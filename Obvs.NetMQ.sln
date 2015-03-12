@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.NetMQ", "Obvs.NetMQ\Obvs.NetMQ.csproj", "{B8256983-F54A-477C-BACA-BF9685135983}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.NetMQ.Tests", "Obvs.NetMQ.Tests\Obvs.NetMQ.Tests.csproj", "{A24FCCF0-448F-4A82-ADAC-17456F6A3A1C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B8256983-F54A-477C-BACA-BF9685135983}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8256983-F54A-477C-BACA-BF9685135983}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8256983-F54A-477C-BACA-BF9685135983}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8256983-F54A-477C-BACA-BF9685135983}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A24FCCF0-448F-4A82-ADAC-17456F6A3A1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A24FCCF0-448F-4A82-ADAC-17456F6A3A1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A24FCCF0-448F-4A82-ADAC-17456F6A3A1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A24FCCF0-448F-4A82-ADAC-17456F6A3A1C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
