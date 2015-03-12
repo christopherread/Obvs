@@ -41,7 +41,7 @@ Create your service bus:
 
 Send commands:
 
-	serviceBus.Commands.Subscribe(e => Console.WriteLine("Received a command!"));
+	serviceBus.Commands.Subscribe(c => Console.WriteLine("Received a command!"));
 	serviceBus.Send(new TestCommand())
 
 Publish events:
@@ -93,7 +93,9 @@ Define custom endpoints that can wrap API calls or integrations with other syste
 	...
 
 	IServiceBus serviceBus = ServiceBus.Configure()
-		.WithBroker("tcp://localhost:61616")
-		.WithActiveMqEndpoints<ITestServiceMessage>("Obvs.TestService")
+		.WithActiveMqEndpoints<ITestServiceMessage>()
+            .Named("Obvs.TestService")
+            .UsingBroker("tcp://localhost:61616")
+            .AsClientAndServer()
 		.WithEndpoints(new MyCustomEndpoint())
 		.Create();
