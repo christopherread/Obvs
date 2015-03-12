@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Obvs.Serialization
+namespace Obvs.Serialization.Json
 {
     public class JsonMessageSerializer : IMessageSerializer
     {

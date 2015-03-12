@@ -1,9 +1,9 @@
 using System.IO;
 using System.Xml.Serialization;
 
-namespace Obvs.Serialization
+namespace Obvs.Serialization.Xml
 {
-    public class XmlMessageDeserializer<TMessage> : DeserializerBase<TMessage>, IMessageDeserializer<TMessage>
+    public class XmlMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage>
     {
         private readonly XmlSerializer _xmlSerializer;
 
@@ -12,7 +12,7 @@ namespace Obvs.Serialization
             _xmlSerializer = new XmlSerializer(typeof(TMessage));
         }
 
-        public TMessage Deserialize(object obj)
+        public override TMessage Deserialize(object obj)
         {
             using (StringReader stringReader = new StringReader((string)obj))
             {

@@ -1,15 +1,16 @@
 ﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Obvs.Serialization")]
+[assembly: AssemblyTitle("Obvs.Serialization.Xml")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Christopher Read")]
-[assembly: AssemblyProduct("Obvs.Serialization")]
-[assembly: AssemblyCopyright("Copyright © Christopher Read 2014")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Obvs.Serialization.Xml")]
+[assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -19,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("4041d570-2593-4e5e-a06f-891c1b8f3ea8")]
+[assembly: Guid("ba6d8c0e-bbe6-4f62-9acd-f9b9c5e7a8c9")]
 
 // Version information for an assembly consists of the following four values:
 //

@@ -1,7 +1,7 @@
 using System.IO;
 using ProtoBuf;
 
-namespace Obvs.Serialization
+namespace Obvs.Serialization.ProtoBuf
 {
     public class ProtoBufMessageSerializer : IMessageSerializer
     {
@@ -10,13 +10,9 @@ namespace Obvs.Serialization
             using (MemoryStream stream = new MemoryStream())
             {
                 Serializer.NonGeneric.Serialize(stream, message);
-
                 byte[] buffer = new byte[stream.Length];
-
                 stream.Position = 0;
-
                 stream.Read(buffer, 0, buffer.Length);
-
                 return buffer;
             }
         }

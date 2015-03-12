@@ -1,7 +1,7 @@
 using System.IO;
 using System.Xml.Serialization;
 
-namespace Obvs.Serialization
+namespace Obvs.Serialization.Xml
 {
     public class XmlMessageSerializer<TMessage> : IMessageSerializer
     {

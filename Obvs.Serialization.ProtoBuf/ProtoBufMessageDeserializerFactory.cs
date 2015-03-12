@@ -4,16 +4,16 @@ using System.Linq;
 using Obvs.Configuration;
 using Obvs.Types;
 
-namespace Obvs.Serialization
+namespace Obvs.Serialization.ProtoBuf
 {
-    public static class DeserializerTypeFactory
+    public class ProtoBufMessageDeserializerFactory : IMessageDeserializerFactory
     {
-        public static IEnumerable<IMessageDeserializer<TMessage>> CreateJson<TMessage, TServiceMessage>(string assemblyNameContains = null)
+        public IEnumerable<IMessageDeserializer<TMessage>> Create<TMessage, TServiceMessage>(string assemblyNameContains = null)
             where TMessage : IMessage
             where TServiceMessage : IMessage
         {
             return MessageTypes.Get<TMessage, TServiceMessage>(assemblyNameContains)
-                .Select(type => typeof(JsonMessageDeserializer<>).MakeGenericType(new[] { type }))
+                .Select(type => typeof(ProtoBufMessageDeserializer<>).MakeGenericType(new[] { type }))
                 .Select(deserializerGeneric => Activator.CreateInstance(deserializerGeneric) as IMessageDeserializer<TMessage>)
                 .ToArray();
         }

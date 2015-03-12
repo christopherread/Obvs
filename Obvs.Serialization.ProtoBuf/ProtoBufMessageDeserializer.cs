@@ -1,11 +1,11 @@
 ﻿using System.IO;
 using ProtoBuf;
 
-namespace Obvs.Serialization
+namespace Obvs.Serialization.ProtoBuf
 {
-    public class ProtoBufMessageDeserializer<TMessage> : DeserializerBase<TMessage>, IMessageDeserializer<TMessage>
+    public class ProtoBufMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage>
     {
-        public TMessage Deserialize(object obj)
+        public override TMessage Deserialize(object obj)
         {
             byte[] data = obj == null ? new byte[0] : (byte[])obj;
 
