@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{325264EE-18AA-4DF4-9306-3FE7A1F49A98}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Obvs</RootNamespace>
+    <AssemblyName>Obvs</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Reactive.Core">
+      <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces">
+      <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Linq">
+      <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Configuration\ICanAddEndpointOrCreate.cs" />
+    <Compile Include="Configuration\IServiceEndpointProvider.cs" />
+    <Compile Include="Configuration\MessageTypes.cs" />
+    <Compile Include="Configuration\RequesterId.cs" />
+    <Compile Include="Configuration\ServiceBusFluentCreator.cs" />
+    <Compile Include="IHandle.cs" />
+    <Compile Include="IMessageBus.cs" />
+    <Compile Include="IMessageConverter.cs" />
+    <Compile Include="IMessagePropertyProvider.cs" />
+    <Compile Include="IMessagePublisher.cs" />
+    <Compile Include="IMessageSource.cs" />
+    <Compile Include="IServiceBus.cs" />
+    <Compile Include="IServiceBusClient.cs" />
+    <Compile Include="IServiceEndpoint.cs" />
+    <Compile Include="IServiceEndpointClient.cs" />
+    <Compile Include="MergedMessageSource.cs" />
+    <Compile Include="MessageBridge.cs" />
+    <Compile Include="MessagePropertyNames.cs" />
+    <Compile Include="MessageSourceConverter.cs" />
+    <Compile Include="Extensions\ObservableExtensions.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Extensions\RequestExtensions.cs" />
+    <Compile Include="RequestPropertyProvider.cs" />
+    <Compile Include="Extensions\ResponseExtensions.cs" />
+    <Compile Include="ResponsePropertyProvider.cs" />
+    <Compile Include="IMessageDeserializer.cs" />
+    <Compile Include="IMessageSerializer.cs" />
+    <Compile Include="ServiceBusErrorHandlingBase.cs" />
+    <Compile Include="ServiceEndpoint.cs" />
+    <Compile Include="ServiceEndpointClient.cs" />
+    <Compile Include="TypeRoutingMessagePublisher.cs" />
+    <Compile Include="Types\ICommand.cs" />
+    <Compile Include="Types\IEvent.cs" />
+    <Compile Include="Types\IMessage.cs" />
+    <Compile Include="Types\IRequest.cs" />
+    <Compile Include="Types\IResponse.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Obvs.nuspec" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
