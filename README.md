@@ -1,5 +1,5 @@
 ﻿
-# Obvs: convention based observable µService bus
+# Obvs: an observable µService bus
 ## observable services, *obvs*
 
 Features:
