@@ -54,7 +54,9 @@ Request/response:
 	serviceBus
 		.GetResponses(new TestRequest())
 		.OfType<TestResponse>()
-		.Subscribe(o => Console.WriteLine("Received a response!));
+		.Take(1)
+		.Timeout(TimeSpan.FromSeconds(1))
+		.Subscribe(r => Console.WriteLine("Received a response!"), exception => Console.WriteLine("Oh no!"));
 
 	serviceBus.Requests.OfType<TestRequest>.Subscribe(request => serviceBus.Reply(request, new TestResponse()));
 
