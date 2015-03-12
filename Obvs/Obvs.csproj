@@ -53,6 +53,7 @@
     <Compile Include="IHandle.cs" />
     <Compile Include="IMessageBus.cs" />
     <Compile Include="IMessageConverter.cs" />
+    <Compile Include="IMessageDeserializerFactory.cs" />
     <Compile Include="IMessagePropertyProvider.cs" />
     <Compile Include="IMessagePublisher.cs" />
     <Compile Include="IMessageSource.cs" />
