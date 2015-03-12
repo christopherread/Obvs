@@ -41,12 +41,12 @@ Create your service bus:
 
 Send commands:
 
-	serviceBus.Commands.Subscribe(e => Console.WriteLine("Recieved a command!"));
+	serviceBus.Commands.Subscribe(e => Console.WriteLine("Received a command!"));
 	serviceBus.Send(new TestCommand())
 
 Publish events:
 
-	serviceBus.Events.Subscribe(e => Console.WriteLine("Recieved an event!"));
+	serviceBus.Events.Subscribe(e => Console.WriteLine("Received an event!"));
 	serviceBus.Publish(new TestEvent())
 	
 Request/response:
@@ -54,7 +54,7 @@ Request/response:
 	serviceBus
 		.GetResponses(new TestRequest())
 		.OfType<TestResponse>()
-		.Subscribe(o => Console.WriteLine("Recieved a response!));
+		.Subscribe(o => Console.WriteLine("Received a response!));
 
 	serviceBus.Requests.OfType<TestRequest>.Subscribe(request => serviceBus.Reply(request, new TestResponse()));
 
