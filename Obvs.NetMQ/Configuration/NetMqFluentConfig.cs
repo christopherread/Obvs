@@ -16,7 +16,12 @@ namespace Obvs.NetMQ.Configuration
 
     public interface ICanAddNetMqPort
     {
-        ICanCreateClientOrServer OnPort(int port);
+        ICanSpecifySerializers OnPort(int port);
+    }
+
+    public interface ICanSpecifySerializers
+    {
+        ICanCreateClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory);
     }
     
     public interface ICanCreateClientOrServer
@@ -26,13 +31,15 @@ namespace Obvs.NetMQ.Configuration
         ICanAddEndpointOrCreate AsClientAndServer();
     }
 
-    internal class NetMqFluentConfig<TServiceMessage> : ICanAddNetMqAddress, ICanAddNetMqPort, ICanAddNetMqServiceName, ICanCreateClientOrServer 
+    internal class NetMqFluentConfig<TServiceMessage> : ICanAddNetMqAddress, ICanAddNetMqPort, ICanAddNetMqServiceName, ICanCreateClientOrServer, ICanSpecifySerializers
         where TServiceMessage : IMessage
     {
         private readonly ICanAddEndpoint _canAddEndpoint;
         private string _serviceName;
         private Uri _address;
         private int _port;
+        private IMessageSerializer _serializer;
+        private IMessageDeserializerFactory _deserializerFactory;
 
         public NetMqFluentConfig(ICanAddEndpoint canAddEndpoint)
         {
@@ -51,7 +58,7 @@ namespace Obvs.NetMQ.Configuration
             return this;
         }
 
-        ICanCreateClientOrServer ICanAddNetMqPort.OnPort(int port)
+        ICanSpecifySerializers ICanAddNetMqPort.OnPort(int port)
         {
             _port = port;
             return this;
@@ -74,7 +81,14 @@ namespace Obvs.NetMQ.Configuration
 
         private NetMqServiceEndpointProvider<TServiceMessage> CreateProvider()
         {
-            return new NetMqServiceEndpointProvider<TServiceMessage>(_serviceName, _address.OriginalString, _port);
+            return new NetMqServiceEndpointProvider<TServiceMessage>(_serviceName, _address.OriginalString, _port, _serializer, _deserializerFactory);
+        }
+
+        public ICanCreateClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
+        {
+            _serializer = serializer;
+            _deserializerFactory = deserializerFactory;
+            return this;
         }
     }
 }

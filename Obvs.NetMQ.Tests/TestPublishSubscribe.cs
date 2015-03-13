@@ -5,7 +5,8 @@ using System.Reactive;
 using System.Threading;
 using NetMQ;
 using NUnit.Framework;
-using Obvs.Serialization;
+using Obvs.Serialization.Json;
+using Obvs.Serialization.ProtoBuf;
 using Obvs.Types;
 using ProtoBuf;
 
@@ -58,7 +59,7 @@ namespace Obvs.NetMQ.Tests
                 new IMessageDeserializer<IMessage>[]
                 {
                     new JsonMessageDeserializer<TestMessage1>(), 
-                    new JsonMessageDeserializer<TestMessage2>(),
+                    new JsonMessageDeserializer<TestMessage2>()
                 },
                 context, topic);
 
@@ -108,7 +109,7 @@ namespace Obvs.NetMQ.Tests
                 new IMessageDeserializer<IMessage>[]
                 {
                     new ProtoBufMessageDeserializer<TestMessage1>(), 
-                    new ProtoBufMessageDeserializer<TestMessage2>(),
+                    new ProtoBufMessageDeserializer<TestMessage2>()
                 },
                 context, topic);
             

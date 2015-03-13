@@ -41,16 +41,16 @@
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs, Version=1.3.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.1.3.2.0\lib\net45\Obvs.dll</HintPath>
+    <Reference Include="Obvs">
+      <HintPath>..\packages\Obvs.1.4.1\lib\net45\Obvs.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs.Serialization, Version=1.3.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.Serialization.1.3.2.0\lib\net45\Obvs.Serialization.dll</HintPath>
+    <Reference Include="Obvs.Serialization.Json">
+      <HintPath>..\packages\Obvs.Serialization.Json.1.4.0\lib\net45\Obvs.Serialization.Json.dll</HintPath>
     </Reference>
-    <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Obvs.Serialization.ProtoBuf">
+      <HintPath>..\packages\Obvs.Serialization.ProtoBuf.1.4.0\lib\net45\Obvs.Serialization.ProtoBuf.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
     <Reference Include="System" />
