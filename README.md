@@ -50,6 +50,8 @@ Publish events:
 	serviceBus.Publish(new TestEvent())
 	
 Request/response:
+
+	serviceBus.Requests.OfType<TestRequest>.Subscribe(request => serviceBus.Reply(request, new TestResponse()));
 	
 	serviceBus
 		.GetResponses(new TestRequest())
@@ -57,8 +59,6 @@ Request/response:
 		.Take(1)
 		.Timeout(TimeSpan.FromSeconds(1))
 		.Subscribe(r => Console.WriteLine("Received a response!"), exception => Console.WriteLine("Oh no!"));
-
-	serviceBus.Requests.OfType<TestRequest>.Subscribe(request => serviceBus.Reply(request, new TestResponse()));
 
 Define custom endpoints that can wrap API calls or integrations with other systems:
 	
