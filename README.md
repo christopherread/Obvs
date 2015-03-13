@@ -51,14 +51,16 @@ Publish events:
 	
 Request/response:
 
-	serviceBus.Requests.OfType<TestRequest>.Subscribe(request => serviceBus.Reply(request, new TestResponse()));
+	serviceBus.Requests
+		  .OfType<TestRequest>()
+		  .Subscribe(request => serviceBus.Reply(request, new TestResponse()));
 	
-	serviceBus
-		.GetResponses(new TestRequest())
-		.OfType<TestResponse>()
-		.Take(1)
-		.Timeout(TimeSpan.FromSeconds(1))
-		.Subscribe(r => Console.WriteLine("Received a response!"), exception => Console.WriteLine("Oh no!"));
+	serviceBus.GetResponses(new TestRequest())
+		  .OfType<TestResponse>()
+		  .Take(1)
+		  .Timeout(TimeSpan.FromSeconds(1))
+		  .Subscribe(r => Console.WriteLine("Received a response!"), 
+		  	     exception => Console.WriteLine("Oh no!"));
 
 Define custom endpoints that can wrap API calls or integrations with other systems:
 	
