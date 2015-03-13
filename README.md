@@ -1,6 +1,6 @@
 ﻿
 # Obvs: an observable µService bus
-## observable services, *obvs*
+## observable services, *obviously*
 
 Features:
 
@@ -59,8 +59,7 @@ Request/response:
 		  .OfType<TestResponse>()
 		  .Take(1)
 		  .Timeout(TimeSpan.FromSeconds(1))
-		  .Subscribe(r => Console.WriteLine("Received a response!"), 
-		  	     exception => Console.WriteLine("Oh no!"));
+		  .Subscribe(r => Console.WriteLine("Received a response!"), err => Console.WriteLine("Oh no!"));
 
 Define custom endpoints that can wrap API calls or integrations with other systems:
 	
