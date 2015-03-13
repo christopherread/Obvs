@@ -10,7 +10,12 @@ namespace Obvs.ActiveMQ.Configuration
 
     public interface ICanSpecifyActiveMQBroker
     {
-        ICanCreateClientOrServer UsingBroker(string brokerUri);
+        ICanSpecifySerializers UsingBroker(string brokerUri);
+    }
+
+    public interface ICanSpecifySerializers
+    {
+        ICanCreateClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory);
     }
 
     public interface ICanFilterMessageTypeAssemblies
@@ -25,13 +30,15 @@ namespace Obvs.ActiveMQ.Configuration
         ICanAddEndpointOrCreate AsClientAndServer();
     }
 
-    internal class ActiveMQFluentConfig<TServiceMessage> : ICanSpecifyActiveMQBroker, ICanSpecifyActiveMQServiceName, ICanCreateClientOrServer 
+    internal class ActiveMQFluentConfig<TServiceMessage> : ICanSpecifyActiveMQBroker, ICanSpecifyActiveMQServiceName, ICanCreateClientOrServer, ICanSpecifySerializers
         where TServiceMessage : IMessage
     {
         private readonly ICanAddEndpoint _canAddEndpoint;
         private string _serviceName;
         private string _brokerUri;
         private string _assemblyNameContains = string.Empty;
+        private IMessageSerializer _serializer;
+        private IMessageDeserializerFactory _deserializerFactory;
 
         public ActiveMQFluentConfig(ICanAddEndpoint canAddEndpoint)
         {
@@ -67,12 +74,19 @@ namespace Obvs.ActiveMQ.Configuration
 
         private ActiveMQServiceEndpointProvider<TServiceMessage> CreateProvider()
         {
-            return new ActiveMQServiceEndpointProvider<TServiceMessage>(_serviceName, _brokerUri, _assemblyNameContains);
+            return new ActiveMQServiceEndpointProvider<TServiceMessage>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _assemblyNameContains);
         }
 
-        public ICanCreateClientOrServer UsingBroker(string brokerUri)
+        public ICanSpecifySerializers UsingBroker(string brokerUri)
         {
             _brokerUri = brokerUri;
+            return this;
+        }
+
+        public ICanCreateClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
+        {
+            _serializer = serializer;
+            _deserializerFactory = deserializerFactory;
             return this;
         }
     }

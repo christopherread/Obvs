@@ -6,7 +6,7 @@ using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using FakeItEasy;
 using NUnit.Framework;
-using Obvs.Serialization;
+using Obvs.Serialization.Json;
 using Obvs.Types;
 using IMessage = Obvs.Types.IMessage;
 
