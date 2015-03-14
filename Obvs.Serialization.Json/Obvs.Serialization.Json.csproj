@@ -34,9 +34,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.6.0.6\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs, Version=1.4.1.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs, Version=1.4.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.1.4.1\lib\net45\Obvs.dll</HintPath>
+      <HintPath>..\packages\Obvs.1.4.2\lib\net45\Obvs.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -51,6 +51,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\FluentConfigExtensions.cs" />
     <Compile Include="JsonMessageDeserializer.cs" />
     <Compile Include="JsonMessageDeserializerFactory.cs" />
     <Compile Include="JsonMessageSerializer.cs" />
@@ -60,6 +61,7 @@
     <None Include="Obvs.Serialization.Json.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
