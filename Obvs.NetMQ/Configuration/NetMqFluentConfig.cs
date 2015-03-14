@@ -16,22 +16,10 @@ namespace Obvs.NetMQ.Configuration
 
     public interface ICanAddNetMqPort
     {
-        ICanSpecifySerializers OnPort(int port);
+        ICanSpecifyEndpointSerializers OnPort(int port);
     }
 
-    public interface ICanSpecifySerializers
-    {
-        ICanCreateClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory);
-    }
-    
-    public interface ICanCreateClientOrServer
-    {
-        ICanAddEndpointOrCreate AsClient();
-        ICanAddEndpointOrCreate AsServer();
-        ICanAddEndpointOrCreate AsClientAndServer();
-    }
-
-    internal class NetMqFluentConfig<TServiceMessage> : ICanAddNetMqAddress, ICanAddNetMqPort, ICanAddNetMqServiceName, ICanCreateClientOrServer, ICanSpecifySerializers
+    internal class NetMqFluentConfig<TServiceMessage> : ICanAddNetMqAddress, ICanAddNetMqPort, ICanAddNetMqServiceName, ICanCreateEndpointAsClientOrServer, ICanSpecifyEndpointSerializers
         where TServiceMessage : IMessage
     {
         private readonly ICanAddEndpoint _canAddEndpoint;
@@ -40,6 +28,7 @@ namespace Obvs.NetMQ.Configuration
         private int _port;
         private IMessageSerializer _serializer;
         private IMessageDeserializerFactory _deserializerFactory;
+        private string _assemblyNameContains;
 
         public NetMqFluentConfig(ICanAddEndpoint canAddEndpoint)
         {
@@ -58,7 +47,7 @@ namespace Obvs.NetMQ.Configuration
             return this;
         }
 
-        ICanSpecifySerializers ICanAddNetMqPort.OnPort(int port)
+        ICanSpecifyEndpointSerializers ICanAddNetMqPort.OnPort(int port)
         {
             _port = port;
             return this;
@@ -81,13 +70,19 @@ namespace Obvs.NetMQ.Configuration
 
         private NetMqServiceEndpointProvider<TServiceMessage> CreateProvider()
         {
-            return new NetMqServiceEndpointProvider<TServiceMessage>(_serviceName, _address.OriginalString, _port, _serializer, _deserializerFactory);
+            return new NetMqServiceEndpointProvider<TServiceMessage>(_serviceName, _address.OriginalString, _port, _serializer, _deserializerFactory, _assemblyNameContains);
         }
 
-        public ICanCreateClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
+        public ICanCreateEndpointAsClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
         {
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
+            return this;
+        }
+
+        public ICanCreateEndpointAsClientOrServer FilterMessageTypeAssemblies(string assemblyNameContains)
+        {
+            _assemblyNameContains = assemblyNameContains;
             return this;
         }
     }

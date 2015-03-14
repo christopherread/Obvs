@@ -6,7 +6,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using NUnit.Framework;
 using Obvs.NetMQ.Configuration;
-using Obvs.Serialization.Json;
+using Obvs.Serialization.Json.Configuration;
 using Obvs.Types;
 
 namespace Obvs.NetMQ.Tests
@@ -71,7 +71,7 @@ namespace Obvs.NetMQ.Tests
                     .Named("Obvs.TestNetMqService")
                     .BindToAddress("tcp://localhost")
                     .OnPort(5555)
-                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory())
+                    .SerializedAsJson()
                     .AsClientAndServer()
                 .Create();
 
