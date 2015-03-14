@@ -1,4 +1,6 @@
-﻿using Obvs.Configuration;
+﻿using System;
+using System.Collections.Generic;
+using Obvs.Configuration;
 using Obvs.Types;
 
 namespace Obvs.ActiveMQ.Configuration
@@ -8,9 +10,14 @@ namespace Obvs.ActiveMQ.Configuration
         ICanSpecifyActiveMQBroker Named(string serviceName);
     }
 
-    public interface ICanSpecifyActiveMQBroker
+    public interface ICanSpecifyActiveMQQueue
     {
-        ICanSpecifyEndpointSerializers UsingBroker(string brokerUri);
+        ICanSpecifyActiveMQBroker UsingQueueFor<TMessage>() where TMessage : IMessage;
+    }
+
+    public interface ICanSpecifyActiveMQBroker : ICanSpecifyActiveMQQueue
+    {
+        ICanSpecifyEndpointSerializers ConnectToBroker(string brokerUri);
     }
 
     internal class ActiveMQFluentConfig<TServiceMessage> : ICanSpecifyActiveMQBroker, ICanSpecifyActiveMQServiceName, ICanCreateEndpointAsClientOrServer, ICanSpecifyEndpointSerializers
@@ -22,6 +29,7 @@ namespace Obvs.ActiveMQ.Configuration
         private string _assemblyNameContains = string.Empty;
         private IMessageSerializer _serializer;
         private IMessageDeserializerFactory _deserializerFactory;
+        private readonly List<Type> _queueTypes = new List<Type>();
 
         public ActiveMQFluentConfig(ICanAddEndpoint canAddEndpoint)
         {
@@ -57,10 +65,10 @@ namespace Obvs.ActiveMQ.Configuration
 
         private ActiveMQServiceEndpointProvider<TServiceMessage> CreateProvider()
         {
-            return new ActiveMQServiceEndpointProvider<TServiceMessage>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _assemblyNameContains);
+            return new ActiveMQServiceEndpointProvider<TServiceMessage>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyNameContains);
         }
 
-        public ICanSpecifyEndpointSerializers UsingBroker(string brokerUri)
+        public ICanSpecifyEndpointSerializers ConnectToBroker(string brokerUri)
         {
             _brokerUri = brokerUri;
             return this;
@@ -70,6 +78,12 @@ namespace Obvs.ActiveMQ.Configuration
         {
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
+            return this;
+        }
+
+        public ICanSpecifyActiveMQBroker UsingQueueFor<TMessage>() where TMessage : IMessage
+        {
+            _queueTypes.Add(typeof(TMessage));
             return this;
         }
     }
