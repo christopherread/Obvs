@@ -19,4 +19,21 @@ namespace Obvs.Configuration
         ICanAddEndpointOrCreate WithClientEndpoints(IServiceEndpointProvider serviceEndpointProvider);
         ICanAddEndpointOrCreate WithServerEndpoints(IServiceEndpointProvider serviceEndpointProvider);
     }
+
+    public interface ICanSpecifyEndpointSerializers
+    {
+        ICanCreateEndpointAsClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory);
+    }
+
+    public interface ICanFilterEndpointMessageTypeAssemblies
+    {
+        ICanCreateEndpointAsClientOrServer FilterMessageTypeAssemblies(string assemblyNameContains);
+    }
+
+    public interface ICanCreateEndpointAsClientOrServer : ICanFilterEndpointMessageTypeAssemblies
+    {
+        ICanAddEndpointOrCreate AsClient();
+        ICanAddEndpointOrCreate AsServer();
+        ICanAddEndpointOrCreate AsClientAndServer();
+    }
 }
