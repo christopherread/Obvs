@@ -6,7 +6,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using NUnit.Framework;
 using Obvs.ActiveMQ.Configuration;
-using Obvs.Serialization.Json;
+using Obvs.Serialization.Json.Configuration;
 using Obvs.Types;
 
 namespace Obvs.ActiveMQ.Tests
@@ -72,7 +72,7 @@ namespace Obvs.ActiveMQ.Tests
                 .WithActiveMQEndpoints<ITestMessage>()
                     .Named("Obvs.TestService")
                     .UsingBroker("tcp://localhost:61616")
-                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory())
+                    .SerializedAsJson()
                     .AsClientAndServer()
                 .Create();
 

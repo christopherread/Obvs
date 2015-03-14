@@ -10,27 +10,10 @@ namespace Obvs.ActiveMQ.Configuration
 
     public interface ICanSpecifyActiveMQBroker
     {
-        ICanSpecifySerializers UsingBroker(string brokerUri);
+        ICanSpecifyEndpointSerializers UsingBroker(string brokerUri);
     }
 
-    public interface ICanSpecifySerializers
-    {
-        ICanCreateClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory);
-    }
-
-    public interface ICanFilterMessageTypeAssemblies
-    {
-        ICanCreateClientOrServer FilterMessageTypeAssemblies(string assemblyNameContains);
-    }
-
-    public interface ICanCreateClientOrServer : ICanFilterMessageTypeAssemblies
-    {
-        ICanAddEndpointOrCreate AsClient();
-        ICanAddEndpointOrCreate AsServer();
-        ICanAddEndpointOrCreate AsClientAndServer();
-    }
-
-    internal class ActiveMQFluentConfig<TServiceMessage> : ICanSpecifyActiveMQBroker, ICanSpecifyActiveMQServiceName, ICanCreateClientOrServer, ICanSpecifySerializers
+    internal class ActiveMQFluentConfig<TServiceMessage> : ICanSpecifyActiveMQBroker, ICanSpecifyActiveMQServiceName, ICanCreateEndpointAsClientOrServer, ICanSpecifyEndpointSerializers
         where TServiceMessage : IMessage
     {
         private readonly ICanAddEndpoint _canAddEndpoint;
@@ -51,7 +34,7 @@ namespace Obvs.ActiveMQ.Configuration
             return this;
         }
 
-        public ICanCreateClientOrServer FilterMessageTypeAssemblies(string assemblyNameContains)
+        public ICanCreateEndpointAsClientOrServer FilterMessageTypeAssemblies(string assemblyNameContains)
         {
             _assemblyNameContains = assemblyNameContains;
             return this;
@@ -77,13 +60,13 @@ namespace Obvs.ActiveMQ.Configuration
             return new ActiveMQServiceEndpointProvider<TServiceMessage>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _assemblyNameContains);
         }
 
-        public ICanSpecifySerializers UsingBroker(string brokerUri)
+        public ICanSpecifyEndpointSerializers UsingBroker(string brokerUri)
         {
             _brokerUri = brokerUri;
             return this;
         }
 
-        public ICanCreateClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
+        public ICanCreateEndpointAsClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
         {
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
