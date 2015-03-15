@@ -5,7 +5,7 @@
 Features:
 
 * Simple RX based interfaces for doing pub/sub
-* Convention based messaging over topics per service
+* Convention based messaging over topics/queues per service
 * Multiplexing of multiple message types over single topics/queues
 * Dynamic creation of deserializers per type
 * Asynchronous error handling on a separate channel
@@ -33,9 +33,11 @@ Create command/event/request/response message types:
 Create your service bus:
 
 	IServiceBus serviceBus = ServiceBus.Configure()
-        .WithActiveMqEndpoints<ITestServiceMessage>()
+        .WithActiveMQEndpoints<ITestMessage>()
             .Named("Obvs.TestService")
-            .UsingBroker("tcp://localhost:61616")
+            .UsingQueueFor<ICommand>()
+            .ConnectToBroker("tcp://localhost:61616")
+            .SerializedAsJson()
             .AsClientAndServer()
         .Create();
 
@@ -94,9 +96,11 @@ Define custom endpoints that can wrap API calls or integrations with other syste
 	...
 
 	IServiceBus serviceBus = ServiceBus.Configure()
-		.WithActiveMqEndpoints<ITestServiceMessage>()
+        .WithActiveMQEndpoints<ITestMessage>()
             .Named("Obvs.TestService")
-            .UsingBroker("tcp://localhost:61616")
+            .UsingQueueFor<ICommand>()
+            .ConnectToBroker("tcp://localhost:61616")
+            .SerializedAsJson()
             .AsClientAndServer()
 		.WithEndpoints(new MyCustomEndpoint())
-		.Create();
+        .Create();
