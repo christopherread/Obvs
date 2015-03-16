@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Obvs by inter8ection</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Obvs</h1>
+        <h2>An observable µService bus library that wraps the complexities of your particular transport in a simple Rx based wrapper.</h2>
+        <a href="https://github.com/inter8ection/Obvs" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="obvs-an-observable-µservice-bus" class="anchor" href="#obvs-an-observable-%C2%B5service-bus" aria-hidden="true"><span class="octicon octicon-link"></span></a>Obvs: an observable µService bus</h1>
+
+<h2>
+<a id="observable-services-obviously" class="anchor" href="#observable-services-obviously" aria-hidden="true"><span class="octicon octicon-link"></span></a>observable services, <em>obviously</em>
+</h2>
+
+<p>Features:</p>
+
+<ul>
+<li>Simple RX based interfaces for doing pub/sub</li>
+<li>Convention based messaging over topics/queues per service</li>
+<li>Multiplexing of multiple message types over single topics/queues</li>
+<li>Dynamic creation of deserializers per type</li>
+<li>Asynchronous error handling on a separate channel</li>
+<li>Easy to extend and customise, allowing integration with external systems</li>
+<li>Fluent code based configuration</li>
+<li>Supports ActiveMQ and NetMQ transports</li>
+<li>Provides serialization for XML, JSON, and ProtoBuf</li>
+</ul>
+
+<h2>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h2>
+
+<p>Define a root message type to identify messages as belonging to your service:</p>
+
+<pre><code>public interface ITestServiceMessage : IMessage { }
+</code></pre>
+
+<p>Create command/event/request/response message types:</p>
+
+<pre><code>public class TestCommand : ITestServiceMessage, ICommand { }
+
+public class TestEvent : ITestServiceMessage, IEvent { }
+
+public class TestRequest: ITestServiceMessage, IRequest { }
+
+public class TestResponse : ITestServiceMessage, IResponse { }
+</code></pre>
+
+<p>Create your service bus:</p>
+
+<pre><code>IServiceBus serviceBus = ServiceBus.Configure()
+    .WithActiveMQEndpoints&lt;ITestMessage&gt;()
+        .Named("Obvs.TestService")
+        .UsingQueueFor&lt;ICommand&gt;()
+        .ConnectToBroker("tcp://localhost:61616")
+        .SerializedAsJson()
+        .AsClientAndServer()
+    .Create();
+</code></pre>
+
+<p>Send commands:</p>
+
+<pre><code>serviceBus.Commands.Subscribe(c =&gt; Console.WriteLine("Received a command!"));
+serviceBus.Send(new TestCommand())
+</code></pre>
+
+<p>Publish events:</p>
+
+<pre><code>serviceBus.Events.Subscribe(e =&gt; Console.WriteLine("Received an event!"));
+serviceBus.Publish(new TestEvent())
+</code></pre>
+
+<p>Request/response:</p>
+
+<pre><code>serviceBus.Requests
+      .OfType&lt;TestRequest&gt;()
+      .Subscribe(request =&gt; serviceBus.Reply(request, new TestResponse()));
+
+serviceBus.GetResponses(new TestRequest())
+      .OfType&lt;TestResponse&gt;()
+      .Take(1)
+      .Timeout(TimeSpan.FromSeconds(1))
+      .Subscribe(r =&gt; Console.WriteLine("Received a response!"), err =&gt; Console.WriteLine("Oh no!"));
+</code></pre>
+
+<p>Define custom endpoints that can wrap API calls or integrations with other systems:</p>
+
+<pre><code>public class MyCustomEndpoint : IServiceEndpointClient
+    {
+        Type _serviceType = typeof(IMyCustomServiceMessage);
+
+        public IObservable&lt;IEvent&gt; Events
+        {
+                get
+                {
+                    // subscribe to external MQ broker
+                }
+        }
+
+        public void Send(ICommand command)
+        {
+                // call external API
+        }
+
+        public IObservable&lt;IResponse&gt; GetResponses(IRequest request)
+        {
+                // call external API and wrap response in observable
+        }
+
+        public bool CanHandle(IMessage message)
+        {
+                return _serviceType.IsInstanceOfType(message);
+        }
+    }
+
+...
+
+IServiceBus serviceBus = ServiceBus.Configure()
+    .WithActiveMQEndpoints&lt;ITestMessage&gt;()
+        .Named("Obvs.TestService")
+        .UsingQueueFor&lt;ICommand&gt;()
+        .ConnectToBroker("tcp://localhost:61616")
+        .SerializedAsJson()
+        .AsClientAndServer()
+    .WithEndpoints(new MyCustomEndpoint())
+    .Create();
+</code></pre>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/inter8ection/Obvs/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/inter8ection/Obvs/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/inter8ection/Obvs"></a> is maintained by <a href="https://github.com/inter8ection">inter8ection</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
