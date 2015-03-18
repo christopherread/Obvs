@@ -57,6 +57,7 @@
     <Compile Include="MessagePublisher.cs" />
     <Compile Include="MessageSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RabbitExchangeTypes.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

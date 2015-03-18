@@ -18,7 +18,7 @@ namespace Obvs.RabbitMQ
             _exchange = exchange;
             _connection = connectionFactory.CreateConnection();
             _channel = _connection.CreateModel();
-            _channel.ExchangeDeclare(_exchange, "topic");
+            _channel.ExchangeDeclare(_exchange, RabbitExchangeTypes.Topic);
         }
 
         public void Publish(TMessage message)
