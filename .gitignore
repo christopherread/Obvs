@@ -1,0 +1,11 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/Obvs.RabbitMQ/bin
+/Obvs.RabbitMQ/obj
+/Obvs.RabbitMQ.Tests/bin
+/Obvs.RabbitMQ.Tests/obj
+/packages
+/Obvs.RabbitMQ.sln.DotSettings.user
+*.suo
