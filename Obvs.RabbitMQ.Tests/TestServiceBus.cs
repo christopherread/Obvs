@@ -15,7 +15,7 @@ namespace Obvs.RabbitMQ.Tests
     [TestFixture]
     public class TestServiceBus
     {
-        [Test]
+        [Test, Explicit]
         public void ShouldSendAndReceiveMessagesOverServiceBus()
         {
             IServiceBus serviceBus = ServiceBus.Configure()
