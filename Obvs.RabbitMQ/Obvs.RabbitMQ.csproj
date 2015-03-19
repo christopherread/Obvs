@@ -65,6 +65,7 @@
     <Compile Include="RabbitExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Obvs.RabbitMQ.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
