@@ -11,7 +11,7 @@ Features:
 * Asynchronous error handling on a separate channel
 * Easy to extend and customise, allowing integration with external systems
 * Fluent code based configuration
-* Supports ActiveMQ and NetMQ transports
+* Supports ActiveMQ, NetMQ, and RabbitMQ transports
 * Provides serialization for XML, JSON, and ProtoBuf
 
 ## Example
