@@ -43,6 +43,12 @@
     <Reference Include="Obvs.Serialization.Json">
       <HintPath>..\packages\Obvs.Serialization.Json.1.4.1\lib\net45\Obvs.Serialization.Json.dll</HintPath>
     </Reference>
+    <Reference Include="Obvs.Serialization.ProtoBuf">
+      <HintPath>..\packages\Obvs.Serialization.ProtoBuf.1.4.1\lib\net45\Obvs.Serialization.ProtoBuf.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
     <Reference Include="RabbitMQ.Client">
       <HintPath>..\packages\RabbitMQ.Client.3.5.0\lib\net40\RabbitMQ.Client.dll</HintPath>
     </Reference>
@@ -64,7 +70,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TestMessageSource.cs" />
+    <Compile Include="TestSendingAndReceiving.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

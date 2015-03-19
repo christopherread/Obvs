@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Obvs.Types;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -49,23 +49,36 @@ namespace Obvs.RabbitMQ
             {
                 return Observable.Create<TMessage>(observer =>
                 {
-                    var queue = _channel.QueueDeclare();
+                    var consumer = CreateConsumer();
 
-                    foreach (string routingKey in _routingKeys)
-                    {
-                        _channel.QueueBind(queue, _exchange, routingKey);   
-                    }
-                    
-                    var consumer = new QueueingBasicConsumer(_channel);
-                    _channel.BasicConsume(queue, true, consumer);
-
-                    return Observable.Timer(TimeSpan.Zero, TimeSpan.Zero)
-                        .Select(i => consumer.Queue.Dequeue())
+                    IDisposable subscribe = Observable.Defer(() => Observable.StartAsync(consumer.DequeueAsync))
+                        .Repeat()
                         .Select(Deserialize)
                         .Subscribe(observer);
+
+                    return Disposable.Create(() =>
+                    {
+                        consumer.Queue.Close();
+                        subscribe.Dispose();
+                    });
                 });
             }
         }
+
+        private QueueingBasicConsumer CreateConsumer()
+        {
+            var queue = _channel.QueueDeclare();
+
+            foreach (string routingKey in _routingKeys)
+            {
+                _channel.QueueBind(queue, _exchange, routingKey);
+            }
+
+            var consumer = new QueueingBasicConsumer(_channel);
+            _channel.BasicConsume(queue, true, consumer);
+            return consumer;
+        }
+
 
         private TMessage Deserialize(BasicDeliverEventArgs deliverEventArgs)
         {
