@@ -13,15 +13,15 @@ namespace Obvs.RabbitMQ
     public class MessageSource<TMessage> : IMessageSource<TMessage> where TMessage : IMessage
     {
         private readonly string _exchange;
-        private readonly IList<string> _routingKeys;
+        private readonly string _routingKeyPrefix;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly IConnection _connection;
         private readonly IModel _channel;
-        private readonly string _typeRoutingKey = string.Format("{0}.*", typeof(TMessage).Name);
 
-        public MessageSource(IConnectionFactory connectionFactory, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string exchange, IEnumerable<string> routingKeys = null)
+        public MessageSource(IConnectionFactory connectionFactory, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string exchange, string routingKeyPrefix)
         {
             _exchange = exchange;
+            _routingKeyPrefix = routingKeyPrefix;
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
 
             if (!_deserializers.Any())
@@ -29,7 +29,6 @@ namespace Obvs.RabbitMQ
                 throw new Exception("You must supply at least one deserializer");
             }
 
-            _routingKeys = routingKeys == null ? new List<string> { _typeRoutingKey } : routingKeys.ToList();
             _connection = connectionFactory.CreateConnection();
             _channel = _connection.CreateModel();
             _channel.ExchangeDeclare(_exchange, RabbitExchangeTypes.Topic);
@@ -69,10 +68,7 @@ namespace Obvs.RabbitMQ
         {
             var queue = _channel.QueueDeclare();
 
-            foreach (string routingKey in _routingKeys)
-            {
-                _channel.QueueBind(queue, _exchange, routingKey);
-            }
+            _channel.QueueBind(queue, _exchange, string.Format("{0}.*", _routingKeyPrefix));
 
             var consumer = new QueueingBasicConsumer(_channel);
             _channel.BasicConsume(queue, true, consumer);

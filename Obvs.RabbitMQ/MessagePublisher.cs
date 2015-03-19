@@ -9,13 +9,15 @@ namespace Obvs.RabbitMQ
     {
         private readonly IMessageSerializer _serializer;
         private readonly string _exchange;
+        private readonly string _routingKeyPrefix;
         private readonly IConnection _connection;
         private readonly IModel _channel;
 
-        public MessagePublisher(IConnectionFactory connectionFactory, IMessageSerializer serializer, string exchange)
+        public MessagePublisher(IConnectionFactory connectionFactory, IMessageSerializer serializer, string exchange, string routingKeyPrefix)
         {
             _serializer = serializer;
             _exchange = exchange;
+            _routingKeyPrefix = routingKeyPrefix;
             _connection = connectionFactory.CreateConnection();
             _channel = _connection.CreateModel();
             _channel.ExchangeDeclare(_exchange, RabbitExchangeTypes.Topic);
@@ -23,7 +25,7 @@ namespace Obvs.RabbitMQ
 
         public void Publish(TMessage message)
         {
-            string routingKey = string.Format("{0}.{1}", typeof (TMessage).Name, message.GetType().Name);
+            string routingKey = string.Format("{0}.{1}", _routingKeyPrefix, message.GetType().Name);
             object serializedMessage = _serializer.Serialize(message);
             byte[] body = serializedMessage as byte[] ?? Encoding.UTF8.GetBytes((string) serializedMessage);
             string contentType = serializedMessage is byte[] ? "bytes" : "text";

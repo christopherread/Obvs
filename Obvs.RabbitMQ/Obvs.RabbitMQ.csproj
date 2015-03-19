@@ -54,6 +54,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\RabbitMQConfigExtensions.cs" />
+    <Compile Include="Configuration\RabbitMQFluentConfig.cs" />
+    <Compile Include="Configuration\RabbitMQServiceEndpointProvider.cs" />
+    <Compile Include="Configuration\SourcePublisherFactory.cs" />
     <Compile Include="MessagePublisher.cs" />
     <Compile Include="MessageSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
