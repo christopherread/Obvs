@@ -33,9 +33,9 @@ namespace Obvs.RabbitMQ
 
                 var task = Task.Run(() =>
                 {
-                    while (!token.IsCancellationRequested)
+                    try
                     {
-                        try
+                        while (!token.IsCancellationRequested)
                         {
                             BasicDeliverEventArgs msg;
                             if (consumer.Queue.Dequeue(millisecondsTimeout, out msg))
@@ -43,12 +43,12 @@ namespace Obvs.RabbitMQ
                                 observer.OnNext(msg);
                             }
                         }
-                        catch (Exception exception)
-                        {
-                            observer.OnError(exception);
-                        }
+                        observer.OnCompleted();
                     }
-                    observer.OnCompleted();
+                    catch (Exception exception)
+                    {
+                        observer.OnError(exception);
+                    }
                 }, token);
 
                 return Disposable.Create(() =>
