@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq.Expressions;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,11 +11,6 @@ namespace Obvs.RabbitMQ
 {
     internal static class RabbitExtensions
     {
-        public static Task<BasicDeliverEventArgs> DequeueAsync(this QueueingBasicConsumer consumer, CancellationToken token)
-        {
-            return Task.Run(() => consumer.Queue.Dequeue(), token);
-        }
-
         public static QueueingBasicConsumer CreateConsumer(this IModel channel, string exchange, string routingKey)
         {
             QueueDeclareOk queue = channel.QueueDeclare();
@@ -27,7 +24,39 @@ namespace Obvs.RabbitMQ
 
         public static IObservable<BasicDeliverEventArgs> GetMessages(this QueueingBasicConsumer consumer)
         {
-            return Observable.Defer(() => Observable.StartAsync(consumer.DequeueAsync)).Repeat();
+            const int millisecondsTimeout = 200; // don't want to block indefinitely if task cancelled
+
+            return Observable.Create<BasicDeliverEventArgs>(observer => 
+            {
+                var tokenSource = new CancellationTokenSource();
+                var token = tokenSource.Token;
+
+                var task = Task.Run(() =>
+                {
+                    while (!token.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            BasicDeliverEventArgs msg;
+                            if (consumer.Queue.Dequeue(millisecondsTimeout, out msg))
+                            {
+                                observer.OnNext(msg);
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            observer.OnError(exception);
+                        }
+                    }
+                    observer.OnCompleted();
+                }, token);
+
+                return Disposable.Create(() =>
+                {
+                    tokenSource.Cancel();
+                    task.Wait();
+                });
+            });
         }
     }
 }

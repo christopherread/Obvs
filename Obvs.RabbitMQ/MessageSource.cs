@@ -56,8 +56,8 @@ namespace Obvs.RabbitMQ
 
                     return Disposable.Create(() =>
                     {
-                        consumer.Queue.Close();
                         subscription.Dispose();
+                        consumer.Queue.Close();
                     });
                 });
             }
