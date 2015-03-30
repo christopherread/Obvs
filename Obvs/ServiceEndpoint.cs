@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Obvs.Types;
 
 namespace Obvs
@@ -33,17 +34,17 @@ namespace Obvs
             get { return _commandSource.Messages; }
         }
 
-        public void Publish(IEvent ev)
+        public Task PublishAsync(IEvent ev)
         {
-            _eventPublisher.Publish(ev);
+            return _eventPublisher.PublishAsync(ev);
         }
 
-        public void Reply(IRequest request, IResponse response)
+        public Task ReplyAsync(IRequest request, IResponse response)
         {
             response.RequestId = request.RequestId;
             response.RequesterId = request.RequesterId;
 
-            _responsePublisher.Publish(response);
+            return _responsePublisher.PublishAsync(response);
         }
 
         public bool CanHandle(IMessage message)

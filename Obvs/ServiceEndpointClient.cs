@@ -1,5 +1,6 @@
 using System;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using Obvs.Configuration;
 using Obvs.Types;
 
@@ -31,9 +32,9 @@ namespace Obvs
             get { return _eventSource.Messages; }
         }
 
-        public void Send(ICommand command)
+        public Task SendAsync(ICommand command)
         {
-            _commandPublisher.Publish(command);
+            return _commandPublisher.PublishAsync(command);
         }
 
         public IObservable<IResponse> GetResponses(IRequest request)
@@ -48,7 +49,7 @@ namespace Obvs
                                        response.RequesterId == request.RequesterId)
                     .Subscribe(observer);
 
-                _requestPublisher.Publish(request);
+                _requestPublisher.PublishAsync(request);
 
                 return disposable;
             });

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Obvs.Types;
 
 namespace Obvs
@@ -6,7 +7,7 @@ namespace Obvs
     public interface IServiceEndpointClient : IEndpoint
     {
         IObservable<IEvent> Events { get; }
-        void Send(ICommand command);
+        Task SendAsync(ICommand command);
 
         IObservable<IResponse> GetResponses(IRequest request);
     }

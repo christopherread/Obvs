@@ -55,7 +55,7 @@ namespace Obvs.Tests
             bridge.Start();
             observer.OnNext(objFrom);
 
-            A.CallTo(() => publisher.Publish(objTo)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => publisher.PublishAsync(objTo)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test]

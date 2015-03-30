@@ -54,9 +54,9 @@ namespace Obvs
             _publisher.Dispose();
         }
 
-        private void PublishMessage(TTo obj)
+        private void PublishMessage(TTo msg)
         {
-            _publisher.Publish(obj);
+            _publisher.PublishAsync(msg);
         }
 
         private static bool MessageIsValid(TTo msg)

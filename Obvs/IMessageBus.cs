@@ -1,5 +1,6 @@
 using System;
 using System.Reactive.Subjects;
+using System.Threading.Tasks;
 using Obvs.Types;
 
 namespace Obvs
@@ -19,9 +20,10 @@ namespace Obvs
             _subject = new Subject<TMessage>();
         }
 
-        public void Publish(TMessage message)
+        public Task PublishAsync(TMessage message)
         {
             _subject.OnNext(message);
+            return Task.FromResult(true);
         }
 
         public void Dispose()

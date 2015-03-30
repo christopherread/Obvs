@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using Obvs.Configuration;
 using Obvs.Extensions;
 using Obvs.Types;
@@ -13,8 +14,8 @@ namespace Obvs
         IObservable<IRequest> Requests { get; }
         IObservable<ICommand> Commands { get; }
 
-        void Publish(IEvent ev);
-        void Reply(IRequest request, IResponse response);
+        Task PublishAsync(IEvent ev);
+        Task ReplyAsync(IRequest request, IResponse response);
     }
 
     public class ServiceBus : ServiceBusClient, IServiceBus
@@ -41,30 +42,34 @@ namespace Obvs
             get { return _commands; }
         }
 
-        public void Publish(IEvent ev)
+        public Task PublishAsync(IEvent ev)
         {
             List<Exception> exceptions = new List<Exception>();
 
-            EndpointsThatCanHandle(ev).ForEach(endpoint => Catch(() => endpoint.Publish(ev), exceptions, EventErrorMessage(endpoint)));
+            var tasks = EndpointsThatCanHandle(ev).Select(endpoint => Catch(() => endpoint.PublishAsync(ev), exceptions, EventErrorMessage(endpoint))).ToArray();
 
             if (exceptions.Any())
             {
                 throw new AggregateException(EventErrorMessage(ev), exceptions);
             }
+
+            return Task.WhenAll(tasks);
         }
 
-        public void Reply(IRequest request, IResponse response)
+        public Task ReplyAsync(IRequest request, IResponse response)
         {
             response.SetCorrelationIds(request);
 
             List<Exception> exceptions = new List<Exception>();
 
-            EndpointsThatCanHandle(response).ForEach(endpoint => Catch(() => endpoint.Reply(request, response), exceptions, ReplyErrorMessage(endpoint)));
+            var tasks = EndpointsThatCanHandle(response).Select(endpoint => Catch(() => endpoint.ReplyAsync(request, response), exceptions, ReplyErrorMessage(endpoint))).ToArray();
 
             if (exceptions.Any())
             {
                 throw new AggregateException(ReplyErrorMessage(request, response), exceptions);
             }
+
+            return Task.WhenAll(tasks);
         }
 
         public static ICanAddEndpoint Configure()

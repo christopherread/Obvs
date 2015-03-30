@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Obvs.Types;
 
 namespace Obvs
@@ -13,7 +14,7 @@ namespace Obvs
         IObservable<IRequest> Requests { get; }
         IObservable<ICommand> Commands { get; }
 
-        void Publish(IEvent ev);
-        void Reply(IRequest request, IResponse response);
+        Task PublishAsync(IEvent ev);
+        Task ReplyAsync(IRequest request, IResponse response);
     }
 }

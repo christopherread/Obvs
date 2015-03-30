@@ -28,21 +28,21 @@ namespace Obvs.Tests
             ICommand command = A.Fake<ICommand>();
             IMessage message = A.Fake<IMessage>();
 
-            typeRoutingMessagePublisher.Publish(ev);
-            typeRoutingMessagePublisher.Publish(command);
-            typeRoutingMessagePublisher.Publish(message);
+            typeRoutingMessagePublisher.PublishAsync(ev);
+            typeRoutingMessagePublisher.PublishAsync(command);
+            typeRoutingMessagePublisher.PublishAsync(message);
 
-            A.CallTo(() => eventPublisher.Publish(ev)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => eventPublisher.Publish(message)).MustNotHaveHappened();
-            A.CallTo(() => eventPublisher.Publish(command)).MustNotHaveHappened();
+            A.CallTo(() => eventPublisher.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => eventPublisher.PublishAsync(message)).MustNotHaveHappened();
+            A.CallTo(() => eventPublisher.PublishAsync(command)).MustNotHaveHappened();
 
-            A.CallTo(() => commandPublisher.Publish(ev)).MustNotHaveHappened();
-            A.CallTo(() => commandPublisher.Publish(message)).MustNotHaveHappened();
-            A.CallTo(() => commandPublisher.Publish(command)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => commandPublisher.PublishAsync(ev)).MustNotHaveHappened();
+            A.CallTo(() => commandPublisher.PublishAsync(message)).MustNotHaveHappened();
+            A.CallTo(() => commandPublisher.PublishAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
 
-            A.CallTo(() => messagePublisher.Publish(ev)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => messagePublisher.Publish(command)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => messagePublisher.Publish(message)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => messagePublisher.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => messagePublisher.PublishAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => messagePublisher.PublishAsync(message)).MustHaveHappened(Repeated.Exactly.Once);
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading.Tasks;
 using Obvs.Extensions;
 using Obvs.Types;
 
@@ -81,6 +82,19 @@ namespace Obvs
             {
                 exceptions.Add(message == null ? exception : new Exception(message, exception));
             }
+        }
+
+        protected Task Catch(Func<Task> func, List<Exception> exceptions, string message = null)
+        {
+            try
+            {
+                return func();
+            }
+            catch (Exception exception)
+            {
+                exceptions.Add(message == null ? exception : new Exception(message, exception));
+            }
+            return Task.FromResult(false);
         }
     }
 }

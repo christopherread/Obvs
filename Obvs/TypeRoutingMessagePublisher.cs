@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Obvs.Types;
 
 namespace Obvs
@@ -14,16 +15,11 @@ namespace Obvs
             _publishers = publishers;
         }
 
-        public void Publish(TMessage message)
+        public Task PublishAsync(TMessage message)
         {
-            IEnumerable<IMessagePublisher<TMessage>> publishers = _publishers.Where(pair => pair.Key.IsInstanceOfType(message))
-                                                                             .Select(pair => pair.Value)
-                                                                             .ToArray();
-
-            foreach (IMessagePublisher<TMessage> messagePublisher in publishers)
-            {
-                messagePublisher.Publish(message);
-            }
+            return Task.WhenAll(_publishers.Where(pair => pair.Key.IsInstanceOfType(message))
+                .Select(pair => pair.Value)
+                .Select(publisher => publisher.PublishAsync(message)));
         }
 
         public void Dispose()

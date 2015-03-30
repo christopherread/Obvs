@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
+using System.Threading.Tasks;
 using FakeItEasy;
 using NUnit.Framework;
 using Obvs.Types;
@@ -698,21 +699,21 @@ namespace Obvs.Tests
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2, serviceEndpointClient3 }, new[] { serviceEndpoint1, serviceEndpoint2 });
             
-            serviceBus.Send(command1);
+            serviceBus.SendAsync(command1);
 
-            A.CallTo(() => serviceEndpointClient1.Send(command1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpointClient2.Send(command1)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.Send(command1)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command1)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command1)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command1)).MustHaveHappened(Repeated.Exactly.Once);
             
-            serviceBus.Send(new[]{command2, command3});
+            serviceBus.SendAsync(new[]{command2, command3});
 
-            A.CallTo(() => serviceEndpointClient1.Send(command2)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpointClient2.Send(command2)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.Send(command2)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command2)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command2)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command2)).MustHaveHappened(Repeated.Exactly.Once);
 
-            A.CallTo(() => serviceEndpointClient1.Send(command3)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpointClient2.Send(command3)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.Send(command3)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command3)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command3)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command3)).MustHaveHappened(Repeated.Exactly.Once);
         } 
         
         [Test]
@@ -765,11 +766,11 @@ namespace Obvs.Tests
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2, serviceEndpoint3 });
             
-            serviceBus.Publish(ev);
+            serviceBus.PublishAsync(ev);
 
-            A.CallTo(() => serviceEndpoint1.Publish(ev)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint2.Publish(ev)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpoint3.Publish(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test]
@@ -790,11 +791,11 @@ namespace Obvs.Tests
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2, serviceEndpoint3 });
 
-            serviceBus.Reply(request, response);
+            serviceBus.ReplyAsync(request, response);
 
-            A.CallTo(() => serviceEndpoint1.Reply(request, response)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint2.Reply(request, response)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpoint3.Reply(request, response)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test]
@@ -860,14 +861,16 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpointClient3.CanHandle(A<ICommand>._)).Returns(true);
 
             Exception originalException = new Exception("Something went wrong");
-            A.CallTo(() => serviceEndpointClient2.Send(A<ICommand>._)).Throws(originalException);
+            A.CallTo(() => serviceEndpointClient1.SendAsync(A<ICommand>._)).Returns(Task.FromResult(true));
+            A.CallTo(() => serviceEndpointClient2.SendAsync(A<ICommand>._)).Throws(originalException);
+            A.CallTo(() => serviceEndpointClient3.SendAsync(A<ICommand>._)).Returns(Task.FromResult(true));
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2, serviceEndpointClient3 }, new[] { serviceEndpoint1, serviceEndpoint2 });
 
             AggregateException aggregateException = null;
             try
             {
-                serviceBus.Send(new[] {command, command2});
+                serviceBus.SendAsync(new[] {command, command2});
             }
             catch (AggregateException ex)
             {
@@ -878,9 +881,9 @@ namespace Obvs.Tests
             Assert.That(aggregateException != null, "No aggregate exception was thrown");
             Assert.That(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpointClient1.Send(command)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpointClient2.Send(command)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpointClient3.Send(command)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test]
@@ -899,14 +902,16 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpoint3.CanHandle(A<IEvent>._)).Returns(true);
 
             Exception originalException = new Exception("Something went wrong");
-            A.CallTo(() => serviceEndpoint2.Publish(ev)).Throws(originalException);
+            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).Returns(Task.FromResult(true));
+            A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).Throws(originalException);
+            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).Returns(Task.FromResult(true));
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2, serviceEndpoint3 });
 
             AggregateException aggregateException = null;
             try
             {
-                serviceBus.Publish(ev);
+                serviceBus.PublishAsync(ev);
             }
             catch (AggregateException ex)
             {
@@ -917,9 +922,9 @@ namespace Obvs.Tests
             Assert.That(aggregateException != null, "No aggregate exception was thrown");
             Assert.That(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpoint1.Publish(ev)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint2.Publish(ev)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint3.Publish(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
         }
         
         [Test]
@@ -939,7 +944,7 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpoint3.CanHandle(A<IResponse>._)).Returns(true);
 
             Exception originalException = new Exception("Something went wrong");
-            A.CallTo(() => serviceEndpoint2.Reply(request, response)).Throws(originalException);
+            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).Throws(originalException);
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2, serviceEndpoint3 });
 
@@ -947,7 +952,7 @@ namespace Obvs.Tests
             
             try
             {
-                serviceBus.Reply(request, response);
+                serviceBus.ReplyAsync(request, response);
             }
             catch (AggregateException ex)
             {
@@ -958,9 +963,9 @@ namespace Obvs.Tests
             Assert.That(aggregateException != null, "No aggregate exception was thrown");
             Assert.That(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpoint1.Reply(request, response)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint2.Reply(request, response)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint3.Reply(request, response)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test]
@@ -985,16 +990,16 @@ namespace Obvs.Tests
             serviceBus.Exceptions.Subscribe(exceptions.Add);
 
             // trigger exception
-            serviceBus.Publish(new TestServiceMessage1());
+            serviceBus.PublishAsync(new TestServiceMessage1());
 
             TestServiceMessage2 message1 = new TestServiceMessage2();
-            serviceBus.Publish(message1);
+            serviceBus.PublishAsync(message1);
 
             // trigger another exception
-            serviceBus.Publish(new TestServiceMessage1());
+            serviceBus.PublishAsync(new TestServiceMessage1());
 
             TestServiceMessage2 message2 = new TestServiceMessage2();
-            serviceBus.Publish(message2);
+            serviceBus.PublishAsync(message2);
 
             // wait some time until we think all messages have been sent and received
             Thread.Sleep(TimeSpan.FromSeconds(3));
@@ -1026,9 +1031,10 @@ namespace Obvs.Tests
             return _serviceType.IsInstanceOfType(message);
         }
 
-        public void Send(ICommand command)
+        public Task SendAsync(ICommand command)
         {
             _subject.OnNext(command);
+            return Task.FromResult(true);
         }
 
         public IObservable<IResponse> GetResponses(IRequest request)
@@ -1092,16 +1098,18 @@ namespace Obvs.Tests
             }
         }
 
-        public void Publish(IEvent ev)
+        public Task PublishAsync(IEvent ev)
         {
             _subject.OnNext(ev);
+            return Task.FromResult(true);
         }
 
-        public void Reply(IRequest request, IResponse response)
+        public Task ReplyAsync(IRequest request, IResponse response)
         {
             response.RequestId = request.RequestId;
             response.RequesterId = request.RequesterId;
             _subject.OnNext(response);
+            return Task.FromResult(true);
         }
     }
 }
