@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Obvs.Types;
 
-namespace Obvs
+namespace Obvs.MessageProperties
 {
     public interface IMessagePropertyProvider<in TMessage> where TMessage : IMessage
     {

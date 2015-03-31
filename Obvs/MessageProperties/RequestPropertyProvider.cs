@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Obvs.Types;
 
-namespace Obvs
+namespace Obvs.MessageProperties
 {
     public class RequestPropertyProvider : IMessagePropertyProvider<IRequest>
     {
@@ -9,8 +9,8 @@ namespace Obvs
         {
             return new List<KeyValuePair<string, object>>
             {
-                new KeyValuePair<string, object>("RequestId", request.RequestId),
-                new KeyValuePair<string, object>("RequesterId", request.RequesterId)
+                new KeyValuePair<string, object>(MessagePropertyNames.RequestId, request.RequestId),
+                new KeyValuePair<string, object>(MessagePropertyNames.RequesterId, request.RequesterId)
             };
         }
     }
