@@ -50,7 +50,6 @@
     <Compile Include="Configuration\MessageTypes.cs" />
     <Compile Include="Configuration\RequesterId.cs" />
     <Compile Include="Configuration\ServiceBusFluentCreator.cs" />
-    <Compile Include="IHandle.cs" />
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\ILoggerFactory.cs" />
     <Compile Include="IMessageBus.cs" />
@@ -79,8 +78,6 @@
     <Compile Include="Serialization\IMessageDeserializer.cs" />
     <Compile Include="Serialization\IMessageSerializer.cs" />
     <Compile Include="ServiceBusErrorHandlingBase.cs" />
-    <Compile Include="ServiceEndpoint.cs" />
-    <Compile Include="ServiceEndpointClient.cs" />
     <Compile Include="TypeRoutingMessagePublisher.cs" />
     <Compile Include="Types\ICommand.cs" />
     <Compile Include="Types\IEvent.cs" />
