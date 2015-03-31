@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Obvs.Types;
 
-namespace Obvs
+namespace Obvs.Serialization
 {
     public interface IMessageDeserializerFactory
     {

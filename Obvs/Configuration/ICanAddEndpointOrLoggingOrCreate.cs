@@ -1,4 +1,5 @@
 using Obvs.Logging;
+using Obvs.Serialization;
 
 namespace Obvs.Configuration
 {

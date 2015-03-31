@@ -55,7 +55,7 @@
     <Compile Include="Logging\ILoggerFactory.cs" />
     <Compile Include="IMessageBus.cs" />
     <Compile Include="IMessageConverter.cs" />
-    <Compile Include="IMessageDeserializerFactory.cs" />
+    <Compile Include="Serialization\IMessageDeserializerFactory.cs" />
     <Compile Include="IMessagePropertyProvider.cs" />
     <Compile Include="IMessagePublisher.cs" />
     <Compile Include="IMessageSource.cs" />
@@ -76,8 +76,8 @@
     <Compile Include="RequestPropertyProvider.cs" />
     <Compile Include="Extensions\ResponseExtensions.cs" />
     <Compile Include="ResponsePropertyProvider.cs" />
-    <Compile Include="IMessageDeserializer.cs" />
-    <Compile Include="IMessageSerializer.cs" />
+    <Compile Include="Serialization\IMessageDeserializer.cs" />
+    <Compile Include="Serialization\IMessageSerializer.cs" />
     <Compile Include="ServiceBusErrorHandlingBase.cs" />
     <Compile Include="ServiceEndpoint.cs" />
     <Compile Include="ServiceEndpointClient.cs" />

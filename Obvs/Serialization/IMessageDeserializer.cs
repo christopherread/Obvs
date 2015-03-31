@@ -1,4 +1,4 @@
-namespace Obvs
+namespace Obvs.Serialization
 {
     public interface IMessageDeserializer<out TMessage>
     {
