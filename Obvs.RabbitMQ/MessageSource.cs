@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
+using Obvs.Serialization;
 using Obvs.Types;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -30,7 +31,7 @@ namespace Obvs.RabbitMQ
 
             _connection = connectionFactory.CreateConnection();
             _channel = _connection.CreateModel();
-            _channel.ExchangeDeclare(_exchange, RabbitExchangeTypes.Topic);
+            _channel.ExchangeDeclare(_exchange, ExchangeType.Topic);
             _routingKey = string.Format("{0}.*", routingKeyPrefix);
         }
 

@@ -1,4 +1,5 @@
 ﻿using Obvs.Configuration;
+using Obvs.Serialization;
 using Obvs.Types;
 
 namespace Obvs.RabbitMQ.Configuration

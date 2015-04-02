@@ -1,4 +1,6 @@
 ﻿using System.Text;
+using System.Threading.Tasks;
+using Obvs.Serialization;
 using Obvs.Types;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Framing;
@@ -20,16 +22,17 @@ namespace Obvs.RabbitMQ
             _routingKeyPrefix = routingKeyPrefix;
             _connection = connectionFactory.CreateConnection();
             _channel = _connection.CreateModel();
-            _channel.ExchangeDeclare(_exchange, RabbitExchangeTypes.Topic);
+            _channel.ExchangeDeclare(_exchange, ExchangeType.Topic);
         }
 
-        public void Publish(TMessage message)
+        public Task PublishAsync(TMessage message)
         {
             string routingKey = string.Format("{0}.{1}", _routingKeyPrefix, message.GetType().Name);
             object serializedMessage = _serializer.Serialize(message);
             byte[] body = serializedMessage as byte[] ?? Encoding.UTF8.GetBytes((string) serializedMessage);
             string contentType = serializedMessage is byte[] ? "bytes" : "text";
             _channel.BasicPublish(_exchange, routingKey, new BasicProperties { ContentType = contentType }, body);
+            return Task.FromResult(true);
         }
 
         public void Dispose()

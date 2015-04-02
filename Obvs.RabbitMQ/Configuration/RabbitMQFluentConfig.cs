@@ -1,4 +1,5 @@
 ﻿using Obvs.Configuration;
+using Obvs.Serialization;
 using Obvs.Types;
 
 namespace Obvs.RabbitMQ.Configuration
@@ -45,7 +46,7 @@ namespace Obvs.RabbitMQ.Configuration
             return this;
         }
 
-        public ICanAddEndpointOrCreate AsClient()
+        public ICanAddEndpointOrLoggingOrCreate AsClient()
         {
             return _canAddEndpoint.WithClientEndpoints(CreateProvider());
         }
@@ -56,12 +57,12 @@ namespace Obvs.RabbitMQ.Configuration
                 _serializer, _deserializerFactory, _assemblyNameContains);
         }
 
-        public ICanAddEndpointOrCreate AsServer()
+        public ICanAddEndpointOrLoggingOrCreate AsServer()
         {
             return _canAddEndpoint.WithServerEndpoints(CreateProvider());
         }
 
-        public ICanAddEndpointOrCreate AsClientAndServer()
+        public ICanAddEndpointOrLoggingOrCreate AsClientAndServer()
         {
             return _canAddEndpoint.WithEndpoints(CreateProvider());
         }
