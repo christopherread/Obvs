@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Logging.NLog", "Obvs.Logging.NLog\Obvs.Logging.NLog.csproj", "{66CAB382-FF32-49DB-A103-3F6837B0FB0E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Logging.NLog.Tests", "Obvs.Logging.NLog.Tests\Obvs.Logging.NLog.Tests.csproj", "{1549C421-A61C-4DDE-B0A5-BA1121FDB02B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{66CAB382-FF32-49DB-A103-3F6837B0FB0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66CAB382-FF32-49DB-A103-3F6837B0FB0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66CAB382-FF32-49DB-A103-3F6837B0FB0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66CAB382-FF32-49DB-A103-3F6837B0FB0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1549C421-A61C-4DDE-B0A5-BA1121FDB02B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1549C421-A61C-4DDE-B0A5-BA1121FDB02B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1549C421-A61C-4DDE-B0A5-BA1121FDB02B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1549C421-A61C-4DDE-B0A5-BA1121FDB02B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
