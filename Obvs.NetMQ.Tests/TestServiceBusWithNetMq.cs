@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Threading;
 using NUnit.Framework;
@@ -73,14 +74,15 @@ namespace Obvs.NetMQ.Tests
                     .OnPort(5555)
                     .SerializedAsJson()
                     .AsClientAndServer()
+                .UsingDebugLogging()
                 .Create();
 
             // create threadsafe collection to hold received messages in
             ConcurrentBag<IMessage> messages = new ConcurrentBag<IMessage>();
 
             // create some actions that will act as a fake services acting on incoming commands and requests
-            Action<TestCommand> fakeService1 = command => serviceBus.Publish(new TestEvent { Id = command.Id });
-            Action<TestRequest> fakeService2 = request => serviceBus.Reply(request, new TestResponse { Id = request.Id });
+            Action<TestCommand> fakeService1 = command => serviceBus.PublishAsync(new TestEvent { Id = command.Id });
+            Action<TestRequest> fakeService2 = request => serviceBus.ReplyAsync(request, new TestResponse { Id = request.Id });
             AnonymousObserver<IMessage> observer = new AnonymousObserver<IMessage>(msg =>
             {
                 messages.Add(msg);
@@ -91,15 +93,15 @@ namespace Obvs.NetMQ.Tests
             serviceBus.Events.Subscribe(observer);
             serviceBus.Commands.Subscribe(observer);
             serviceBus.Requests.Subscribe(observer);
-            serviceBus.Commands.OfType<TestCommand>().Subscribe(fakeService1);
+            serviceBus.Commands.OfType<TestCommand>().SubscribeOn(TaskPoolScheduler.Default).Subscribe(fakeService1);
             serviceBus.Requests.OfType<TestRequest>().Subscribe(fakeService2);
 
             // send some messages
-            serviceBus.Send(new TestCommand { Id = 123 });
+            serviceBus.SendAsync(new TestCommand { Id = 123 });
             serviceBus.GetResponses(new TestRequest { Id = 456 }).Subscribe(observer);
 
             // wait some time until we think all messages have been sent and received over AMQ
-            Thread.Sleep(TimeSpan.FromSeconds(3));
+            Thread.Sleep(TimeSpan.FromSeconds(5));
 
             // test we got everything we expected
             Assert.That(messages.OfType<TestCommand>().Count() == 1, "TestCommand not received");

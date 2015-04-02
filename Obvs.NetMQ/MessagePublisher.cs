@@ -1,11 +1,13 @@
 ﻿using System;
-using System.Collections.Concurrent;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using NetMQ;
 using NetMQ.Sockets;
 using Obvs.NetMQ.Extensions;
+using Obvs.Serialization;
 using Obvs.Types;
 
 namespace Obvs.NetMQ
@@ -16,47 +18,42 @@ namespace Obvs.NetMQ
         private readonly IMessageSerializer _serializer;
         private readonly NetMQContext _context;
         private readonly string _topic;
+        private readonly IScheduler _scheduler;
+        private readonly Lazy<PublisherSocket> _socket;
 
-        private readonly BlockingCollection<TMessage> _queue = new BlockingCollection<TMessage>();
-
-        public MessagePublisher(string address, IMessageSerializer serializer, NetMQContext context, string topic)
+        public MessagePublisher(string address, IMessageSerializer serializer, NetMQContext context, string topic, IScheduler scheduler)
         {
             _address = address;
             _serializer = serializer;
             _context = context;
             _topic = topic;
+            _scheduler = scheduler;
 
-            Task.Run(() => Publisher());
-        }
-
-        public void Publish(TMessage message)
-        {
-            _queue.Add(message);
-        }
-
-        private void Publisher()
-        {
-            using (PublisherSocket socket = _context.CreatePublisherSocket())
+            _socket = new Lazy<PublisherSocket>(() =>
             {
+                var socket = _context.CreatePublisherSocket();
                 socket.Bind(_address);
                 Thread.Sleep(TimeSpan.FromSeconds(1)); // wait for subscribers
-                PublishQueuedMessages(socket);
-            }
+                return socket;
+            });
         }
 
-        private void PublishQueuedMessages(PublisherSocket socket)
+        private void Publish(TMessage message)
         {
-            _queue.GetConsumingEnumerable().ToObservable().Subscribe(msg => Send(msg, socket));
+            _socket.Value.SendToTopic(_topic, message.GetType().Name, _serializer.Serialize(message));
         }
 
-        private void Send(TMessage message, PublisherSocket socket)
+        public Task PublishAsync(TMessage message)
         {
-            socket.SendToTopic(_topic, message.GetType().Name, _serializer.Serialize(message));
+            return Observable.Start(() => Publish(message), _scheduler).ToTask();
         }
 
         public void Dispose()
         {
-            _queue.CompleteAdding();
+            if (_socket.IsValueCreated)
+            {
+                _socket.Value.Dispose();
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using NetMQ;
 using NetMQ.Sockets;
 using Obvs.NetMQ.Extensions;
+using Obvs.Serialization;
 using Obvs.Types;
 
 namespace Obvs.NetMQ
