@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Obvs.Configuration;
+using Obvs.Serialization;
 using Obvs.Types;
 
 namespace Obvs.ActiveMQ.Configuration
@@ -48,17 +49,17 @@ namespace Obvs.ActiveMQ.Configuration
             return this;
         }
 
-        public ICanAddEndpointOrCreate AsClient()
+        public ICanAddEndpointOrLoggingOrCreate AsClient()
         {
             return _canAddEndpoint.WithClientEndpoints(CreateProvider());
         }
 
-        public ICanAddEndpointOrCreate AsServer()
+        public ICanAddEndpointOrLoggingOrCreate AsServer()
         {
             return _canAddEndpoint.WithServerEndpoints(CreateProvider());
         }
 
-        public ICanAddEndpointOrCreate AsClientAndServer()
+        public ICanAddEndpointOrLoggingOrCreate AsClientAndServer()
         {
             return _canAddEndpoint.WithEndpoints(CreateProvider());
         }

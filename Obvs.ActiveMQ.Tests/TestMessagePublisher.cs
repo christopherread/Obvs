@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive.Concurrency;
 using System.Threading;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using FakeItEasy;
+using Microsoft.Reactive.Testing;
 using NUnit.Framework;
+using Obvs.MessageProperties;
+using Obvs.Serialization;
 using Obvs.Serialization.Json;
 using Obvs.Types;
 using IMessage = Obvs.Types.IMessage;
@@ -24,6 +28,7 @@ namespace Obvs.ActiveMQ.Tests
         private IDestination _destination;
         private ITextMessage _message;
         private IMessagePropertyProvider<IMessage> _messagePropertyProvider;
+        private TestScheduler _testScheduler;
 
         private interface ITestMessage : IEvent
         {
@@ -71,20 +76,23 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _session.CreateTextMessage(A<string>._)).Returns(_message);
             A.CallTo(() => _serializer.Serialize(A<object>._)).Returns("SerializedString");
 
-            _publisher = new MessagePublisher<IMessage>(_connectionFactory, _destination, _serializer, _messagePropertyProvider);
+            _testScheduler = new TestScheduler();
+            _publisher = new MessagePublisher<IMessage>(_connectionFactory, _destination, _serializer, _messagePropertyProvider, _testScheduler);
         }
 
         [Test]
         public void ShouldConnectToBrokerOnceOnFirstPublish()
         {
-            _publisher.Publish(new TestMessage());
+            _publisher.PublishAsync(new TestMessage());
+            _testScheduler.AdvanceBy(1);
 
             A.CallTo(() => _connectionFactory.CreateConnection()).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => _session.CreateProducer(_destination)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => _connection.Start()).MustHaveHappened(Repeated.Exactly.Once);
 
-            _publisher.Publish(new TestMessage());
-            _publisher.Publish(new TestMessage());
+            _publisher.PublishAsync(new TestMessage());
+            _publisher.PublishAsync(new TestMessage());
+            _testScheduler.AdvanceBy(1);
 
             A.CallTo(() => _connectionFactory.CreateConnection()).MustHaveHappened(Repeated.Exactly.Once);
         }
@@ -95,7 +103,8 @@ namespace Obvs.ActiveMQ.Tests
             ITestMessage testMessage = new TestMessage();
             A.CallTo(() => _messagePropertyProvider.GetProperties(testMessage)).Returns(new Dictionary<string, object> { { "key1", 1 }, { "key2", "2" }, { "key3", 3.0 }, { "key4", 4L }, { "key5", true } });
 
-            _publisher.Publish(testMessage);
+            _publisher.PublishAsync(testMessage);
+            _testScheduler.AdvanceBy(1);
 
             A.CallTo(() => _producer.Send(_message)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => _message.Properties.SetInt("key1", 1)).MustHaveHappened(Repeated.Exactly.Once);
@@ -115,7 +124,8 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _serializer.Serialize(testMessage)).Returns(bytes);
             A.CallTo(() => _session.CreateBytesMessage(bytes)).Returns(bytesMessage);
 
-            _publisher.Publish(testMessage);
+            _publisher.PublishAsync(testMessage);
+            _testScheduler.AdvanceBy(1);
 
             A.CallTo(() => _producer.Send(bytesMessage)).MustHaveHappened(Repeated.Exactly.Once);
         }
@@ -126,7 +136,8 @@ namespace Obvs.ActiveMQ.Tests
             ITestMessage testMessage = new TestMessage();
             A.CallTo(() => _messagePropertyProvider.GetProperties(testMessage)).Returns(new Dictionary<string, object>());
 
-            _publisher.Publish(testMessage);
+            _publisher.PublishAsync(testMessage);
+            _testScheduler.AdvanceBy(1);
 
             A.CallTo(() => _producer.Send(_message)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => _message.Properties.SetString(MessagePropertyNames.TypeName, typeof(TestMessage).Name)).MustHaveHappened(Repeated.Exactly.Once);
@@ -135,7 +146,8 @@ namespace Obvs.ActiveMQ.Tests
         [Test]
         public void ShouldDisconnectWhenDisposed()
         {
-            _publisher.Publish(new TestMessage());
+            _publisher.PublishAsync(new TestMessage());
+            _testScheduler.AdvanceBy(1);
             _publisher.Dispose();
 
             A.CallTo(() => _connection.Close()).MustHaveHappened(Repeated.Exactly.Once);
@@ -152,17 +164,19 @@ namespace Obvs.ActiveMQ.Tests
 
             IConnectionFactory connectionFactory = new ConnectionFactory(brokerUri);
 
+            var scheduler = new EventLoopScheduler();
+
             IMessagePublisher<IMessage> publisher1 = new MessagePublisher<IMessage>(
                 connectionFactory,
                 new ActiveMQTopic(topicName1),
                 new JsonMessageSerializer(),
-                getProperties);
+                getProperties, scheduler);
 
             IMessagePublisher<IMessage> publisher2 = new MessagePublisher<IMessage>(
                 connectionFactory,
                 new ActiveMQTopic(topicName2),
                 new JsonMessageSerializer(),
-                getProperties);
+                getProperties, scheduler);
 
             IMessageDeserializer<IMessage>[] deserializers =
             {
@@ -187,10 +201,10 @@ namespace Obvs.ActiveMQ.Tests
 
             source.Messages.Subscribe(Console.WriteLine);
 
-            publisher1.Publish(new TestMessage { Id = 1234 });
-            publisher1.Publish(new TestMessage2 { Id = 4567 });
-            publisher2.Publish(new TestMessage { Id = 8910 });
-            publisher2.Publish(new TestMessage2 { Id = 1112 });
+            publisher1.PublishAsync(new TestMessage { Id = 1234 });
+            publisher1.PublishAsync(new TestMessage2 { Id = 4567 });
+            publisher2.PublishAsync(new TestMessage { Id = 8910 });
+            publisher2.PublishAsync(new TestMessage2 { Id = 1112 });
 
             Thread.Sleep(TimeSpan.FromSeconds(3));
         }

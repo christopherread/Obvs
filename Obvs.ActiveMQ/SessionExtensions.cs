@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Apache.NMS;

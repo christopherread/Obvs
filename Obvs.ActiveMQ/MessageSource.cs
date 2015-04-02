@@ -5,6 +5,8 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using Apache.NMS;
+using Obvs.MessageProperties;
+using Obvs.Serialization;
 using IMessage = Obvs.Types.IMessage;
 
 namespace Obvs.ActiveMQ

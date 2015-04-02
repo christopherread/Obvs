@@ -4,6 +4,8 @@ using Apache.NMS;
 using FakeItEasy;
 using Moq;
 using NUnit.Framework;
+using Obvs.MessageProperties;
+using Obvs.Serialization;
 using IMessage = Obvs.Types.IMessage;
 
 namespace Obvs.ActiveMQ.Tests

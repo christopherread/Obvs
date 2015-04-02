@@ -1,20 +1,24 @@
-﻿using Apache.NMS;
+﻿using System.Reactive.Concurrency;
+using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
+using Obvs.MessageProperties;
+using Obvs.Serialization;
 using IMessage = Obvs.Types.IMessage;
 
 namespace Obvs.ActiveMQ.Configuration
 {
     public static class DestinationFactory
     {
-        public static MessagePublisher<TMessage> CreatePublisher<TMessage>(string broker, string destination, string serviceName, DestinationType destinationType, IMessageSerializer messageSerializer, IMessagePropertyProvider<TMessage> propertyProvider = null)
+        public static MessagePublisher<TMessage> CreatePublisher<TMessage>(string broker, string destination, string serviceName, DestinationType destinationType, IMessageSerializer messageSerializer, IScheduler scheduler, IMessagePropertyProvider<TMessage> propertyProvider = null)
             where TMessage : IMessage
         {
             return new MessagePublisher<TMessage>(
                 new ConnectionFactory(broker, ConnectionClientId.CreateWithSuffix(string.Format("{0}.{1}.Publisher", serviceName, typeof(TMessage).Name))),
                 CreateDestination(destination, destinationType),
                 messageSerializer,
-                propertyProvider ?? new DefaultPropertyProvider<TMessage>());
+                propertyProvider ?? new DefaultPropertyProvider<TMessage>(),
+                scheduler);
         }
 
         public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(string broker, string destination, string serviceName, DestinationType destinationType, IMessageDeserializerFactory deserializerFactory, string assemblyNameContains = null, string selector = null)

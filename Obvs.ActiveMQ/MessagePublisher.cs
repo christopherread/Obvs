@@ -1,9 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 using Apache.NMS;
+using Obvs.MessageProperties;
+using Obvs.Serialization;
 using IMessage = Obvs.Types.IMessage;
 
 namespace Obvs.ActiveMQ
@@ -15,18 +21,20 @@ namespace Obvs.ActiveMQ
         private readonly IDestination _destination;
         private readonly IMessageSerializer _serializer;
         private readonly IMessagePropertyProvider<TMessage> _propertyProvider;
+        private readonly IScheduler _scheduler;
         private readonly Lazy<IConnection> _connection;
         private ISession _session;
         private IMessageProducer _producer;
         private IDisposable _disposable;
 
-        public MessagePublisher(IConnectionFactory connectionFactory, IDestination destination, IMessageSerializer serializer, IMessagePropertyProvider<TMessage> propertyProvider)
+        public MessagePublisher(IConnectionFactory connectionFactory, IDestination destination, IMessageSerializer serializer, IMessagePropertyProvider<TMessage> propertyProvider, IScheduler scheduler)
         {
             _connectionFactory = connectionFactory;
             _destination = destination;
             _serializer = serializer;
             _propertyProvider = propertyProvider;
-            
+            _scheduler = scheduler;
+
             _connection = new Lazy<IConnection>(() =>
             {
                 IConnection connection = _connectionFactory.CreateConnection();
@@ -35,7 +43,12 @@ namespace Obvs.ActiveMQ
             }, LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
-        public void Publish(TMessage message)
+        public Task PublishAsync(TMessage message)
+        {
+            return Observable.Start(() => Publish(message), _scheduler).ToTask();
+        }
+
+        private void Publish(TMessage message)
         {
             List<KeyValuePair<string, object>> properties = _propertyProvider.GetProperties(message).ToList();
 

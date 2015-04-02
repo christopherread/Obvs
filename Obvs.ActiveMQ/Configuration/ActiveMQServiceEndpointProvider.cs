@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive.Concurrency;
+using System.Threading;
 using Apache.NMS;
 using Obvs.Configuration;
+using Obvs.Serialization;
 using Obvs.Types;
 using IMessage = Obvs.Types.IMessage;
 
@@ -14,6 +17,7 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly IMessageDeserializerFactory _deserializerFactory;
         private readonly List<Type> _queueTypes;
         private readonly string _assemblyNameContains;
+        private readonly IScheduler _scheduler;
 
         public ActiveMQServiceEndpointProvider(string serviceName, string brokerUri, IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, List<Type> queueTypes, string assemblyNameContains)
             : base(serviceName)
@@ -23,12 +27,7 @@ namespace Obvs.ActiveMQ.Configuration
             _deserializerFactory = deserializerFactory;
             _queueTypes = queueTypes;
             _assemblyNameContains = assemblyNameContains;
-        }
-
-        public ActiveMQServiceEndpointProvider(string serviceName, string brokerUri, IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
-            : this(serviceName, brokerUri, serializer, deserializerFactory, new List<Type>(), string.Empty)
-        {
-            _brokerUri = brokerUri;
+            _scheduler = new EventLoopScheduler(start => new Thread(start){Name = string.Format("{0}.Publisher", serviceName)});
         }
 
         public override IServiceEndpoint CreateEndpoint()
@@ -36,8 +35,8 @@ namespace Obvs.ActiveMQ.Configuration
             return new ServiceEndpoint(
                 DestinationFactory.CreateSource<IRequest, TServiceMessage>(_brokerUri, RequestsDestination, ServiceName, GetDestinationType<IRequest>(), _deserializerFactory, _assemblyNameContains),
                 DestinationFactory.CreateSource<ICommand, TServiceMessage>(_brokerUri, CommandsDestination, ServiceName, GetDestinationType<ICommand>(), _deserializerFactory, _assemblyNameContains),
-                DestinationFactory.CreatePublisher<IEvent>(_brokerUri, EventsDestination, ServiceName, GetDestinationType<IEvent>(), _serializer),
-                DestinationFactory.CreatePublisher<IResponse>(_brokerUri, ResponsesDestination, ServiceName, GetDestinationType<IResponse>(), _serializer),
+                DestinationFactory.CreatePublisher<IEvent>(_brokerUri, EventsDestination, ServiceName, GetDestinationType<IEvent>(), _serializer, _scheduler),
+                DestinationFactory.CreatePublisher<IResponse>(_brokerUri, ResponsesDestination, ServiceName, GetDestinationType<IResponse>(), _serializer, _scheduler),
                 typeof(TServiceMessage));
         }
 
@@ -46,8 +45,8 @@ namespace Obvs.ActiveMQ.Configuration
             return new ServiceEndpointClient(
                 DestinationFactory.CreateSource<IEvent, TServiceMessage>(_brokerUri, EventsDestination, ServiceName, GetDestinationType<IEvent>(), _deserializerFactory, _assemblyNameContains),
                 DestinationFactory.CreateSource<IResponse, TServiceMessage>(_brokerUri, ResponsesDestination, ServiceName, GetDestinationType<IResponse>(), _deserializerFactory, _assemblyNameContains),
-                DestinationFactory.CreatePublisher<IRequest>(_brokerUri, RequestsDestination, ServiceName, GetDestinationType<IRequest>(), _serializer),
-                DestinationFactory.CreatePublisher<ICommand>(_brokerUri, CommandsDestination, ServiceName, GetDestinationType<ICommand>(), _serializer),
+                DestinationFactory.CreatePublisher<IRequest>(_brokerUri, RequestsDestination, ServiceName, GetDestinationType<IRequest>(), _serializer, _scheduler),
+                DestinationFactory.CreatePublisher<ICommand>(_brokerUri, CommandsDestination, ServiceName, GetDestinationType<ICommand>(), _serializer, _scheduler),
                 typeof(TServiceMessage));
         }
 

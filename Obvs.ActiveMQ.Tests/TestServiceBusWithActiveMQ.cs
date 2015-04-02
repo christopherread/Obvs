@@ -31,8 +31,8 @@ namespace Obvs.ActiveMQ.Tests
             ConcurrentBag<IMessage> messages = new ConcurrentBag<IMessage>();
 
             // create some actions that will act as a fake services acting on incoming commands and requests
-            Action<TestCommand> fakeService1 = command => serviceBus.Publish(new TestEvent {Id = command.Id});
-            Action<TestRequest> fakeService2 = request => serviceBus.Reply(request, new TestResponse {Id = request.Id});
+            Action<TestCommand> fakeService1 = command => serviceBus.PublishAsync(new TestEvent {Id = command.Id});
+            Action<TestRequest> fakeService2 = request => serviceBus.ReplyAsync(request, new TestResponse {Id = request.Id});
             AnonymousObserver<IMessage> observer = new AnonymousObserver<IMessage>(msg => { messages.Add(msg); Console.WriteLine(msg); }, exception => Console.WriteLine(exception));
 
             // subscribe to all messages on the ServiceBus
@@ -43,7 +43,7 @@ namespace Obvs.ActiveMQ.Tests
             serviceBus.Requests.OfType<TestRequest>().Subscribe(fakeService2);
 
             // send some messages
-            serviceBus.Send(new TestCommand { Id = 123 });
+            serviceBus.SendAsync(new TestCommand { Id = 123 });
             serviceBus.GetResponses(new TestRequest { Id = 456 }).Subscribe(observer);
 
             // wait some time until we think all messages have been sent and received over AMQ
