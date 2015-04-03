@@ -58,6 +58,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\FluentConfigExtensions.cs" />
     <Compile Include="NLogLoggerFactory.cs" />
     <Compile Include="NLogLoggerWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
