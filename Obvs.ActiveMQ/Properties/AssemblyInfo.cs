@@ -7,9 +7,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Obvs.ActiveMQ")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Christopher Read")]
+[assembly: AssemblyCompany("inter8ection")]
 [assembly: AssemblyProduct("Obvs.ActiveMQ")]
-[assembly: AssemblyCopyright("Copyright © Christopher Read 2014")]
+[assembly: AssemblyCopyright("Copyright © 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
