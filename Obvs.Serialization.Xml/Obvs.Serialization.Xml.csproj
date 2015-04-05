@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\FluentConfigExtensions.cs" />
     <Compile Include="XmlMessageDeserializerFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="XmlMessageDeserializer.cs" />

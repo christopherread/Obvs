@@ -5,7 +5,7 @@
     <version>$version$</version>
     <title>$title$</title>
     <authors>$author$</authors>
-    <description>Xml Serializers for Obvs</description>
+    <description>XML serialization for Obvs</description>
     <copyright>Copyright 2014</copyright>
   </metadata>
 </package>
