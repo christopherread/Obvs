@@ -27,12 +27,22 @@ namespace Obvs.RabbitMQ
 
         public Task PublishAsync(TMessage message)
         {
-            string routingKey = string.Format("{0}.{1}", _routingKeyPrefix, message.GetType().Name);
+            Publish(message);
+            return Task.FromResult(true);
+        }
+
+        private void Publish(TMessage message)
+        {
             object serializedMessage = _serializer.Serialize(message);
             byte[] body = serializedMessage as byte[] ?? Encoding.UTF8.GetBytes((string) serializedMessage);
             string contentType = serializedMessage is byte[] ? "bytes" : "text";
-            _channel.BasicPublish(_exchange, routingKey, new BasicProperties { ContentType = contentType }, body);
-            return Task.FromResult(true);
+
+            _channel.BasicPublish(_exchange, RoutingKey(message), new BasicProperties { ContentType = contentType }, body);
+        }
+
+        private string RoutingKey(TMessage message)
+        {
+            return string.Format("{0}.{1}", _routingKeyPrefix, message.GetType().Name);
         }
 
         public void Dispose()
