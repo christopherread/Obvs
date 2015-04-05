@@ -39,7 +39,7 @@
     </Reference>
     <Reference Include="Obvs, Version=1.5.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.1.5.1-CI00012\lib\net45\Obvs.dll</HintPath>
+      <HintPath>..\packages\Obvs.1.5.1\lib\net45\Obvs.dll</HintPath>
     </Reference>
     <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
