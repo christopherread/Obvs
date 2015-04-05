@@ -36,7 +36,7 @@
 <li>Easy to extend and customise, allowing integration with external systems</li>
 <li>Fluent code based configuration</li>
 <li>Supports ActiveMQ, NetMQ, RabbitMQ transports</li>
-<li>Provides serialization for XML, JSON, and ProtoBuf</li>
+<li>Provides serialization for XML, JSON, ProtoBuf, and MsgPack</li>
 <li>Provides logging extension points, and support for NLog</li>
 </ul>
 
@@ -89,20 +89,20 @@ public class TestResponse : ITestServiceMessage, IResponse { }
 <p>Send commands:</p>
 
 <pre><code>serviceBus.Commands.Subscribe(c =&gt; Console.WriteLine("Received a command!"));
-serviceBus.Send(new TestCommand())
+serviceBus.SendAsync(new TestCommand())
 </code></pre>
 
 <p>Publish events:</p>
 
 <pre><code>serviceBus.Events.Subscribe(e =&gt; Console.WriteLine("Received an event!"));
-serviceBus.Publish(new TestEvent())
+serviceBus.PublishAsync(new TestEvent())
 </code></pre>
 
 <p>Request/response:</p>
 
 <pre><code>serviceBus.Requests
       .OfType&lt;TestRequest&gt;()
-      .Subscribe(request =&gt; serviceBus.Reply(request, new TestResponse()));
+      .Subscribe(request =&gt; serviceBus.ReplyAsync(request, new TestResponse()));
 
 serviceBus.GetResponses(new TestRequest())
       .OfType&lt;TestResponse&gt;()
