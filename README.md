@@ -12,7 +12,8 @@ Features:
 * Easy to extend and customise, allowing integration with external systems
 * Fluent code based configuration
 * Supports ActiveMQ, NetMQ, and RabbitMQ transports
-* Provides serialization for XML, JSON, and ProtoBuf
+* Provides serialization for XML, JSON, ProtoBuf, and MsgPack
+* Provides logging extensions, and support for NLog
 
 ## Example
 
@@ -44,18 +45,18 @@ Create your service bus:
 Send commands:
 
 	serviceBus.Commands.Subscribe(c => Console.WriteLine("Received a command!"));
-	serviceBus.Send(new TestCommand())
+	serviceBus.SendAsync(new TestCommand())
 
 Publish events:
 
 	serviceBus.Events.Subscribe(e => Console.WriteLine("Received an event!"));
-	serviceBus.Publish(new TestEvent())
+	serviceBus.PublishAsync(new TestEvent())
 	
 Request/response:
 
 	serviceBus.Requests
 		  .OfType<TestRequest>()
-		  .Subscribe(request => serviceBus.Reply(request, new TestResponse()));
+		  .Subscribe(request => serviceBus.ReplyAsync(request, new TestResponse()));
 	
 	serviceBus.GetResponses(new TestRequest())
 		  .OfType<TestResponse>()
