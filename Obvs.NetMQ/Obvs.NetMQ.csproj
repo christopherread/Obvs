@@ -33,9 +33,9 @@
     <Reference Include="NetMQ">
       <HintPath>..\packages\NetMQ.3.3.0.11\lib\net40\NetMQ.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs, Version=1.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs, Version=1.5.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.1.5.0\lib\net45\Obvs.dll</HintPath>
+      <HintPath>..\packages\Obvs.1.5.1\lib\net45\Obvs.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
