@@ -1,24 +1,35 @@
+using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Xml.Serialization;
 
 namespace Obvs.Serialization.Xml
 {
-    public class XmlMessageSerializer<TMessage> : IMessageSerializer
+    public class XmlMessageSerializer : IMessageSerializer
     {
-        private readonly XmlSerializer _xmlSerializer;
-
-        public XmlMessageSerializer()
-        {
-            _xmlSerializer = new XmlSerializer(typeof(TMessage));
-        }
+        private readonly ConcurrentDictionary<Type, XmlSerializer> _serializers = new ConcurrentDictionary<Type, XmlSerializer>();
 
         public object Serialize(object obj)
         {
-            using (StringWriter writer = new StringWriter())
+            using (MemoryStream stream = new MemoryStream())
             {
-                _xmlSerializer.Serialize(writer, obj);
-                return writer.ToString();
+                Serialize(stream, obj);
+                stream.Position = 0;
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    return reader.ReadToEnd();
+                }
             }
+        }
+
+        public void Serialize(Stream stream, object obj)
+        {
+            Serializer(obj.GetType()).Serialize(stream, obj);
+        }
+
+        private XmlSerializer Serializer(Type type)
+        {
+            return _serializers.GetOrAdd(type, t => new XmlSerializer(t));
         }
     }
 }

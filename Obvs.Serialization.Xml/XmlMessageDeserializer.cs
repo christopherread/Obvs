@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 using System.Xml.Serialization;
 
 namespace Obvs.Serialization.Xml
@@ -14,10 +15,15 @@ namespace Obvs.Serialization.Xml
 
         public override TMessage Deserialize(object obj)
         {
-            using (StringReader stringReader = new StringReader((string)obj))
+            using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes((string)obj)))
             {
-                return (TMessage)_xmlSerializer.Deserialize(stringReader);
+                return Deserialize(stream);
             }
+        }
+
+        public override TMessage Deserialize(Stream stream)
+        {
+            return (TMessage)_xmlSerializer.Deserialize(stream);
         }
     }
 }

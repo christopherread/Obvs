@@ -1,14 +1,29 @@
+using System.IO;
+using System.Text;
 using Newtonsoft.Json;
-using Obvs.Types;
 
 namespace Obvs.Serialization.Json
 {
     public class JsonMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage>
-        where TMessage : IMessage
     {
+        private readonly JsonSerializer _serializer;
+
+        public JsonMessageDeserializer()
+        {
+            _serializer = new JsonSerializer();
+        }
+
         public override TMessage Deserialize(object obj)
         {
-            return JsonConvert.DeserializeObject<TMessage>((string)obj);
+            using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes((string) obj)))
+            {
+                return Deserialize(stream);
+            }
+        }
+
+        public override TMessage Deserialize(Stream stream)
+        {
+            return _serializer.Deserialize<TMessage>(new JsonTextReader(new StreamReader(stream)));
         }
     }
 }

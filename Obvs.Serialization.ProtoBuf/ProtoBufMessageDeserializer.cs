@@ -11,8 +11,13 @@ namespace Obvs.Serialization.ProtoBuf
 
             using (MemoryStream stream = new MemoryStream(data))
             {
-                return (TMessage)Serializer.NonGeneric.Deserialize(typeof(TMessage), stream);
+                return Deserialize(stream);
             }
+        }
+
+        public override TMessage Deserialize(Stream source)
+        {
+            return Serializer.Deserialize<TMessage>(source);
         }
     }
 }

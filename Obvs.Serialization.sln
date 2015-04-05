@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.Xml", "O
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.ProtoBuf", "Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj", "{204D0EC4-7029-4080-BA27-23AEDB6831D9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{6C4475B7-D8EE-4769-A05F-84DCFA1A0340}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.Tests", "Obvs.Serialization.Tests\Obvs.Serialization.Tests.csproj", "{6FF57DDD-05DC-4FDC-9393-DB71C67D31A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,8 +31,15 @@ Global
 		{204D0EC4-7029-4080-BA27-23AEDB6831D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{204D0EC4-7029-4080-BA27-23AEDB6831D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{204D0EC4-7029-4080-BA27-23AEDB6831D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FF57DDD-05DC-4FDC-9393-DB71C67D31A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FF57DDD-05DC-4FDC-9393-DB71C67D31A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FF57DDD-05DC-4FDC-9393-DB71C67D31A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FF57DDD-05DC-4FDC-9393-DB71C67D31A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6FF57DDD-05DC-4FDC-9393-DB71C67D31A1} = {6C4475B7-D8EE-4769-A05F-84DCFA1A0340}
 	EndGlobalSection
 EndGlobal

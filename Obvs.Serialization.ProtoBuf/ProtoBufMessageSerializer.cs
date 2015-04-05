@@ -9,12 +9,17 @@ namespace Obvs.Serialization.ProtoBuf
         {
             using (MemoryStream stream = new MemoryStream())
             {
-                Serializer.NonGeneric.Serialize(stream, message);
+                Serialize(stream, message);
                 byte[] buffer = new byte[stream.Length];
                 stream.Position = 0;
                 stream.Read(buffer, 0, buffer.Length);
                 return buffer;
             }
+        }
+
+        public void Serialize(Stream destination, object message)
+        {
+            Serializer.NonGeneric.Serialize(destination, message);
         }
     }
 }
