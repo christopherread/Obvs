@@ -66,9 +66,9 @@ namespace Obvs.Configuration
             return this;
         }
 
-        public ICanCreate UsingDebugLogging()
+        public ICanCreate UsingDebugLogging(Func<IEndpoint, bool> enableLogging = null)
         {
-            return UsingLogging(new DebugLoggerFactory());
+            return UsingLogging(new DebugLoggerFactory(), enableLogging);
         }
     }
 }

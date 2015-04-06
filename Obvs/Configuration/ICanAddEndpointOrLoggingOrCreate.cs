@@ -27,7 +27,7 @@ namespace Obvs.Configuration
     public interface ICanSpecifyLogging
     {
         ICanCreate UsingLogging(ILoggerFactory loggerFactory, Func<IEndpoint, bool> enableLogging = null);
-        ICanCreate UsingDebugLogging();
+        ICanCreate UsingDebugLogging(Func<IEndpoint, bool> enableLogging = null);
     }
 
     public interface ICanSpecifyEndpointSerializers
