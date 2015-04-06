@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Obvs.Logging.NLog")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Christopher Read")]
+[assembly: AssemblyCompany("inter8ection")]
 [assembly: AssemblyProduct("Obvs.Logging.NLog")]
 [assembly: AssemblyCopyright("Copyright © 2015")]
 [assembly: AssemblyTrademark("")]
