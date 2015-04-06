@@ -1,18 +1,5 @@
-﻿using NUnit.Framework;
-
-namespace Obvs.Logging.NLog.Tests
+﻿namespace Obvs.Logging.Tests
 {
-    [TestFixture]
-    public class TestLoggerWrapper
-    {
-        [Test]
-        public void TestLoggerUsesCorrectName()
-        {
-            MyClass myClass = new MyClass(new NLogLoggerFactory());
-            myClass.LogSomethingBaby();
-        }
-    }
-
     public class MyClass
     {
         private readonly ILogger _logger;
@@ -22,7 +9,7 @@ namespace Obvs.Logging.NLog.Tests
             _logger = loggerFactory.Create<MyClass>();
         }
 
-        public void LogSomethingBaby()
+        public void LogSomething()
         {
             _logger.Debug("Debug Message");
             _logger.Info("Info Message");
