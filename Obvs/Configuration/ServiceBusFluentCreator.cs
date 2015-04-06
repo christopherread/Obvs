@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Obvs.Logging;
 
@@ -9,6 +10,7 @@ namespace Obvs.Configuration
         private readonly IList<IServiceEndpointClient> _endpointClients = new List<IServiceEndpointClient>();
         private readonly IList<IServiceEndpoint> _endpoints = new List<IServiceEndpoint>();
         private ILoggerFactory _loggerFactory;
+        private Func<IEndpoint, bool> _enableLogging;
 
         public ICanAddEndpointOrLoggingOrCreate WithEndpoints(IServiceEndpointProvider serviceEndpointProvider)
         {
@@ -34,15 +36,15 @@ namespace Obvs.Configuration
             return _loggerFactory == null
                 ? new ServiceBus(_endpointClients, _endpoints)
                 : new ServiceBus(
-                    _endpointClients.Select(ep => ep.CreateLoggingProxy(_loggerFactory)),
-                    _endpoints.Select(ep => ep.CreateLoggingProxy(_loggerFactory)));
+                    _endpointClients.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory)),
+                    _endpoints.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory)));
         }
 
         public IServiceBusClient CreateClient()
         {
             return _loggerFactory == null
                 ? new ServiceBusClient(_endpointClients)
-                : new ServiceBusClient(_endpointClients.Select(ep => ep.CreateLoggingProxy(_loggerFactory)));
+                : new ServiceBusClient(_endpointClients.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory)));
         }
 
         public ICanAddEndpointOrLoggingOrCreate WithEndpoint(IServiceEndpointClient endpointClient)
@@ -57,16 +59,16 @@ namespace Obvs.Configuration
             return this;
         }
 
-        public ICanCreate UsingLogging(ILoggerFactory loggerFactory)
+        public ICanCreate UsingLogging(ILoggerFactory loggerFactory, Func<IEndpoint, bool> enableLogging = null)
         {
+            _enableLogging = enableLogging ?? (endpoint => true);
             _loggerFactory = loggerFactory;
             return this;
         }
 
         public ICanCreate UsingDebugLogging()
         {
-            _loggerFactory = new DebugLoggerFactory();
-            return this;
+            return UsingLogging(new DebugLoggerFactory());
         }
     }
 }

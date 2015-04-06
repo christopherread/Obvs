@@ -26,7 +26,7 @@ namespace Obvs.Logging
             get
             {
                 return _endpoint.Events.Do(
-                    ev => _logger.Info(string.Format((string) "Received {0}", (object) ev.ToString())),
+                    ev => _logger.Info(string.Format("Received event {0}", ev.ToString())),
                     exception => _logger.Error("Error receiving events", exception),
                     () => _logger.Warn("Events completed"));
             }
@@ -34,14 +34,14 @@ namespace Obvs.Logging
 
         public Task SendAsync(ICommand command)
         {
-            _logger.Info(string.Format("Sending {0}", command));
+            _logger.Info(string.Format("Sending command {0}", command));
             return _endpoint.SendAsync(command);
         }
 
         public IObservable<IResponse> GetResponses(IRequest request)
         {
             return _endpoint.GetResponses(request).Do(
-                response => _logger.Info(string.Format("Received {0}", response.ToString())),
+                response => _logger.Info(string.Format("Received response {0}", response.ToString())),
                 exception => _logger.Error("Error receiving responses", exception),
                 () => _logger.Warn("Responses completed"));
         }

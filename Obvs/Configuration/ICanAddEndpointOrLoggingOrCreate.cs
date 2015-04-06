@@ -1,3 +1,4 @@
+using System;
 using Obvs.Logging;
 using Obvs.Serialization;
 
@@ -25,7 +26,7 @@ namespace Obvs.Configuration
 
     public interface ICanSpecifyLogging
     {
-        ICanCreate UsingLogging(ILoggerFactory loggerFactory);
+        ICanCreate UsingLogging(ILoggerFactory loggerFactory, Func<IEndpoint, bool> enableLogging = null);
         ICanCreate UsingDebugLogging();
     }
 
