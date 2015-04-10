@@ -15,9 +15,9 @@ namespace Obvs.Serialization.Xml
 
         public override TMessage Deserialize(object obj)
         {
-            using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes((string)obj)))
+            using (TextReader reader = new StringReader((string) obj))
             {
-                return Deserialize(stream);
+                return (TMessage)_xmlSerializer.Deserialize(reader);
             }
         }
 

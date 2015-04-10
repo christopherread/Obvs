@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System.Text;
+using NUnit.Framework;
 using Obvs.Serialization.Xml;
 
 namespace Obvs.Serialization.Tests
@@ -12,7 +13,7 @@ namespace Obvs.Serialization.Tests
             IMessageSerializer serializer = new XmlMessageSerializer();
 
             var message = new TestMessage { Id = 123, Name = "SomeName" };
-            var serialize = serializer.Serialize(message);
+            var serialize = serializer.Serialize(message) as string;
 
             Assert.That(serialize, Is.Not.Null);
             Assert.That(serialize, Is.Not.Empty);
@@ -27,8 +28,22 @@ namespace Obvs.Serialization.Tests
             IMessageDeserializer<TestMessage> deserializer = new XmlMessageDeserializer<TestMessage>();
 
             var message = new TestMessage {Id = 123, Name = "SomeName"};
-            var serialize = serializer.Serialize(message);
+            var serialize = serializer.Serialize(message) as string;
             var deserialize = deserializer.Deserialize(serialize);
+
+            Assert.That(message, Is.EqualTo(deserialize));
+        }
+        
+        [Test]
+        public void ShouldDeserializeFromXmlAscii()
+        {
+            IMessageSerializer serializer = new XmlMessageSerializer();
+            IMessageDeserializer<TestMessage> deserializer = new XmlMessageDeserializer<TestMessage>();
+
+            var message = new TestMessage {Id = 123, Name = "SomeName"};
+            var serialize = (string)serializer.Serialize(message);
+            string ascii = Encoding.ASCII.GetString(Encoding.Convert(Encoding.UTF8, Encoding.ASCII, Encoding.UTF8.GetBytes(serialize)));
+            var deserialize = deserializer.Deserialize(ascii);
 
             Assert.That(message, Is.EqualTo(deserialize));
         }

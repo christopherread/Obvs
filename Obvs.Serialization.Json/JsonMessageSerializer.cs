@@ -14,14 +14,10 @@ namespace Obvs.Serialization.Json
 
         public object Serialize(object message)
         {
-            using (MemoryStream stream = new MemoryStream(256))
+            using (TextWriter writer = new StringWriter())
             {
-                Serialize(stream, message);
-                using (StreamReader streamReader = new StreamReader(stream))
-                {
-                    stream.Position = 0;
-                    return streamReader.ReadToEnd();
-                }
+                _serializer.Serialize(writer, message);
+                return writer.ToString();
             }
         }
 

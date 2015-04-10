@@ -11,14 +11,10 @@ namespace Obvs.Serialization.Xml
 
         public object Serialize(object obj)
         {
-            using (MemoryStream stream = new MemoryStream())
+            using (TextWriter writer = new StringWriter())
             {
-                Serialize(stream, obj);
-                stream.Position = 0;
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    return reader.ReadToEnd();
-                }
+                Serializer(obj.GetType()).Serialize(writer, obj);
+                return writer.ToString();
             }
         }
 

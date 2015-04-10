@@ -15,10 +15,7 @@ namespace Obvs.Serialization.Json
 
         public override TMessage Deserialize(object obj)
         {
-            using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes((string) obj)))
-            {
-                return Deserialize(stream);
-            }
+            return _serializer.Deserialize<TMessage>(new JsonTextReader(new StringReader((string)obj)));
         }
 
         public override TMessage Deserialize(Stream stream)
