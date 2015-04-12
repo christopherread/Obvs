@@ -57,9 +57,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Obvs.1.5.2\lib\net45\Obvs.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs.Serialization.Json, Version=1.5.2.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs.Serialization.Json, Version=1.5.3.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.Serialization.Json.1.5.2\lib\net45\Obvs.Serialization.Json.dll</HintPath>
+      <HintPath>..\packages\Obvs.Serialization.Json.1.5.3\lib\net45\Obvs.Serialization.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
