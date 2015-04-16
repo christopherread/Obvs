@@ -799,7 +799,7 @@ namespace Obvs.Tests
         }
 
         [Test]
-        public void ShouldSetRequestIdsOnRequests()
+        public void ShouldSetRequestIdsOnRequestsWhenUsingDefaultRequestCorrelationProvider()
         {
             const string requestId = "MyOwnRequestId";
 

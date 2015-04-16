@@ -4,7 +4,7 @@ using Obvs.Serialization;
 
 namespace Obvs.Configuration
 {
-    public interface ICanAddEndpointOrLoggingOrCreate : ICanCreate, ICanAddEndpoint, ICanSpecifyLogging
+    public interface ICanAddEndpointOrLoggingOrCreateOrCorrelation : ICanCreate, ICanAddEndpoint, ICanSpecifyLogging, ICanSpecifyRequestCorrelationProvider
     {
     }
 
@@ -16,12 +16,17 @@ namespace Obvs.Configuration
 
     public interface ICanAddEndpoint
     {
-        ICanAddEndpointOrLoggingOrCreate WithEndpoint(IServiceEndpointClient endpointClient);
-        ICanAddEndpointOrLoggingOrCreate WithEndpoint(IServiceEndpoint endpoint);
+        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithEndpoint(IServiceEndpointClient endpointClient);
+        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithEndpoint(IServiceEndpoint endpoint);
 
-        ICanAddEndpointOrLoggingOrCreate WithEndpoints(IServiceEndpointProvider serviceEndpointProvider);
-        ICanAddEndpointOrLoggingOrCreate WithClientEndpoints(IServiceEndpointProvider serviceEndpointProvider);
-        ICanAddEndpointOrLoggingOrCreate WithServerEndpoints(IServiceEndpointProvider serviceEndpointProvider);
+        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithEndpoints(IServiceEndpointProvider serviceEndpointProvider);
+        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithClientEndpoints(IServiceEndpointProvider serviceEndpointProvider);
+        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithServerEndpoints(IServiceEndpointProvider serviceEndpointProvider);
+    }
+
+    public interface ICanSpecifyRequestCorrelationProvider
+    {
+        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithCorrelationProvider(IRequestCorrelationProvider correlationProvider);
     }
 
     public interface ICanSpecifyLogging
@@ -42,8 +47,8 @@ namespace Obvs.Configuration
 
     public interface ICanCreateEndpointAsClientOrServer : ICanFilterEndpointMessageTypeAssemblies
     {
-        ICanAddEndpointOrLoggingOrCreate AsClient();
-        ICanAddEndpointOrLoggingOrCreate AsServer();
-        ICanAddEndpointOrLoggingOrCreate AsClientAndServer();
+        ICanAddEndpointOrLoggingOrCreateOrCorrelation AsClient();
+        ICanAddEndpointOrLoggingOrCreateOrCorrelation AsServer();
+        ICanAddEndpointOrLoggingOrCreateOrCorrelation AsClientAndServer();
     }
 }

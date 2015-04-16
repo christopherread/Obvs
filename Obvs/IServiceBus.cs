@@ -25,7 +25,12 @@ namespace Obvs
         private readonly IObservable<ICommand> _commands;
 
         public ServiceBus(IEnumerable<IServiceEndpointClient> endpointClients, IEnumerable<IServiceEndpoint> endpoints)
-            : base(endpointClients)
+            : this(endpointClients, endpoints, new DefaultRequestCorrelationProvider())
+        {
+        }
+
+        public ServiceBus(IEnumerable<IServiceEndpointClient> endpointClients, IEnumerable<IServiceEndpoint> endpoints, IRequestCorrelationProvider requestCorrelationProvider)
+            : base(endpointClients, requestCorrelationProvider)
         {
             _endpoints = endpoints.ToList();
             _requests = _endpoints.Select(RequestsWithErrorHandling).Merge().Publish().RefCount();
