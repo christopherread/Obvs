@@ -4,7 +4,7 @@ using Obvs.Serialization;
 
 namespace Obvs.Configuration
 {
-    public interface ICanAddEndpointOrLoggingOrCreateOrCorrelation : ICanCreate, ICanAddEndpoint, ICanSpecifyLogging, ICanSpecifyRequestCorrelationProvider
+    public interface ICanAddEndpointOrLoggingOrCorrelationOrCreate : ICanCreate, ICanAddEndpoint, ICanSpecifyLogging, ICanSpecifyRequestCorrelationProvider
     {
     }
 
@@ -16,17 +16,17 @@ namespace Obvs.Configuration
 
     public interface ICanAddEndpoint
     {
-        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithEndpoint(IServiceEndpointClient endpointClient);
-        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithEndpoint(IServiceEndpoint endpoint);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoint(IServiceEndpointClient endpointClient);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoint(IServiceEndpoint endpoint);
 
-        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithEndpoints(IServiceEndpointProvider serviceEndpointProvider);
-        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithClientEndpoints(IServiceEndpointProvider serviceEndpointProvider);
-        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithServerEndpoints(IServiceEndpointProvider serviceEndpointProvider);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoints(IServiceEndpointProvider serviceEndpointProvider);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate WithClientEndpoints(IServiceEndpointProvider serviceEndpointProvider);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate WithServerEndpoints(IServiceEndpointProvider serviceEndpointProvider);
     }
 
     public interface ICanSpecifyRequestCorrelationProvider
     {
-        ICanAddEndpointOrLoggingOrCreateOrCorrelation WithCorrelationProvider(IRequestCorrelationProvider correlationProvider);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate CorrelatesRequestWith(IRequestCorrelationProvider correlationProvider);
     }
 
     public interface ICanSpecifyLogging
@@ -47,8 +47,8 @@ namespace Obvs.Configuration
 
     public interface ICanCreateEndpointAsClientOrServer : ICanFilterEndpointMessageTypeAssemblies
     {
-        ICanAddEndpointOrLoggingOrCreateOrCorrelation AsClient();
-        ICanAddEndpointOrLoggingOrCreateOrCorrelation AsServer();
-        ICanAddEndpointOrLoggingOrCreateOrCorrelation AsClientAndServer();
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClient();
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate AsServer();
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClientAndServer();
     }
 }

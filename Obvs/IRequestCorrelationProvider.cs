@@ -6,12 +6,12 @@ namespace Obvs
 {
     public interface IRequestCorrelationProvider
     {
-        void ProvideRequestCorrelationIds(IRequest request);
+        void SetRequestCorrelationIds(IRequest request);
     }
 
     public class DefaultRequestCorrelationProvider : IRequestCorrelationProvider
     {
-        public void ProvideRequestCorrelationIds(IRequest request)
+        public void SetRequestCorrelationIds(IRequest request)
         {
             if(string.IsNullOrEmpty(request.RequestId))
             {

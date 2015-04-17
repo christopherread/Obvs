@@ -74,7 +74,7 @@ namespace Obvs
 
         public IObservable<IResponse> GetResponses(IRequest request)
         {
-            _requestCorrelationProvider.ProvideRequestCorrelationIds(request);
+            _requestCorrelationProvider.SetRequestCorrelationIds(request);
 
             return EndpointsThatCanHandle(request).Select(endpoint => endpoint.GetResponses(request).Where(response => response.CorrelatesTo(request)))
                                                   .Merge().Publish().RefCount();

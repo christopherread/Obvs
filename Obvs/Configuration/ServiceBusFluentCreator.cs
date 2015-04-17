@@ -5,7 +5,7 @@ using Obvs.Logging;
 
 namespace Obvs.Configuration
 {
-    public class ServiceBusFluentCreator : ICanAddEndpointOrLoggingOrCreateOrCorrelation
+    public class ServiceBusFluentCreator : ICanAddEndpointOrLoggingOrCorrelationOrCreate
     {
         private readonly IList<IServiceEndpointClient> _endpointClients = new List<IServiceEndpointClient>();
         private readonly IList<IServiceEndpoint> _endpoints = new List<IServiceEndpoint>();
@@ -13,20 +13,20 @@ namespace Obvs.Configuration
         private Func<IEndpoint, bool> _enableLogging;
         private IRequestCorrelationProvider _requestCorrelationProvider;
 
-        public ICanAddEndpointOrLoggingOrCreateOrCorrelation WithEndpoints(IServiceEndpointProvider serviceEndpointProvider)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoints(IServiceEndpointProvider serviceEndpointProvider)
         {
             _endpointClients.Add(serviceEndpointProvider.CreateEndpointClient());
             _endpoints.Add(serviceEndpointProvider.CreateEndpoint());
             return this;
         }
 
-        public ICanAddEndpointOrLoggingOrCreateOrCorrelation WithClientEndpoints(IServiceEndpointProvider serviceEndpointProvider)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate WithClientEndpoints(IServiceEndpointProvider serviceEndpointProvider)
         {
             _endpointClients.Add(serviceEndpointProvider.CreateEndpointClient());
             return this;
         }
 
-        public ICanAddEndpointOrLoggingOrCreateOrCorrelation WithServerEndpoints(IServiceEndpointProvider serviceEndpointProvider)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate WithServerEndpoints(IServiceEndpointProvider serviceEndpointProvider)
         {
             _endpoints.Add(serviceEndpointProvider.CreateEndpoint());
             return this;
@@ -52,13 +52,13 @@ namespace Obvs.Configuration
             return new ServiceBusClient(_endpointClients, GetRequestCorrelationProvider());
         }
 
-        public ICanAddEndpointOrLoggingOrCreateOrCorrelation WithEndpoint(IServiceEndpointClient endpointClient)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoint(IServiceEndpointClient endpointClient)
         {
             _endpointClients.Add(endpointClient);
             return this;
         }
 
-        public ICanAddEndpointOrLoggingOrCreateOrCorrelation WithEndpoint(IServiceEndpoint endpoint)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoint(IServiceEndpoint endpoint)
         {
             _endpoints.Add(endpoint);
             return this;
@@ -76,7 +76,7 @@ namespace Obvs.Configuration
             return UsingLogging(new DebugLoggerFactory(), enableLogging);
         }
 
-        public ICanAddEndpointOrLoggingOrCreateOrCorrelation WithCorrelationProvider(IRequestCorrelationProvider requestCorrelationProvider)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate CorrelatesRequestWith(IRequestCorrelationProvider requestCorrelationProvider)
         {
             if(requestCorrelationProvider == null) throw new ArgumentNullException("requestCorrelationProvider");
             
