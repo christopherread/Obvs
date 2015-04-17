@@ -32,7 +32,7 @@ namespace Obvs.Configuration
 
         public virtual IServiceEndpointClient CreateEndpointClient()
         {
-            return new ServiceEndpointClient(new DefaultMessageSource<IEvent>(), new DefaultMessageSource<IResponse>(), new DefaultMessagePublisher<IRequest>(), new DefaultMessagePublisher<ICommand>(), typeof(IMessage));
+            return new ServiceEndpointClient(new DefaultMessageSource<IEvent>(), new DefaultMessageSource<IResponse>(), new DefaultMessagePublisher<IRequest>(), new DefaultMessagePublisher<ICommand>(), typeof(IMessage), new DefaultRequestCorrelationProvider());
         }
     }
 }
