@@ -49,17 +49,17 @@ namespace Obvs.ActiveMQ.Configuration
             return this;
         }
 
-        public ICanAddEndpointOrLoggingOrCreate AsClient()
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClient()
         {
             return _canAddEndpoint.WithClientEndpoints(CreateProvider());
         }
 
-        public ICanAddEndpointOrLoggingOrCreate AsServer()
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate AsServer()
         {
             return _canAddEndpoint.WithServerEndpoints(CreateProvider());
         }
 
-        public ICanAddEndpointOrLoggingOrCreate AsClientAndServer()
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClientAndServer()
         {
             return _canAddEndpoint.WithEndpoints(CreateProvider());
         }

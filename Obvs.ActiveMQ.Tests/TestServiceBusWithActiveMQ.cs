@@ -25,6 +25,7 @@ namespace Obvs.ActiveMQ.Tests
                     .ConnectToBroker("tcp://localhost:61616")
                     .SerializedAsJson()
                     .AsClientAndServer()
+                .UsingConsoleLogging()
                 .Create();
 
             // create threadsafe collection to hold received messages in
@@ -33,7 +34,7 @@ namespace Obvs.ActiveMQ.Tests
             // create some actions that will act as a fake services acting on incoming commands and requests
             Action<TestCommand> fakeService1 = command => serviceBus.PublishAsync(new TestEvent {Id = command.Id});
             Action<TestRequest> fakeService2 = request => serviceBus.ReplyAsync(request, new TestResponse {Id = request.Id});
-            AnonymousObserver<IMessage> observer = new AnonymousObserver<IMessage>(msg => { messages.Add(msg); Console.WriteLine(msg); }, exception => Console.WriteLine(exception));
+            AnonymousObserver<IMessage> observer = new AnonymousObserver<IMessage>(messages.Add, Console.WriteLine, () => Console.WriteLine("OnCompleted"));
 
             // subscribe to all messages on the ServiceBus
             serviceBus.Events.Subscribe(observer);

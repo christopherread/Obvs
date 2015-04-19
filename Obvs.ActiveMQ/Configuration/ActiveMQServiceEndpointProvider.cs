@@ -19,7 +19,9 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly string _assemblyNameContains;
         private readonly IScheduler _scheduler;
 
-        public ActiveMQServiceEndpointProvider(string serviceName, string brokerUri, IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, List<Type> queueTypes, string assemblyNameContains)
+        public ActiveMQServiceEndpointProvider(string serviceName, string brokerUri, 
+                                               IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, 
+                                               List<Type> queueTypes, string assemblyNameContains)
             : base(serviceName)
         {
             _brokerUri = brokerUri;
