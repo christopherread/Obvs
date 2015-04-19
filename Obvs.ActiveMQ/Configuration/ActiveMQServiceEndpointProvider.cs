@@ -29,7 +29,7 @@ namespace Obvs.ActiveMQ.Configuration
             _deserializerFactory = deserializerFactory;
             _queueTypes = queueTypes;
             _assemblyNameContains = assemblyNameContains;
-            _scheduler = new EventLoopScheduler(start => new Thread(start){Name = string.Format("{0}.Publisher", serviceName)});
+            _scheduler = new EventLoopScheduler(start => new Thread(start){Name = string.Format("{0}.Publisher", serviceName), IsBackground = true});
         }
 
         public override IServiceEndpoint CreateEndpoint()
