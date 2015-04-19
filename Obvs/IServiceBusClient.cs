@@ -25,11 +25,18 @@ namespace Obvs
     {
         private readonly IEnumerable<IServiceEndpointClient> _endpointClients;
         private readonly IObservable<IEvent> _events;
-        
+        private readonly IRequestCorrelationProvider _requestCorrelationProvider;
+
         public ServiceBusClient(IEnumerable<IServiceEndpointClient> endpointClients)
+            : this(endpointClients, new DefaultRequestCorrelationProvider())
+        {
+        }
+        
+        public ServiceBusClient(IEnumerable<IServiceEndpointClient> endpointClients, IRequestCorrelationProvider requestCorrelationProvider)
         {
             _endpointClients = endpointClients.ToArray();
             _events = _endpointClients.Select(EventsWithErroHandling).Merge().Publish().RefCount();
+            _requestCorrelationProvider = requestCorrelationProvider;
         }
 
         public IObservable<IEvent> Events
@@ -67,7 +74,7 @@ namespace Obvs
 
         public IObservable<IResponse> GetResponses(IRequest request)
         {
-            request.SetCorrelationIds();
+            _requestCorrelationProvider.SetRequestCorrelationIds(request);
 
             return EndpointsThatCanHandle(request).Select(endpoint => endpoint.GetResponses(request).Where(response => response.CorrelatesTo(request)))
                                                   .Merge().Publish().RefCount();

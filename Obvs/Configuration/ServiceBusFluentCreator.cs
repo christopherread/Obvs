@@ -5,27 +5,28 @@ using Obvs.Logging;
 
 namespace Obvs.Configuration
 {
-    public class ServiceBusFluentCreator : ICanAddEndpointOrLoggingOrCreate
+    public class ServiceBusFluentCreator : ICanAddEndpointOrLoggingOrCorrelationOrCreate
     {
         private readonly IList<IServiceEndpointClient> _endpointClients = new List<IServiceEndpointClient>();
         private readonly IList<IServiceEndpoint> _endpoints = new List<IServiceEndpoint>();
         private ILoggerFactory _loggerFactory;
         private Func<IEndpoint, bool> _enableLogging;
+        private IRequestCorrelationProvider _requestCorrelationProvider;
 
-        public ICanAddEndpointOrLoggingOrCreate WithEndpoints(IServiceEndpointProvider serviceEndpointProvider)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoints(IServiceEndpointProvider serviceEndpointProvider)
         {
             _endpointClients.Add(serviceEndpointProvider.CreateEndpointClient());
             _endpoints.Add(serviceEndpointProvider.CreateEndpoint());
             return this;
         }
 
-        public ICanAddEndpointOrLoggingOrCreate WithClientEndpoints(IServiceEndpointProvider serviceEndpointProvider)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate WithClientEndpoints(IServiceEndpointProvider serviceEndpointProvider)
         {
             _endpointClients.Add(serviceEndpointProvider.CreateEndpointClient());
             return this;
         }
 
-        public ICanAddEndpointOrLoggingOrCreate WithServerEndpoints(IServiceEndpointProvider serviceEndpointProvider)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate WithServerEndpoints(IServiceEndpointProvider serviceEndpointProvider)
         {
             _endpoints.Add(serviceEndpointProvider.CreateEndpoint());
             return this;
@@ -33,27 +34,31 @@ namespace Obvs.Configuration
 
         public IServiceBus Create()
         {
-            return _loggerFactory == null
-                ? new ServiceBus(_endpointClients, _endpoints)
-                : new ServiceBus(
-                    _endpointClients.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory)),
-                    _endpoints.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory)));
+            IEnumerable<IServiceEndpointClient> endpointClients;
+            IEnumerable<IServiceEndpoint> endpoints;
+
+            GetPreparedEndpointsAndClients(out endpointClients, out endpoints);
+
+            return new ServiceBus(endpointClients, endpoints, GetRequestCorrelationProvider());
         }
 
         public IServiceBusClient CreateClient()
         {
-            return _loggerFactory == null
-                ? new ServiceBusClient(_endpointClients)
-                : new ServiceBusClient(_endpointClients.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory)));
+            IEnumerable<IServiceEndpointClient> endpointClients;
+            IEnumerable<IServiceEndpoint> endpoints;
+
+            GetPreparedEndpointsAndClients(out endpointClients, out endpoints);
+
+            return new ServiceBusClient(_endpointClients, GetRequestCorrelationProvider());
         }
 
-        public ICanAddEndpointOrLoggingOrCreate WithEndpoint(IServiceEndpointClient endpointClient)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoint(IServiceEndpointClient endpointClient)
         {
             _endpointClients.Add(endpointClient);
             return this;
         }
 
-        public ICanAddEndpointOrLoggingOrCreate WithEndpoint(IServiceEndpoint endpoint)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoint(IServiceEndpoint endpoint)
         {
             _endpoints.Add(endpoint);
             return this;
@@ -69,6 +74,33 @@ namespace Obvs.Configuration
         public ICanCreate UsingDebugLogging(Func<IEndpoint, bool> enableLogging = null)
         {
             return UsingLogging(new DebugLoggerFactory(), enableLogging);
+        }
+
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate CorrelatesRequestWith(IRequestCorrelationProvider requestCorrelationProvider)
+        {
+            if(requestCorrelationProvider == null) throw new ArgumentNullException("requestCorrelationProvider");
+            
+            _requestCorrelationProvider = requestCorrelationProvider;
+            return this;
+        }
+
+        private void GetPreparedEndpointsAndClients(out IEnumerable<IServiceEndpointClient> endpointClients, out IEnumerable<IServiceEndpoint> endpoints)
+        {
+            if(_loggerFactory == null)
+            {
+                endpointClients = _endpointClients;
+                endpoints = _endpoints;
+            }
+            else
+            {
+                endpointClients = _endpointClients.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory));
+                endpoints = _endpoints.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory));
+            }
+        }
+
+        private IRequestCorrelationProvider GetRequestCorrelationProvider()
+        {
+            return _requestCorrelationProvider ?? new DefaultRequestCorrelationProvider();
         }
     }
 }
