@@ -82,7 +82,7 @@ namespace Obvs
             return new ServiceBusFluentCreator();
         }
 
-        private List<IServiceEndpoint> EndpointsThatCanHandle(IMessage message)
+        private IEnumerable<IServiceEndpoint> EndpointsThatCanHandle(IMessage message)
         {
             return _endpoints.Where(endpoint => endpoint.CanHandle(message)).ToList();
         }

@@ -1,7 +1,6 @@
 using System;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using Obvs.Configuration;
 using Obvs.Types;
 
 namespace Obvs
@@ -21,21 +20,18 @@ namespace Obvs
         private readonly IMessagePublisher<IRequest> _requestPublisher;
         private readonly IMessagePublisher<ICommand> _commandPublisher;
         private readonly Type _serviceType;
-        private readonly IRequestCorrelationProvider _requestCorrelationProvider;
 
         public ServiceEndpointClient(IMessageSource<IEvent> eventSource,
             IMessageSource<IResponse> responseSource,
             IMessagePublisher<IRequest> requestPublisher,
             IMessagePublisher<ICommand> commandPublisher,
-            Type serviceType,
-            IRequestCorrelationProvider requestCorrelationProvider)
+            Type serviceType)
         {
             _eventSource = eventSource;
             _responseSource = responseSource;
             _requestPublisher = requestPublisher;
             _commandPublisher = commandPublisher;
             _serviceType = serviceType;
-            _requestCorrelationProvider = requestCorrelationProvider;
         }
 
         public IObservable<IEvent> Events
@@ -50,8 +46,6 @@ namespace Obvs
 
         public IObservable<IResponse> GetResponses(IRequest request)
         {
-            _requestCorrelationProvider.SetRequestCorrelationIds(request);
-
             return Observable.Create<IResponse>(observer =>
             {
                 IDisposable disposable = _responseSource.Messages

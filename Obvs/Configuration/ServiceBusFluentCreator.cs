@@ -34,22 +34,12 @@ namespace Obvs.Configuration
 
         public IServiceBus Create()
         {
-            IEnumerable<IServiceEndpointClient> endpointClients;
-            IEnumerable<IServiceEndpoint> endpoints;
-
-            GetPreparedEndpointsAndClients(out endpointClients, out endpoints);
-
-            return new ServiceBus(endpointClients, endpoints, GetRequestCorrelationProvider());
+            return new ServiceBus(GetEndpointClients(), GetEndpoints(), GetRequestCorrelationProvider());
         }
 
         public IServiceBusClient CreateClient()
         {
-            IEnumerable<IServiceEndpointClient> endpointClients;
-            IEnumerable<IServiceEndpoint> endpoints;
-
-            GetPreparedEndpointsAndClients(out endpointClients, out endpoints);
-
-            return new ServiceBusClient(_endpointClients, GetRequestCorrelationProvider());
+            return new ServiceBusClient(GetEndpointClients(), GetRequestCorrelationProvider());
         }
 
         public ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoint(IServiceEndpointClient endpointClient)
@@ -76,26 +66,30 @@ namespace Obvs.Configuration
             return UsingLogging(new DebugLoggerFactory(), enableLogging);
         }
 
+        public ICanCreate UsingConsoleLogging(Func<IEndpoint, bool> enableLogging = null)
+        {
+            return UsingLogging(new ConsoleLoggerFactory(), enableLogging);
+        }
+
         public ICanAddEndpointOrLoggingOrCorrelationOrCreate CorrelatesRequestWith(IRequestCorrelationProvider requestCorrelationProvider)
         {
-            if(requestCorrelationProvider == null) throw new ArgumentNullException("requestCorrelationProvider");
+            if (requestCorrelationProvider == null)
+            {
+                throw new ArgumentNullException("requestCorrelationProvider");
+            }
             
             _requestCorrelationProvider = requestCorrelationProvider;
             return this;
         }
 
-        private void GetPreparedEndpointsAndClients(out IEnumerable<IServiceEndpointClient> endpointClients, out IEnumerable<IServiceEndpoint> endpoints)
+        private IEnumerable<IServiceEndpointClient> GetEndpointClients()
         {
-            if(_loggerFactory == null)
-            {
-                endpointClients = _endpointClients;
-                endpoints = _endpoints;
-            }
-            else
-            {
-                endpointClients = _endpointClients.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory));
-                endpoints = _endpoints.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory));
-            }
+            return _loggerFactory == null ? _endpointClients : _endpointClients.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory));
+        }
+
+        private IEnumerable<IServiceEndpoint> GetEndpoints()
+        {
+            return _loggerFactory == null ? _endpoints : _endpoints.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory));
         }
 
         private IRequestCorrelationProvider GetRequestCorrelationProvider()

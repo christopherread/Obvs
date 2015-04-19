@@ -85,9 +85,9 @@ namespace Obvs
             return GetResponses(request).OfType<T>();
         }
 
-        private List<IServiceEndpointClient> EndpointsThatCanHandle(IMessage message)
+        private IEnumerable<IServiceEndpointClient> EndpointsThatCanHandle(IMessage message)
         {
-            return _endpointClients.Where(endpoint => endpoint.CanHandle(message)).ToList();
+            return _endpointClients.Where(endpoint => endpoint.CanHandle(message)).ToArray();
         }
     }
 }

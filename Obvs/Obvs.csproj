@@ -51,6 +51,10 @@
     <Compile Include="Configuration\MessageTypes.cs" />
     <Compile Include="Configuration\RequesterId.cs" />
     <Compile Include="Configuration\ServiceBusFluentCreator.cs" />
+    <Compile Include="Logging\ConsoleLogger.cs" />
+    <Compile Include="Logging\ConsoleLoggerFactory.cs" />
+    <Compile Include="Logging\DebugLogger.cs" />
+    <Compile Include="Logging\DebugLoggerFactory.cs" />
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\ILoggerFactory.cs" />
     <Compile Include="IMessageBus.cs" />

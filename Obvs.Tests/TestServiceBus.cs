@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
 using NUnit.Framework;
@@ -100,9 +99,6 @@ namespace Obvs.Tests
             IDisposable sub1 = serviceBus.Events.Subscribe(observer1);
             IDisposable sub2 = serviceBus.Events.Subscribe(observer2);
             
-            //A.CallTo(() => serviceEndpointClient1.Events).MustHaveHappened(Repeated.Exactly.Once);
-            //A.CallTo(() => serviceEndpointClient2.Events).MustHaveHappened(Repeated.Exactly.Once);
-
             A.CallTo(() => observable1.Subscribe(A<IObserver<IEvent>>._)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => observable2.Subscribe(A<IObserver<IEvent>>._)).MustHaveHappened(Repeated.Exactly.Once);
 
@@ -979,6 +975,7 @@ namespace Obvs.Tests
                 .WithEndpoint(erroringEndpoint as IServiceEndpoint)
                 .WithEndpoint(serviceEndpoint as IServiceEndpointClient)
                 .WithEndpoint(serviceEndpoint as IServiceEndpoint)
+                .UsingConsoleLogging()
                 .Create();
 
             ConcurrentBag<IMessage> messages = new ConcurrentBag<IMessage>();
@@ -1000,9 +997,6 @@ namespace Obvs.Tests
 
             TestServiceMessage2 message2 = new TestServiceMessage2();
             serviceBus.PublishAsync(message2);
-
-            // wait some time until we think all messages have been sent and received
-            Thread.Sleep(TimeSpan.FromSeconds(3));
 
             Assert.That(exceptions.Count(), Is.EqualTo(2));
             Assert.That(messages.Contains(message1), "message1 not received");
