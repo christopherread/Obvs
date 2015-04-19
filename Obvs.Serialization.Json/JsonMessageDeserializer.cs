@@ -1,5 +1,4 @@
 using System.IO;
-using System.Text;
 using Newtonsoft.Json;
 
 namespace Obvs.Serialization.Json
