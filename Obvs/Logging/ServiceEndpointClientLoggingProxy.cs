@@ -45,5 +45,10 @@ namespace Obvs.Logging
                 exception => _logger.Error("Error receiving responses", exception),
                 () => _logger.Warn("Responses completed"));
         }
+
+        public void Dispose()
+        {
+            _endpoint.Dispose();
+        }
     }
 }

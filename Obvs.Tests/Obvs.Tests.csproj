@@ -79,12 +79,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FakeServiceEndpoint.cs" />
     <Compile Include="TestMergedMessageSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestMessageBridge.cs" />
     <Compile Include="TestMessageSourceConverter.cs" />
     <Compile Include="TestMessageTypes.cs" />
     <Compile Include="TestServiceBus.cs" />
+    <Compile Include="TestServiceEndpoint.cs" />
+    <Compile Include="TestServiceEndpointClient.cs" />
     <Compile Include="TestTypeRoutingMessagePublisher.cs" />
   </ItemGroup>
   <ItemGroup>

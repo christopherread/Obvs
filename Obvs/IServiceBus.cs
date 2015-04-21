@@ -86,5 +86,14 @@ namespace Obvs
         {
             return _endpoints.Where(endpoint => endpoint.CanHandle(message)).ToList();
         }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            foreach (IServiceEndpoint endpoint in _endpoints)
+            {
+                endpoint.Dispose();
+            }
+        }
     }
 }

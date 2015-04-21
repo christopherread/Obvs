@@ -5,8 +5,9 @@
     <version>$version$</version>
     <title>$title$</title>
     <authors>$author$</authors>
-    <description>Observable services, obviously</description>
+    <description>An observable µServiceBus .NET library</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Fixed bug in service bus error handling where two exceptions in a row caused subscription to end</releaseNotes>
+    <releaseNotes>ServiceBus will now dispose of all endpoints and resources</releaseNotes>
+    <projectUrl>http://inter8ection.github.io/Obvs</projectUrl>
   </metadata>
 </package>

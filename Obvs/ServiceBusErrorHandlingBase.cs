@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Obvs.Extensions;
@@ -8,7 +7,7 @@ using Obvs.Types;
 
 namespace Obvs
 {
-    public abstract class ServiceBusErrorHandlingBase
+    public abstract class ServiceBusErrorHandlingBase : IDisposable
     {
         private readonly Subject<Exception> _exceptions;
 
@@ -95,6 +94,11 @@ namespace Obvs
                 exceptions.Add(message == null ? exception : new Exception(message, exception));
             }
             return Task.FromResult(false);
+        }
+
+        public virtual void Dispose()
+        {
+            _exceptions.Dispose();
         }
     }
 }

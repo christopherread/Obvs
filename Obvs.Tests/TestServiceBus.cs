@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using FakeItEasy;
 using NUnit.Framework;
@@ -965,10 +963,28 @@ namespace Obvs.Tests
         }
 
         [Test]
-        public void TestEndpointWithErrorsDoesntEndSubscriptions()
+        public void ShouldDisposeEndpointsWhenDisposed()
         {
-            TestServiceEndpoint erroringEndpoint = new TestServiceEndpoint(typeof(ITestServiceMessage1)) { ThrowException = true };
-            TestServiceEndpoint serviceEndpoint = new TestServiceEndpoint(typeof(ITestServiceMessage2));
+            IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
+            IServiceEndpoint serviceEndpoint2 = A.Fake<IServiceEndpoint>();
+            IServiceEndpointClient serviceEndpointClient1 = A.Fake<IServiceEndpointClient>();
+            IServiceEndpointClient serviceEndpointClient2 = A.Fake<IServiceEndpointClient>();
+
+            IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2 });
+
+            ((IDisposable)serviceBus).Dispose();
+
+            A.CallTo(() => serviceEndpoint1.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint2.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient2.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
+        }
+
+        [Test]
+        public void ShouldCatchAndHandleExceptionsThrownByEndpointObservables()
+        {
+            FakeServiceEndpoint erroringEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1)) { ThrowException = true };
+            FakeServiceEndpoint serviceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
 
             IServiceBus serviceBus = ServiceBus.Configure()
                 .WithEndpoint(erroringEndpoint as IServiceEndpointClient)
@@ -1008,102 +1024,4 @@ namespace Obvs.Tests
     public interface ITestServiceMessage2 : IMessage {}
     public class TestServiceMessage2 : ITestServiceMessage2, IEvent { }
     public class TestServiceMessage1 : ITestServiceMessage1, IEvent { }
-
-    public class TestServiceEndpoint : IServiceEndpointClient, IServiceEndpoint
-    {
-        private readonly Subject<IMessage> _subject = new Subject<IMessage>();
-        private readonly Type _serviceType;
-        public bool ThrowException { get; set; }
-
-        public TestServiceEndpoint(Type serviceType)
-        {
-            _serviceType = serviceType;
-        }
-
-        public bool CanHandle(IMessage message)
-        {
-            return _serviceType.IsInstanceOfType(message);
-        }
-
-        public Task SendAsync(ICommand command)
-        {
-            _subject.OnNext(command);
-            return Task.FromResult(true);
-        }
-
-        public IObservable<IResponse> GetResponses(IRequest request)
-        {
-            return Observable.Create<IResponse>(observer =>
-                    _subject.OfType<IResponse>().Where(response => response.RequestId == request.RequestId && response.RequesterId == request.RequesterId).Select(ev =>
-                    {
-                        if (ThrowException)
-                        {
-                            throw new Exception();
-                        }
-                        return ev;
-                    }).Subscribe(observer));
-        }
-
-        public IObservable<IEvent> Events
-        {
-            get
-            {
-                return Observable.Create<IEvent>(observer =>
-                    _subject.OfType<IEvent>().Select(ev =>
-                    {
-                        if (ThrowException)
-                        {
-                            throw new Exception();
-                        }
-                        return ev;
-                    }).Subscribe(observer));
-            }
-        }
-
-        public IObservable<IRequest> Requests
-        {
-            get
-            {
-                return Observable.Create<IRequest>(observer =>
-                    _subject.OfType<IRequest>().Select(request =>
-                    {
-                        if (ThrowException)
-                        {
-                            throw new Exception();
-                        }
-                        return request;
-                    }).Subscribe(observer));
-            }
-        }
-
-        public IObservable<ICommand> Commands
-        {
-            get
-            {
-                return Observable.Create<ICommand>(observer =>
-                    _subject.OfType<ICommand>().Select(command =>
-                    {
-                        if (ThrowException)
-                        {
-                            throw new Exception();
-                        }
-                        return command;
-                    }).Subscribe(observer));
-            }
-        }
-
-        public Task PublishAsync(IEvent ev)
-        {
-            _subject.OnNext(ev);
-            return Task.FromResult(true);
-        }
-
-        public Task ReplyAsync(IRequest request, IResponse response)
-        {
-            response.RequestId = request.RequestId;
-            response.RequesterId = request.RequesterId;
-            _subject.OnNext(response);
-            return Task.FromResult(true);
-        }
-    }
 }

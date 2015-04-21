@@ -21,7 +21,7 @@ namespace Obvs
         IObservable<Exception> Exceptions { get; }
     }
 
-    public class ServiceBusClient : ServiceBusErrorHandlingBase, IServiceBusClient
+    public class ServiceBusClient : ServiceBusErrorHandlingBase, IServiceBusClient, IDisposable
     {
         private readonly IEnumerable<IServiceEndpointClient> _endpointClients;
         private readonly IObservable<IEvent> _events;
@@ -88,6 +88,15 @@ namespace Obvs
         private IEnumerable<IServiceEndpointClient> EndpointsThatCanHandle(IMessage message)
         {
             return _endpointClients.Where(endpoint => endpoint.CanHandle(message)).ToArray();
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            foreach (IServiceEndpointClient endpointClient in _endpointClients)
+            {
+                endpointClient.Dispose();
+            }
         }
     }
 }

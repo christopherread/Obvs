@@ -4,7 +4,7 @@ using Obvs.Types;
 
 namespace Obvs
 {
-    public interface IEndpoint
+    public interface IEndpoint : IDisposable
     {
         bool CanHandle(IMessage message);
     }
@@ -67,5 +67,13 @@ namespace Obvs
         }
 
         private Type ServiceType { get; set; }
+
+        public void Dispose()
+        {
+            _commandSource.Dispose();
+            _eventPublisher.Dispose();
+            _requestSource.Dispose();
+            _responsePublisher.Dispose();
+        }
     }
 }

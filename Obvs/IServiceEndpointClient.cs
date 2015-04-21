@@ -63,5 +63,13 @@ namespace Obvs
         {
             return _serviceType.IsInstanceOfType(message);
         }
+
+        public void Dispose()
+        {
+            _commandPublisher.Dispose();
+            _eventSource.Dispose();
+            _requestPublisher.Dispose();
+            _responseSource.Dispose();
+        }
     }
 }

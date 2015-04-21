@@ -54,5 +54,10 @@ namespace Obvs.Logging
             _logger.Info(string.Format("Replying to {0} with {1}", request, response));
             return _endpoint.ReplyAsync(request, response);
         }
+
+        public void Dispose()
+        {
+            _endpoint.Dispose();
+        }
     }
 }
