@@ -56,9 +56,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs, Version=1.6.1.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs, Version=1.6.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.1.6.1\lib\net45\Obvs.dll</HintPath>
+      <HintPath>..\packages\Obvs.1.6.2\lib\net45\Obvs.dll</HintPath>
     </Reference>
     <Reference Include="Obvs.Serialization.Json, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
