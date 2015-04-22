@@ -24,11 +24,6 @@ namespace Obvs.RabbitMQ
             _exchange = exchange;
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
 
-            if (!_deserializers.Any())
-            {
-                throw new Exception("You must supply at least one deserializer");
-            }
-
             _connection = connectionFactory.CreateConnection();
             _channel = _connection.CreateModel();
             _channel.ExchangeDeclare(_exchange, ExchangeType.Topic);

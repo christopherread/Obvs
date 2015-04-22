@@ -37,23 +37,24 @@
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs, Version=1.5.1.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs, Version=1.6.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.1.5.1\lib\net45\Obvs.dll</HintPath>
+      <HintPath>..\packages\Obvs.1.6.2\lib\net45\Obvs.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs.Serialization.Json, Version=1.5.1.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs.Serialization.Json, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.Serialization.Json.1.5.1\lib\net45\Obvs.Serialization.Json.dll</HintPath>
+      <HintPath>..\packages\Obvs.Serialization.Json.1.6.0\lib\net45\Obvs.Serialization.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs.Serialization.ProtoBuf, Version=1.5.1.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs.Serialization.ProtoBuf, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.Serialization.ProtoBuf.1.5.1\lib\net45\Obvs.Serialization.ProtoBuf.dll</HintPath>
+      <HintPath>..\packages\Obvs.Serialization.ProtoBuf.1.6.0\lib\net45\Obvs.Serialization.ProtoBuf.dll</HintPath>
     </Reference>
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
-    <Reference Include="RabbitMQ.Client">
-      <HintPath>..\packages\RabbitMQ.Client.3.5.0\lib\net40\RabbitMQ.Client.dll</HintPath>
+    <Reference Include="RabbitMQ.Client, Version=3.5.1.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\RabbitMQ.Client.3.5.1\lib\net40\RabbitMQ.Client.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
