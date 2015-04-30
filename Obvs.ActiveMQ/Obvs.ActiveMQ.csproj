@@ -59,12 +59,15 @@
     <Compile Include="Configuration\ActiveMQConfigExtensions.cs" />
     <Compile Include="Configuration\ActiveMQServiceEndpointProvider.cs" />
     <Compile Include="Configuration\ConnectionClientId.cs" />
+    <Compile Include="Configuration\ConnectionFactoryExtensions.cs" />
     <Compile Include="Configuration\DestinationFactory.cs" />
     <Compile Include="Configuration\ActiveMQFluentConfig.cs" />
-    <Compile Include="MessageExtensions.cs" />
+    <Compile Include="Configuration\DisposingServiceEndpoint.cs" />
+    <Compile Include="Configuration\DisposingServiceEndpointClient.cs" />
+    <Compile Include="Extensions\MessageExtensions.cs" />
     <Compile Include="MessagePublisher.cs" />
     <Compile Include="MessageSource.cs" />
-    <Compile Include="SessionExtensions.cs" />
+    <Compile Include="Extensions\SessionExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

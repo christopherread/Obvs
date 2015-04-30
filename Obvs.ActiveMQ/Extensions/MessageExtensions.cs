@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Apache.NMS;
 
-namespace Obvs.ActiveMQ
+namespace Obvs.ActiveMQ.Extensions
 {
     public static class MessageExtensions
     {
@@ -30,12 +30,32 @@ namespace Obvs.ActiveMQ
                 {
                     message.Properties.SetDouble(keyValuePair.Key, (double)keyValuePair.Value);
                 }
+                else if (keyValuePair.Value is short)
+                {
+                    message.Properties.SetShort(keyValuePair.Key, (short)keyValuePair.Value);
+                }
+                else if (keyValuePair.Value is float)
+                {
+                    message.Properties.SetFloat(keyValuePair.Key, (float)keyValuePair.Value);
+                }
+                else if (keyValuePair.Value is char)
+                {
+                    message.Properties.SetChar(keyValuePair.Key, (char)keyValuePair.Value);
+                }
+                else if (keyValuePair.Value is byte)
+                {
+                    message.Properties.SetByte(keyValuePair.Key, (byte)keyValuePair.Value);
+                }
+                else if (keyValuePair.Value is byte[])
+                {
+                    message.Properties.SetBytes(keyValuePair.Key, (byte[])keyValuePair.Value);
+                }
             }
 
             return message;
         }
 
-        public static void Send(this Apache.NMS.IMessage message, IMessageProducer producer)
+        public static void Send(this IMessage message, IMessageProducer producer)
         {
             producer.Send(message);
         }

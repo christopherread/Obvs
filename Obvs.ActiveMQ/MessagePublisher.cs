@@ -5,9 +5,9 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
-using System.Threading;
 using System.Threading.Tasks;
 using Apache.NMS;
+using Obvs.ActiveMQ.Extensions;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
 using IMessage = Obvs.Types.IMessage;
@@ -17,7 +17,6 @@ namespace Obvs.ActiveMQ
     public class MessagePublisher<TMessage> : IMessagePublisher<TMessage>
         where TMessage : IMessage
     {
-        private readonly IConnectionFactory _connectionFactory;
         private readonly IDestination _destination;
         private readonly IMessageSerializer _serializer;
         private readonly IMessagePropertyProvider<TMessage> _propertyProvider;
@@ -27,20 +26,13 @@ namespace Obvs.ActiveMQ
         private IMessageProducer _producer;
         private IDisposable _disposable;
 
-        public MessagePublisher(IConnectionFactory connectionFactory, IDestination destination, IMessageSerializer serializer, IMessagePropertyProvider<TMessage> propertyProvider, IScheduler scheduler)
+        public MessagePublisher(Lazy<IConnection> lazyConnection, IDestination destination, IMessageSerializer serializer, IMessagePropertyProvider<TMessage> propertyProvider, IScheduler scheduler)
         {
-            _connectionFactory = connectionFactory;
+            _connection = lazyConnection;
             _destination = destination;
             _serializer = serializer;
             _propertyProvider = propertyProvider;
             _scheduler = scheduler;
-
-            _connection = new Lazy<IConnection>(() =>
-            {
-                IConnection connection = _connectionFactory.CreateConnection();
-                connection.Start();
-                return connection;
-            }, LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
         public Task PublishAsync(TMessage message)
@@ -86,8 +78,6 @@ namespace Obvs.ActiveMQ
                     _producer.Dispose();
                     _session.Close();
                     _session.Dispose();
-                    _connection.Value.Close();
-                    _connection.Value.Dispose();
                 });
             }
         }

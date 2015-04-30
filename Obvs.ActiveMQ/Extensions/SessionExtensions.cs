@@ -3,16 +3,11 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Apache.NMS;
 
-namespace Obvs.ActiveMQ
+namespace Obvs.ActiveMQ.Extensions
 {
     public static class SessionExtensions
     {
-        public static IObservable<IMessage> ToObservable(this ISession session, IDestination destination)
-        {
-            return session.ToObservable(destination, null);
-        }
-
-        public static IObservable<IMessage> ToObservable(this ISession session, IDestination destination, string selector)
+        public static IObservable<IMessage> ToObservable(this ISession session, IDestination destination, string selector = null)
         {
             return Observable.Create<IMessage>(
                 observer =>

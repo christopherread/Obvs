@@ -1,6 +1,6 @@
-﻿using System.Reactive.Concurrency;
+﻿using System;
+using System.Reactive.Concurrency;
 using Apache.NMS;
-using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
@@ -10,23 +10,23 @@ namespace Obvs.ActiveMQ.Configuration
 {
     public static class DestinationFactory
     {
-        public static MessagePublisher<TMessage> CreatePublisher<TMessage>(string broker, string destination, string serviceName, DestinationType destinationType, IMessageSerializer messageSerializer, IScheduler scheduler, IMessagePropertyProvider<TMessage> propertyProvider = null)
+        public static MessagePublisher<TMessage> CreatePublisher<TMessage>(Lazy<IConnection> lazyConnection, string destination, DestinationType destinationType, IMessageSerializer messageSerializer, IScheduler scheduler, IMessagePropertyProvider<TMessage> propertyProvider = null)
             where TMessage : IMessage
         {
             return new MessagePublisher<TMessage>(
-                new ConnectionFactory(broker, ConnectionClientId.CreateWithSuffix(string.Format("{0}.{1}.Publisher", serviceName, typeof(TMessage).Name))),
+                lazyConnection,
                 CreateDestination(destination, destinationType),
                 messageSerializer,
                 propertyProvider ?? new DefaultPropertyProvider<TMessage>(),
                 scheduler);
         }
 
-        public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(string broker, string destination, string serviceName, DestinationType destinationType, IMessageDeserializerFactory deserializerFactory, string assemblyNameContains = null, string selector = null)
+        public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(Lazy<IConnection> lazyConnection, string destination, DestinationType destinationType, IMessageDeserializerFactory deserializerFactory, string assemblyNameContains = null, string selector = null)
             where TServiceMessage : IMessage
             where TMessage : IMessage
         {
             return new MessageSource<TMessage>(
-                new ConnectionFactory(broker, ConnectionClientId.CreateWithSuffix(string.Format("{0}.{1}.Source", serviceName, typeof(TMessage).Name))),
+                lazyConnection,
                 deserializerFactory.Create<TMessage, TServiceMessage>(assemblyNameContains),
                 CreateDestination(destination, destinationType),
                 AcknowledgementMode.AutoAcknowledge,

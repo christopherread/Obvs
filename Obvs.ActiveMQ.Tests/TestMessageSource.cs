@@ -13,7 +13,6 @@ namespace Obvs.ActiveMQ.Tests
     [TestFixture]
     public class TestMessageSource
     {
-        private IConnectionFactory _connectionFactory;
         private IConnection _connection;
         private ISession _session;
         private IMessageConsumer _consumer;
@@ -22,6 +21,7 @@ namespace Obvs.ActiveMQ.Tests
         private IMessageSource<ITestMessage> _source;
         private IDestination _destination;
         private AcknowledgementMode _acknowledgementMode;
+        private Lazy<IConnection> _lazyConnection;
 
         public interface ITestMessage : IMessage
         {
@@ -35,8 +35,13 @@ namespace Obvs.ActiveMQ.Tests
         [SetUp]
         public void SetUp()
         {
-            _connectionFactory = A.Fake<IConnectionFactory>();
+            A.Fake<IConnectionFactory>();
             _connection = A.Fake<IConnection>();
+            _lazyConnection = new Lazy<IConnection>(() =>
+            {
+                _connection.Start();
+                return _connection;
+            });
             _session = A.Fake<ISession>();
             _consumer = A.Fake<IMessageConsumer>();
             _deserializer = A.Fake<IMessageDeserializer<ITestMessage>>();
@@ -44,11 +49,10 @@ namespace Obvs.ActiveMQ.Tests
             _destination = A.Fake<IDestination>();
             _acknowledgementMode = AcknowledgementMode.AutoAcknowledge;
 
-            A.CallTo(() => _connectionFactory.CreateConnection()).Returns(_connection);
             A.CallTo(() => _connection.CreateSession(A<AcknowledgementMode>.Ignored)).Returns(_session);
             A.CallTo(() => _session.CreateConsumer(_destination)).Returns(_consumer);
 
-            _source = new MessageSource<ITestMessage>(_connectionFactory, new[] {_deserializer}, _destination,
+            _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
                 _acknowledgementMode);
         }
 
@@ -57,7 +61,6 @@ namespace Obvs.ActiveMQ.Tests
         {
             _source.Messages.Subscribe(_observer);
 
-            A.CallTo(() => _connectionFactory.CreateConnection()).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => _connection.Start()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
@@ -86,36 +89,9 @@ namespace Obvs.ActiveMQ.Tests
         }
 
         [Test]
-        public void ShouldDisconnectFromBrokerWhenDisposed()
-        {
-            _source.Messages.Subscribe(_observer);
-
-            _source.Dispose();
-
-            A.CallTo(() => _connection.Stop()).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _connection.Close()).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _connection.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
-        }
-
-        [Test]
-        public void ShouldNotConnectToBrokerMoreThanOnce()
-        {
-            IDisposable subscription1 = _source.Messages.Subscribe(_observer);
-            IDisposable subscription2 = _source.Messages.Subscribe(_observer);
-            IDisposable subscription3 = _source.Messages.Subscribe(_observer);
-
-            A.CallTo(() => _connectionFactory.CreateConnection()).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _connection.Start()).MustHaveHappened(Repeated.Exactly.Once);
-
-            subscription1.Dispose();
-            subscription2.Dispose();
-            subscription3.Dispose();
-        }
-
-        [Test]
         public void ShouldNotAcknowledgeMessagesIfInvalid()
         {
-            _source = new MessageSource<ITestMessage>(_connectionFactory, new[] {_deserializer}, _destination,
+            _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
                 AcknowledgementMode.IndividualAcknowledge);
 
             Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
@@ -131,7 +107,7 @@ namespace Obvs.ActiveMQ.Tests
         [Test]
         public void ShouldAcknowledgeMessagesIfValid()
         {
-            _source = new MessageSource<ITestMessage>(_connectionFactory, new[] {_deserializer}, _destination,
+            _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
                 AcknowledgementMode.IndividualAcknowledge);
 
             Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
@@ -189,7 +165,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _deserializer.Deserialize(serializedFixtureString)).Returns(message);
             A.CallTo(() => _deserializer.GetTypeName()).Returns("SomeTypeName");
 
-            _source = new MessageSource<ITestMessage>(_connectionFactory, new[] {_deserializer}, _destination,
+            _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
                 _acknowledgementMode);
 
             _source.Messages.Subscribe(_observer);

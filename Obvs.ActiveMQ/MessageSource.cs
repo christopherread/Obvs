@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Threading;
 using Apache.NMS;
+using Obvs.ActiveMQ.Extensions;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
 using IMessage = Obvs.Types.IMessage;
@@ -15,31 +15,25 @@ namespace Obvs.ActiveMQ
         where TMessage : IMessage
     {
         private readonly string _selector;
-        private readonly IConnectionFactory _connectionFactory;
+       
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly IDestination _destination;
         private readonly AcknowledgementMode _mode;
         private readonly Lazy<IConnection> _lazyConnection;
 
-        public MessageSource(IConnectionFactory connectionFactory, IEnumerable<IMessageDeserializer<TMessage>> deserializers, IDestination destination, AcknowledgementMode mode)
+        public MessageSource(Lazy<IConnection> lazyConnection, IEnumerable<IMessageDeserializer<TMessage>> deserializers, IDestination destination, AcknowledgementMode mode)
         {
-            _connectionFactory = connectionFactory;
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
+            _lazyConnection = lazyConnection;
             _destination = destination;
             _mode = mode;
-            
-            _lazyConnection = new Lazy<IConnection>(() =>
-            {
-                IConnection connection = _connectionFactory.CreateConnection();
-                connection.Start();
-                return connection;
-            }, LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
-        public MessageSource(IConnectionFactory connectionFactory,
-            IEnumerable<IMessageDeserializer<TMessage>> deserializers, IDestination destination,
+        public MessageSource(Lazy<IConnection> connection,
+            IEnumerable<IMessageDeserializer<TMessage>> deserializers, 
+            IDestination destination,
             AcknowledgementMode mode, string selector)
-            : this(connectionFactory, deserializers, destination, mode)
+            : this(connection, deserializers, destination, mode)
         {
             _selector = selector;
         }
@@ -116,12 +110,6 @@ namespace Obvs.ActiveMQ
 
         public void Dispose()
         {
-            if (_lazyConnection.IsValueCreated)
-            {
-                _lazyConnection.Value.Stop();
-                _lazyConnection.Value.Close();
-                _lazyConnection.Value.Dispose();
-            }
         }
     }
 }

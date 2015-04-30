@@ -19,7 +19,6 @@ namespace Obvs.ActiveMQ.Tests
     [TestFixture]
     public class TestMessagePublisher
     {
-        private IConnectionFactory _connectionFactory;
         private IConnection _connection;
         private ISession _session;
         private IMessageProducer _producer;
@@ -29,6 +28,7 @@ namespace Obvs.ActiveMQ.Tests
         private ITextMessage _message;
         private IMessagePropertyProvider<IMessage> _messagePropertyProvider;
         private TestScheduler _testScheduler;
+        private Lazy<IConnection> _lazyConnection;
 
         private interface ITestMessage : IEvent
         {
@@ -61,8 +61,13 @@ namespace Obvs.ActiveMQ.Tests
         [SetUp]
         public void SetUp()
         {
-            _connectionFactory = A.Fake<IConnectionFactory>();
+            A.Fake<IConnectionFactory>();
             _connection = A.Fake<IConnection>();
+            _lazyConnection = new Lazy<IConnection>(() =>
+            {
+                _connection.Start();
+                return _connection;
+            });
             _session = A.Fake<ISession>();
             _producer = A.Fake<IMessageProducer>();
             _serializer = A.Fake<IMessageSerializer>();
@@ -70,23 +75,21 @@ namespace Obvs.ActiveMQ.Tests
             _message = A.Fake<ITextMessage>();
             _messagePropertyProvider = A.Fake<IMessagePropertyProvider<IMessage>>();
 
-            A.CallTo(() => _connectionFactory.CreateConnection()).Returns(_connection);
             A.CallTo(() => _connection.CreateSession(A<AcknowledgementMode>.Ignored)).Returns(_session);
             A.CallTo(() => _session.CreateProducer(_destination)).Returns(_producer);
             A.CallTo(() => _session.CreateTextMessage(A<string>._)).Returns(_message);
             A.CallTo(() => _serializer.Serialize(A<object>._)).Returns("SerializedString");
 
             _testScheduler = new TestScheduler();
-            _publisher = new MessagePublisher<IMessage>(_connectionFactory, _destination, _serializer, _messagePropertyProvider, _testScheduler);
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
         }
 
         [Test]
-        public void ShouldConnectToBrokerOnceOnFirstPublish()
+        public void ShouldCreateSessionsOnceOnFirstPublish()
         {
             _publisher.PublishAsync(new TestMessage());
             _testScheduler.AdvanceBy(1);
 
-            A.CallTo(() => _connectionFactory.CreateConnection()).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => _session.CreateProducer(_destination)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => _connection.Start()).MustHaveHappened(Repeated.Exactly.Once);
 
@@ -94,7 +97,8 @@ namespace Obvs.ActiveMQ.Tests
             _publisher.PublishAsync(new TestMessage());
             _testScheduler.AdvanceBy(1);
 
-            A.CallTo(() => _connectionFactory.CreateConnection()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _session.CreateProducer(_destination)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _connection.Start()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test]
@@ -144,36 +148,43 @@ namespace Obvs.ActiveMQ.Tests
         }
 
         [Test]
-        public void ShouldDisconnectWhenDisposed()
+        public void ShouldCloseSessionWhenDisposed()
         {
             _publisher.PublishAsync(new TestMessage());
             _testScheduler.AdvanceBy(1);
             _publisher.Dispose();
 
-            A.CallTo(() => _connection.Close()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _session.Close()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _producer.Close()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test, Explicit]
         public void ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics()
         {
-            const string brokerUri = "<insert test broker uri here>";
+            const string brokerUri = "tcp://localhost:61616";
             const string topicName1 = "Obvs.Tests.ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics1";
             const string topicName2 = "Obvs.Tests.ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics2";
 
             IMessagePropertyProvider<IMessage> getProperties = new DefaultPropertyProvider<IMessage>();
 
             IConnectionFactory connectionFactory = new ConnectionFactory(brokerUri);
+            var lazyConnection = new Lazy<IConnection>(() =>
+            {
+                var conn = connectionFactory.CreateConnection();
+                conn.Start();
+                return conn;
+            });
 
             var scheduler = new EventLoopScheduler();
 
             IMessagePublisher<IMessage> publisher1 = new MessagePublisher<IMessage>(
-                connectionFactory,
+                lazyConnection,
                 new ActiveMQTopic(topicName1),
                 new JsonMessageSerializer(),
                 getProperties, scheduler);
 
             IMessagePublisher<IMessage> publisher2 = new MessagePublisher<IMessage>(
-                connectionFactory,
+                lazyConnection,
                 new ActiveMQTopic(topicName2),
                 new JsonMessageSerializer(),
                 getProperties, scheduler);
@@ -187,13 +198,13 @@ namespace Obvs.ActiveMQ.Tests
             IMessageSource<IMessage> source = new MergedMessageSource<IMessage>(new[]
             {
                 new MessageSource<IMessage>(
-                    connectionFactory,
+                    lazyConnection,
                     deserializers,
                     new ActiveMQTopic(topicName1),
                     AcknowledgementMode.AutoAcknowledge),
 
                 new MessageSource<IMessage>(
-                    connectionFactory,
+                    lazyConnection,
                     deserializers,
                     new ActiveMQTopic(topicName2),
                     AcknowledgementMode.AutoAcknowledge)
