@@ -10,7 +10,8 @@ namespace Obvs.ActiveMQ.Configuration
 {
     public static class DestinationFactory
     {
-        public static MessagePublisher<TMessage> CreatePublisher<TMessage>(Lazy<IConnection> lazyConnection, string destination, DestinationType destinationType, IMessageSerializer messageSerializer, IScheduler scheduler, IMessagePropertyProvider<TMessage> propertyProvider = null)
+        public static MessagePublisher<TMessage> CreatePublisher<TMessage>(Lazy<IConnection> lazyConnection, string destination, DestinationType destinationType, IMessageSerializer messageSerializer, IScheduler scheduler,
+                                                                           IMessagePropertyProvider<TMessage> propertyProvider = null, Func<TMessage, MsgDeliveryMode> deliveryMode = null, Func<TMessage, MsgPriority> priority = null, Func<TMessage, TimeSpan> timeToLive = null)
             where TMessage : IMessage
         {
             return new MessagePublisher<TMessage>(
@@ -18,7 +19,10 @@ namespace Obvs.ActiveMQ.Configuration
                 CreateDestination(destination, destinationType),
                 messageSerializer,
                 propertyProvider ?? new DefaultPropertyProvider<TMessage>(),
-                scheduler);
+                scheduler,
+                deliveryMode, 
+                priority, 
+                timeToLive);
         }
 
         public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(Lazy<IConnection> lazyConnection, string destination, DestinationType destinationType, IMessageDeserializerFactory deserializerFactory, string assemblyNameContains = null, string selector = null)

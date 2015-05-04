@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>ActiveMQ transport support for Obvs</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Create fewer connections to the broker per service</releaseNotes>
+    <releaseNotes>Allow the user to optionally override DeliveryMode, Priority and TimeToLive when using MessagePublisher directly</releaseNotes>
   </metadata>
 </package>

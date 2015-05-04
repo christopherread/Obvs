@@ -21,18 +21,25 @@ namespace Obvs.ActiveMQ
         private readonly IMessageSerializer _serializer;
         private readonly IMessagePropertyProvider<TMessage> _propertyProvider;
         private readonly IScheduler _scheduler;
+        private readonly Func<TMessage, MsgDeliveryMode> _deliveryMode;
+        private readonly Func<TMessage, MsgPriority> _priority;
+        private readonly Func<TMessage, TimeSpan> _timeToLive;
         private readonly Lazy<IConnection> _connection;
         private ISession _session;
         private IMessageProducer _producer;
         private IDisposable _disposable;
 
-        public MessagePublisher(Lazy<IConnection> lazyConnection, IDestination destination, IMessageSerializer serializer, IMessagePropertyProvider<TMessage> propertyProvider, IScheduler scheduler)
+        public MessagePublisher(Lazy<IConnection> lazyConnection, IDestination destination, IMessageSerializer serializer, IMessagePropertyProvider<TMessage> propertyProvider, IScheduler scheduler,
+                                Func<TMessage, MsgDeliveryMode> deliveryMode = null, Func<TMessage, MsgPriority> priority = null, Func<TMessage, TimeSpan> timeToLive = null)
         {
             _connection = lazyConnection;
             _destination = destination;
             _serializer = serializer;
             _propertyProvider = propertyProvider;
             _scheduler = scheduler;
+            _deliveryMode = deliveryMode ?? (message => MsgDeliveryMode.NonPersistent);
+            _priority = priority ?? (message => MsgPriority.Normal);
+            _timeToLive = timeToLive ?? (message => TimeSpan.Zero);
         }
 
         public Task PublishAsync(TMessage message)
@@ -57,7 +64,7 @@ namespace Obvs.ActiveMQ
 
             _session.CreateMessageFromData(data)
                     .SetProperties(properties)
-                    .Send(_producer);
+                    .Send(_producer, _deliveryMode(message), _priority(message), _timeToLive(message));
         }
 
         private static void AppendTypeNameProperty(TMessage message, List<KeyValuePair<string, object>> properties)

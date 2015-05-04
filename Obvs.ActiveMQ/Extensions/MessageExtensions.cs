@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Apache.NMS;
 
@@ -55,9 +56,9 @@ namespace Obvs.ActiveMQ.Extensions
             return message;
         }
 
-        public static void Send(this IMessage message, IMessageProducer producer)
+        public static void Send(this IMessage message, IMessageProducer producer, MsgDeliveryMode deliveryMode, MsgPriority priority, TimeSpan timeToLive)
         {
-            producer.Send(message);
+            producer.Send(message, deliveryMode, priority, timeToLive);
         }
     }
 }
