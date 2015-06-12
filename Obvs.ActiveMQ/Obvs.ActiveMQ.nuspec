@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>ActiveMQ transport support for Obvs</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Allow the user to optionally override DeliveryMode, Priority and TimeToLive when using MessagePublisher directly</releaseNotes>
+    <releaseNotes>Upgraded Apache.NMS.ActiveMQ from 1.6.3 to 1.7.0</releaseNotes>
   </metadata>
 </package>
