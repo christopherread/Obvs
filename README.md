@@ -2,6 +2,8 @@
 # Obvs: an observable µService bus
 ## observable services, *obviously*
 
+![build](https://ci.appveyor.com/api/projects/status/hcv02eeulvfdr9de?svg=true)
+
 Features:
 
 * Simple RX based interfaces for doing pub/sub
@@ -105,3 +107,4 @@ Define custom endpoints that can wrap API calls or integrations with other syste
             .AsClientAndServer()
 		.WithEndpoints(new MyCustomEndpoint())
         .Create();
+
