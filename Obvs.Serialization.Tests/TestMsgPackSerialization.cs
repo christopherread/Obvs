@@ -1,6 +1,10 @@
 using System;
+using FakeItEasy;
 using NUnit.Framework;
+using Obvs.Configuration;
 using Obvs.Serialization.MessagePack;
+using Obvs.Serialization.MessagePack.Configuration;
+using Obvs.Types;
 
 namespace Obvs.Serialization.Tests
 {
@@ -35,6 +39,13 @@ namespace Obvs.Serialization.Tests
             Assert.That(message.Id, Is.EqualTo(deserialize.Id));
             Assert.That(message.Name, Is.EqualTo(deserialize.Name));
             Assert.That(message.Date, Is.EqualTo(deserialize.Date));
+        }
+
+        [Test]
+        public void ShouldInferGenericArgumentsInFluentConfig()
+        {
+            var fakeConfigurator = A.Fake<ICanSpecifyEndpointSerializers<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            fakeConfigurator.SerializedAsMsgPack();
         }
     }
 }

@@ -1,5 +1,9 @@
-﻿using NUnit.Framework;
+﻿using FakeItEasy;
+using NUnit.Framework;
+using Obvs.Configuration;
 using Obvs.Serialization.Json;
+using Obvs.Serialization.Json.Configuration;
+using Obvs.Types;
 
 namespace Obvs.Serialization.Tests
 {
@@ -31,6 +35,13 @@ namespace Obvs.Serialization.Tests
             var deserialize = deserializer.Deserialize(serialize);
 
             Assert.That(message, Is.EqualTo(deserialize));
+        }
+
+        [Test]
+        public void ShouldInferGenericArgumentsInFluentConfig()
+        {
+            var fakeConfigurator = A.Fake<ICanSpecifyEndpointSerializers<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            fakeConfigurator.SerializedAsJson();
         }
     }
 }
