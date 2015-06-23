@@ -1,55 +1,100 @@
 using System;
+using System.Reflection;
 using Obvs.Logging;
 using Obvs.Serialization;
 
 namespace Obvs.Configuration
 {
-    public interface ICanAddEndpointOrLoggingOrCorrelationOrCreate : ICanCreate, ICanAddEndpoint, ICanSpecifyLogging, ICanSpecifyRequestCorrelationProvider
+    public interface ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> :
+        ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+        ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyLogging<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyRequestCorrelationProvider<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
     }
 
-    public interface ICanCreate
+    public interface ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        IServiceBus Create();
-        IServiceBusClient CreateClient();
+        IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> CreateServiceBus();
+        IServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse> CreateServiceBusClient();
     }
 
-    public interface ICanAddEndpoint
+    public interface ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoint(IServiceEndpointClient endpointClient);
-        ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoint(IServiceEndpoint endpoint);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> WithEndpoint(IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> endpointClient);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> WithEndpoint(IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint);
 
-        ICanAddEndpointOrLoggingOrCorrelationOrCreate WithEndpoints(IServiceEndpointProvider serviceEndpointProvider);
-        ICanAddEndpointOrLoggingOrCorrelationOrCreate WithClientEndpoints(IServiceEndpointProvider serviceEndpointProvider);
-        ICanAddEndpointOrLoggingOrCorrelationOrCreate WithServerEndpoints(IServiceEndpointProvider serviceEndpointProvider);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> WithEndpoints(IServiceEndpointProvider<TMessage, TCommand, TEvent, TRequest, TResponse> serviceEndpointProvider);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> WithClientEndpoints(IServiceEndpointProvider<TMessage, TCommand, TEvent, TRequest, TResponse> serviceEndpointProvider);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> WithServerEndpoints(IServiceEndpointProvider<TMessage, TCommand, TEvent, TRequest, TResponse> serviceEndpointProvider);
     }
 
-    public interface ICanSpecifyRequestCorrelationProvider
+    public interface ICanSpecifyRequestCorrelationProvider<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        ICanAddEndpointOrLoggingOrCorrelationOrCreate CorrelatesRequestWith(IRequestCorrelationProvider correlationProvider);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> CorrelatesRequestWith(IRequestCorrelationProvider<TRequest, TResponse> correlationProvider);
     }
 
-    public interface ICanSpecifyLogging
+   public interface ICanSpecifyLogging<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        ICanCreate UsingLogging(ILoggerFactory loggerFactory, Func<IEndpoint, bool> enableLogging = null);
-        ICanCreate UsingDebugLogging(Func<IEndpoint, bool> enableLogging = null);
-        ICanCreate UsingConsoleLogging(Func<IEndpoint, bool> enableLogging = null);
+       ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingLogging(ILoggerFactory loggerFactory, Func<IEndpoint<TMessage>, bool> enableLogging = null, Func<Type, LogLevel> logLevelSend = null, Func<Type, LogLevel> logLevelReceive = null);
+        ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingDebugLogging(Func<IEndpoint<TMessage>, bool> enableLogging = null, Func<Type, LogLevel> logLevelSend = null, Func<Type, LogLevel> logLevelReceive = null);
+        ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingConsoleLogging(Func<IEndpoint<TMessage>, bool> enableLogging = null, Func<Type, LogLevel> logLevelSend = null, Func<Type, LogLevel> logLevelReceive = null);
     }
 
-    public interface ICanSpecifyEndpointSerializers
+    public interface ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
+       where TMessage : class
+       where TCommand : class, TMessage
+       where TEvent : class, TMessage
+       where TRequest : class, TMessage
+       where TResponse : class, TMessage
     {
-        ICanCreateEndpointAsClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory);
+        ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory);
     }
 
-    public interface ICanFilterEndpointMessageTypeAssemblies
+    public interface ICanFilterEndpointMessageTypeAssemblies<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        ICanCreateEndpointAsClientOrServer FilterMessageTypeAssemblies(string assemblyNameContains);
+        ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> FilterMessageTypeAssemblies(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null);
     }
 
-    public interface ICanCreateEndpointAsClientOrServer : ICanFilterEndpointMessageTypeAssemblies
+    public interface ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanFilterEndpointMessageTypeAssemblies<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClient();
-        ICanAddEndpointOrLoggingOrCorrelationOrCreate AsServer();
-        ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClientAndServer();
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsClient();
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsServer();
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsClientAndServer();
     }
 }

@@ -2,11 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Obvs.Types;
 
 namespace Obvs
 {
-    public class TypeRoutingMessagePublisher<TMessage> : IMessagePublisher<TMessage> where TMessage : IMessage
+    public class TypeRoutingMessagePublisher<TMessage> : IMessagePublisher<TMessage> where TMessage : class
     {
         private readonly IEnumerable<KeyValuePair<Type, IMessagePublisher<TMessage>>> _publishers;
 

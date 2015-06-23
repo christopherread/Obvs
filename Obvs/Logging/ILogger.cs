@@ -8,5 +8,6 @@ namespace Obvs.Logging
         void Info(string message, Exception exception = null);
         void Warn(string message, Exception exception = null);
         void Error(string message, Exception exception = null);
+        void Log(LogLevel level, string message, Exception exception = null);
     }
 }

@@ -13,27 +13,32 @@ namespace Obvs.Logging
 
         public void Debug(string message, Exception exception = null)
         {
-            WriteToConsole("DEBUG", message, exception);
+            Log(LogLevel.Debug, message, exception);
         }
 
         public void Info(string message, Exception exception = null)
         {
-            WriteToConsole("INFO", message, exception);
+            Log(LogLevel.Info, message, exception);
         }
 
         public void Warn(string message, Exception exception = null)
         {
-            WriteToConsole("WARN", message, exception);
+            Log(LogLevel.Warn, message, exception);
         }
 
         public void Error(string message, Exception exception = null)
         {
-            WriteToConsole("ERROR", message, exception);
+            Log(LogLevel.Error, message, exception);
         }
 
-        private void WriteToConsole(string messageType, string message, Exception exception)
+        public void Log(LogLevel level, string message, Exception exception = null)
         {
-            Console.WriteLine("{0} {1} {2} {3} {4}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), messageType, _name, message, exception == null ? "" : exception.ToString());
+            WriteToConsole(level.ToString().ToUpper(), message, exception);
+        }
+
+        private void WriteToConsole(string logLevel, string message, Exception exception)
+        {
+            Console.WriteLine("{0} {1} [{2}] {3} {4}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), logLevel, _name, message, exception == null ? "" : exception.ToString());
         }
     }
 }

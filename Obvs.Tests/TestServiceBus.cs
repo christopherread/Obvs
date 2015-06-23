@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
 using NUnit.Framework;
+using Obvs.Configuration;
 using Obvs.Types;
 
 namespace Obvs.Tests
@@ -987,12 +988,11 @@ namespace Obvs.Tests
             FakeServiceEndpoint serviceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
 
             IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint(erroringEndpoint as IServiceEndpointClient)
-                .WithEndpoint(erroringEndpoint as IServiceEndpoint)
-                .WithEndpoint(serviceEndpoint as IServiceEndpointClient)
-                .WithEndpoint(serviceEndpoint as IServiceEndpoint)
-                .UsingConsoleLogging()
-                .Create();
+                .WithEndpoint((IServiceEndpointClient) erroringEndpoint)
+                .WithEndpoint((IServiceEndpoint)erroringEndpoint)
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint)
+                .UsingConsoleLogging().Create();
 
             ConcurrentBag<IMessage> messages = new ConcurrentBag<IMessage>();
             ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();

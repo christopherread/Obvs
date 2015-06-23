@@ -30,5 +30,10 @@ namespace Obvs.Logging
         {
             System.Diagnostics.Debug.WriteLine(message + (exception == null ? "" : Environment.NewLine + exception), _name + ".Error");
         }
+
+        public void Log(LogLevel level, string message, Exception exception = null)
+        {
+            System.Diagnostics.Debug.WriteLine(message + (exception == null ? "" : Environment.NewLine + exception), _name + "." + level);
+        }
     }
 }

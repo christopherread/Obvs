@@ -1,12 +1,11 @@
 using System;
 using System.Reactive.Linq;
-using Obvs.Types;
 
 namespace Obvs
 {
     public class MessageSourceConverter<TFrom, TTo> : IMessageSource<TTo>
-        where TTo : IMessage 
-        where TFrom : IMessage
+        where TTo : class
+        where TFrom : class
     {
         private readonly IMessageSource<TFrom> _source;
         private readonly IMessageConverter<TFrom, TTo> _converter;

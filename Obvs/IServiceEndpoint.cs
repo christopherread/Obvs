@@ -1,34 +1,53 @@
 using System;
 using System.Threading.Tasks;
+using Obvs.Extensions;
 using Obvs.Types;
 
 namespace Obvs
 {
-    public interface IEndpoint : IDisposable
+    public interface IServiceEndpoint : IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>
     {
-        bool CanHandle(IMessage message);
     }
 
-    public interface IServiceEndpoint : IEndpoint
+    public interface IServiceEndpoint<in TMessage, out TCommand, in TEvent, TRequest, in TResponse> : IEndpoint<TMessage>
+        where TMessage : class
+        where TCommand : TMessage
+        where TEvent : TMessage
+        where TRequest : TMessage
+        where TResponse : TMessage
     {
-        IObservable<IRequest> Requests { get; }
-        IObservable<ICommand> Commands { get; }
+        IObservable<TRequest> Requests { get; }
+        IObservable<TCommand> Commands { get; }
 
-        Task PublishAsync(IEvent ev);
-        Task ReplyAsync(IRequest request, IResponse response);
+        Task PublishAsync(TEvent ev);
+        Task ReplyAsync(TRequest request, TResponse response);
     }
 
-    public class ServiceEndpoint : IServiceEndpoint
+    public class ServiceEndpoint : ServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>, IServiceEndpoint
     {
-        private readonly IMessageSource<IRequest> _requestSource;
-        private readonly IMessageSource<ICommand> _commandSource;
-        private readonly IMessagePublisher<IEvent> _eventPublisher;
-        private readonly IMessagePublisher<IResponse> _responsePublisher;
+        public ServiceEndpoint(IMessageSource<IRequest> requestSource, IMessageSource<ICommand> commandSource, IMessagePublisher<IEvent> eventPublisher, IMessagePublisher<IResponse> responsePublisher, Type serviceType) 
+            : base(requestSource, commandSource, eventPublisher, responsePublisher, serviceType)
+        {
+        }
+    }
 
-        public ServiceEndpoint(IMessageSource<IRequest> requestSource,
-            IMessageSource<ICommand> commandSource,
-            IMessagePublisher<IEvent> eventPublisher,
-            IMessagePublisher<IResponse> responsePublisher,
+    public class ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> : IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
+        private readonly IMessageSource<TRequest> _requestSource;
+        private readonly IMessageSource<TCommand> _commandSource;
+        private readonly IMessagePublisher<TEvent> _eventPublisher;
+        private readonly IMessagePublisher<TResponse> _responsePublisher;
+        private readonly string _name;
+
+        public ServiceEndpoint(IMessageSource<TRequest> requestSource,
+            IMessageSource<TCommand> commandSource,
+            IMessagePublisher<TEvent> eventPublisher,
+            IMessagePublisher<TResponse> responsePublisher,
             Type serviceType)
         {
             _requestSource = requestSource;
@@ -36,34 +55,37 @@ namespace Obvs
             _eventPublisher = eventPublisher;
             _responsePublisher = responsePublisher;
             ServiceType = serviceType;
+            _name = string.Format("{0}[{1}]", GetType().GetSimpleName(), ServiceType.Name);
         }
 
-        public IObservable<IRequest> Requests
+        public IObservable<TRequest> Requests
         {
             get { return _requestSource.Messages; }
         }
 
-        public IObservable<ICommand> Commands
+        public IObservable<TCommand> Commands
         {
             get { return _commandSource.Messages; }
         }
 
-        public Task PublishAsync(IEvent ev)
+        public Task PublishAsync(TEvent ev)
         {
             return _eventPublisher.PublishAsync(ev);
         }
 
-        public Task ReplyAsync(IRequest request, IResponse response)
+        public Task ReplyAsync(TRequest request, TResponse response)
         {
-            response.RequestId = request.RequestId;
-            response.RequesterId = request.RequesterId;
-
             return _responsePublisher.PublishAsync(response);
         }
 
-        public bool CanHandle(IMessage message)
+        public bool CanHandle(TMessage message)
         {
             return ServiceType.IsInstanceOfType(message);
+        }
+
+        public string Name
+        {
+            get { return _name; }
         }
 
         private Type ServiceType { get; set; }

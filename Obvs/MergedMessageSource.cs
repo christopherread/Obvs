@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using Obvs.Types;
 
 namespace Obvs
 {
     public class MergedMessageSource<TMessage> : IMessageSource<TMessage> 
-        where TMessage : IMessage
+        where TMessage : class
     {
         private readonly IObservable<TMessage> _messages;
 

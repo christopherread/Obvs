@@ -17,7 +17,7 @@ namespace Obvs.Tests
         [Test]
         public void TestThatCorrectMessageTypesAreFound()
         {
-            IEnumerable<Type> types = MessageTypes.Get<IMessage, ITestServiceMessage>("Obvs.Tests").ToArray();
+            IEnumerable<Type> types = MessageTypes.Get<IMessage, ITestServiceMessage>(assembly => assembly.FullName.Contains("Obvs.Tests")).ToArray();
 
             Assert.That(types.Any());
             Assert.That(types.Contains(typeof(TestMessage1)));

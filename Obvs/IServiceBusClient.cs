@@ -3,48 +3,101 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using Obvs.Extensions;
 using Obvs.Types;
 
 namespace Obvs
 {
-    public interface IServiceBusClient
+    public interface IServiceBusClient : IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>
     {
-        IObservable<IEvent> Events { get; }
+    }
 
-        Task SendAsync(ICommand command);
-        Task SendAsync(IEnumerable<ICommand> commands);
+    public interface IServiceBusClient<TMessage, in TCommand, out TEvent, in TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
+        IObservable<TEvent> Events { get; }
 
-        IObservable<IResponse> GetResponses(IRequest request);
-        IObservable<T> GetResponses<T>(IRequest request) where T : IResponse;
+        Task SendAsync(TCommand command);
+        Task SendAsync(IEnumerable<TCommand> commands);
+
+        IObservable<TResponse> GetResponses(TRequest request);
+        IObservable<T> GetResponses<T>(TRequest request) where T : TResponse;
 
         IObservable<Exception> Exceptions { get; }
     }
 
-    public class ServiceBusClient : ServiceBusErrorHandlingBase, IServiceBusClient, IDisposable
+    public class ServiceBusClient : IServiceBusClient, IDisposable
     {
-        private readonly IEnumerable<IServiceEndpointClient> _endpointClients;
-        private readonly IObservable<IEvent> _events;
-        private readonly IRequestCorrelationProvider _requestCorrelationProvider;
+        private readonly IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse> _serviceBusClient;
 
-        public ServiceBusClient(IEnumerable<IServiceEndpointClient> endpointClients)
-            : this(endpointClients, new DefaultRequestCorrelationProvider())
+        public ServiceBusClient(IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse> serviceBusClient)
         {
+            _serviceBusClient = serviceBusClient;
         }
-        
-        public ServiceBusClient(IEnumerable<IServiceEndpointClient> endpointClients, IRequestCorrelationProvider requestCorrelationProvider)
+
+        public IObservable<IEvent> Events
+        {
+            get { return _serviceBusClient.Events; }
+        }
+
+        public Task SendAsync(ICommand command)
+        {
+            return _serviceBusClient.SendAsync(command);
+        }
+
+        public Task SendAsync(IEnumerable<ICommand> commands)
+        {
+            return _serviceBusClient.SendAsync(commands);
+        }
+
+        public IObservable<IResponse> GetResponses(IRequest request)
+        {
+            return _serviceBusClient.GetResponses(request);
+        }
+
+        public IObservable<T> GetResponses<T>(IRequest request) where T : IResponse
+        {
+            return _serviceBusClient.GetResponses<T>(request);
+        }
+
+        public IObservable<Exception> Exceptions
+        {
+            get { return _serviceBusClient.Exceptions; }
+        }
+
+        public void Dispose()
+        {
+            ((IDisposable)_serviceBusClient).Dispose();
+        }
+    }
+
+    public class ServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceBusErrorHandlingBase<TMessage, TCommand, TEvent, TRequest, TResponse>, IServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
+        private readonly IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> _endpointClients;
+        private readonly IObservable<TEvent> _events;
+        private readonly IRequestCorrelationProvider<TRequest, TResponse> _requestCorrelationProvider;
+
+        public ServiceBusClient(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider)
         {
             _endpointClients = endpointClients.ToArray();
             _events = _endpointClients.Select(EventsWithErroHandling).Merge().Publish().RefCount();
             _requestCorrelationProvider = requestCorrelationProvider;
         }
 
-        public IObservable<IEvent> Events
+        public IObservable<TEvent> Events
         {
             get { return _events; }
         }
 
-        public Task SendAsync(ICommand command)
+        public Task SendAsync(TCommand command)
         {
             List<Exception> exceptions = new List<Exception>();
 
@@ -58,7 +111,7 @@ namespace Obvs
             return Task.WhenAll(tasks);
         }
 
-        public Task SendAsync(IEnumerable<ICommand> commands)
+        public Task SendAsync(IEnumerable<TCommand> commands)
         {
             List<Exception> exceptions = new List<Exception>();
 
@@ -72,20 +125,27 @@ namespace Obvs
             return Task.WhenAll(tasks);
         }
 
-        public IObservable<IResponse> GetResponses(IRequest request)
+        public IObservable<TResponse> GetResponses(TRequest request)
         {
+            if (_requestCorrelationProvider == null)
+            {
+                throw new InvalidOperationException("Please configure the ServiceBus with a IRequestCorrelationProvider using the fluent configuration extension method .CorrelatesRequestWith()");
+            }
+
             _requestCorrelationProvider.SetRequestCorrelationIds(request);
 
-            return EndpointsThatCanHandle(request).Select(endpoint => endpoint.GetResponses(request).Where(response => response.CorrelatesTo(request)))
+            return EndpointsThatCanHandle(request).Select(endpoint => endpoint.GetResponses(request)
+                                                  .Where(response => _requestCorrelationProvider.AreCorrelated(request, response)))
                                                   .Merge().Publish().RefCount();
         }
 
-        public IObservable<T> GetResponses<T>(IRequest request) where T : IResponse
+        public IObservable<T> GetResponses<T>(TRequest request) where T : TResponse
         {
-            return GetResponses(request).OfType<T>();
+            IObservable<TResponse> observable = GetResponses(request);
+            return observable.OfType<T>();
         }
 
-        private IEnumerable<IServiceEndpointClient> EndpointsThatCanHandle(IMessage message)
+        private IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> EndpointsThatCanHandle(TMessage message)
         {
             return _endpointClients.Where(endpoint => endpoint.CanHandle(message)).ToArray();
         }
@@ -93,7 +153,7 @@ namespace Obvs
         public override void Dispose()
         {
             base.Dispose();
-            foreach (IServiceEndpointClient endpointClient in _endpointClients)
+            foreach (IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> endpointClient in _endpointClients)
             {
                 endpointClient.Dispose();
             }

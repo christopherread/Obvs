@@ -1,17 +1,16 @@
 using System;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
-using Obvs.Types;
 
 namespace Obvs
 {
     public interface IMessageBus<TMessage> : IMessagePublisher<TMessage>, IMessageSource<TMessage> 
-        where TMessage : IMessage
+        where TMessage : class 
     {
     }
 
     public class SubjectMessageBus<TMessage> : IMessageBus<TMessage>
-        where TMessage : IMessage
+        where TMessage : class
     {
         private readonly Subject<TMessage> _subject;
 

@@ -29,7 +29,7 @@ namespace Obvs.Tests
         public void ShouldDisposeEndpointClientIfWrappedInLoggingProxy()
         {
             IServiceEndpointClient endpointClient = A.Fake<IServiceEndpointClient>();
-            IServiceEndpointClient loggingProxy = new ServiceEndpointClientLoggingProxy(A.Fake<ILoggerFactory>(), endpointClient);
+            IServiceEndpointClient loggingProxy = new ServiceEndpointClientLoggingProxy(A.Fake<ILoggerFactory>(), endpointClient, message => LogLevel.Info, message => LogLevel.Info);
 
             loggingProxy.Dispose();
 

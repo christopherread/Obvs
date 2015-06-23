@@ -10,7 +10,7 @@ namespace Obvs.Tests
     {
         private readonly Subject<IMessage> _subject = new Subject<IMessage>();
         private readonly Type _serviceType;
-        public bool ThrowException { get; set; }
+        public bool ThrowException { private get; set; }
 
         public FakeServiceEndpoint(Type serviceType)
         {
@@ -20,6 +20,11 @@ namespace Obvs.Tests
         public bool CanHandle(IMessage message)
         {
             return _serviceType.IsInstanceOfType(message);
+        }
+
+        public string Name
+        {
+            get { return GetType().FullName; }
         }
 
         public Task SendAsync(ICommand command)

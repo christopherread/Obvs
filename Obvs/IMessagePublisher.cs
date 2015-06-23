@@ -1,16 +1,16 @@
 using System;
 using System.Threading.Tasks;
-using Obvs.Types;
 
 namespace Obvs
 {
     public interface IMessagePublisher<in TMessage> : IDisposable
-        where TMessage : IMessage
+        where TMessage : class
     {
         Task PublishAsync(TMessage message);
     }
 
-    public class DefaultMessagePublisher<TMessage> : IMessagePublisher<TMessage> where TMessage : IMessage
+    public class DefaultMessagePublisher<TMessage> : IMessagePublisher<TMessage>
+        where TMessage : class
     {
         public Task PublishAsync(TMessage message)
         {
