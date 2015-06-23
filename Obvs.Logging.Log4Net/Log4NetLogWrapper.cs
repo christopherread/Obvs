@@ -59,5 +59,26 @@ namespace Obvs.Logging.Log4Net
                 _log.Error(message, exception);
             }
         }
+
+        public void Log(LogLevel level, string message, Exception exception = null)
+        {
+            switch (level)
+            {
+                case LogLevel.Debug:
+                    Debug(message, exception);
+                    break;
+                case LogLevel.Info:
+                    Info(message, exception);
+                    break;
+                case LogLevel.Warn:
+                    Warn(message, exception);
+                    break;
+                case LogLevel.Error:
+                    Error(message, exception);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("level", level, null);
+            }
+        }
     }
 }

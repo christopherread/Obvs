@@ -15,6 +15,7 @@
             _logger.Info("Info Message");
             _logger.Warn("Warn Message");
             _logger.Error("Error Message");
+            _logger.Log(LogLevel.Warn, "Error Message");
         }
     }
 }
