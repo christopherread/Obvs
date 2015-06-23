@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Obvs.Configuration;
-using Obvs.Types;
 
 namespace Obvs.Serialization.MessagePack
 {
     public class MsgPackMessageDeserializerFactory : IMessageDeserializerFactory
     {
-        public IEnumerable<IMessageDeserializer<TMessage>> Create<TMessage, TServiceMessage>(string assemblyNameContains = null) where TMessage : IMessage where TServiceMessage : IMessage
+        public IEnumerable<IMessageDeserializer<TMessage>> Create<TMessage, TServiceMessage>(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
+            where TMessage : class
+            where TServiceMessage : class
         {
-            return MessageTypes.Get<TMessage, TServiceMessage>(assemblyNameContains)
-                .Select(type => typeof(MsgPackMessageDeserializer<>).MakeGenericType(new[] { type }))
+            return MessageTypes.Get<TMessage, TServiceMessage>(assemblyFilter, typeFilter)
+                .Select(type => typeof(MsgPackMessageDeserializer<>).MakeGenericType(type))
                 .Select(deserializerGeneric => Activator.CreateInstance(deserializerGeneric) as IMessageDeserializer<TMessage>)
                 .ToArray();
         }

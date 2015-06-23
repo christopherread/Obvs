@@ -3,7 +3,8 @@ using MsgPack.Serialization;
 
 namespace Obvs.Serialization.MessagePack
 {
-    public class MsgPackMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage>
+    public class MsgPackMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage> 
+        where TMessage : class
     {
         public override TMessage Deserialize(object obj)
         {

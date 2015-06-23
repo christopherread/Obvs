@@ -3,7 +3,8 @@ using ProtoBuf;
 
 namespace Obvs.Serialization.ProtoBuf
 {
-    public class ProtoBufMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage>
+    public class ProtoBufMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage> 
+        where TMessage : class
     {
         public override TMessage Deserialize(object obj)
         {

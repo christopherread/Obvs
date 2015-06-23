@@ -230,3 +230,5 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 /packages
+*.ncrunchproject
+*.ncrunchsolution

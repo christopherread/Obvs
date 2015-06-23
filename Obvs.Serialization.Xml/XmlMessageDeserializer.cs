@@ -1,10 +1,10 @@
 using System.IO;
-using System.Text;
 using System.Xml.Serialization;
 
 namespace Obvs.Serialization.Xml
 {
-    public class XmlMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage>
+    public class XmlMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage> 
+        where TMessage : class
     {
         private readonly XmlSerializer _xmlSerializer;
 

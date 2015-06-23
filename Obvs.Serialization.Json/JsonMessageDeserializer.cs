@@ -1,10 +1,10 @@
 using System.IO;
-using System.Text;
 using Newtonsoft.Json;
 
 namespace Obvs.Serialization.Json
 {
     public class JsonMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage>
+        where TMessage : class
     {
         private readonly JsonSerializer _serializer;
 
