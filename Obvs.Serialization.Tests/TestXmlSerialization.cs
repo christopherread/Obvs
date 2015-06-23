@@ -1,6 +1,10 @@
 ﻿using System.Text;
+using FakeItEasy;
 using NUnit.Framework;
+using Obvs.Configuration;
 using Obvs.Serialization.Xml;
+using Obvs.Serialization.Xml.Configuration;
+using Obvs.Types;
 
 namespace Obvs.Serialization.Tests
 {
@@ -46,6 +50,19 @@ namespace Obvs.Serialization.Tests
             var deserialize = deserializer.Deserialize(ascii);
 
             Assert.That(message, Is.EqualTo(deserialize));
+        }
+
+
+        [Test]
+        public void ShouldPassInCorrectFluentConfig()
+        {
+            var fakeConfigurator = A.Fake<ICanSpecifyEndpointSerializers<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            fakeConfigurator.SerializedAsXml();
+            
+            A.CallTo(() => fakeConfigurator.SerializedWith(
+                A<IMessageSerializer>.That.IsInstanceOf(typeof (XmlMessageSerializer)),
+                A<IMessageDeserializerFactory>.That.IsInstanceOf(typeof (XmlMessageDeserializerFactory))))
+                .MustHaveHappened(Repeated.Exactly.Once);
         }
     }
 }

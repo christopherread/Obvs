@@ -38,10 +38,15 @@ namespace Obvs.Serialization.Tests
         }
 
         [Test]
-        public void ShouldInferGenericArgumentsInFluentConfig()
+        public void ShouldPassInCorrectFluentConfig()
         {
             var fakeConfigurator = A.Fake<ICanSpecifyEndpointSerializers<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             fakeConfigurator.SerializedAsJson();
+
+            A.CallTo(() => fakeConfigurator.SerializedWith(
+                A<IMessageSerializer>.That.IsInstanceOf(typeof (JsonMessageSerializer)),
+                A<IMessageDeserializerFactory>.That.IsInstanceOf(typeof (JsonMessageDeserializerFactory))))
+                .MustHaveHappened(Repeated.Exactly.Once);
         }
     }
 }
