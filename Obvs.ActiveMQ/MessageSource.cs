@@ -7,12 +7,11 @@ using Apache.NMS;
 using Obvs.ActiveMQ.Extensions;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
-using IMessage = Obvs.Types.IMessage;
 
 namespace Obvs.ActiveMQ
 {
-    public class MessageSource<TMessage> : IMessageSource<TMessage>
-        where TMessage : IMessage
+    public class MessageSource<TMessage> : IMessageSource<TMessage> 
+        where TMessage : class
     {
         private readonly string _selector;
        
@@ -61,12 +60,12 @@ namespace Obvs.ActiveMQ
             }
         }
 
-        private bool IsCorrectType(Apache.NMS.IMessage message)
+        private bool IsCorrectType(IMessage message)
         {
             return !HasTypeName(message) || _deserializers.ContainsKey(GetTypeName(message));
         }
 
-        private TMessage Deserialize(Apache.NMS.IMessage message)
+        private TMessage Deserialize(IMessage message)
         {
             IMessageDeserializer<TMessage> deserializer = HasTypeName(message) ? _deserializers[GetTypeName(message)] : _deserializers.Values.Single();
 
@@ -90,17 +89,17 @@ namespace Obvs.ActiveMQ
             return deserializedMessage;
         }
 
-        private static string GetTypeName(Apache.NMS.IMessage message)
+        private static string GetTypeName(IMessage message)
         {
             return message.Properties.GetString(MessagePropertyNames.TypeName);
         }
 
-        private static bool HasTypeName(Apache.NMS.IMessage message)
+        private static bool HasTypeName(IMessage message)
         {
             return message.Properties.Contains(MessagePropertyNames.TypeName);
         }
 
-        private void Acknowledge(Apache.NMS.IMessage message)
+        private void Acknowledge(IMessage message)
         {
             if (_mode != AcknowledgementMode.AutoAcknowledge)
             {

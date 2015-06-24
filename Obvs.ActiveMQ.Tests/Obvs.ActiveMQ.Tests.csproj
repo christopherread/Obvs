@@ -58,13 +58,13 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\NUnit.2.6.2\lib\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs, Version=1.6.2.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs, Version=2.0.0.8, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.1.6.2\lib\net45\Obvs.dll</HintPath>
+      <HintPath>..\packages\Obvs.2.0.0.8-pre1\lib\net45\Obvs.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs.Serialization.Json, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs.Serialization.Json, Version=2.0.0.7, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.Serialization.Json.1.6.0\lib\net45\Obvs.Serialization.Json.dll</HintPath>
+      <HintPath>..\packages\Obvs.Serialization.Json.2.0.0.7-pre1\lib\net45\Obvs.Serialization.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

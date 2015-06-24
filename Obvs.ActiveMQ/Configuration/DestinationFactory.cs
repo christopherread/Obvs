@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Reactive.Concurrency;
+using System.Reflection;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ.Commands;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
-using IMessage = Obvs.Types.IMessage;
 
 namespace Obvs.ActiveMQ.Configuration
 {
     public static class DestinationFactory
     {
         public static MessagePublisher<TMessage> CreatePublisher<TMessage>(Lazy<IConnection> lazyConnection, string destination, DestinationType destinationType, IMessageSerializer messageSerializer, IScheduler scheduler,
-                                                                           IMessagePropertyProvider<TMessage> propertyProvider = null, Func<TMessage, MsgDeliveryMode> deliveryMode = null, Func<TMessage, MsgPriority> priority = null, Func<TMessage, TimeSpan> timeToLive = null)
-            where TMessage : IMessage
+                                                                           IMessagePropertyProvider<TMessage> propertyProvider = null, Func<TMessage, MsgDeliveryMode> deliveryMode = null, Func<TMessage, MsgPriority> priority = null, Func<TMessage, TimeSpan> timeToLive = null) 
+            where TMessage : class
         {
             return new MessagePublisher<TMessage>(
                 lazyConnection,
@@ -25,13 +25,13 @@ namespace Obvs.ActiveMQ.Configuration
                 timeToLive);
         }
 
-        public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(Lazy<IConnection> lazyConnection, string destination, DestinationType destinationType, IMessageDeserializerFactory deserializerFactory, string assemblyNameContains = null, string selector = null)
-            where TServiceMessage : IMessage
-            where TMessage : IMessage
+        public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(Lazy<IConnection> lazyConnection, string destination, DestinationType destinationType, IMessageDeserializerFactory deserializerFactory, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null, string selector = null)
+            where TMessage : class
+            where TServiceMessage : class
         {
             return new MessageSource<TMessage>(
                 lazyConnection,
-                deserializerFactory.Create<TMessage, TServiceMessage>(assemblyNameContains),
+                deserializerFactory.Create<TMessage, TServiceMessage>(assemblyFilter, typeFilter),
                 CreateDestination(destination, destinationType),
                 AcknowledgementMode.AutoAcknowledge,
                 selector);

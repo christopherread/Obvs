@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Obvs.Types;
 
 namespace Obvs.ActiveMQ.Configuration
 {
-    internal class DisposingServiceEndpointClient : IServiceEndpointClient
+    internal class DisposingServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> : IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : TMessage
+        where TEvent : TMessage
+        where TRequest : TMessage
+        where TResponse : TMessage
     {
-        private readonly IServiceEndpointClient _endpointClient;
+        private readonly IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> _endpointClient;
         private readonly IDisposable _disposable;
 
-        public DisposingServiceEndpointClient(IServiceEndpointClient endpointClient, IDisposable disposable)
+        public DisposingServiceEndpointClient(IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> endpointClient, IDisposable disposable)
         {
             _endpointClient = endpointClient;
             _disposable = disposable;
@@ -21,22 +25,27 @@ namespace Obvs.ActiveMQ.Configuration
             _disposable.Dispose();
         }
 
-        public bool CanHandle(IMessage message)
+        public bool CanHandle(TMessage message)
         {
             return _endpointClient.CanHandle(message);
         }
 
-        public Task SendAsync(ICommand command)
+        public string Name
+        {
+            get { return _endpointClient.Name; }
+        }
+
+        public Task SendAsync(TCommand command)
         {
             return _endpointClient.SendAsync(command);
         }
 
-        public IObservable<IResponse> GetResponses(IRequest request)
+        public IObservable<TResponse> GetResponses(TRequest request)
         {
             return _endpointClient.GetResponses(request);
         }
 
-        public IObservable<IEvent> Events
+        public IObservable<TEvent> Events
         {
             get { return _endpointClient.Events; }
         }

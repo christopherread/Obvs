@@ -10,12 +10,11 @@ using Apache.NMS;
 using Obvs.ActiveMQ.Extensions;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
-using IMessage = Obvs.Types.IMessage;
 
 namespace Obvs.ActiveMQ
 {
-    public class MessagePublisher<TMessage> : IMessagePublisher<TMessage>
-        where TMessage : IMessage
+    public class MessagePublisher<TMessage> : IMessagePublisher<TMessage> 
+        where TMessage : class
     {
         private readonly IDestination _destination;
         private readonly IMessageSerializer _serializer;

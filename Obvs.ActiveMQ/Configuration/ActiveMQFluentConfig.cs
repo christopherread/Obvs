@@ -1,88 +1,114 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Obvs.Configuration;
 using Obvs.Serialization;
-using Obvs.Types;
 
 namespace Obvs.ActiveMQ.Configuration
 {
-    public interface ICanSpecifyActiveMQServiceName
+    public interface ICanSpecifyActiveMQServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        ICanSpecifyActiveMQBroker Named(string serviceName);
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> Named(string serviceName);
     }
 
-    public interface ICanSpecifyActiveMQQueue
+    public interface ICanSpecifyActiveMQQueue<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        ICanSpecifyActiveMQBroker UsingQueueFor<TMessage>() where TMessage : IMessage;
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> UsingQueueFor<T>() where T : TMessage;
     }
 
-    public interface ICanSpecifyActiveMQBroker : ICanSpecifyActiveMQQueue
+    public interface ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanSpecifyActiveMQQueue<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        ICanSpecifyEndpointSerializers ConnectToBroker(string brokerUri);
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri);
     }
 
-    internal class ActiveMQFluentConfig<TServiceMessage> : ICanSpecifyActiveMQBroker, ICanSpecifyActiveMQServiceName, ICanCreateEndpointAsClientOrServer, ICanSpecifyEndpointSerializers
-        where TServiceMessage : IMessage
+    internal class ActiveMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : 
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+        ICanSpecifyActiveMQServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+        ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TServiceMessage : class 
+        where TCommand : class, TMessage 
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage 
+        where TResponse : class, TMessage
     {
-        private readonly ICanAddEndpoint _canAddEndpoint;
+        private readonly ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> _canAddEndpoint;
         private string _serviceName;
         private string _brokerUri;
-        private string _assemblyNameContains = string.Empty;
         private IMessageSerializer _serializer;
         private IMessageDeserializerFactory _deserializerFactory;
         private readonly List<Type> _queueTypes = new List<Type>();
+        private Func<Assembly, bool> _assemblyFilter;
+        private Func<Type, bool> _typeFilter;
 
-        public ActiveMQFluentConfig(ICanAddEndpoint canAddEndpoint)
+        public ActiveMQFluentConfig(ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint)
         {
             _canAddEndpoint = canAddEndpoint;
         }
 
-        public ICanSpecifyActiveMQBroker Named(string serviceName)
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> Named(string serviceName)
         {
             _serviceName = serviceName;
             return this;
         }
 
-        public ICanCreateEndpointAsClientOrServer FilterMessageTypeAssemblies(string assemblyNameContains)
+        public ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> FilterMessageTypeAssemblies(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
         {
-            _assemblyNameContains = assemblyNameContains;
+            _assemblyFilter = assemblyFilter;
+            _typeFilter = typeFilter;
             return this;
         }
 
-        public ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClient()
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsClient()
         {
             return _canAddEndpoint.WithClientEndpoints(CreateProvider());
         }
 
-        public ICanAddEndpointOrLoggingOrCorrelationOrCreate AsServer()
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsServer()
         {
             return _canAddEndpoint.WithServerEndpoints(CreateProvider());
         }
 
-        public ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClientAndServer()
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsClientAndServer()
         {
             return _canAddEndpoint.WithEndpoints(CreateProvider());
         }
 
-        private ActiveMQServiceEndpointProvider<TServiceMessage> CreateProvider()
+        private ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> CreateProvider()
         {
-            return new ActiveMQServiceEndpointProvider<TServiceMessage>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyNameContains);
+            return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, _typeFilter);
         }
 
-        public ICanSpecifyEndpointSerializers ConnectToBroker(string brokerUri)
+        public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri)
         {
             _brokerUri = brokerUri;
             return this;
         }
 
-        public ICanCreateEndpointAsClientOrServer SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
+        public ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
         {
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
             return this;
         }
 
-        public ICanSpecifyActiveMQBroker UsingQueueFor<TMessage>() where TMessage : IMessage
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> UsingQueueFor<T>() where T : TMessage
         {
             _queueTypes.Add(typeof(TMessage));
             return this;
