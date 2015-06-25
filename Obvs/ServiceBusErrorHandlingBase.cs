@@ -13,7 +13,7 @@ namespace Obvs
         where TRequest : TMessage
         where TResponse : TMessage
     {
-        private readonly Subject<Exception> _exceptions;
+        protected readonly Subject<Exception> _exceptions;
 
         protected ServiceBusErrorHandlingBase()
         {

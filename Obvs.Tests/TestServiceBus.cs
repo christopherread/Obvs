@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
+using Microsoft.Reactive.Testing;
 using NUnit.Framework;
 using Obvs.Configuration;
 using Obvs.Types;
@@ -1003,25 +1005,276 @@ namespace Obvs.Tests
             serviceBus.Exceptions.Subscribe(exceptions.Add);
 
             // trigger exception
-            serviceBus.PublishAsync(new TestServiceMessage1());
+            serviceBus.PublishAsync(new TestServiceEvent1());
 
-            TestServiceMessage2 message1 = new TestServiceMessage2();
+            TestServiceEvent2 message1 = new TestServiceEvent2();
             serviceBus.PublishAsync(message1);
 
             // trigger another exception
-            serviceBus.PublishAsync(new TestServiceMessage1());
+            serviceBus.PublishAsync(new TestServiceEvent1());
 
-            TestServiceMessage2 message2 = new TestServiceMessage2();
+            TestServiceEvent2 message2 = new TestServiceEvent2();
             serviceBus.PublishAsync(message2);
 
             Assert.That(exceptions.Count(), Is.EqualTo(2));
             Assert.That(messages.Contains(message1), "message1 not received");
             Assert.That(messages.Contains(message2), "message2 not received");
         }
+
+        [Test]
+        public void ShouldSendAllMessagesToSubscribers()
+        {
+            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
+            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
+
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
+                .UsingConsoleLogging().Create();
+
+            ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
+            serviceBus.Exceptions.Subscribe(exceptions.Add);
+
+            FakeSubscriber subscriber = new FakeSubscriber();
+
+            var testScheduler = new TestScheduler();
+            var subscription = serviceBus.Subscribe(subscriber, testScheduler);
+
+            serviceBus.PublishAsync(new TestServiceEvent1());
+            testScheduler.AdvanceBy(1);
+
+            serviceBus.PublishAsync(new TestServiceEvent2());
+            testScheduler.AdvanceBy(1);
+
+            serviceBus.SendAsync(new TestServiceCommand1());
+            testScheduler.AdvanceBy(1);
+
+            serviceBus.SendAsync(new TestServiceCommand2());
+            testScheduler.AdvanceBy(1);
+
+            subscription.Dispose();
+
+            Assert.That(exceptions.Count(), Is.EqualTo(0));
+            Assert.That(subscriber.Received.Count(), Is.EqualTo(4));
+            Assert.That(subscriber.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
+            Assert.That(subscriber.Received[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
+            Assert.That(subscriber.Received[2].GetType(), Is.EqualTo(typeof(TestServiceCommand1)));
+            Assert.That(subscriber.Received[3].GetType(), Is.EqualTo(typeof(TestServiceCommand2)));
+        }
+        
+        [Test]
+        public void ShouldEmitSubscriberExceptionsOnExceptionObservable()
+        {
+            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
+            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
+
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
+                .UsingConsoleLogging().Create();
+
+            ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
+            serviceBus.Exceptions.Subscribe(exceptions.Add);
+
+            FakeSubscriber subscriber = new FakeSubscriber();
+
+            var testScheduler = new TestScheduler();
+            var subscription = serviceBus.Subscribe(subscriber, testScheduler);
+
+            subscriber.ThrowExceptions = true;
+            serviceBus.PublishAsync(new TestServiceEvent1());
+            testScheduler.AdvanceBy(1);
+
+            serviceBus.PublishAsync(new TestServiceEvent2());
+            testScheduler.AdvanceBy(1);
+
+            serviceBus.SendAsync(new TestServiceCommand1());
+            testScheduler.AdvanceBy(1);
+
+            serviceBus.SendAsync(new TestServiceCommand2());
+            testScheduler.AdvanceBy(1);
+
+            subscription.Dispose();
+
+            Assert.That(exceptions.Count(), Is.EqualTo(4));
+            Assert.That(subscriber.Received.Count(), Is.EqualTo(0));
+        }
+
+        [Test, ExpectedException(typeof(ArgumentException))]
+        public void ShouldThrowExceptionIfAlreadySubscribed()
+        {
+            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
+            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
+
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
+                .UsingConsoleLogging().Create();
+
+            FakeSubscriber subscriber = new FakeSubscriber();
+
+            serviceBus.Subscribe(subscriber);
+            serviceBus.Subscribe(subscriber);
+        }
+        
+        [Test]
+        public void ShouldNotDeliverMessagesToSubscriberAfterSubscriptionDisposed()
+        {
+            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
+            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
+
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
+                .UsingConsoleLogging().Create();
+
+            var subscriber = new FakeSubscriber();
+            var testScheduler = new TestScheduler();
+            var subscription = serviceBus.Subscribe(subscriber, testScheduler);
+
+            serviceEndpoint1.Messages.OnNext(new TestServiceEvent1());
+            testScheduler.AdvanceBy(1);
+
+            subscription.Dispose();
+
+            serviceEndpoint1.Messages.OnNext(new TestServiceEvent2());
+            testScheduler.AdvanceBy(1);
+
+            Assert.That(subscriber.Received.Count(), Is.EqualTo(1));
+            Assert.That(subscriber.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
+        }
+        
+        [Test, ExpectedException(typeof(ArgumentNullException))]
+        public void ShouldThrowExceptionIfSubscriberIsNull()
+        {
+            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
+            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
+
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
+                .UsingConsoleLogging().Create();
+
+            serviceBus.Subscribe(null);
+        }
+        
+        [Test, ExpectedException(typeof(ArgumentException))]
+        public void ShouldThrowExceptionIfSubscriberHasNoValidMessageHandlers()
+        {
+            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
+            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
+
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
+                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
+                .UsingConsoleLogging().Create();
+
+            serviceBus.Subscribe(new object());
+        }
+        
+        [Test]
+        public void ShouldSendAllMessagesToClientSubscribers()
+        {
+            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
+            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
+
+            IServiceBusClient serviceBusClient = ServiceBus.Configure()
+                .WithEndpoint((IServiceEndpointClient)serviceEndpoint1)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
+                .WithEndpoint((IServiceEndpointClient)serviceEndpoint2)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
+                .UsingConsoleLogging().CreateClient();
+
+            ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
+            serviceBusClient.Exceptions.Subscribe(exceptions.Add);
+
+            FakeSubscriber subscriber = new FakeSubscriber();
+
+            var testScheduler = new TestScheduler();
+            var subscription = serviceBusClient.Subscribe(subscriber, testScheduler);
+
+            serviceEndpoint1.Messages.OnNext(new TestServiceEvent1());
+            testScheduler.AdvanceBy(1);
+
+            serviceEndpoint1.Messages.OnNext(new TestServiceEvent2());
+            testScheduler.AdvanceBy(1);
+
+            serviceEndpoint1.Messages.OnNext(new TestServiceEventBase());
+            testScheduler.AdvanceBy(1);
+
+            subscription.Dispose();
+
+            Assert.That(exceptions.Count(), Is.EqualTo(0));
+            Assert.That(subscriber.Received.Count(), Is.EqualTo(3));
+            Assert.That(subscriber.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
+            Assert.That(subscriber.Received[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
+            Assert.That(subscriber.Received[2].GetType(), Is.EqualTo(typeof(TestServiceEventBase)));
+        }
     }
 
     public interface ITestServiceMessage1 : IMessage {}
     public interface ITestServiceMessage2 : IMessage {}
-    public class TestServiceMessage2 : ITestServiceMessage2, IEvent { }
-    public class TestServiceMessage1 : ITestServiceMessage1, IEvent { }
+    public class TestServiceEvent1 : ITestServiceMessage1, IEvent { }
+    public class TestServiceEvent2 : TestServiceEventBase { }
+    public class TestServiceCommand1 : ITestServiceMessage1, ICommand { }
+    public class TestServiceCommand2 : TestServiceCommandBase { }
+    public class TestServiceCommandBase : ITestServiceMessage2, ICommand { }
+    public class TestServiceEventBase : ITestServiceMessage2, IEvent { }
+
+    public class FakeSubscriber
+    {
+        public readonly List<IMessage> Received = new List<IMessage>();
+        public bool ThrowExceptions { get; set; }
+
+        public void OnEvent(TestServiceEvent1 message)
+        {
+            Handle(message);
+        }
+
+        public void OnEvent(TestServiceEvent2 message)
+        {
+            Handle(message);
+        }
+
+        public void OnEvent(TestServiceEventBase message)
+        {
+            Handle(message);
+        }
+
+        public void OnCommand(TestServiceCommand1 message)
+        {
+            Handle(message);
+        }
+
+        public void OnCommand(TestServiceCommand2 message)
+        {
+            Handle(message);
+        }
+
+        public void OnCommand(TestServiceCommandBase message)
+        {
+            Handle(message);
+        }
+
+        private void Handle(IMessage message)
+        {
+            if (ThrowExceptions)
+            {
+                throw new Exception("ThrowExceptions set to True");
+            }
+            Received.Add(message);
+        }
+    }
 }

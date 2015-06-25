@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Threading.Tasks;
 using Obvs.Configuration;
-
+using Obvs.Extensions;
 using Obvs.Types;
 
 namespace Obvs
@@ -75,6 +79,11 @@ namespace Obvs
         public IObservable<Exception> Exceptions
         {
             get { return _serviceBus.Exceptions; }
+        }
+
+        public IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
+        {
+            return _serviceBus.Subscribe(subscriber, scheduler);
         }
 
         public IObservable<IRequest> Requests
@@ -189,6 +198,11 @@ namespace Obvs
             {
                 endpoint.Dispose();
             }
+        }
+
+        public override IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
+        {
+            return Subscribe<TCommand, TEvent>(subscriber, Commands.Select(c => c as TMessage).Merge(Events), scheduler);
         }
     }
 }

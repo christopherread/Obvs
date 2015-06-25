@@ -8,7 +8,7 @@ namespace Obvs.Tests
 {
     public class FakeServiceEndpoint : IServiceEndpointClient, IServiceEndpoint
     {
-        private readonly Subject<IMessage> _subject = new Subject<IMessage>();
+        public readonly Subject<IMessage> Messages = new Subject<IMessage>();
         private readonly Type _serviceType;
         public bool ThrowException { private get; set; }
 
@@ -29,14 +29,14 @@ namespace Obvs.Tests
 
         public Task SendAsync(ICommand command)
         {
-            _subject.OnNext(command);
+            Messages.OnNext(command);
             return Task.FromResult(true);
         }
 
         public IObservable<IResponse> GetResponses(IRequest request)
         {
             return Observable.Create<IResponse>(observer =>
-                _subject.OfType<IResponse>().Where(response => response.RequestId == request.RequestId && response.RequesterId == request.RequesterId).Select(ev =>
+                Messages.OfType<IResponse>().Where(response => response.RequestId == request.RequestId && response.RequesterId == request.RequesterId).Select(ev =>
                 {
                     if (ThrowException)
                     {
@@ -51,7 +51,7 @@ namespace Obvs.Tests
             get
             {
                 return Observable.Create<IEvent>(observer =>
-                    _subject.OfType<IEvent>().Select(ev =>
+                    Messages.OfType<IEvent>().Select(ev =>
                     {
                         if (ThrowException)
                         {
@@ -67,7 +67,7 @@ namespace Obvs.Tests
             get
             {
                 return Observable.Create<IRequest>(observer =>
-                    _subject.OfType<IRequest>().Select(request =>
+                    Messages.OfType<IRequest>().Select(request =>
                     {
                         if (ThrowException)
                         {
@@ -83,7 +83,7 @@ namespace Obvs.Tests
             get
             {
                 return Observable.Create<ICommand>(observer =>
-                    _subject.OfType<ICommand>().Select(command =>
+                    Messages.OfType<ICommand>().Select(command =>
                     {
                         if (ThrowException)
                         {
@@ -96,7 +96,7 @@ namespace Obvs.Tests
 
         public Task PublishAsync(IEvent ev)
         {
-            _subject.OnNext(ev);
+            Messages.OnNext(ev);
             return Task.FromResult(true);
         }
 
@@ -104,13 +104,13 @@ namespace Obvs.Tests
         {
             response.RequestId = request.RequestId;
             response.RequesterId = request.RequesterId;
-            _subject.OnNext(response);
+            Messages.OnNext(response);
             return Task.FromResult(true);
         }
 
         public void Dispose()
         {
-            _subject.Dispose();
+            Messages.Dispose();
         }
     }
 }

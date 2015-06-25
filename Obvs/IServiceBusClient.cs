@@ -1,8 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Threading.Tasks;
+using Obvs.Extensions;
 using Obvs.Types;
 
 namespace Obvs
@@ -27,6 +32,8 @@ namespace Obvs
         IObservable<T> GetResponses<T>(TRequest request) where T : TResponse;
 
         IObservable<Exception> Exceptions { get; }
+
+        IDisposable Subscribe(object subscriber, IScheduler scheduler = null);
     }
 
     public class ServiceBusClient : IServiceBusClient, IDisposable
@@ -68,6 +75,11 @@ namespace Obvs
             get { return _serviceBusClient.Exceptions; }
         }
 
+        public IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
+        {
+            return _serviceBusClient.Subscribe(subscriber, scheduler);
+        }
+
         public void Dispose()
         {
             ((IDisposable)_serviceBusClient).Dispose();
@@ -84,12 +96,14 @@ namespace Obvs
         private readonly IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> _endpointClients;
         private readonly IObservable<TEvent> _events;
         private readonly IRequestCorrelationProvider<TRequest, TResponse> _requestCorrelationProvider;
+        private readonly List<KeyValuePair<object, IObservable<TMessage>>> _subscribers;
 
         public ServiceBusClient(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider)
         {
             _endpointClients = endpointClients.ToArray();
             _events = _endpointClients.Select(EventsWithErroHandling).Merge().Publish().RefCount();
             _requestCorrelationProvider = requestCorrelationProvider;
+            _subscribers = new List<KeyValuePair<object, IObservable<TMessage>>>();
         }
 
         public IObservable<TEvent> Events
@@ -143,6 +157,82 @@ namespace Obvs
         {
             IObservable<TResponse> observable = GetResponses(request);
             return observable.OfType<T>();
+        }
+
+        public virtual IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
+        {
+            return Subscribe<TEvent, TEvent>(subscriber, Events, scheduler);
+        }
+
+        protected IDisposable Subscribe<T1, T2>(object subscriber, IObservable<TMessage> messages, IScheduler scheduler = null)
+        {
+            if (subscriber == null)
+            {
+                throw new ArgumentNullException("subscriber");
+            }
+
+            IObservable<TMessage> observable;
+            lock (_subscribers)
+            {
+                if (_subscribers.Any(sub => sub.Key == subscriber))
+                {
+                    throw new ArgumentException("Already subscribed", "subscriber");
+                }
+                observable = messages.ObserveOn(scheduler ?? Scheduler.Default);
+                _subscribers.Add(new KeyValuePair<object, IObservable<TMessage>>(subscriber, observable));
+            }
+
+            var subscriberType = subscriber.GetType();
+            var methodHandlers = subscriberType.GetSubscriberMethods<T1, T2>();
+
+            var subscription = new CompositeDisposable();
+            foreach (var methodHandler in methodHandlers)
+            {
+                Action<object, TMessage> onMessage = CreateSubscriberDelegate(subscriberType, methodHandler.Key);
+                var paramType = methodHandler.Value;
+
+                subscription.Add(observable
+                    .Where(message => paramType.IsInstanceOfType(message))
+                    .Subscribe(message =>
+                    {
+                        try
+                        {
+                            onMessage(subscriber, message);
+                        }
+                        catch (Exception exception)
+                        {
+                            _exceptions.OnNext(exception);
+                        }
+                    }));
+            }
+
+            if (!subscription.Any())
+            {
+                throw new ArgumentException("Subscriber needs at least one public method of format 'void MethodName(TMessage msg)'", "subscriber");
+            }
+
+            subscription.Add(Disposable.Create(() =>
+            {
+                lock (_subscribers)
+                {
+                    _subscribers.RemoveAll(sub => sub.Key == subscriber);
+                }
+            }));
+
+            return subscription;
+        }
+
+        private Action<object, TMessage> CreateSubscriberDelegate(Type subscriberType, MethodInfo methodInfo)
+        {
+            DynamicMethod shim = new DynamicMethod(subscriberType.Name + methodInfo.Name, typeof(void), new[] { typeof(object), typeof(TMessage) }, GetType());
+            ILGenerator il = shim.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0); // Load subscriber
+            il.Emit(OpCodes.Ldarg_1); // Load parameter
+            il.Emit(OpCodes.Call, methodInfo); // Invoke method
+            il.Emit(OpCodes.Ret); // void return
+
+            return (Action<object, TMessage>)shim.CreateDelegate(typeof(Action<object, TMessage>));
         }
 
         private IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> EndpointsThatCanHandle(TMessage message)
