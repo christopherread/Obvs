@@ -75,7 +75,7 @@ namespace Obvs.ActiveMQ
         {
             if (_disposable == null)
             {
-                _session = _connection.Value.CreateSession(AcknowledgementMode.AutoAcknowledge);
+                _session = _connection.Value.CreateSession(Apache.NMS.AcknowledgementMode.AutoAcknowledge);
                 _producer = _session.CreateProducer(_destination);
 
                 _disposable = Disposable.Create(() =>

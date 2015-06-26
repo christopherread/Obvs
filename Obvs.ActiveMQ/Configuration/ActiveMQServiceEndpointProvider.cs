@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reflection;
@@ -21,7 +22,7 @@ namespace Obvs.ActiveMQ.Configuration
     {
         private readonly IMessageSerializer _serializer;
         private readonly IMessageDeserializerFactory _deserializerFactory;
-        private readonly List<Type> _queueTypes;
+        private readonly List<Tuple<Type, AcknowledgementMode>> _queueTypes;
         private readonly Func<Assembly, bool> _assemblyFilter;
         private readonly Func<Type, bool> _typeFilter;
         private readonly IScheduler _scheduler;
@@ -30,7 +31,7 @@ namespace Obvs.ActiveMQ.Configuration
 
         public ActiveMQServiceEndpointProvider(string serviceName, string brokerUri, 
                                                IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory,
-                                               List<Type> queueTypes, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
+                                               List<Tuple<Type, AcknowledgementMode>> queueTypes, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
             : base(serviceName)
         {
             _serializer = serializer;
@@ -51,8 +52,8 @@ namespace Obvs.ActiveMQ.Configuration
         {
             return new DisposingServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
                 new ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                    DestinationFactory.CreateSource<TRequest, TServiceMessage>(_endpointConnection, RequestsDestination, GetDestinationType<TRequest>(), _deserializerFactory, _assemblyFilter, _typeFilter),
-                    DestinationFactory.CreateSource<TCommand, TServiceMessage>(_endpointConnection, CommandsDestination, GetDestinationType<TCommand>(), _deserializerFactory, _assemblyFilter, _typeFilter),
+                    DestinationFactory.CreateSource<TRequest, TServiceMessage>(_endpointConnection, RequestsDestination, GetDestinationType<TRequest>(), _deserializerFactory, _assemblyFilter, _typeFilter, null, GetAcknowledgementMode<TRequest>()),
+                    DestinationFactory.CreateSource<TCommand, TServiceMessage>(_endpointConnection, CommandsDestination, GetDestinationType<TCommand>(), _deserializerFactory, _assemblyFilter, _typeFilter, null, GetAcknowledgementMode<TCommand>()),
                     DestinationFactory.CreatePublisher<TEvent>(_endpointConnection, EventsDestination, GetDestinationType<TEvent>(), _serializer, _scheduler),
                     DestinationFactory.CreatePublisher<TResponse>(_endpointConnection, ResponsesDestination, GetDestinationType<TResponse>(), _serializer, _scheduler),
                     typeof(TServiceMessage)), 
@@ -63,8 +64,8 @@ namespace Obvs.ActiveMQ.Configuration
         {
             return new DisposingServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
                 new ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                    DestinationFactory.CreateSource<TEvent, TServiceMessage>(_endpointClientConnection, EventsDestination, GetDestinationType<TEvent>(), _deserializerFactory, _assemblyFilter, _typeFilter),
-                    DestinationFactory.CreateSource<TResponse, TServiceMessage>(_endpointClientConnection, ResponsesDestination, GetDestinationType<TResponse>(), _deserializerFactory, _assemblyFilter, _typeFilter),
+                    DestinationFactory.CreateSource<TEvent, TServiceMessage>(_endpointClientConnection, EventsDestination, GetDestinationType<TEvent>(), _deserializerFactory, _assemblyFilter, _typeFilter, null, GetAcknowledgementMode<TEvent>()),
+                    DestinationFactory.CreateSource<TResponse, TServiceMessage>(_endpointClientConnection, ResponsesDestination, GetDestinationType<TResponse>(), _deserializerFactory, _assemblyFilter, _typeFilter, null, GetAcknowledgementMode<TResponse>()),
                     DestinationFactory.CreatePublisher<TRequest>(_endpointClientConnection, RequestsDestination, GetDestinationType<TRequest>(), _serializer, _scheduler),
                     DestinationFactory.CreatePublisher<TCommand>(_endpointClientConnection, CommandsDestination, GetDestinationType<TCommand>(), _serializer, _scheduler),
                     typeof(TServiceMessage)),
@@ -73,7 +74,12 @@ namespace Obvs.ActiveMQ.Configuration
 
         private DestinationType GetDestinationType<T>() where T : TMessage
         {
-            return _queueTypes.Contains(typeof (T)) ? DestinationType.Queue : DestinationType.Topic;
+            return _queueTypes.Any(q => q.Item1 == typeof (T)) ? DestinationType.Queue : DestinationType.Topic;
+        }
+
+        private AcknowledgementMode GetAcknowledgementMode<T>() where T : TMessage
+        {
+            return _queueTypes.Where(q => q.Item1 == typeof (T)).Select(q => q.Item2).FirstOrDefault();
         }
 
         private static IDisposable GetConnectionDisposable(Lazy<IConnection> lazyConnection)

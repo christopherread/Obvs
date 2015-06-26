@@ -14,26 +14,21 @@ namespace Obvs.ActiveMQ
         where TMessage : class
     {
         private readonly string _selector;
-       
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly IDestination _destination;
-        private readonly AcknowledgementMode _mode;
+        private readonly Apache.NMS.AcknowledgementMode _mode;
         private readonly Lazy<IConnection> _lazyConnection;
 
-        public MessageSource(Lazy<IConnection> lazyConnection, IEnumerable<IMessageDeserializer<TMessage>> deserializers, IDestination destination, AcknowledgementMode mode)
+        public MessageSource(Lazy<IConnection> lazyConnection,
+            IEnumerable<IMessageDeserializer<TMessage>> deserializers, 
+            IDestination destination,
+            AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge, 
+            string selector = null)
         {
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
             _lazyConnection = lazyConnection;
             _destination = destination;
-            _mode = mode;
-        }
-
-        public MessageSource(Lazy<IConnection> connection,
-            IEnumerable<IMessageDeserializer<TMessage>> deserializers, 
-            IDestination destination,
-            AcknowledgementMode mode, string selector)
-            : this(connection, deserializers, destination, mode)
-        {
+            _mode = mode == AcknowledgementMode.ClientAcknowledge ? Apache.NMS.AcknowledgementMode.ClientAcknowledge : Apache.NMS.AcknowledgementMode.AutoAcknowledge;
             _selector = selector;
         }
 
@@ -67,7 +62,9 @@ namespace Obvs.ActiveMQ
 
         private TMessage Deserialize(IMessage message)
         {
-            IMessageDeserializer<TMessage> deserializer = HasTypeName(message) ? _deserializers[GetTypeName(message)] : _deserializers.Values.Single();
+            IMessageDeserializer<TMessage> deserializer = HasTypeName(message)
+                ? _deserializers[GetTypeName(message)]
+                : _deserializers.Values.Single();
 
             TMessage deserializedMessage = default(TMessage);
 
@@ -84,6 +81,7 @@ namespace Obvs.ActiveMQ
                     deserializedMessage = deserializer.Deserialize(bytesMessage.Content);
                 }
             }
+
             Acknowledge(message);
 
             return deserializedMessage;
@@ -101,7 +99,7 @@ namespace Obvs.ActiveMQ
 
         private void Acknowledge(IMessage message)
         {
-            if (_mode != AcknowledgementMode.AutoAcknowledge)
+            if (_mode !=  Apache.NMS.AcknowledgementMode.AutoAcknowledge)
             {
                 message.Acknowledge();
             }

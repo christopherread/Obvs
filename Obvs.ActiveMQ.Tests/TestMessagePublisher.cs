@@ -75,7 +75,7 @@ namespace Obvs.ActiveMQ.Tests
             _message = A.Fake<ITextMessage>();
             _messagePropertyProvider = A.Fake<IMessagePropertyProvider<IMessage>>();
 
-            A.CallTo(() => _connection.CreateSession(A<AcknowledgementMode>.Ignored)).Returns(_session);
+            A.CallTo(() => _connection.CreateSession(A<Apache.NMS.AcknowledgementMode>.Ignored)).Returns(_session);
             A.CallTo(() => _session.CreateProducer(_destination)).Returns(_producer);
             A.CallTo(() => _session.CreateTextMessage(A<string>._)).Returns(_message);
             A.CallTo(() => _serializer.Serialize(A<object>._)).Returns("SerializedString");
@@ -200,14 +200,12 @@ namespace Obvs.ActiveMQ.Tests
                 new MessageSource<IMessage>(
                     lazyConnection,
                     deserializers,
-                    new ActiveMQTopic(topicName1),
-                    AcknowledgementMode.AutoAcknowledge),
+                    new ActiveMQTopic(topicName1)),
 
                 new MessageSource<IMessage>(
                     lazyConnection,
                     deserializers,
-                    new ActiveMQTopic(topicName2),
-                    AcknowledgementMode.AutoAcknowledge)
+                    new ActiveMQTopic(topicName2))
             });
 
             source.Messages.Subscribe(Console.WriteLine);

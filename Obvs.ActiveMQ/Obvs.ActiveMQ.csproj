@@ -58,6 +58,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AcknowledgementMode.cs" />
     <Compile Include="Configuration\ActiveMQConfigExtensions.cs" />
     <Compile Include="Configuration\ActiveMQServiceEndpointProvider.cs" />
     <Compile Include="Configuration\ConnectionClientId.cs" />

@@ -49,7 +49,7 @@ namespace Obvs.ActiveMQ.Tests
             _destination = A.Fake<IDestination>();
             _acknowledgementMode = AcknowledgementMode.AutoAcknowledge;
 
-            A.CallTo(() => _connection.CreateSession(A<AcknowledgementMode>.Ignored)).Returns(_session);
+            A.CallTo(() => _connection.CreateSession(A<Apache.NMS.AcknowledgementMode>.Ignored)).Returns(_session);
             A.CallTo(() => _session.CreateConsumer(_destination)).Returns(_consumer);
 
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
@@ -69,7 +69,7 @@ namespace Obvs.ActiveMQ.Tests
         {
             _source.Messages.Subscribe(_observer);
 
-            A.CallTo(() => _connection.CreateSession(_acknowledgementMode)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _connection.CreateSession(_acknowledgementMode == AcknowledgementMode.ClientAcknowledge ? Apache.NMS.AcknowledgementMode.ClientAcknowledge : Apache.NMS.AcknowledgementMode.AutoAcknowledge)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => _session.CreateConsumer(_destination)).MustHaveHappened(Repeated.Exactly.Once);
 
             A.CallTo(_consumer).Where(x => x.Method.Name.Equals("add_Listener")).MustHaveHappened();
@@ -92,7 +92,7 @@ namespace Obvs.ActiveMQ.Tests
         public void ShouldNotAcknowledgeMessagesIfInvalid()
         {
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
-                AcknowledgementMode.IndividualAcknowledge);
+                AcknowledgementMode.ClientAcknowledge);
 
             Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
             ITextMessage textMessage = A.Fake<ITextMessage>();
@@ -108,7 +108,7 @@ namespace Obvs.ActiveMQ.Tests
         public void ShouldAcknowledgeMessagesIfValid()
         {
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
-                AcknowledgementMode.IndividualAcknowledge);
+                AcknowledgementMode.ClientAcknowledge);
 
             Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
             ITextMessage textMessage = A.Fake<ITextMessage>();

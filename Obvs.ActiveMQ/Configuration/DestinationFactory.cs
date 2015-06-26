@@ -25,7 +25,7 @@ namespace Obvs.ActiveMQ.Configuration
                 timeToLive);
         }
 
-        public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(Lazy<IConnection> lazyConnection, string destination, DestinationType destinationType, IMessageDeserializerFactory deserializerFactory, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null, string selector = null)
+        public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(Lazy<IConnection> lazyConnection, string destination, DestinationType destinationType, IMessageDeserializerFactory deserializerFactory, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null, string selector = null, AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge)
             where TMessage : class
             where TServiceMessage : class
         {
@@ -33,7 +33,7 @@ namespace Obvs.ActiveMQ.Configuration
                 lazyConnection,
                 deserializerFactory.Create<TMessage, TServiceMessage>(assemblyFilter, typeFilter),
                 CreateDestination(destination, destinationType),
-                AcknowledgementMode.AutoAcknowledge,
+                mode,
                 selector);
         }
 

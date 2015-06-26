@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ActiveMq">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\ActiveMq.dll</HintPath>
+    </Reference>
     <Reference Include="Apache.NMS, Version=1.7.0.3635, Culture=neutral, PublicKeyToken=82756feee3957618, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Apache.NMS.1.7.0\lib\net40\Apache.NMS.dll</HintPath>
@@ -38,9 +41,60 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Apache.NMS.ActiveMQ.1.7.0\lib\net40\Apache.NMS.ActiveMQ.dll</HintPath>
     </Reference>
+    <Reference Include="EmbedMq">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\EmbedMq.dll</HintPath>
+    </Reference>
     <Reference Include="FakeItEasy, Version=1.25.2.0, Culture=neutral, PublicKeyToken=eff28e2146d5fd2c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\FakeItEasy.1.25.2\lib\net40\FakeItEasy.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.AWT.WinForms">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.AWT.WinForms.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Beans">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.Beans.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Charsets">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.Charsets.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Corba">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.Corba.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Core">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Management">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.Management.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Media">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.Media.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Naming">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.Naming.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Remoting">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.Remoting.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Security">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.Security.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.SwingAWT">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.SwingAWT.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Text">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.Text.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Util">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.Util.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.XML.API">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.OpenJDK.XML.API.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.Runtime">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.Runtime.JNI">
+      <HintPath>..\packages\EmbedMq.5.10.0.2\lib\net40\IKVM.Runtime.JNI.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Reactive.Testing">
       <HintPath>..\packages\Rx-Testing.2.2.5\lib\net45\Microsoft.Reactive.Testing.dll</HintPath>
@@ -58,9 +112,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\NUnit.2.6.2\lib\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs, Version=2.0.0.9, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs, Version=2.0.0.13, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.2.0.0.9-pre1\lib\net45\Obvs.dll</HintPath>
+      <HintPath>..\packages\Obvs.2.0.0.13-pre1\lib\net45\Obvs.dll</HintPath>
     </Reference>
     <Reference Include="Obvs.Serialization.Json, Version=2.0.0.9, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

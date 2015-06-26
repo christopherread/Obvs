@@ -23,7 +23,7 @@ namespace Obvs.ActiveMQ.Configuration
         where TRequest : class, TMessage
         where TResponse : class, TMessage
     {
-        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> UsingQueueFor<T>() where T : TMessage;
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> UsingQueueFor<T>(AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge) where T : TMessage;
     }
 
     public interface ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanSpecifyActiveMQQueue<TMessage, TCommand, TEvent, TRequest, TResponse>
@@ -53,7 +53,7 @@ namespace Obvs.ActiveMQ.Configuration
         private string _brokerUri;
         private IMessageSerializer _serializer;
         private IMessageDeserializerFactory _deserializerFactory;
-        private readonly List<Type> _queueTypes = new List<Type>();
+        private readonly List<Tuple<Type, AcknowledgementMode>> _queueTypes = new List<Tuple<Type, AcknowledgementMode>>();
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _typeFilter;
 
@@ -108,9 +108,9 @@ namespace Obvs.ActiveMQ.Configuration
             return this;
         }
 
-        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> UsingQueueFor<T>() where T : TMessage
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> UsingQueueFor<T>(AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge) where T : TMessage
         {
-            _queueTypes.Add(typeof(TMessage));
+            _queueTypes.Add(new Tuple<Type, AcknowledgementMode>(typeof(TMessage), mode));
             return this;
         }
     }
