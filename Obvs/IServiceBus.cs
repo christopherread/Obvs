@@ -198,7 +198,7 @@ namespace Obvs
 
         public override IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
         {
-            IObservable<TMessage> messages = Commands.Select(c => c as TMessage).Merge(Events).Merge(Requests);
+            IObservable<TMessage> messages = (Commands as IObservable<TMessage>).Merge(Events);
             Action<TRequest, TResponse> reply = (request, response) => ReplyAsync(request, response);
 
             return Subscribe(subscriber, messages, scheduler, Requests, reply);
