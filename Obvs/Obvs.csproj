@@ -59,6 +59,9 @@
     <Compile Include="Logging\ILoggerFactory.cs" />
     <Compile Include="IMessageBus.cs" />
     <Compile Include="IMessageConverter.cs" />
+    <Compile Include="MessageProperties\FuncMessagePropertyProvider.cs" />
+    <Compile Include="MessageProperties\CompositeMessagePropertyProvider.cs" />
+    <Compile Include="MessageProperties\MessagePropertyProviderConfigurationExtensions.cs" />
     <Compile Include="Serialization\IMessageDeserializerFactory.cs" />
     <Compile Include="MessageProperties\IMessagePropertyProvider.cs" />
     <Compile Include="IMessagePublisher.cs" />

@@ -1,6 +1,8 @@
 using System;
 using Obvs.Logging;
+using Obvs.MessageProperties;
 using Obvs.Serialization;
+using Obvs.Types;
 
 namespace Obvs.Configuration
 {
@@ -51,5 +53,10 @@ namespace Obvs.Configuration
         ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClient();
         ICanAddEndpointOrLoggingOrCorrelationOrCreate AsServer();
         ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClientAndServer();
+    }
+
+    public interface ICanSpecifyPropertyProviders : ICanSpecifyEndpointSerializers
+    {
+        ICanSpecifyEndpointSerializers UsingMessagePropertyProviderFor<TMessage>(IMessagePropertyProvider<TMessage> provider) where TMessage : IMessage;
     }
 }
