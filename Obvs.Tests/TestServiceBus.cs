@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
 using Microsoft.Reactive.Testing;
@@ -1032,7 +1033,8 @@ namespace Obvs.Tests
                 .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
                 .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
                 .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
-                .UsingConsoleLogging().Create();
+                .UsingConsoleLogging()
+                .Create();
 
             ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
             serviceBus.Exceptions.Subscribe(exceptions.Add);
@@ -1054,14 +1056,18 @@ namespace Obvs.Tests
             serviceBus.SendAsync(new TestServiceCommand2());
             testScheduler.AdvanceBy(1);
 
+            serviceEndpoint1.Messages.OnNext(new TestServiceRequest1());
+            testScheduler.AdvanceBy(1);
+
             subscription.Dispose();
 
             Assert.That(exceptions.Count(), Is.EqualTo(0));
-            Assert.That(subscriber.Received.Count(), Is.EqualTo(4));
+            Assert.That(subscriber.Received.Count(), Is.EqualTo(5));
             Assert.That(subscriber.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
             Assert.That(subscriber.Received[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
             Assert.That(subscriber.Received[2].GetType(), Is.EqualTo(typeof(TestServiceCommand1)));
             Assert.That(subscriber.Received[3].GetType(), Is.EqualTo(typeof(TestServiceCommand2)));
+            Assert.That(subscriber.Received[4].GetType(), Is.EqualTo(typeof(TestServiceRequest1)));
         }
         
         [Test]
@@ -1232,6 +1238,11 @@ namespace Obvs.Tests
     public class TestServiceCommand2 : TestServiceCommandBase { }
     public class TestServiceCommandBase : ITestServiceMessage2, ICommand { }
     public class TestServiceEventBase : ITestServiceMessage2, IEvent { }
+    public class TestServiceRequest1 : ITestServiceMessage1, IRequest 
+    {
+        public string RequestId { get; set; }
+        public string RequesterId { get; set; }
+    }
 
     public class FakeSubscriber
     {
@@ -1266,6 +1277,12 @@ namespace Obvs.Tests
         public void OnCommand(TestServiceCommandBase message)
         {
             Handle(message);
+        }
+
+        public IObservable<IResponse> OnRequest(TestServiceRequest1 request)
+        {
+            Handle(request);
+            return Observable.Empty<IResponse>();
         }
 
         private void Handle(IMessage message)

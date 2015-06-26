@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
@@ -161,10 +162,10 @@ namespace Obvs
 
         public virtual IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
         {
-            return Subscribe<TEvent, TEvent>(subscriber, Events, scheduler);
+            return Subscribe(subscriber, Events, scheduler);
         }
 
-        protected IDisposable Subscribe<T1, T2>(object subscriber, IObservable<TMessage> messages, IScheduler scheduler = null)
+        protected IDisposable Subscribe(object subscriber, IObservable<TMessage> messages, IScheduler scheduler = null, IObservable<TMessage> requests = null, Action<TRequest, TResponse> reply = null)
         {
             if (subscriber == null)
             {
@@ -172,24 +173,46 @@ namespace Obvs
             }
 
             IObservable<TMessage> observable;
+            scheduler = scheduler ?? Scheduler.Default;
+
             lock (_subscribers)
             {
                 if (_subscribers.Any(sub => sub.Key == subscriber))
                 {
                     throw new ArgumentException("Already subscribed", "subscriber");
                 }
-                observable = messages.ObserveOn(scheduler ?? Scheduler.Default);
+                observable = messages;
+                if (requests != null)
+                {
+                    observable = observable.Merge(requests);
+                }
+                observable = observable.ObserveOn(scheduler);
                 _subscribers.Add(new KeyValuePair<object, IObservable<TMessage>>(subscriber, observable));
             }
 
             var subscriberType = subscriber.GetType();
-            var methodHandlers = subscriberType.GetSubscriberMethods<T1, T2>();
-
+            var methodHandlers = subscriberType.GetSubscriberMethods<TCommand, TEvent, TRequest, TResponse>();
+            
             var subscription = new CompositeDisposable();
             foreach (var methodHandler in methodHandlers)
             {
-                Action<object, TMessage> onMessage = CreateSubscriberDelegate(subscriberType, methodHandler.Key);
-                var paramType = methodHandler.Value;
+                var methodInfo = methodHandler.Item1;
+                var paramType = methodHandler.Item2;
+                var returnType = methodHandler.Item3;
+                var isVoidReturn = returnType == typeof (void);
+                bool hasReplyAction = reply != null;
+
+                Action<object, TMessage> onMessage = null;
+                Func<object, TRequest, IObservable<TResponse>> onRequest = null;
+
+                if (isVoidReturn)
+                {
+                    onMessage = CreateSubscriberAction(subscriberType, methodInfo);
+                }
+                else if (hasReplyAction)
+                {
+                    onRequest = CreateSubscriberFunc(subscriberType, methodInfo);
+                }
 
                 subscription.Add(observable
                     .Where(message => paramType.IsInstanceOfType(message))
@@ -197,7 +220,15 @@ namespace Obvs
                     {
                         try
                         {
-                            onMessage(subscriber, message);
+                            if (isVoidReturn)
+                            {
+                                onMessage(subscriber, message);
+                            }
+                            else if (hasReplyAction)
+                            {
+                                var request = message as TRequest;
+                                onRequest(subscriber, request).Subscribe(response => reply(request, response));
+                            }
                         }
                         catch (Exception exception)
                         {
@@ -222,7 +253,7 @@ namespace Obvs
             return subscription;
         }
 
-        private Action<object, TMessage> CreateSubscriberDelegate(Type subscriberType, MethodInfo methodInfo)
+        private Action<object, TMessage> CreateSubscriberAction(Type subscriberType, MethodInfo methodInfo)
         {
             DynamicMethod shim = new DynamicMethod(subscriberType.Name + methodInfo.Name, typeof(void), new[] { typeof(object), typeof(TMessage) }, GetType());
             ILGenerator il = shim.GetILGenerator();
@@ -233,6 +264,19 @@ namespace Obvs
             il.Emit(OpCodes.Ret); // void return
 
             return (Action<object, TMessage>)shim.CreateDelegate(typeof(Action<object, TMessage>));
+        }
+
+        private Func<object, TRequest, IObservable<TResponse>> CreateSubscriberFunc(Type subscriberType, MethodInfo methodInfo)
+        {
+            DynamicMethod shim = new DynamicMethod(subscriberType.Name + methodInfo.Name, typeof(IObservable<TResponse>), new[] { typeof(object), typeof(TRequest) }, GetType());
+            ILGenerator il = shim.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0); // Load subscriber
+            il.Emit(OpCodes.Ldarg_1); // Load parameter
+            il.Emit(OpCodes.Call, methodInfo); // Invoke method
+            il.Emit(OpCodes.Ret); // return
+
+            return (Func<object, TRequest, IObservable<TResponse>>)shim.CreateDelegate(typeof(Func<object, TRequest, IObservable<TResponse>>));
         }
 
         private IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> EndpointsThatCanHandle(TMessage message)

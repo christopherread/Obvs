@@ -2,13 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
 using System.Threading.Tasks;
 using Obvs.Configuration;
-using Obvs.Extensions;
 using Obvs.Types;
 
 namespace Obvs
@@ -202,7 +198,10 @@ namespace Obvs
 
         public override IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
         {
-            return Subscribe<TCommand, TEvent>(subscriber, Commands.Select(c => c as TMessage).Merge(Events), scheduler);
+            IObservable<TMessage> messages = Commands.Select(c => c as TMessage).Merge(Events).Merge(Requests);
+            Action<TRequest, TResponse> reply = (request, response) => ReplyAsync(request, response);
+
+            return Subscribe(subscriber, messages, scheduler, Requests, reply);
         }
     }
 }

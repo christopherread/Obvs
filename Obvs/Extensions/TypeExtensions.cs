@@ -32,10 +32,11 @@ namespace Obvs.Extensions
                    type.IsClass;
         }
 
-        internal static KeyValuePair<MethodInfo, Type>[] GetSubscriberMethods<TCommand, TEvent>(this Type subscriberType)
+        internal static Tuple<MethodInfo, Type, Type>[] GetSubscriberMethods<TCommand, TEvent, TRequest, TResponse>(this Type subscriberType)
         {
-            var methods = subscriberType
-                .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+            var publicMethods = subscriberType.GetMethods(BindingFlags.Instance | BindingFlags.Public);
+
+            var methods = publicMethods
                 .Where(m => m.ReturnType == typeof (void))
                 .Where(m =>
                 {
@@ -44,14 +45,31 @@ namespace Obvs.Extensions
                     var parameterInfo = parameters[0];
                     var parameterType = parameterInfo.ParameterType;
 
-                    return parameterType.IsClass && !parameterInfo.IsOptional &&
+                    return (parameterType.IsInterface || parameterType.IsClass) && !parameterInfo.IsOptional &&
                            (typeof (TCommand).IsAssignableFrom(parameterType) ||
                             typeof (TEvent).IsAssignableFrom(parameterType));
                 })
-                .Select(m => new KeyValuePair<MethodInfo, Type>(m, m.GetParameters()[0].ParameterType))
+                .Select(m => new Tuple<MethodInfo, Type, Type>(m, m.GetParameters()[0].ParameterType, typeof(void)))
                 .ToArray();
 
-            return methods.Where(methodHandler => !methods.Any(mh => mh.Key != methodHandler.Key && mh.Value.IsAssignableFrom(methodHandler.Value))).ToArray();
+            var functions = publicMethods
+                .Where(m => m.ReturnType == typeof(IObservable<TResponse>))
+                .Where(m =>
+                {
+                    var parameters = m.GetParameters();
+                    if (parameters.Length != 1) return false;
+                    var parameterInfo = parameters[0];
+                    var parameterType = parameterInfo.ParameterType;
+
+                    return (parameterType.IsInterface || parameterType.IsClass) && !parameterInfo.IsOptional && typeof(TRequest).IsAssignableFrom(parameterType);
+                })
+                .Select(m => new Tuple<MethodInfo, Type, Type>(m, m.GetParameters()[0].ParameterType, typeof(IObservable<TResponse>)))
+                .ToArray();
+
+            return methods.Concat(functions)
+                          .Where(methodHandler => !methods.Any(mh => mh.Item1 != methodHandler.Item1 && 
+                                                                     mh.Item2.IsAssignableFrom(methodHandler.Item2)))
+                          .ToArray();
         }
     }
 }
