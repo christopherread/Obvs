@@ -110,7 +110,7 @@ namespace Obvs.ActiveMQ.Configuration
 
         public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> UsingQueueFor<T>(AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge) where T : TMessage
         {
-            _queueTypes.Add(new Tuple<Type, AcknowledgementMode>(typeof(TMessage), mode));
+            _queueTypes.Add(new Tuple<Type, AcknowledgementMode>(typeof(T), mode));
             return this;
         }
     }
