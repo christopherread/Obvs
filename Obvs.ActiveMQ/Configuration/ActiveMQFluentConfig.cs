@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Obvs.Configuration;
 using Obvs.Serialization;
@@ -23,7 +24,27 @@ namespace Obvs.ActiveMQ.Configuration
         where TRequest : class, TMessage
         where TResponse : class, TMessage
     {
-        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> UsingQueueFor<T>(AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge) where T : TMessage;
+        ICanSpecifyActiveMQQueueAcknowledge<TMessage, TCommand, TEvent, TRequest, TResponse> UsingQueueFor<T>() where T : TMessage;
+    }
+
+    public interface ICanSpecifyActiveMQQueueAcknowledge<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
+        /// <summary>
+        /// The message is automatically acknowledged as soon as it is delivered from the broker
+        /// </summary>
+        /// <returns></returns>
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AutoAcknowledge();
+
+        /// <summary>
+        /// Manually acknowledges the message after it has successfully deserialized it
+        /// </summary>
+        /// <returns></returns>
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> ClientAcknowledge();
     }
 
     public interface ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanSpecifyActiveMQQueue<TMessage, TCommand, TEvent, TRequest, TResponse>
@@ -36,11 +57,11 @@ namespace Obvs.ActiveMQ.Configuration
         ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri);
     }
 
-    internal class ActiveMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : 
-        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+    internal class ActiveMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
         ICanSpecifyActiveMQServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>, 
         ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse>, 
-        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyActiveMQQueueAcknowledge<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TServiceMessage : class 
         where TCommand : class, TMessage 
@@ -108,9 +129,25 @@ namespace Obvs.ActiveMQ.Configuration
             return this;
         }
 
-        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> UsingQueueFor<T>(AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge) where T : TMessage
+        public ICanSpecifyActiveMQQueueAcknowledge<TMessage, TCommand, TEvent, TRequest, TResponse> UsingQueueFor<T>() where T : TMessage
         {
-            _queueTypes.Add(new Tuple<Type, AcknowledgementMode>(typeof(T), mode));
+            _queueTypes.Add(new Tuple<Type, AcknowledgementMode>(typeof(T), AcknowledgementMode.AutoAcknowledge));
+            return this;
+        }
+
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AutoAcknowledge()
+        {
+            var existing = _queueTypes.Last();
+            _queueTypes.Remove(existing);
+            _queueTypes.Add(new Tuple<Type, AcknowledgementMode>(existing.Item1, AcknowledgementMode.AutoAcknowledge));
+            return this;
+        }
+
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> ClientAcknowledge()
+        {
+            var existing = _queueTypes.Last();
+            _queueTypes.Remove(existing);
+            _queueTypes.Add(new Tuple<Type, AcknowledgementMode>(existing.Item1, AcknowledgementMode.ClientAcknowledge));
             return this;
         }
     }

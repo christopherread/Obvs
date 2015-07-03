@@ -29,19 +29,23 @@ namespace Obvs.ActiveMQ.Tests
         [TearDown]
         public void TearDown()
         {
-            Console.WriteLine("Disposing broker {0}", _broker.FailoverUri);
-            _broker.Dispose();
+           Console.WriteLine("Disposing broker {0}", _broker.FailoverUri);
+           _broker.Dispose();
         }
 
         [Test]
         public void TestServiceBusWithEmbeddedBroker()
         {
+            // use the embedded broker
+            var brokerUri = _broker.FailoverUri;
+
             // set up ServiceBus using fluent interfaces and all current endpoints and pointing at test AMQ broker
             IServiceBus serviceBus = ServiceBus.Configure()
                 .WithActiveMQEndpoints<ITestMessage>()
                     .Named("Obvs.TestService")
-                    .UsingQueueFor<ICommand>(AcknowledgementMode.ClientAcknowledge)
-                    .ConnectToBroker(_broker.FailoverUri)
+                    .UsingQueueFor<ICommand>().ClientAcknowledge()
+                    .UsingQueueFor<IRequest>().AutoAcknowledge()
+                    .ConnectToBroker(brokerUri)
                     .SerializedAsJson()
                     .AsClientAndServer()
                 .UsingConsoleLogging()
