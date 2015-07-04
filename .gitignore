@@ -12,3 +12,5 @@
 /Obvs.RabbitMQ.Benchmark/bin
 /Obvs.RabbitMQ.Benchmark/obj
 /Obvs.RabbitMQ.Benchmark/Obvs.RabbitMQ.Benchmark.csproj.user
+*.ncrunchsolution
+*.ncrunchproject

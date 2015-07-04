@@ -1,47 +1,51 @@
-﻿using Obvs.Configuration;
+﻿using System;
+using System.Reflection;
+using Obvs.Configuration;
 using Obvs.Serialization;
-using Obvs.Types;
 
 namespace Obvs.RabbitMQ.Configuration
 {
-    public class RabbitMQServiceEndpointProvider<TServiceMessage> : ServiceEndpointProviderBase where TServiceMessage : IMessage
+    public class RabbitMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TServiceMessage : class
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
         private readonly string _brokerUri;
         private readonly IMessageSerializer _serializer;
         private readonly IMessageDeserializerFactory _deserializerFactory;
-        private readonly string _assemblyNameContains;
+        private readonly Func<Assembly, bool> _assemblyFilter;
+        private readonly Func<Type, bool> _typeFilter;
 
-        public RabbitMQServiceEndpointProvider(string serviceName, string brokerUri, IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, string assemblyNameContains)
+        public RabbitMQServiceEndpointProvider(string serviceName, string brokerUri, IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
             : base(serviceName)
         {
             _brokerUri = brokerUri;
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
-            _assemblyNameContains = assemblyNameContains;
+            _typeFilter = typeFilter ?? (type => true);
+            _assemblyFilter = assemblyFilter ?? (assembly => true);
         }
 
-        public RabbitMQServiceEndpointProvider(string serviceName, string brokerUri, IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
-            : this(serviceName, brokerUri, serializer, deserializerFactory, string.Empty)
+        public override IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpoint()
         {
-        }
-
-        public override IServiceEndpoint CreateEndpoint()
-        {
-            return new ServiceEndpoint(
-                SourcePublisherFactory.CreateSource<IRequest, TServiceMessage>(_brokerUri, RequestsDestination, ServiceName, _deserializerFactory, _assemblyNameContains),
-                SourcePublisherFactory.CreateSource<ICommand, TServiceMessage>(_brokerUri, CommandsDestination, ServiceName, _deserializerFactory, _assemblyNameContains),
-                SourcePublisherFactory.CreatePublisher<IEvent>(_brokerUri, EventsDestination, ServiceName, _serializer),
-                SourcePublisherFactory.CreatePublisher<IResponse>(_brokerUri, ResponsesDestination, ServiceName, _serializer),
+            return new ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
+                SourcePublisherFactory.CreateSource<TRequest, TServiceMessage>(_brokerUri, RequestsDestination, ServiceName, _deserializerFactory, _assemblyFilter, _typeFilter),
+                SourcePublisherFactory.CreateSource<TCommand, TServiceMessage>(_brokerUri, CommandsDestination, ServiceName, _deserializerFactory, _assemblyFilter, _typeFilter),
+                SourcePublisherFactory.CreatePublisher<TEvent>(_brokerUri, EventsDestination, ServiceName, _serializer),
+                SourcePublisherFactory.CreatePublisher<TResponse>(_brokerUri, ResponsesDestination, ServiceName, _serializer),
                 typeof(TServiceMessage));
         }
 
-        public override IServiceEndpointClient CreateEndpointClient()
+        public override IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpointClient()
         {
-            return new ServiceEndpointClient(
-                SourcePublisherFactory.CreateSource<IEvent, TServiceMessage>(_brokerUri, EventsDestination, ServiceName, _deserializerFactory, _assemblyNameContains),
-                SourcePublisherFactory.CreateSource<IResponse, TServiceMessage>(_brokerUri, ResponsesDestination, ServiceName, _deserializerFactory, _assemblyNameContains),
-                SourcePublisherFactory.CreatePublisher<IRequest>(_brokerUri, RequestsDestination, ServiceName, _serializer),
-                SourcePublisherFactory.CreatePublisher<ICommand>(_brokerUri, CommandsDestination, ServiceName, _serializer),
+            return new ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
+                SourcePublisherFactory.CreateSource<TEvent, TServiceMessage>(_brokerUri, EventsDestination, ServiceName, _deserializerFactory, _assemblyFilter, _typeFilter),
+                SourcePublisherFactory.CreateSource<TResponse, TServiceMessage>(_brokerUri, ResponsesDestination, ServiceName, _deserializerFactory, _assemblyFilter, _typeFilter),
+                SourcePublisherFactory.CreatePublisher<TRequest>(_brokerUri, RequestsDestination, ServiceName, _serializer),
+                SourcePublisherFactory.CreatePublisher<TCommand>(_brokerUri, CommandsDestination, ServiceName, _serializer),
                 typeof(TServiceMessage));
         }
     }

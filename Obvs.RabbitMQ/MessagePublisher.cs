@@ -1,13 +1,12 @@
 ﻿using System.Text;
 using System.Threading.Tasks;
 using Obvs.Serialization;
-using Obvs.Types;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Framing;
 
 namespace Obvs.RabbitMQ
 {
-    public class MessagePublisher<TMessage> : IMessagePublisher<TMessage> where TMessage : IMessage
+    public class MessagePublisher<TMessage> : IMessagePublisher<TMessage> where TMessage : class
     {
         private readonly IMessageSerializer _serializer;
         private readonly string _exchange;

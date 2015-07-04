@@ -1,5 +1,6 @@
-﻿using Obvs.Serialization;
-using Obvs.Types;
+﻿using System;
+using System.Reflection;
+using Obvs.Serialization;
 using RabbitMQ.Client;
 
 namespace Obvs.RabbitMQ.Configuration
@@ -7,7 +8,7 @@ namespace Obvs.RabbitMQ.Configuration
     internal static class SourcePublisherFactory
     {
         public static MessagePublisher<TMessage> CreatePublisher<TMessage>(string brokerUri, string routingKeyPrefix, string serviceName, IMessageSerializer messageSerializer)
-            where TMessage : IMessage
+            where TMessage : class
         {
             return new MessagePublisher<TMessage>(
                 CreateConnectionFactory(brokerUri),
@@ -16,13 +17,13 @@ namespace Obvs.RabbitMQ.Configuration
                 routingKeyPrefix);
         }
 
-        public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(string brokerUri, string routingKeyPrefix, string serviceName, IMessageDeserializerFactory deserializerFactory, string assemblyNameContains = null, string selector = null)
-            where TServiceMessage : IMessage
-            where TMessage : IMessage
+        public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(string brokerUri, string routingKeyPrefix, string serviceName, IMessageDeserializerFactory deserializerFactory, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null, string selector = null)
+            where TServiceMessage : class
+            where TMessage : class
         {
             return new MessageSource<TMessage>(
                 CreateConnectionFactory(brokerUri),
-                deserializerFactory.Create<TMessage, TServiceMessage>(assemblyNameContains), 
+                deserializerFactory.Create<TMessage, TServiceMessage>(assemblyFilter, typeFilter), 
                 serviceName,
                 routingKeyPrefix);
         }

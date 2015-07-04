@@ -5,13 +5,12 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
 using Obvs.Serialization;
-using Obvs.Types;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace Obvs.RabbitMQ
 {
-    public class MessageSource<TMessage> : IMessageSource<TMessage> where TMessage : IMessage
+    public class MessageSource<TMessage> : IMessageSource<TMessage> where TMessage : class
     {
         private readonly string _exchange;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;

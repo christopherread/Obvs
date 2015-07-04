@@ -5,6 +5,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading;
 using NUnit.Framework;
+using Obvs.Configuration;
 using Obvs.RabbitMQ.Configuration;
 using Obvs.RabbitMQ.Tests.Messages;
 using Obvs.Serialization.Json.Configuration;
@@ -24,6 +25,7 @@ namespace Obvs.RabbitMQ.Tests
                         .ConnectToBroker("amqp://localhost")
                         .SerializedAsJson()
                         .AsClientAndServer()
+                    .UsingConsoleLogging()
                     .Create();
 
             // create threadsafe collection to hold received messages in

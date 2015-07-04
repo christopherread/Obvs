@@ -1,77 +1,100 @@
-﻿using Obvs.Configuration;
+﻿using System;
+using System.Reflection;
+using Obvs.Configuration;
 using Obvs.Serialization;
-using Obvs.Types;
 
 namespace Obvs.RabbitMQ.Configuration
 {
-    public interface ICanSpecifyRabbitMQServiceName
+    public interface ICanSpecifyRabbitMQServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        ICanSpecifyRabbitMQBroker Named(string serviceName);
+        ICanSpecifyRabbitMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> Named(string serviceName);
     }
 
-    public interface ICanSpecifyRabbitMQBroker
+    public interface ICanSpecifyRabbitMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        ICanSpecifyEndpointSerializers ConnectToBroker(string brokerUri);
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri);
     }
 
-    public class RabbitMQFluentConfig<TServiceMessage> : ICanSpecifyRabbitMQServiceName, ICanSpecifyRabbitMQBroker, ICanCreateEndpointAsClientOrServer, ICanSpecifyEndpointSerializers where TServiceMessage : IMessage
+    public class RabbitMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : 
+        ICanSpecifyRabbitMQServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+        ICanSpecifyRabbitMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+        ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TServiceMessage : class
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
     {
-        private readonly ICanAddEndpoint _canAddEndpoint;
+        private readonly ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> _canAddEndpoint;
         private string _serviceName;
         private string _brokerUri;
-        private string _assemblyNameContains;
+        private Func<Assembly, bool> _assemblyFilter;
         private IMessageSerializer _serializer;
         private IMessageDeserializerFactory _deserializerFactory;
+        private Func<Type, bool> _typeFilter;
 
-        public RabbitMQFluentConfig(ICanAddEndpoint canAddEndpoint)
+        public RabbitMQFluentConfig(ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint)
         {
             _canAddEndpoint = canAddEndpoint;
         }
 
-        public ICanSpecifyRabbitMQBroker Named(string serviceName)
+        public ICanSpecifyRabbitMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> Named(string serviceName)
         {
             _serviceName = serviceName;
             return this;
         }
 
-        public ICanSpecifyEndpointSerializers ConnectToBroker(string brokerUri)
+        public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri)
         {
             _brokerUri = brokerUri;
             return this;
         }
 
-        public ICanCreateEndpointAsClientOrServer FilterMessageTypeAssemblies(string assemblyNameContains)
-        {
-            _assemblyNameContains = assemblyNameContains;
-            return this;
-        }
-
-        public ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClient()
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsClient()
         {
             return _canAddEndpoint.WithClientEndpoints(CreateProvider());
         }
 
-        private RabbitMQServiceEndpointProvider<TServiceMessage> CreateProvider()
+        private IServiceEndpointProvider<TMessage, TCommand, TEvent, TRequest, TResponse> CreateProvider()
         {
-            return new RabbitMQServiceEndpointProvider<TServiceMessage>(_serviceName, _brokerUri,
-                _serializer, _deserializerFactory, _assemblyNameContains);
+            return new RabbitMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(_serviceName, _brokerUri,
+                _serializer, _deserializerFactory, _assemblyFilter, _typeFilter);
         }
 
-        public ICanAddEndpointOrLoggingOrCorrelationOrCreate AsServer()
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsServer()
         {
             return _canAddEndpoint.WithServerEndpoints(CreateProvider());
         }
 
-        public ICanAddEndpointOrLoggingOrCorrelationOrCreate AsClientAndServer()
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsClientAndServer()
         {
             return _canAddEndpoint.WithEndpoints(CreateProvider());
         }
 
-        public ICanCreateEndpointAsClientOrServer SerializedWith(IMessageSerializer serializer,
+        public ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> SerializedWith(IMessageSerializer serializer,
             IMessageDeserializerFactory deserializerFactory)
         {
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
+            return this;
+        }
+
+        public ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> FilterMessageTypeAssemblies(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
+        {
+            _assemblyFilter = assemblyFilter;
+            _typeFilter = typeFilter;
             return this;
         }
     }
