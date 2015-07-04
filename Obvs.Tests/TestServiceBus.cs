@@ -1040,9 +1040,11 @@ namespace Obvs.Tests
             serviceBus.Exceptions.Subscribe(exceptions.Add);
 
             FakeSubscriber subscriber = new FakeSubscriber();
+            FakeSubscriber2 subscriber2 = new FakeSubscriber2();
 
             var testScheduler = new TestScheduler();
             var subscription = serviceBus.Subscribe(subscriber, testScheduler);
+            var subscription2 = serviceBus.Subscribe(subscriber2, testScheduler);
 
             serviceBus.PublishAsync(new TestServiceEvent1());
             testScheduler.AdvanceBy(1);
@@ -1060,6 +1062,7 @@ namespace Obvs.Tests
             testScheduler.AdvanceBy(1);
 
             subscription.Dispose();
+            subscription2.Dispose();
 
             Assert.That(exceptions.Count(), Is.EqualTo(0));
             Assert.That(subscriber.Received.Count(), Is.EqualTo(5));
@@ -1068,6 +1071,13 @@ namespace Obvs.Tests
             Assert.That(subscriber.Received[2].GetType(), Is.EqualTo(typeof(TestServiceCommand1)));
             Assert.That(subscriber.Received[3].GetType(), Is.EqualTo(typeof(TestServiceCommand2)));
             Assert.That(subscriber.Received[4].GetType(), Is.EqualTo(typeof(TestServiceRequest1)));
+            
+            Assert.That(subscriber2.Received.Count(), Is.EqualTo(5));
+            Assert.That(subscriber2.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
+            Assert.That(subscriber2.Received[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
+            Assert.That(subscriber2.Received[2].GetType(), Is.EqualTo(typeof(TestServiceCommand1)));
+            Assert.That(subscriber2.Received[3].GetType(), Is.EqualTo(typeof(TestServiceCommand2)));
+            Assert.That(subscriber2.Received[4].GetType(), Is.EqualTo(typeof(TestServiceRequest1)));
         }
         
         [Test]
@@ -1207,9 +1217,11 @@ namespace Obvs.Tests
             serviceBusClient.Exceptions.Subscribe(exceptions.Add);
 
             FakeSubscriber subscriber = new FakeSubscriber();
+            FakeSubscriber2 subscriber2 = new FakeSubscriber2();
 
             var testScheduler = new TestScheduler();
             var subscription = serviceBusClient.Subscribe(subscriber, testScheduler);
+            var subscription2 = serviceBusClient.Subscribe(subscriber2, testScheduler);
 
             serviceEndpoint1.Messages.OnNext(new TestServiceEvent1());
             testScheduler.AdvanceBy(1);
@@ -1221,12 +1233,19 @@ namespace Obvs.Tests
             testScheduler.AdvanceBy(1);
 
             subscription.Dispose();
+            subscription2.Dispose();
 
             Assert.That(exceptions.Count(), Is.EqualTo(0));
+
             Assert.That(subscriber.Received.Count(), Is.EqualTo(3));
             Assert.That(subscriber.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
             Assert.That(subscriber.Received[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
             Assert.That(subscriber.Received[2].GetType(), Is.EqualTo(typeof(TestServiceEventBase)));
+            
+            Assert.That(subscriber2.Received.Count(), Is.EqualTo(3));
+            Assert.That(subscriber2.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
+            Assert.That(subscriber2.Received[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
+            Assert.That(subscriber2.Received[2].GetType(), Is.EqualTo(typeof(TestServiceEventBase)));
         }
     }
 
@@ -1245,6 +1264,57 @@ namespace Obvs.Tests
     }
 
     public class FakeSubscriber
+    {
+        public readonly List<IMessage> Received = new List<IMessage>();
+        public bool ThrowExceptions { get; set; }
+
+        public void OnEvent(TestServiceEvent1 message)
+        {
+            Handle(message);
+        }
+
+        public void OnEvent(TestServiceEvent2 message)
+        {
+            Handle(message);
+        }
+
+        public void OnEvent(TestServiceEventBase message)
+        {
+            Handle(message);
+        }
+
+        public void OnCommand(TestServiceCommand1 message)
+        {
+            Handle(message);
+        }
+
+        public void OnCommand(TestServiceCommand2 message)
+        {
+            Handle(message);
+        }
+
+        public void OnCommand(TestServiceCommandBase message)
+        {
+            Handle(message);
+        }
+
+        public IObservable<IResponse> OnRequest(TestServiceRequest1 request)
+        {
+            Handle(request);
+            return Observable.Empty<IResponse>();
+        }
+
+        private void Handle(IMessage message)
+        {
+            if (ThrowExceptions)
+            {
+                throw new Exception("ThrowExceptions set to True");
+            }
+            Received.Add(message);
+        }
+    } 
+    
+    public class FakeSubscriber2
     {
         public readonly List<IMessage> Received = new List<IMessage>();
         public bool ThrowExceptions { get; set; }

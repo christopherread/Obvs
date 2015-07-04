@@ -25,21 +25,6 @@ namespace Obvs
             get { return _exceptions; }
         }
 
-        protected IObservable<TEvent> EventsWithErroHandling(IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint)
-        {
-            return endpoint.Events.CatchAndHandle(_exceptions, () => endpoint.Events, string.Format("Error receiving {0} from endpoint {1}", typeof(TEvent), endpoint.GetType().FullName));
-        }
-
-        protected IObservable<TCommand> CommandsWithErrorHandling(IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint)
-        {
-            return endpoint.Commands.CatchAndHandle(_exceptions, () => endpoint.Commands, string.Format("Error receiving {0} from endpoint {1}", typeof(TCommand), endpoint.GetType().FullName));
-        }
-
-        protected IObservable<TRequest> RequestsWithErrorHandling(IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint)
-        {
-            return endpoint.Requests.CatchAndHandle(_exceptions, () => endpoint.Requests, string.Format("Error receiving {0} from endpoint {1}", typeof(TRequest), endpoint.GetType().FullName));
-        }
-
         protected static string EventErrorMessage(IEndpoint<TMessage> endpoint)
         {
             return string.Format("Error publishing event to endpoint {0}", endpoint.GetType().FullName);

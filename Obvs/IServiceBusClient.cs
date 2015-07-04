@@ -101,7 +101,7 @@ namespace Obvs
         public ServiceBusClient(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider)
         {
             _endpointClients = endpointClients.ToArray();
-            _events = _endpointClients.Select(EventsWithErroHandling).Merge().Publish().RefCount();
+            _events = _endpointClients.Select(endpointClient => endpointClient.EventsWithErroHandling(_exceptions)).Merge().Publish().RefCount();
             _requestCorrelationProvider = requestCorrelationProvider;
             _subscribers = new List<KeyValuePair<object, IObservable<TMessage>>>();
         }
@@ -164,7 +164,7 @@ namespace Obvs
             return Subscribe(subscriber, Events, scheduler);
         }
 
-        protected IDisposable Subscribe(object subscriber, IObservable<TMessage> messages, IScheduler scheduler = null, IObservable<TMessage> requests = null, Action<TRequest, TResponse> reply = null)
+        protected IDisposable Subscribe(object subscriber, IObservable<TMessage> messages, IScheduler scheduler = null, IObservable<TRequest> requests = null, Action<TRequest, TResponse> onReply = null)
         {
             if (subscriber == null)
             {
@@ -198,19 +198,17 @@ namespace Obvs
                 var methodInfo = methodHandler.Item1;
                 var paramType = methodHandler.Item2;
                 var returnType = methodHandler.Item3;
-                var isVoidReturn = returnType == typeof (void);
-                bool hasReplyAction = reply != null;
 
                 Action<object, TMessage> onMessage = null;
                 Func<object, TRequest, IObservable<TResponse>> onRequest = null;
 
-                if (isVoidReturn)
+                if (returnType == typeof(void))
                 {
-                    onMessage = CreateSubscriberAction(subscriberType, methodInfo);
+                    onMessage = CreateSubscriberAction<TMessage>(subscriberType, methodInfo);
                 }
-                else if (hasReplyAction)
+                else if (onReply != null)
                 {
-                    onRequest = CreateSubscriberFunc(subscriberType, methodInfo);
+                    onRequest = CreateSubscriberFunc<TRequest, IObservable<TResponse>>(subscriberType, methodInfo);
                 }
 
                 subscription.Add(observable
@@ -219,14 +217,14 @@ namespace Obvs
                     {
                         try
                         {
-                            if (isVoidReturn)
+                            if (onMessage != null)
                             {
                                 onMessage(subscriber, message);
                             }
-                            else if (hasReplyAction)
+                            else if (onRequest != null && onReply != null)
                             {
                                 var request = message as TRequest;
-                                onRequest(subscriber, request).Subscribe(response => reply(request, response));
+                                onRequest(subscriber, request).Subscribe(response => onReply(request, response));
                             }
                         }
                         catch (Exception exception)
@@ -238,7 +236,7 @@ namespace Obvs
 
             if (!subscription.Any())
             {
-                throw new ArgumentException("Subscriber needs at least one public method of format 'void MethodName(TMessage msg)'", "subscriber");
+                throw new ArgumentException("Subscriber needs at least one public method of format 'void OnMessage(TMessage msg)' or 'IObservable<TResponse> OnRequest(TRequest req)'", "subscriber");
             }
 
             subscription.Add(Disposable.Create(() =>
@@ -252,9 +250,10 @@ namespace Obvs
             return subscription;
         }
 
-        private Action<object, TMessage> CreateSubscriberAction(Type subscriberType, MethodInfo methodInfo)
+        private static Action<object, TParamType> CreateSubscriberAction<TParamType>(Type subscriberType, MethodInfo methodInfo)
         {
-            DynamicMethod shim = new DynamicMethod(subscriberType.Name + methodInfo.Name, typeof(void), new[] { typeof(object), typeof(TMessage) }, GetType());
+            var name = subscriberType.Name + methodInfo.Name + "DynamicMethod";
+            DynamicMethod shim = new DynamicMethod(name, typeof(void), new[] { typeof(object), typeof(TParamType) }, subscriberType);
             ILGenerator il = shim.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0); // Load subscriber
@@ -262,12 +261,13 @@ namespace Obvs
             il.Emit(OpCodes.Call, methodInfo); // Invoke method
             il.Emit(OpCodes.Ret); // void return
 
-            return (Action<object, TMessage>)shim.CreateDelegate(typeof(Action<object, TMessage>));
+            return (Action<object, TParamType>)shim.CreateDelegate(typeof(Action<object, TParamType>));
         }
 
-        private Func<object, TRequest, IObservable<TResponse>> CreateSubscriberFunc(Type subscriberType, MethodInfo methodInfo)
+        private static Func<object, TParamType, TReturnType> CreateSubscriberFunc<TParamType, TReturnType>(Type subscriberType, MethodInfo methodInfo)
         {
-            DynamicMethod shim = new DynamicMethod(subscriberType.Name + methodInfo.Name, typeof(IObservable<TResponse>), new[] { typeof(object), typeof(TRequest) }, GetType());
+            var name = subscriberType.Name + methodInfo.Name + "DynamicMethod";
+            DynamicMethod shim = new DynamicMethod(name, typeof(TReturnType), new[] { typeof(object), typeof(TParamType) }, subscriberType);
             ILGenerator il = shim.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0); // Load subscriber
@@ -275,7 +275,7 @@ namespace Obvs
             il.Emit(OpCodes.Call, methodInfo); // Invoke method
             il.Emit(OpCodes.Ret); // return
 
-            return (Func<object, TRequest, IObservable<TResponse>>)shim.CreateDelegate(typeof(Func<object, TRequest, IObservable<TResponse>>));
+            return (Func<object, TParamType, TReturnType>)shim.CreateDelegate(typeof(Func<object, TParamType, TReturnType>));
         }
 
         private IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> EndpointsThatCanHandle(TMessage message)

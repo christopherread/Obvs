@@ -36,6 +36,7 @@ namespace Obvs.Extensions
         {
             var publicMethods = subscriberType.GetMethods(BindingFlags.Instance | BindingFlags.Public);
 
+            // get message handler methods
             var methods = publicMethods
                 .Where(m => m.ReturnType == typeof (void))
                 .Where(m =>
@@ -45,13 +46,14 @@ namespace Obvs.Extensions
                     var parameterInfo = parameters[0];
                     var parameterType = parameterInfo.ParameterType;
 
-                    return (parameterType.IsInterface || parameterType.IsClass) && !parameterInfo.IsOptional &&
-                           (typeof (TCommand).IsAssignableFrom(parameterType) ||
-                            typeof (TEvent).IsAssignableFrom(parameterType));
+                    return (parameterType.IsInterface || parameterType.IsClass) && 
+                           !parameterInfo.IsOptional &&
+                           (typeof (TCommand).IsAssignableFrom(parameterType) || typeof (TEvent).IsAssignableFrom(parameterType));
                 })
                 .Select(m => new Tuple<MethodInfo, Type, Type>(m, m.GetParameters()[0].ParameterType, typeof(void)))
                 .ToArray();
 
+            // get request/response functions
             var functions = publicMethods
                 .Where(m => m.ReturnType == typeof(IObservable<TResponse>))
                 .Where(m =>
@@ -61,15 +63,20 @@ namespace Obvs.Extensions
                     var parameterInfo = parameters[0];
                     var parameterType = parameterInfo.ParameterType;
 
-                    return (parameterType.IsInterface || parameterType.IsClass) && !parameterInfo.IsOptional && typeof(TRequest).IsAssignableFrom(parameterType);
+                    return (parameterType.IsInterface || parameterType.IsClass) && 
+                           !parameterInfo.IsOptional && 
+                           typeof(TRequest).IsAssignableFrom(parameterType);
                 })
                 .Select(m => new Tuple<MethodInfo, Type, Type>(m, m.GetParameters()[0].ParameterType, typeof(IObservable<TResponse>)))
                 .ToArray();
 
-            return methods.Concat(functions)
-                          .Where(methodHandler => !methods.Any(mh => mh.Item1 != methodHandler.Item1 && 
-                                                                     mh.Item2.IsAssignableFrom(methodHandler.Item2)))
-                          .ToArray();
+            // filter out methods where message is a subtype of one that is already handled
+            var subscriberMethods = methods.Concat(functions)
+                .Where(methodHandler => !methods.Any(mh => mh.Item1 != methodHandler.Item1 && 
+                                                           mh.Item2.IsAssignableFrom(methodHandler.Item2)))
+                .ToArray();
+
+            return subscriberMethods;
         }
     }
 }

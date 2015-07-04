@@ -5,6 +5,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Obvs.Configuration;
+using Obvs.Extensions;
 using Obvs.Types;
 
 namespace Obvs
@@ -128,8 +129,8 @@ namespace Obvs
         {
             _requestCorrelationProvider = requestCorrelationProvider;
             _endpoints = endpoints.ToList();
-            _requests = _endpoints.Select(RequestsWithErrorHandling).Merge().Publish().RefCount();
-            _commands = _endpoints.Select(CommandsWithErrorHandling).Merge().Publish().RefCount();
+            _requests = _endpoints.Select(endpoint => endpoint.RequestsWithErrorHandling(_exceptions)).Merge().Publish().RefCount();
+            _commands = _endpoints.Select(endpoint => endpoint.CommandsWithErrorHandling(_exceptions)).Merge().Publish().RefCount();
         }
 
         public IObservable<TRequest> Requests
@@ -199,9 +200,9 @@ namespace Obvs
         public override IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
         {
             IObservable<TMessage> messages = (Commands as IObservable<TMessage>).Merge(Events);
-            Action<TRequest, TResponse> reply = (request, response) => ReplyAsync(request, response);
+            Action<TRequest, TResponse> onReply = (request, response) => ReplyAsync(request, response);
 
-            return Subscribe(subscriber, messages, scheduler, Requests, reply);
+            return Subscribe(subscriber, messages, scheduler, Requests, onReply);
         }
     }
 }
