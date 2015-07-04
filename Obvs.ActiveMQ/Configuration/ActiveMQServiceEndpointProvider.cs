@@ -74,7 +74,7 @@ namespace Obvs.ActiveMQ.Configuration
 
                 return new MergedMessageSource<T>(queueTypes.Select(qt =>
                     new MessageSource<T>(
-                        _endpointConnection,
+                        connection,
                         deserializers,
                         new ActiveMQQueue(string.Format("{0}.{1}", destination, typeof (T).Name)),
                         qt.Item2)));
