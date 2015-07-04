@@ -43,7 +43,8 @@ namespace Obvs.ActiveMQ.Tests
             IServiceBus serviceBus = ServiceBus.Configure()
                 .WithActiveMQEndpoints<ITestMessage>()
                     .Named("Obvs.TestService")
-                    .UsingQueueFor<ICommand>().ClientAcknowledge()
+                    .UsingQueueFor<TestCommand>().ClientAcknowledge()
+                    .UsingQueueFor<TestCommand2>().ClientAcknowledge()
                     .UsingQueueFor<IRequest>().AutoAcknowledge()
                     .ConnectToBroker(brokerUri)
                     .SerializedAsJson()
@@ -68,6 +69,7 @@ namespace Obvs.ActiveMQ.Tests
 
             // send some messages
             serviceBus.SendAsync(new TestCommand { Id = 123 });
+            serviceBus.SendAsync(new TestCommand2 { Id = 123 });
             serviceBus.GetResponses(new TestRequest { Id = 456 }).Subscribe(observer);
 
             // wait some time until we think all messages have been sent and received over AMQ
@@ -75,6 +77,7 @@ namespace Obvs.ActiveMQ.Tests
 
             // test we got everything we expected
             Assert.That(messages.OfType<TestCommand>().Count() == 1, "TestCommand not received");
+            Assert.That(messages.OfType<TestCommand2>().Count() == 1, "TestCommand2 not received");
             Assert.That(messages.OfType<TestEvent>().Count() == 1, "TestEvent not received");
             Assert.That(messages.OfType<TestRequest>().Count() == 1, "TestRequest not received");
             Assert.That(messages.OfType<TestResponse>().Count() == 1, "TestResponse not received");
@@ -94,7 +97,7 @@ namespace Obvs.ActiveMQ.Tests
 
             public override string ToString()
             {
-                return string.Format("TestEvent[Id={0}]", Id);
+                return string.Format("{0}[Id={1}]", GetType().Name, Id);
             }
         }
 
@@ -104,7 +107,17 @@ namespace Obvs.ActiveMQ.Tests
 
             public override string ToString()
             {
-                return string.Format("TestCommand[Id={0}]", Id);
+                return string.Format("{0}[Id={1}]", GetType().Name, Id);
+            }
+        }
+
+        public class TestCommand2 : ITestMessage, ICommand
+        {
+            public int Id { get; set; }
+
+            public override string ToString()
+            {
+                return string.Format("{0}[Id={1}]", GetType().Name, Id);
             }
         }
 
@@ -114,7 +127,7 @@ namespace Obvs.ActiveMQ.Tests
 
             public override string ToString()
             {
-                return string.Format("TestRequest[Id={0}, RequestId={1}]", Id, RequestId);
+                return string.Format("{0}[Id={1}]", GetType().Name, Id);
             }
 
             public string RequestId { get; set; }
@@ -127,7 +140,7 @@ namespace Obvs.ActiveMQ.Tests
 
             public override string ToString()
             {
-                return string.Format("TestResponse[Id={0}, RequestId={1}]", Id, RequestId);
+                return string.Format("{0}[Id={1}]", GetType().Name, Id);
             }
 
             public string RequestId { get; set; }

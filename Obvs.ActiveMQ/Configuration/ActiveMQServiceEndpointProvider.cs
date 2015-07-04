@@ -7,7 +7,9 @@ using System.Reflection;
 using System.Threading;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ;
+using Apache.NMS.ActiveMQ.Commands;
 using Obvs.Configuration;
+using Obvs.MessageProperties;
 using Obvs.Serialization;
 
 namespace Obvs.ActiveMQ.Configuration
@@ -52,22 +54,64 @@ namespace Obvs.ActiveMQ.Configuration
         {
             return new DisposingServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
                 new ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                    DestinationFactory.CreateSource<TRequest, TServiceMessage>(_endpointConnection, RequestsDestination, GetDestinationType<TRequest>(), _deserializerFactory, _assemblyFilter, _typeFilter, null, GetAcknowledgementMode<TRequest>()),
-                    DestinationFactory.CreateSource<TCommand, TServiceMessage>(_endpointConnection, CommandsDestination, GetDestinationType<TCommand>(), _deserializerFactory, _assemblyFilter, _typeFilter, null, GetAcknowledgementMode<TCommand>()),
-                    DestinationFactory.CreatePublisher<TEvent>(_endpointConnection, EventsDestination, GetDestinationType<TEvent>(), _serializer, _scheduler),
-                    DestinationFactory.CreatePublisher<TResponse>(_endpointConnection, ResponsesDestination, GetDestinationType<TResponse>(), _serializer, _scheduler),
+                    CreateSource<TRequest>(_endpointConnection, RequestsDestination),
+                    CreateSource<TCommand>(_endpointConnection, CommandsDestination),
+                    CreatePublisher<TEvent>(_endpointConnection, EventsDestination),
+                    CreatePublisher<TResponse>(_endpointConnection, ResponsesDestination),
                     typeof(TServiceMessage)), 
                 GetConnectionDisposable(_endpointConnection));
+        }
+
+        private IMessageSource<T> CreateSource<T>(Lazy<IConnection> connection, string destination) where T : class, TMessage
+        {
+            var queueTypes = _queueTypes.Where(t => typeof(T).IsAssignableFrom(t.Item1)).ToArray();
+            var moreThanOneQueueType = queueTypes.Length > 1;
+            var containsSuperInterface = queueTypes.Any(qt => qt.Item1 == typeof(T));
+
+            if (moreThanOneQueueType && !containsSuperInterface)
+            {
+                var deserializers = _deserializerFactory.Create<T, TServiceMessage>(_assemblyFilter, _typeFilter);
+
+                return new MergedMessageSource<T>(queueTypes.Select(qt =>
+                    new MessageSource<T>(
+                        _endpointConnection,
+                        deserializers,
+                        new ActiveMQQueue(string.Format("{0}.{1}", destination, typeof (T).Name)),
+                        qt.Item2)));
+            }
+
+            return DestinationFactory.CreateSource<T, TServiceMessage>(connection, destination, GetDestinationType<T>(), _deserializerFactory, _assemblyFilter, _typeFilter, null, GetAcknowledgementMode<T>());
+        }
+
+        private IMessagePublisher<T> CreatePublisher<T>(Lazy<IConnection> connection, string destination) where T : class, TMessage
+        {
+            var queueTypes = _queueTypes.Where(t => typeof(T).IsAssignableFrom(t.Item1)).ToArray();
+            var moreThanOneQueueType = queueTypes.Length > 1;
+            var containsSuperInterface = queueTypes.Any(qt => qt.Item1 == typeof (T));
+
+            if (moreThanOneQueueType && !containsSuperInterface)
+            {
+                return new TypeRoutingMessagePublisher<T>(queueTypes.Select(qt =>
+                    new KeyValuePair<Type, IMessagePublisher<T>>(qt.Item1,
+                        new MessagePublisher<T>(
+                            connection,
+                            new ActiveMQQueue(string.Format("{0}.{1}", destination, typeof (T).Name)),
+                            _serializer,
+                            new DefaultPropertyProvider<T>(),
+                            _scheduler))));
+            }
+
+            return DestinationFactory.CreatePublisher<T>(connection, destination, GetDestinationType<T>(), _serializer, _scheduler);
         }
 
         public override IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpointClient()
         {
             return new DisposingServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
                 new ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                    DestinationFactory.CreateSource<TEvent, TServiceMessage>(_endpointClientConnection, EventsDestination, GetDestinationType<TEvent>(), _deserializerFactory, _assemblyFilter, _typeFilter, null, GetAcknowledgementMode<TEvent>()),
-                    DestinationFactory.CreateSource<TResponse, TServiceMessage>(_endpointClientConnection, ResponsesDestination, GetDestinationType<TResponse>(), _deserializerFactory, _assemblyFilter, _typeFilter, null, GetAcknowledgementMode<TResponse>()),
-                    DestinationFactory.CreatePublisher<TRequest>(_endpointClientConnection, RequestsDestination, GetDestinationType<TRequest>(), _serializer, _scheduler),
-                    DestinationFactory.CreatePublisher<TCommand>(_endpointClientConnection, CommandsDestination, GetDestinationType<TCommand>(), _serializer, _scheduler),
+                    CreateSource<TEvent>(_endpointClientConnection, EventsDestination),
+                    CreateSource<TResponse>(_endpointClientConnection, ResponsesDestination),
+                    CreatePublisher<TRequest>(_endpointClientConnection, RequestsDestination),
+                    CreatePublisher<TCommand>(_endpointClientConnection, CommandsDestination),
                     typeof(TServiceMessage)),
                 GetConnectionDisposable(_endpointClientConnection));
         }
