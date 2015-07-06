@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>$id$</id>
-    <version>1.7.0-beta</version>
+    <version>$version$</version>
     <title>$title$</title>
     <authors>$author$</authors>
     <description>An observable µServiceBus .NET library</description>
