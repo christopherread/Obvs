@@ -64,11 +64,9 @@ namespace Obvs.ActiveMQ.Configuration
 
         private IMessageSource<T> CreateSource<T>(Lazy<IConnection> connection, string destination) where T : class, TMessage
         {
-            var queueTypes = _queueTypes.Where(t => typeof(T).IsAssignableFrom(t.Item1)).ToArray();
-            var moreThanOneQueueType = queueTypes.Length > 1;
-            var containsSuperInterface = queueTypes.Any(qt => qt.Item1 == typeof(T));
+            List<Tuple<Type, AcknowledgementMode>> queueTypes;
 
-            if (moreThanOneQueueType && !containsSuperInterface)
+            if (TryGetMultipleQueueTypes<T>(out queueTypes))
             {
                 var deserializers = _deserializerFactory.Create<T, TServiceMessage>(_assemblyFilter, _typeFilter);
 
@@ -76,7 +74,7 @@ namespace Obvs.ActiveMQ.Configuration
                     new MessageSource<T>(
                         connection,
                         deserializers,
-                        new ActiveMQQueue(string.Format("{0}.{1}", destination, typeof (T).Name)),
+                        new ActiveMQQueue(string.Format("{0}.{1}", destination, qt.Item1.Name)),
                         qt.Item2)));
             }
 
@@ -85,23 +83,34 @@ namespace Obvs.ActiveMQ.Configuration
 
         private IMessagePublisher<T> CreatePublisher<T>(Lazy<IConnection> connection, string destination) where T : class, TMessage
         {
-            var queueTypes = _queueTypes.Where(t => typeof(T).IsAssignableFrom(t.Item1)).ToArray();
-            var moreThanOneQueueType = queueTypes.Length > 1;
-            var containsSuperInterface = queueTypes.Any(qt => qt.Item1 == typeof (T));
-
-            if (moreThanOneQueueType && !containsSuperInterface)
+            List<Tuple<Type, AcknowledgementMode>> queueTypes;
+            
+            if (TryGetMultipleQueueTypes<T>(out queueTypes))
             {
                 return new TypeRoutingMessagePublisher<T>(queueTypes.Select(qt =>
                     new KeyValuePair<Type, IMessagePublisher<T>>(qt.Item1,
                         new MessagePublisher<T>(
                             connection,
-                            new ActiveMQQueue(string.Format("{0}.{1}", destination, typeof (T).Name)),
+                            new ActiveMQQueue(string.Format("{0}.{1}", destination, qt.Item1.Name)),
                             _serializer,
                             new DefaultPropertyProvider<T>(),
                             _scheduler))));
             }
 
             return DestinationFactory.CreatePublisher<T>(connection, destination, GetDestinationType<T>(), _serializer, _scheduler);
+        }
+
+        private bool TryGetMultipleQueueTypes<T>(out List<Tuple<Type, AcknowledgementMode>> queueTypes) where T : class, TMessage
+        {
+            queueTypes = _queueTypes.Where(qt => typeof (T).IsAssignableFrom(qt.Item1)).ToList();
+            var moreThanOneQueueType = queueTypes.Count > 1;
+            var containsSuperInterface = queueTypes.Any(qt => qt.Item1 == typeof (T));
+            var multipleQueues = moreThanOneQueueType && !containsSuperInterface;
+            if (!multipleQueues)
+            {
+                queueTypes = null;
+            }
+            return queueTypes != null;
         }
 
         public override IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpointClient()
