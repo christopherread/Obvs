@@ -1,12 +1,13 @@
+using System;
 using System.Collections.Generic;
-using Obvs.Types;
+using System.Reflection;
 
 namespace Obvs.Serialization
 {
     public interface IMessageDeserializerFactory
     {
-        IEnumerable<IMessageDeserializer<TMessage>> Create<TMessage, TServiceMessage>(string assemblyNameContains = null)
-            where TMessage : IMessage
-            where TServiceMessage : IMessage;
+        IEnumerable<IMessageDeserializer<TMessage>> Create<TMessage, TServiceMessage>(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
+            where TMessage : class
+            where TServiceMessage : class;
     }
 }

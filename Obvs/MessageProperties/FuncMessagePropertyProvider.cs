@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using Obvs.Types;
 
 namespace Obvs.MessageProperties
 {
-    public class FuncMessagePropertyProvider<TMessage> : IMessagePropertyProvider<TMessage> where TMessage : IMessage
+    public class FuncMessagePropertyProvider<TMessage> : IMessagePropertyProvider<TMessage> where TMessage : class
     {
         Func<TMessage, IEnumerable<KeyValuePair<string, object>>> _providerFunc;
 

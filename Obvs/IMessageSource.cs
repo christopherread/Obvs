@@ -1,16 +1,16 @@
 using System;
 using System.Reactive.Linq;
-using Obvs.Types;
 
 namespace Obvs
 {
     public interface IMessageSource<out TMessage> : IDisposable
-        where TMessage : IMessage
+        where TMessage : class
     {
         IObservable<TMessage> Messages { get; }
     }
 
-    public class DefaultMessageSource<TMessage> : IMessageSource<TMessage> where TMessage : IMessage
+    public class DefaultMessageSource<TMessage> : IMessageSource<TMessage>
+        where TMessage : class
     {
         public void Dispose()
         {

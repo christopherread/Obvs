@@ -5,59 +5,117 @@ using Obvs.Types;
 
 namespace Obvs.Logging
 {
-    public class ServiceEndpointLoggingProxy : IServiceEndpoint
+    public class ServiceEndpointLoggingProxy : ServiceEndpointLoggingProxy<IMessage, ICommand, IEvent, IRequest, IResponse>, IServiceEndpoint
     {
-        private readonly IServiceEndpoint _endpoint;
-        private readonly ILogger _logger;
-
-        public ServiceEndpointLoggingProxy(ILoggerFactory loggerFactory, IServiceEndpoint endpoint)
+        public ServiceEndpointLoggingProxy(ILoggerFactory loggerFactory, IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse> endpoint, Func<Type, LogLevel> logLevelSend, Func<Type, LogLevel> logLevelReceive)
+            : base(loggerFactory, endpoint, logLevelSend, logLevelReceive)
         {
-            _logger = loggerFactory.Create(endpoint.GetType().FullName);
+        }
+    }
+
+    public class ServiceEndpointLoggingProxy<TMessage, TCommand, TEvent, TRequest, TResponse> : IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : TMessage
+        where TEvent : TMessage
+        where TRequest : TMessage
+        where TResponse : TMessage
+    {
+        private readonly IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> _endpoint;
+        private readonly ILogger _logger;
+        private readonly LogLevel _logLevelSendEvent;
+        private readonly LogLevel _logLevelSendResponse;
+        private readonly LogLevel _logLevelReceiveCommand;
+        private readonly LogLevel _logLevelReceiveRequest;
+
+        public ServiceEndpointLoggingProxy(ILoggerFactory loggerFactory, IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint, Func<Type, LogLevel> logLevelSend, Func<Type, LogLevel> logLevelReceive)
+        {
+            _logger = loggerFactory.Create(endpoint.Name);
             _endpoint = endpoint;
+            _logLevelSendEvent = logLevelSend(typeof(TEvent));
+            _logLevelSendResponse = logLevelSend(typeof(TResponse));
+            _logLevelReceiveCommand = logLevelReceive(typeof(TCommand));
+            _logLevelReceiveRequest = logLevelReceive(typeof(TRequest));
+
+            _logger.Debug("Created");
+            _logger.Debug(string.Format("CommandLogLevel={0}, EventLogLevel={1}, RequestLogLevel={2}, ResponseLogLevel={3}", _logLevelReceiveCommand, _logLevelSendEvent, _logLevelReceiveRequest, _logLevelSendResponse));
         }
 
-        public bool CanHandle(IMessage message)
+        public bool CanHandle(TMessage message)
         {
             return _endpoint.CanHandle(message);
         }
 
-        public IObservable<IRequest> Requests
+        public string Name
         {
-            get
-            {
-                return _endpoint.Requests.Do(
-                    request => _logger.Info(string.Format("Received request {0}", request.ToString())),
-                    exception => _logger.Error("Error receiving requests", exception),
-                    () => _logger.Warn("Requests completed"));
-            }
+            get { return _endpoint.Name; }
         }
 
-        public IObservable<ICommand> Commands
+        public IObservable<TRequest> Requests
         {
-            get
-            {
-                return _endpoint.Commands.Do(
-                    command => _logger.Info(string.Format("Received command {0}", command.ToString())),
-                    exception => _logger.Error("Error receiving commands", exception),
-                    () => _logger.Warn("Commands completed"));
-            }
+            get { return _endpoint.Requests.Do(LogRequestReceived, LogRequestsError, LogRequestsCompleted); }
         }
 
-        public Task PublishAsync(IEvent ev)
+        public IObservable<TCommand> Commands
         {
-            _logger.Info(string.Format("Publishing event {0}", ev));
+            get { return _endpoint.Commands.Do(LogCommandReceived, LogCommandsException, LogCommandsCompleted); }
+        }
+
+        public Task PublishAsync(TEvent ev)
+        {
+            LogPublishEvent(ev);
             return _endpoint.PublishAsync(ev);
         }
 
-        public Task ReplyAsync(IRequest request, IResponse response)
+        public Task ReplyAsync(TRequest request, TResponse response)
         {
-            _logger.Info(string.Format("Replying to {0} with {1}", request, response));
+            LogReplyRequest(request, response);
             return _endpoint.ReplyAsync(request, response);
         }
-
+        
         public void Dispose()
         {
+            _logger.Debug("Disposing");
             _endpoint.Dispose();
+        }
+        
+        private void LogPublishEvent(TEvent ev)
+        {
+            _logger.Log(_logLevelSendEvent, string.Format("Publishing event {0}", ev));
+        }
+
+        private void LogReplyRequest(TRequest request, TResponse response)
+        {
+            _logger.Log(_logLevelSendResponse, string.Format("Replying to {0} with {1}", request, response));
+        }
+
+        private void LogRequestsCompleted()
+        {
+            _logger.Warn("Requests completed");
+        }
+
+        private void LogRequestsError(Exception exception)
+        {
+            _logger.Error("Error receiving requests", exception);
+        }
+
+        private void LogRequestReceived(TRequest request)
+        {
+            _logger.Log(_logLevelReceiveRequest, string.Format("Received request {0}", request.ToString()));
+        }
+        
+        private void LogCommandsCompleted()
+        {
+            _logger.Warn("Commands completed");
+        }
+
+        private void LogCommandsException(Exception exception)
+        {
+            _logger.Error("Error receiving commands", exception);
+        }
+
+        private void LogCommandReceived(TCommand command)
+        {
+            _logger.Log(_logLevelReceiveCommand, string.Format("Received command {0}", command.ToString()));
         }
     }
 }

@@ -9,7 +9,7 @@ namespace Obvs.MessageProperties
     {
         private IDictionary<Type, List<object>> _messagePropertyProviders = new Dictionary<Type, List<object>>();
 
-        public void Add<TMessage>(IMessagePropertyProvider<TMessage> messagePropertyProvider) where TMessage : IMessage
+        public void Add<TMessage>(IMessagePropertyProvider<TMessage> messagePropertyProvider) where TMessage : class
         {
             List<object> propertyProvidersForType;
             Type messageType = typeof(TMessage);
@@ -24,13 +24,13 @@ namespace Obvs.MessageProperties
             propertyProvidersForType.Add(messagePropertyProvider);
         }
 
-        public IMessagePropertyProvider<TMessage> GetMessagePropertyProviderFor<TMessage>() where TMessage : IMessage
+        public IMessagePropertyProvider<TMessage> GetMessagePropertyProviderFor<TMessage>() where TMessage : class
         {
             return new DispatchingPropertyProvider<TMessage>(_messagePropertyProviders);
         }
     }
 
-    internal sealed class DispatchingPropertyProvider<TMessage> : IMessagePropertyProvider<TMessage> where TMessage : IMessage
+    internal sealed class DispatchingPropertyProvider<TMessage> : IMessagePropertyProvider<TMessage> where TMessage : class
     {
         private IDictionary<Type, List<object>> _messagePropertyProviders;
 

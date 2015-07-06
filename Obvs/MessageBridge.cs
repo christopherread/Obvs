@@ -1,6 +1,5 @@
 using System;
 using System.Reactive.Linq;
-using Obvs.Types;
 
 namespace Obvs
 {
@@ -11,8 +10,8 @@ namespace Obvs
     }
 
     public class MessageBridge<TFrom, TTo> : IMessageBridge 
-        where TFrom : class, IMessage 
-        where TTo : class, IMessage
+        where TFrom : class 
+        where TTo : class
     {
         private readonly IMessagePublisher<TTo> _publisher;
         private readonly IMessageConverter<TFrom, TTo> _converter;

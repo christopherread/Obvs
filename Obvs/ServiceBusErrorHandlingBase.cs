@@ -3,13 +3,17 @@ using System.Collections.Generic;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Obvs.Extensions;
-using Obvs.Types;
 
 namespace Obvs
 {
-    public abstract class ServiceBusErrorHandlingBase : IDisposable
+    public abstract class ServiceBusErrorHandlingBase<TMessage, TCommand, TEvent, TRequest, TResponse> : IDisposable
+        where TMessage : class
+        where TCommand : TMessage
+        where TEvent : TMessage
+        where TRequest : TMessage
+        where TResponse : TMessage
     {
-        private readonly Subject<Exception> _exceptions;
+        protected readonly Subject<Exception> _exceptions;
 
         protected ServiceBusErrorHandlingBase()
         {
@@ -21,47 +25,32 @@ namespace Obvs
             get { return _exceptions; }
         }
 
-        protected IObservable<IEvent> EventsWithErroHandling(IServiceEndpointClient endpoint)
-        {
-            return endpoint.Events.CatchAndHandle(_exceptions, () => endpoint.Events, string.Format("Error receiving {0} from endpoint {1}", typeof(IEvent), endpoint.GetType().FullName));
-        }
-
-        protected IObservable<ICommand> CommandsWithErrorHandling(IServiceEndpoint endpoint)
-        {
-            return endpoint.Commands.CatchAndHandle(_exceptions, () => endpoint.Commands, string.Format("Error receiving {0} from endpoint {1}", typeof(ICommand), endpoint.GetType().FullName));
-        }
-
-        protected IObservable<IRequest> RequestsWithErrorHandling(IServiceEndpoint endpoint)
-        {
-            return endpoint.Requests.CatchAndHandle(_exceptions, () => endpoint.Requests, string.Format("Error receiving {0} from endpoint {1}", typeof(IRequest), endpoint.GetType().FullName));
-        }
-
-        protected static string EventErrorMessage(IEndpoint endpoint)
+        protected static string EventErrorMessage(IEndpoint<TMessage> endpoint)
         {
             return string.Format("Error publishing event to endpoint {0}", endpoint.GetType().FullName);
         }
 
-        protected static string ReplyErrorMessage(IEndpoint endpoint)
+        protected static string ReplyErrorMessage(IEndpoint<TMessage> endpoint)
         {
             return string.Format("Error sending response to endpoint {0}", endpoint.GetType().FullName);
         }
 
-        protected static string CommandErrorMessage(IEndpoint endpoint)
+        protected static string CommandErrorMessage(IEndpoint<TMessage> endpoint)
         {
             return string.Format("Error sending command to endpoint {0}", endpoint.GetType().FullName);
         }
 
-        protected static string EventErrorMessage(IEvent ev)
+        protected static string EventErrorMessage(TEvent ev)
         {
             return string.Format("Error publishing event {0}", ev);
         }
 
-        protected static string ReplyErrorMessage(IRequest request, IResponse response)
+        protected static string ReplyErrorMessage(TRequest request, TResponse response)
         {
             return string.Format("Error replying to request {0} with response {1}", request, response);
         }
 
-        protected static string CommandErrorMessage(ICommand command)
+        protected static string CommandErrorMessage(TCommand command)
         {
             return string.Format("Error sending command {0}", command);
         }

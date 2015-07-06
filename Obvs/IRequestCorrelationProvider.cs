@@ -4,12 +4,20 @@ using Obvs.Types;
 
 namespace Obvs
 {
-    public interface IRequestCorrelationProvider
+    public interface IRequestCorrelationProvider : IRequestCorrelationProvider<IRequest, IResponse>
     {
-        void SetRequestCorrelationIds(IRequest request);
     }
 
-    public class DefaultRequestCorrelationProvider : IRequestCorrelationProvider
+    public interface IRequestCorrelationProvider<in TRequest, in TResponse>
+        where TRequest : class
+        where TResponse : class
+    {
+        void SetRequestCorrelationIds(TRequest request);
+        void SetCorrelationIds(TRequest request, TResponse response);
+        bool AreCorrelated(TRequest request, TResponse response);
+    }
+
+    public class DefaultRequestCorrelationProvider : IRequestCorrelationProvider<IRequest, IResponse>
     {
         public void SetRequestCorrelationIds(IRequest request)
         {
@@ -22,6 +30,18 @@ namespace Obvs
             {
                 request.RequesterId = RequesterId.Create();
             }
+        }
+
+        public bool AreCorrelated(IRequest request, IResponse response)
+        {
+            return request.RequestId == response.RequestId &&
+                   request.RequesterId == response.RequesterId;
+        }
+
+        public void SetCorrelationIds(IRequest request, IResponse response)
+        {
+            response.RequestId = request.RequestId;
+            response.RequesterId = request.RequesterId;
         }
     }
 }

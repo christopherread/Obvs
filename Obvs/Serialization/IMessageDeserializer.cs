@@ -3,6 +3,7 @@ using System.IO;
 namespace Obvs.Serialization
 {
     public interface IMessageDeserializer<out TMessage>
+        where TMessage : class
     {
         TMessage Deserialize(object obj);
         TMessage Deserialize(Stream source);
@@ -10,6 +11,7 @@ namespace Obvs.Serialization
     }
 
     public abstract class MessageDeserializerBase<TMessage> : IMessageDeserializer<TMessage>
+        where TMessage : class
     {
         public abstract TMessage Deserialize(object obj);
         public abstract TMessage Deserialize(Stream source);

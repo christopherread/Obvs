@@ -1,11 +1,10 @@
 using System;
-using Obvs.Types;
 
 namespace Obvs
 {
     public interface IMessageConverter<in TFrom, out TTo> : IDisposable
-        where TFrom : IMessage
-        where TTo : IMessage
+        where TFrom : class
+        where TTo : class
     {
         TTo Convert(TFrom from);
     }

@@ -12,16 +12,16 @@ namespace Obvs.Tests
     {
         public interface ITestServiceMessage : IMessage {}
         public class TestMessage1 : ITestServiceMessage { }
-        public class TestMessage2 : ITestServiceMessage { }
+        public class TesTMessageWithProperties : ITestServiceMessage { }
 
         [Test]
         public void TestThatCorrectMessageTypesAreFound()
         {
-            IEnumerable<Type> types = MessageTypes.Get<IMessage, ITestServiceMessage>("Obvs.Tests").ToArray();
+            IEnumerable<Type> types = MessageTypes.Get<IMessage, ITestServiceMessage>(assembly => assembly.FullName.Contains("Obvs.Tests")).ToArray();
 
             Assert.That(types.Any());
             Assert.That(types.Contains(typeof(TestMessage1)));
-            Assert.That(types.Contains(typeof(TestMessage2)));
+            Assert.That(types.Contains(typeof(TesTMessageWithProperties)));
         }
     }
 }

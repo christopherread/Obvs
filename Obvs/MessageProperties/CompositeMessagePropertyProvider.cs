@@ -4,7 +4,7 @@ using Obvs.Types;
 
 namespace Obvs.MessageProperties
 {
-    public class CompositeMessagePropertyProvider<TMessage> : IMessagePropertyProvider<TMessage> where TMessage : IMessage
+    public class CompositeMessagePropertyProvider<TMessage> : IMessagePropertyProvider<TMessage> where TMessage : class
     {
         List<IMessagePropertyProvider<TMessage>> _providers;
 

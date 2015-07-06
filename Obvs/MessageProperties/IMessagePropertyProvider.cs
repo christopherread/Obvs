@@ -1,15 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
-using Obvs.Types;
 
 namespace Obvs.MessageProperties
 {
-    public interface IMessagePropertyProvider<in TMessage> where TMessage : IMessage
+    public interface IMessagePropertyProvider<in TMessage> where TMessage : class
     {
         IEnumerable<KeyValuePair<string, object>> GetProperties(TMessage message);
     }
 
-    public class DefaultPropertyProvider<TMessage> : IMessagePropertyProvider<TMessage> where TMessage : IMessage
+    public class DefaultPropertyProvider<TMessage> : IMessagePropertyProvider<TMessage> where TMessage : class
     {
         public IEnumerable<KeyValuePair<string, object>> GetProperties(TMessage message)
         {
