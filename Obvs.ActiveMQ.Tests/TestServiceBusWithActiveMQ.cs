@@ -23,13 +23,13 @@ namespace Obvs.ActiveMQ.Tests
         public void SetUp()
         {
             _broker = new EmbeddedBroker();
-            Console.WriteLine("Created broker {0}", _broker.FailoverUri);
+            Console.WriteLine("Created broker: {0}", _broker.FailoverUri);
         }
 
         [TearDown]
         public void TearDown()
         {
-           Console.WriteLine("Disposing broker {0}", _broker.FailoverUri);
+           Console.WriteLine("Disposing broker: {0}", _broker.FailoverUri);
            _broker.Dispose();
         }
 
@@ -70,6 +70,7 @@ namespace Obvs.ActiveMQ.Tests
             // send some messages
             serviceBus.SendAsync(new TestCommand { Id = 123 });
             serviceBus.SendAsync(new TestCommand2 { Id = 123 });
+            serviceBus.SendAsync(new TestCommand3 { Id = 123 });
             serviceBus.GetResponses(new TestRequest { Id = 456 }).Subscribe(observer);
 
             // wait some time until we think all messages have been sent and received over AMQ
@@ -78,6 +79,7 @@ namespace Obvs.ActiveMQ.Tests
             // test we got everything we expected
             Assert.That(messages.OfType<TestCommand>().Count() == 1, "TestCommand not received");
             Assert.That(messages.OfType<TestCommand2>().Count() == 1, "TestCommand2 not received");
+            Assert.That(messages.OfType<TestCommand3>().Count() == 1, "TestCommand3 not received");
             Assert.That(messages.OfType<TestEvent>().Count() == 1, "TestEvent not received");
             Assert.That(messages.OfType<TestRequest>().Count() == 1, "TestRequest not received");
             Assert.That(messages.OfType<TestResponse>().Count() == 1, "TestResponse not received");
@@ -112,6 +114,16 @@ namespace Obvs.ActiveMQ.Tests
         }
 
         public class TestCommand2 : ITestMessage, ICommand
+        {
+            public int Id { get; set; }
+
+            public override string ToString()
+            {
+                return string.Format("{0}[Id={1}]", GetType().Name, Id);
+            }
+        }
+
+        public class TestCommand3 : ITestMessage, ICommand
         {
             public int Id { get; set; }
 

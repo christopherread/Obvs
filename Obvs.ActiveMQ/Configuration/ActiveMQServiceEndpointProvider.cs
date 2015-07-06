@@ -68,14 +68,15 @@ namespace Obvs.ActiveMQ.Configuration
 
             if (TryGetMultipleQueueTypes<T>(out queueTypes))
             {
-                var deserializers = _deserializerFactory.Create<T, TServiceMessage>(_assemblyFilter, _typeFilter);
-
-                return new MergedMessageSource<T>(queueTypes.Select(qt =>
-                    new MessageSource<T>(
-                        connection,
+                var deserializers = _deserializerFactory.Create<T, TServiceMessage>(_assemblyFilter, _typeFilter).ToArray();
+                var topicSources = new[] { new MessageSource<T>(connection, deserializers, new ActiveMQTopic(destination)) };
+                var queueSources = queueTypes.Select(qt =>
+                    new MessageSource<T>(connection, 
                         deserializers,
-                        new ActiveMQQueue(string.Format("{0}.{1}", destination, qt.Item1.Name)),
-                        qt.Item2)));
+                        new ActiveMQQueue(GetTypedQueueName(destination, qt.Item1)), 
+                        qt.Item2));
+
+                return new MergedMessageSource<T>(topicSources.Concat(queueSources));
             }
 
             return DestinationFactory.CreateSource<T, TServiceMessage>(connection, destination, GetDestinationType<T>(), _deserializerFactory, _assemblyFilter, _typeFilter, null, GetAcknowledgementMode<T>());
@@ -87,17 +88,27 @@ namespace Obvs.ActiveMQ.Configuration
             
             if (TryGetMultipleQueueTypes<T>(out queueTypes))
             {
-                return new TypeRoutingMessagePublisher<T>(queueTypes.Select(qt =>
+                var topicTypes = MessageTypes.Get<T, TServiceMessage>().Where(type => queueTypes.All(qt => qt.Item1 != type));
+                var topicPublisher = new MessagePublisher<T>(connection, new ActiveMQTopic(destination), _serializer, new DefaultPropertyProvider<T>(), _scheduler);
+                var topicPublishers = topicTypes.Select(tt => new KeyValuePair<Type, IMessagePublisher<T>>(tt, topicPublisher));
+                var queuePubishers = queueTypes.Select(qt =>
                     new KeyValuePair<Type, IMessagePublisher<T>>(qt.Item1,
                         new MessagePublisher<T>(
                             connection,
-                            new ActiveMQQueue(string.Format("{0}.{1}", destination, qt.Item1.Name)),
+                            new ActiveMQQueue(GetTypedQueueName(destination, qt.Item1)),
                             _serializer,
                             new DefaultPropertyProvider<T>(),
-                            _scheduler))));
+                            _scheduler)));
+
+                return new TypeRoutingMessagePublisher<T>(topicPublishers.Concat(queuePubishers));
             }
 
             return DestinationFactory.CreatePublisher<T>(connection, destination, GetDestinationType<T>(), _serializer, _scheduler);
+        }
+
+        private static string GetTypedQueueName(string destination, Type type)
+        {
+            return string.Format("{0}.{1}", destination, type.Name);
         }
 
         private bool TryGetMultipleQueueTypes<T>(out List<Tuple<Type, AcknowledgementMode>> queueTypes) where T : class, TMessage
