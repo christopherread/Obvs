@@ -12,7 +12,7 @@ namespace Obvs.Tests
     {
         public interface ITestServiceMessage : IMessage {}
         public class TestMessage1 : ITestServiceMessage { }
-        public class TesTMessageWithProperties : ITestServiceMessage { }
+        public class TestMessage2 : ITestServiceMessage { }
 
         [Test]
         public void TestThatCorrectMessageTypesAreFound()
@@ -21,7 +21,7 @@ namespace Obvs.Tests
 
             Assert.That(types.Any());
             Assert.That(types.Contains(typeof(TestMessage1)));
-            Assert.That(types.Contains(typeof(TesTMessageWithProperties)));
+            Assert.That(types.Contains(typeof(TestMessage2)));
         }
     }
 }
