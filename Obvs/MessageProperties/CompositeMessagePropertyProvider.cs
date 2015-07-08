@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Obvs.Types;
 
@@ -29,6 +30,24 @@ namespace Obvs.MessageProperties
             {
                 return _providers;
             }
+        }
+    }
+
+    public static class MessagePropertyProviderListExtensions
+    {
+        public static void Add<T>(this List<IMessagePropertyProvider<T>> propertyProviderList, Func<T, IEnumerable<KeyValuePair<string, object>>> providerFunc) where T : class
+        {
+            propertyProviderList.Add(new FuncMessagePropertyProvider<T>(providerFunc));
+        }
+
+        public static void Add<T>(this List<IMessagePropertyProvider<T>> propertyProviderList, Func<T, KeyValuePair<string, object>> providerFunc) where T : class
+        {
+            propertyProviderList.Add(new FuncMessagePropertyProvider<T>(providerFunc));
+        }
+
+        public static void AddRange<T>(this List<IMessagePropertyProvider<T>> propertyProviderList, params Func<T, KeyValuePair<string, object>>[] providerFuncs) where T : class
+        {
+            propertyProviderList.AddRange(providerFuncs.Select(pf => new FuncMessagePropertyProvider<T>(pf)));
         }
     }
 }
