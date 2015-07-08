@@ -107,12 +107,6 @@ namespace Obvs.Configuration
         where TRequest : class, TMessage
         where TResponse : class, TMessage
     {
-        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> UsingMessagePropertyProviderFor<TMessageWithProperties, TMessage, TCommand, TEvent, TRequest, TResponse>(IMessagePropertyProvider<TMessageWithProperties> provider)
-            where TMessage : class
-            where TCommand : class, TMessage
-            where TEvent : class, TMessage
-            where TRequest : class, TMessage
-            where TResponse : class, TMessage
-            where TMessageWithProperties : class, TMessage;
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> UsingMessagePropertyProviderFor<T>(IMessagePropertyProvider<T> provider) where T : class, TMessage;
     }
 }
