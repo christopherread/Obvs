@@ -5,14 +5,20 @@ using Obvs.Types;
 
 namespace Obvs.MessageProperties
 {
-    public sealed class MessagePropertyProviderManager
+    public sealed class MessagePropertyProviderManager<TMessage> where TMessage : class
     {
         private IDictionary<Type, List<object>> _messagePropertyProviders = new Dictionary<Type, List<object>>();
 
-        public void Add<TMessage>(IMessagePropertyProvider<TMessage> messagePropertyProvider) where TMessage : class
+		public MessagePropertyProviderManager()
+		{
+			// Always include the default provider right now since serializer implementations depend on it being there
+			Add(new DefaultPropertyProvider<TMessage>());
+		}
+
+        public void Add<T>(IMessagePropertyProvider<T> messagePropertyProvider) where T : class, TMessage
         {
             List<object> propertyProvidersForType;
-            Type messageType = typeof(TMessage);
+            Type messageType = typeof(T);
 
             if(!_messagePropertyProviders.TryGetValue(messageType, out propertyProvidersForType))
             {
@@ -24,9 +30,9 @@ namespace Obvs.MessageProperties
             propertyProvidersForType.Add(messagePropertyProvider);
         }
 
-        public IMessagePropertyProvider<TMessage> GetMessagePropertyProviderFor<TMessage>() where TMessage : class
+        public IMessagePropertyProvider<T> GetMessagePropertyProviderFor<T>() where T : class, TMessage
         {
-            return new DispatchingPropertyProvider<TMessage>(_messagePropertyProviders);
+            return new DispatchingPropertyProvider<T>(_messagePropertyProviders);
         }
     }
 
