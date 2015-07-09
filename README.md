@@ -2,6 +2,8 @@
 # Obvs: an observable µService bus
 ## observable services, *obviously*
 
+[![Join the chat at https://gitter.im/inter8ection/Obvs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/inter8ection/Obvs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ![build](https://ci.appveyor.com/api/projects/status/hcv02eeulvfdr9de?svg=true)
 
 Features:
