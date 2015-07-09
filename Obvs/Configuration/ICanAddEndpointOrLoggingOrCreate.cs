@@ -1,7 +1,9 @@
 using System;
 using System.Reflection;
 using Obvs.Logging;
+using Obvs.MessageProperties;
 using Obvs.Serialization;
+using Obvs.Types;
 
 namespace Obvs.Configuration
 {
@@ -96,5 +98,15 @@ namespace Obvs.Configuration
         ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsClient();
         ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsServer();
         ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsClientAndServer();
+    }
+
+    public interface ICanSpecifyPropertyProviders<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
+        ICanSpecifyPropertyProviders<TMessage, TCommand, TEvent, TRequest, TResponse> UsingMessagePropertyProviderFor<T>(IMessagePropertyProvider<T> provider) where T : class, TMessage;
     }
 }
