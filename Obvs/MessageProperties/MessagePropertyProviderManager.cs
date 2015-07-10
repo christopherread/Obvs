@@ -38,7 +38,8 @@ namespace Obvs.MessageProperties
 
     internal sealed class DispatchingPropertyProvider<TMessage> : IMessagePropertyProvider<TMessage> where TMessage : class
     {
-        private IDictionary<Type, List<object>> _messagePropertyProviders;
+        private readonly Type _baseMessageType = typeof(TMessage);
+        private readonly IDictionary<Type, List<object>> _messagePropertyProviders;
 
         public DispatchingPropertyProvider(IDictionary<Type, List<object>> messagePropertyProviders)
         {
@@ -72,27 +73,27 @@ namespace Obvs.MessageProperties
             }
         }
 
-        private static IEnumerable<Type> FindAllApplicableTypesForMessage<TMessage>(TMessage message)
+        private IEnumerable<Type> FindAllApplicableTypesForMessage(TMessage message)
         {
             Type messageType = message.GetType();
 
             yield return messageType;
 
-            if(messageType.IsClass)
+            Type nextBaseType = messageType.BaseType;
+
+            while(nextBaseType != typeof(object))
             {
-                Type nextBaseType = messageType.BaseType;
+                yield return nextBaseType;
 
-                while(nextBaseType != typeof(object))
-                {
-                    yield return nextBaseType;
-
-                    nextBaseType = nextBaseType.BaseType;
-                }
+                nextBaseType = nextBaseType.BaseType;
             }
 
-            foreach(Type messageTypeInterface in messageType.FindInterfaces((t, fc) => typeof(IMessage).IsAssignableFrom(t), null))
+            if(_baseMessageType.IsInterface)
             {
-                yield return messageTypeInterface;
+                foreach(Type messageTypeInterface in messageType.FindInterfaces((t, fc) => _baseMessageType.IsAssignableFrom(t), null))
+                {
+                    yield return messageTypeInterface;
+                }
             }
         }
 
