@@ -25,21 +25,7 @@ namespace Obvs.Configuration
 
             EnsureTypesAreVisible(types);
 
-            EnsureDefaultConstructors(types);
-
             return types.ToArray();
-        }
-
-        private static void EnsureDefaultConstructors(Type[] types)
-        {
-            var noDefaultConstructor = types.Where(t => !t.HasDefaultConstructor()).ToArray();
-
-            if (noDefaultConstructor.Any())
-            {
-                throw new Exception(
-                    "The following message types do not have a default constructors and may not deserialize. Please add a default constuctor: " + Environment.NewLine +
-                    string.Join(Environment.NewLine, noDefaultConstructor.Select(t => string.Format("- {0}", t.FullName))));
-            }
         }
 
         private static void EnsureTypesAreVisible(IEnumerable<Type> types)
