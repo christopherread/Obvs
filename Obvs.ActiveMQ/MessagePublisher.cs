@@ -24,9 +24,11 @@ namespace Obvs.ActiveMQ
         private readonly Func<TMessage, MsgPriority> _priority;
         private readonly Func<TMessage, TimeSpan> _timeToLive;
         private readonly Lazy<IConnection> _connection;
+        
         private ISession _session;
         private IMessageProducer _producer;
         private IDisposable _disposable;
+        private bool _disposed;
 
         public MessagePublisher(Lazy<IConnection> lazyConnection, IDestination destination, IMessageSerializer serializer, IMessagePropertyProvider<TMessage> propertyProvider, IScheduler scheduler,
                                 Func<TMessage, MsgDeliveryMode> deliveryMode = null, Func<TMessage, MsgPriority> priority = null, Func<TMessage, TimeSpan> timeToLive = null)
@@ -43,6 +45,11 @@ namespace Obvs.ActiveMQ
 
         public Task PublishAsync(TMessage message)
         {
+            if (_disposed)
+            {
+                throw new InvalidOperationException("Publisher has been disposed already.");
+            }
+
             return Observable.Start(() => Publish(message), _scheduler).ToTask();
         }
 
@@ -55,6 +62,11 @@ namespace Obvs.ActiveMQ
 
         private void Publish(TMessage message, List<KeyValuePair<string, object>> properties)
         {
+            if (_disposed)
+            {
+                return;
+            }
+
             Connect();
 
             AppendTypeNameProperty(message, properties);
@@ -80,6 +92,7 @@ namespace Obvs.ActiveMQ
 
                 _disposable = Disposable.Create(() =>
                 {
+                    _disposed = true;
                     _producer.Close();
                     _producer.Dispose();
                     _session.Close();
@@ -88,18 +101,12 @@ namespace Obvs.ActiveMQ
             }
         }
 
-        private void Disconnect()
+        public void Dispose()
         {
             if (_disposable != null)
             {
                 _disposable.Dispose();
-                _disposable = null;
             }
-        }
-
-        public void Dispose()
-        {
-            Disconnect();
         }
     }
 }

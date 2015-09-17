@@ -158,6 +158,33 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _producer.Close()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
+        [Test, ExpectedException(typeof(InvalidOperationException))]
+        public void ShouldThrowExceptionIfPublishAttemptedAfterDisposed()
+        {
+            _publisher.PublishAsync(new TestMessage());
+            _testScheduler.AdvanceBy(1);
+            _publisher.Dispose();
+            _publisher.PublishAsync(new TestMessage());
+        }
+
+        [Test]
+        public void ShouldDiscardMessagesThatAreStillQueuedOnSchedulerAfterDispose()
+        {
+            var message1 = new TestMessage();
+            var message2 = new TestMessage();
+
+            _publisher.PublishAsync(message1);
+            _testScheduler.AdvanceBy(1);
+            _publisher.PublishAsync(message2);
+            
+            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Once);
+
+            _publisher.Dispose();
+            _testScheduler.AdvanceBy(1);
+
+            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Once);
+        }
+        
         [Test, Explicit]
         public void ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics()
         {
