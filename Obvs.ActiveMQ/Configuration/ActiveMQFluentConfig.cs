@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Apache.NMS;
 using Obvs.Configuration;
 using Obvs.Serialization;
 
@@ -55,6 +56,7 @@ namespace Obvs.ActiveMQ.Configuration
         where TResponse : class, TMessage
     {
         ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri);
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> UseSharedConnection(IConnection sharedConnection);
     }
 
     internal class ActiveMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
@@ -77,6 +79,7 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly List<Tuple<Type, AcknowledgementMode>> _queueTypes = new List<Tuple<Type, AcknowledgementMode>>();
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _typeFilter;
+        private IConnection _sharedConnection;
 
         public ActiveMQFluentConfig(ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint)
         {
@@ -113,12 +116,18 @@ namespace Obvs.ActiveMQ.Configuration
 
         private ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> CreateProvider()
         {
-            return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, _typeFilter);
+            return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, _typeFilter, _sharedConnection);
         }
 
         public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri)
         {
             _brokerUri = brokerUri;
+            return this;
+        }
+
+        public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> UseSharedConnection(IConnection sharedConnection)
+        {
+            _sharedConnection = sharedConnection;
             return this;
         }
 

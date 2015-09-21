@@ -31,9 +31,14 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly Lazy<IConnection> _endpointConnection;
         private readonly Lazy<IConnection> _endpointClientConnection;
 
-        public ActiveMQServiceEndpointProvider(string serviceName, string brokerUri, 
-                                               IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory,
-                                               List<Tuple<Type, AcknowledgementMode>> queueTypes, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
+        public ActiveMQServiceEndpointProvider(string serviceName,
+                                               string brokerUri, 
+                                               IMessageSerializer serializer, 
+                                               IMessageDeserializerFactory deserializerFactory,
+                                               List<Tuple<Type, AcknowledgementMode>> queueTypes, 
+                                               Func<Assembly, bool> assemblyFilter = null, 
+                                               Func<Type, bool> typeFilter = null,
+                                               IConnection sharedConnection = null)
             : base(serviceName)
         {
             _serializer = serializer;
@@ -41,13 +46,27 @@ namespace Obvs.ActiveMQ.Configuration
             _queueTypes = queueTypes;
             _assemblyFilter = assemblyFilter;
             _typeFilter = typeFilter;
+
+            if (string.IsNullOrEmpty(brokerUri) && sharedConnection == null)
+            {
+                throw new InvalidOperationException(string.Format("For service {0}, please specify either a brokerUri or a sharedConnection. To do this you can use either ConnectToBroker() or UseSharedConnection() on the fluent configuration interfaces.", serviceName));
+            }
             
             _scheduler = new EventLoopScheduler(start => new Thread(start){Name = string.Format("{0}.Publisher", serviceName), IsBackground = true});
 
-            IConnectionFactory endpointConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.Endpoint", serviceName)));
-            IConnectionFactory endpointClientConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.EndpointClient", serviceName)));
-            _endpointConnection = endpointConnectionFactory.GetLazyConnection();           
-            _endpointClientConnection = endpointClientConnectionFactory.GetLazyConnection();
+            if (sharedConnection == null)
+            {
+                IConnectionFactory endpointConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.Endpoint", serviceName)));
+                IConnectionFactory endpointClientConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.EndpointClient", serviceName)));
+                _endpointConnection = endpointConnectionFactory.GetLazyConnection();
+                _endpointClientConnection = endpointClientConnectionFactory.GetLazyConnection();
+            }
+            else
+            {
+                var lazyConnection = sharedConnection.GetLazyConnection();
+                _endpointConnection = lazyConnection;
+                _endpointClientConnection = lazyConnection;
+            }
         }
 
         public override IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpoint()
