@@ -48,7 +48,7 @@ namespace Obvs.ActiveMQ.Configuration
         ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> ClientAcknowledge();
     }
 
-    public interface ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanSpecifyActiveMQQueue<TMessage, TCommand, TEvent, TRequest, TResponse>
+    public interface ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanSpecifyActiveMQQueue<TMessage, TCommand, TEvent, TRequest, TResponse>, ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage
@@ -56,19 +56,11 @@ namespace Obvs.ActiveMQ.Configuration
         where TResponse : class, TMessage
     {
         ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri);
-        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> UseSharedConnection();
-    }
-
-    internal static class ActiveMQFluentConfigContext
-    {
-        [ThreadStatic]
-        internal static IConnection SharedConnection;   
     }
 
     internal class ActiveMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
         ICanSpecifyActiveMQServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>, 
         ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse>, 
-        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>,
         ICanSpecifyActiveMQQueueAcknowledge<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TServiceMessage : class 
@@ -85,7 +77,6 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly List<Tuple<Type, AcknowledgementMode>> _queueTypes = new List<Tuple<Type, AcknowledgementMode>>();
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _typeFilter;
-        private IConnection _sharedConnection;
 
         public ActiveMQFluentConfig(ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint)
         {
@@ -122,7 +113,7 @@ namespace Obvs.ActiveMQ.Configuration
 
         private ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> CreateProvider()
         {
-            return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, _typeFilter, _sharedConnection);
+            return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, _typeFilter, ActiveMQFluentConfigContext.SharedConnection);
         }
 
         public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri)
@@ -130,17 +121,7 @@ namespace Obvs.ActiveMQ.Configuration
             _brokerUri = brokerUri;
             return this;
         }
-
-        public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> UseSharedConnection()
-        {
-            if (ActiveMQFluentConfigContext.SharedConnection == null)
-            {
-                throw new Exception("No shared connection found for service " + _serviceName + ". Please create this endpoint within the provided WithActiveMQSharedConnectionScope function.");
-            }
-            _sharedConnection = ActiveMQFluentConfigContext.SharedConnection;
-            return this;
-        }
-
+        
         public ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
         {
             _serializer = serializer;

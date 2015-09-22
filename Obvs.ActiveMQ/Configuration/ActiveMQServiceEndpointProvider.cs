@@ -38,7 +38,7 @@ namespace Obvs.ActiveMQ.Configuration
                                                List<Tuple<Type, AcknowledgementMode>> queueTypes, 
                                                Func<Assembly, bool> assemblyFilter = null, 
                                                Func<Type, bool> typeFilter = null,
-                                               IConnection sharedConnection = null)
+                                               Lazy<IConnection> sharedConnection = null)
             : base(serviceName)
         {
             _serializer = serializer;
@@ -49,7 +49,7 @@ namespace Obvs.ActiveMQ.Configuration
 
             if (string.IsNullOrEmpty(brokerUri) && sharedConnection == null)
             {
-                throw new InvalidOperationException(string.Format("For service {0}, please specify either a brokerUri or a sharedConnection. To do this you can use either ConnectToBroker() or UseSharedConnection() on the fluent configuration interfaces.", serviceName));
+                throw new InvalidOperationException(string.Format("For service endpoint '{0}', please specify a brokerUri to connect to. To do this you can use either ConnectToBroker() per endpoint, or WithActiveMQSharedConnectionScope() to share a connection across multiple endpoints.", serviceName));
             }
             
             _scheduler = new EventLoopScheduler(start => new Thread(start){Name = string.Format("{0}.Publisher", serviceName), IsBackground = true});
@@ -63,9 +63,8 @@ namespace Obvs.ActiveMQ.Configuration
             }
             else
             {
-                var lazyConnection = sharedConnection.GetLazyConnection();
-                _endpointConnection = lazyConnection;
-                _endpointClientConnection = lazyConnection;
+                _endpointConnection = sharedConnection;
+                _endpointClientConnection = sharedConnection;
             }
         }
 
@@ -169,7 +168,8 @@ namespace Obvs.ActiveMQ.Configuration
         {
             return Disposable.Create(() =>
             {
-                if (lazyConnection.IsValueCreated)
+                if (lazyConnection.IsValueCreated && 
+                    lazyConnection.Value.IsStarted)
                 {
                     lazyConnection.Value.Stop();
                     lazyConnection.Value.Close();

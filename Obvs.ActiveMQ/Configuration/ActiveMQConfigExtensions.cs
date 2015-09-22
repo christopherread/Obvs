@@ -34,7 +34,7 @@ namespace Obvs.ActiveMQ.Configuration
             where TResponse : class, TMessage
         {
             var connectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix("Shared"));
-            ActiveMQFluentConfigContext.SharedConnection = connectionFactory.CreateConnection();
+            ActiveMQFluentConfigContext.SharedConnection = connectionFactory.CreateConnection().GetLazyConnection();
 
             var result = endPointFactory(canAddEndpoint);
 

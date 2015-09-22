@@ -95,18 +95,16 @@ namespace Obvs.ActiveMQ.Tests
 
             // set up ServiceBus using fluent interfaces and all current endpoints and pointing at test AMQ broker
             IServiceBus serviceBus = ServiceBus.Configure()
-                .WithActiveMQSharedConnectionScope(brokerUri, endpoint => endpoint 
+                .WithActiveMQSharedConnectionScope(brokerUri, config => config 
                     .WithActiveMQEndpoints<ITestMessage1>()
                         .Named("Obvs.TestService1")
                         .UsingQueueFor<TestCommand>().ClientAcknowledge()
                         .UsingQueueFor<TestCommand2>().ClientAcknowledge()
                         .UsingQueueFor<IRequest>().AutoAcknowledge()
-                        .UseSharedConnection()
                         .SerializedAsJson()
                         .AsClientAndServer()
                     .WithActiveMQEndpoints<ITestMessage2>()
                         .Named("Obvs.TestService2")
-                        .UseSharedConnection()
                         .SerializedAsJson()
                         .AsClientAndServer())
                 .UsingConsoleLogging()
