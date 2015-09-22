@@ -26,7 +26,7 @@ namespace Obvs.ActiveMQ.Configuration
         }
         
         public static ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> WithActiveMQSharedConnectionScope<TMessage, TCommand, TEvent, TRequest, TResponse>(this ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint, string brokerUri,
-            Func<ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>, IConnection, ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>> endPointFactory)
+            Func<ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>, ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>> endPointFactory)
             where TMessage : class
             where TCommand : class, TMessage
             where TEvent : class, TMessage
@@ -34,13 +34,16 @@ namespace Obvs.ActiveMQ.Configuration
             where TResponse : class, TMessage
         {
             var connectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix("Shared"));
-            var connection = connectionFactory.CreateConnection();
+            ActiveMQFluentConfigContext.SharedConnection = connectionFactory.CreateConnection();
 
-            return endPointFactory(canAddEndpoint, connection);
+            var result = endPointFactory(canAddEndpoint);
+
+            ActiveMQFluentConfigContext.SharedConnection = null;
+            return result;
         }
 
         public static ICanAddEndpointOrLoggingOrCorrelationOrCreate<IMessage, ICommand, IEvent, IRequest, IResponse> WithActiveMQSharedConnectionScope<TServiceMessage>(this ICanAddEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse> canAddEndpoint, string brokerUri,
-            Func<ICanAddEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>, IConnection, ICanAddEndpointOrLoggingOrCorrelationOrCreate<IMessage, ICommand, IEvent, IRequest, IResponse>> endPointFactory) where TServiceMessage : class
+            Func<ICanAddEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>, ICanAddEndpointOrLoggingOrCorrelationOrCreate<IMessage, ICommand, IEvent, IRequest, IResponse>> endPointFactory) where TServiceMessage : class
         {
             return canAddEndpoint.WithActiveMQSharedConnectionScope(brokerUri, endPointFactory);
         }

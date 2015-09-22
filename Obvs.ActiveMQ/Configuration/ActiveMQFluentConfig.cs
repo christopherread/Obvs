@@ -56,7 +56,13 @@ namespace Obvs.ActiveMQ.Configuration
         where TResponse : class, TMessage
     {
         ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri);
-        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> UseSharedConnection(IConnection sharedConnection);
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> UseSharedConnection();
+    }
+
+    internal static class ActiveMQFluentConfigContext
+    {
+        [ThreadStatic]
+        internal static IConnection SharedConnection;   
     }
 
     internal class ActiveMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
@@ -125,9 +131,13 @@ namespace Obvs.ActiveMQ.Configuration
             return this;
         }
 
-        public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> UseSharedConnection(IConnection sharedConnection)
+        public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> UseSharedConnection()
         {
-            _sharedConnection = sharedConnection;
+            if (ActiveMQFluentConfigContext.SharedConnection == null)
+            {
+                throw new Exception("No shared connection found for service " + _serviceName + ". Please create this endpoint within the provided WithActiveMQSharedConnectionScope function.");
+            }
+            _sharedConnection = ActiveMQFluentConfigContext.SharedConnection;
             return this;
         }
 

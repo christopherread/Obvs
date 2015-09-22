@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>ActiveMQ transport support for Obvs</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Upgraded Apache.NMS.ActiveMQ from 1.6.3 to 1.7.0</releaseNotes>
+    <releaseNotes>Allow ActiveMQ endpoints to be configured to share a single connection. Useful for client applications.</releaseNotes>
   </metadata>
 </package>

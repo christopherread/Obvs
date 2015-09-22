@@ -8,7 +8,6 @@ using EmbedMq;
 using NUnit.Framework;
 using Obvs.ActiveMQ.Configuration;
 using Obvs.Configuration;
-using Obvs.Logging;
 using Obvs.Serialization.Json.Configuration;
 using Obvs.Types;
 
@@ -41,7 +40,7 @@ namespace Obvs.ActiveMQ.Tests
 
             // set up ServiceBus using fluent interfaces and all current endpoints and pointing at test AMQ broker
             IServiceBus serviceBus = ServiceBus.Configure()
-                .WithActiveMQEndpoints<ITestMessage>()
+                .WithActiveMQEndpoints<ITestMessage1>()
                     .Named("Obvs.TestService")
                     .UsingQueueFor<TestCommand>().ClientAcknowledge()
                     .UsingQueueFor<TestCommand2>().ClientAcknowledge()
@@ -88,12 +87,82 @@ namespace Obvs.ActiveMQ.Tests
             // win!
         }
 
+        [Test]
+        public void TestServiceBusWithEmbeddedBrokerAndSharedConnection()
+        {
+            // use the embedded broker
+            var brokerUri = _broker.FailoverUri;
 
-        public interface ITestMessage : IMessage
+            // set up ServiceBus using fluent interfaces and all current endpoints and pointing at test AMQ broker
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithActiveMQSharedConnectionScope(brokerUri, endpoint => endpoint 
+                    .WithActiveMQEndpoints<ITestMessage1>()
+                        .Named("Obvs.TestService1")
+                        .UsingQueueFor<TestCommand>().ClientAcknowledge()
+                        .UsingQueueFor<TestCommand2>().ClientAcknowledge()
+                        .UsingQueueFor<IRequest>().AutoAcknowledge()
+                        .UseSharedConnection()
+                        .SerializedAsJson()
+                        .AsClientAndServer()
+                    .WithActiveMQEndpoints<ITestMessage2>()
+                        .Named("Obvs.TestService2")
+                        .UseSharedConnection()
+                        .SerializedAsJson()
+                        .AsClientAndServer())
+                .UsingConsoleLogging()
+                .Create();
+
+            // create threadsafe collection to hold received messages in
+            ConcurrentBag<IMessage> messages = new ConcurrentBag<IMessage>();
+
+            // create some actions that will act as a fake services acting on incoming commands and requests
+            Action<TestCommand> fakeService1 = command => serviceBus.PublishAsync(new TestEvent {Id = command.Id});
+            Action<Test2Command> fakeService3 = command => serviceBus.PublishAsync(new Test2Event {Id = command.Id});
+            Action<TestRequest> fakeService2 = request => serviceBus.ReplyAsync(request, new TestResponse {Id = request.Id});
+            AnonymousObserver<IMessage> observer = new AnonymousObserver<IMessage>(messages.Add, Console.WriteLine, () => Console.WriteLine("OnCompleted"));
+
+            // subscribe to all messages on the ServiceBus
+            serviceBus.Events.Subscribe(observer);
+            serviceBus.Commands.Subscribe(observer);
+            serviceBus.Requests.Subscribe(observer);
+            serviceBus.Commands.OfType<TestCommand>().Subscribe(fakeService1);
+            serviceBus.Commands.OfType<Test2Command>().Subscribe(fakeService3);
+            serviceBus.Requests.OfType<TestRequest>().Subscribe(fakeService2);
+
+            // send some messages
+            serviceBus.SendAsync(new TestCommand { Id = 123 });
+            serviceBus.SendAsync(new Test2Command { Id = 123 });
+            serviceBus.SendAsync(new TestCommand2 { Id = 123 });
+            serviceBus.SendAsync(new TestCommand3 { Id = 123 });
+            serviceBus.GetResponses(new TestRequest { Id = 456 }).Subscribe(observer);
+
+            // wait some time until we think all messages have been sent and received over AMQ
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+
+            // test we got everything we expected
+            Assert.That(messages.OfType<TestCommand>().Count() == 1, "TestCommand not received");
+            Assert.That(messages.OfType<Test2Command>().Count() == 1, "Test2Command not received");
+            Assert.That(messages.OfType<TestCommand2>().Count() == 1, "TestCommand2 not received");
+            Assert.That(messages.OfType<TestCommand3>().Count() == 1, "TestCommand3 not received");
+            Assert.That(messages.OfType<TestEvent>().Count() == 1, "TestEvent not received");
+            Assert.That(messages.OfType<Test2Event>().Count() == 1, "Test2Event not received");
+            Assert.That(messages.OfType<TestRequest>().Count() == 1, "TestRequest not received");
+            Assert.That(messages.OfType<TestResponse>().Count() == 1, "TestResponse not received");
+
+            ((IDisposable)serviceBus).Dispose();
+            // win!
+        }
+
+
+        public interface ITestMessage1 : IMessage
         {
         }
 
-        public class TestEvent : ITestMessage, IEvent
+        public interface ITestMessage2 : IMessage
+        {
+        }
+
+        public class TestEvent : ITestMessage1, IEvent
         {
             public int Id { get; set; }
 
@@ -103,7 +172,7 @@ namespace Obvs.ActiveMQ.Tests
             }
         }
 
-        public class TestCommand : ITestMessage, ICommand
+        public class TestCommand : ITestMessage1, ICommand
         {
             public int Id { get; set; }
 
@@ -113,7 +182,7 @@ namespace Obvs.ActiveMQ.Tests
             }
         }
 
-        public class TestCommand2 : ITestMessage, ICommand
+        public class Test2Event : ITestMessage1, IEvent
         {
             public int Id { get; set; }
 
@@ -123,7 +192,7 @@ namespace Obvs.ActiveMQ.Tests
             }
         }
 
-        public class TestCommand3 : ITestMessage, ICommand
+        public class Test2Command : ITestMessage1, ICommand
         {
             public int Id { get; set; }
 
@@ -133,7 +202,27 @@ namespace Obvs.ActiveMQ.Tests
             }
         }
 
-        public class TestRequest : ITestMessage, IRequest
+        public class TestCommand2 : ITestMessage1, ICommand
+        {
+            public int Id { get; set; }
+
+            public override string ToString()
+            {
+                return string.Format("{0}[Id={1}]", GetType().Name, Id);
+            }
+        }
+
+        public class TestCommand3 : ITestMessage1, ICommand
+        {
+            public int Id { get; set; }
+
+            public override string ToString()
+            {
+                return string.Format("{0}[Id={1}]", GetType().Name, Id);
+            }
+        }
+
+        public class TestRequest : ITestMessage1, IRequest
         {
             public int Id { get; set; }
 
@@ -146,7 +235,7 @@ namespace Obvs.ActiveMQ.Tests
             public string RequesterId { get; set; }
         }
 
-        public class TestResponse : ITestMessage, IResponse
+        public class TestResponse : ITestMessage1, IResponse
         {
             public int Id { get; set; }
 
