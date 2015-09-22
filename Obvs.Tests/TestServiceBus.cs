@@ -1247,6 +1247,42 @@ namespace Obvs.Tests
             Assert.That(subscriber2.Received[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
             Assert.That(subscriber2.Received[2].GetType(), Is.EqualTo(typeof(TestServiceEventBase)));
         }
+        
+        [Test]
+        public void ShouldDeliverAllMessagesFromEndpointsWithoutLoggingEnabled()
+        {
+            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
+            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
+
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithEndpoint((IServiceEndpointClient)serviceEndpoint1)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
+                .WithEndpoint((IServiceEndpointClient)serviceEndpoint2)
+                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
+                .UsingConsoleLogging(endpoint => false)
+                .Create();
+
+            List<Exception> exceptions = new List<Exception>();
+            List<IMessage> messages = new List<IMessage>();
+            serviceBus.Exceptions.Subscribe(exceptions.Add);
+            serviceBus.Events.Subscribe(messages.Add);
+            serviceBus.Commands.Subscribe(messages.Add);
+            
+            var testScheduler = new TestScheduler();
+            
+            serviceEndpoint1.Messages.OnNext(new TestServiceEvent1());
+            testScheduler.AdvanceBy(1);
+
+            serviceEndpoint1.Messages.OnNext(new TestServiceCommand1());
+            testScheduler.AdvanceBy(1);
+
+            Assert.That(exceptions.Count(), Is.EqualTo(0));
+
+            Assert.That(messages.Count(), Is.EqualTo(2));
+            Assert.That(messages[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
+            Assert.That(messages[1].GetType(), Is.EqualTo(typeof(TestServiceCommand1)));
+            
+        }
     }
 
     public interface ITestServiceMessage1 : IMessage {}

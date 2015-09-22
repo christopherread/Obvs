@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Reactive.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Obvs.Types;
 
@@ -37,8 +39,8 @@ namespace Obvs.Logging
             _logLevelSendRequest = logLevelReceive(typeof(TRequest));
             _logLevelReceiveResponse = logLevelReceive(typeof(TResponse));
 
-            _logger.Debug("Created");
-            _logger.Debug(string.Format("CommandLogLevel={0}, EventLogLevel={1}, RequestLogLevel={2}, ResponseLogLevel={3}", _logLevelSendCommand, _logLevelReceiveEvent, _logLevelSendRequest, _logLevelReceiveResponse));
+            TryLog(() => _logger.Debug("Created"));
+            TryLog(() => _logger.Debug(string.Format("CommandLogLevel={0}, EventLogLevel={1}, RequestLogLevel={2}, ResponseLogLevel={3}", _logLevelSendCommand, _logLevelReceiveEvent, _logLevelSendRequest, _logLevelReceiveResponse)));
         }
 
         public bool CanHandle(TMessage message)
@@ -70,48 +72,60 @@ namespace Obvs.Logging
 
         public void Dispose()
         {
-            _logger.Debug("Disposing");
+            TryLog(() => _logger.Debug("Disposing"));
             _endpoint.Dispose();
         }
 
         private void LogRequestReceived(TRequest request)
         {
-            _logger.Log(_logLevelSendRequest, string.Format("Sending request {0}", request));
+            TryLog(() => _logger.Log(_logLevelSendRequest, string.Format("Sending request {0}", request)));
         }
 
         private void LogSendCommand(TCommand command)
         {
-            _logger.Log(_logLevelSendCommand, string.Format("Sending command {0}", command));
+            TryLog(() => _logger.Log(_logLevelSendCommand, string.Format("Sending command {0}", command)));
         }
 
         private void LogResponsesCompleted()
         {
-            _logger.Warn("Responses completed");
+            TryLog(() => _logger.Warn("Responses completed"));
         }
 
         private void LogEventsCompleted()
         {
-            _logger.Warn("Events completed");
+            TryLog(() => _logger.Warn("Events completed"));
         }
 
         private void LogEventsException(Exception exception)
         {
-            _logger.Error("Error receiving events", exception);
+            TryLog(() => _logger.Error("Error receiving events", exception));
         }
 
         private void LogEventReceived(TEvent ev)
         {
-            _logger.Log(_logLevelReceiveEvent, string.Format("Received event {0}", ev.ToString()));
+            TryLog(() => _logger.Log(_logLevelReceiveEvent, string.Format("Received event {0}", ev)));
         }
 
         private void LogResponseReceived(TResponse response)
         {
-            _logger.Log(_logLevelReceiveResponse, string.Format("Received response {0}", response.ToString()));
+            TryLog(() => _logger.Log(_logLevelReceiveResponse, string.Format("Received response {0}", response)));
         }
 
         private void LogResponsesException(Exception exception)
         {
-            _logger.Error("Error receiving responses", exception);
+            TryLog(() => _logger.Error("Error receiving responses", exception));
+        }
+
+        private void TryLog(Action log, [CallerMemberName] string caller = null)
+        {
+            try
+            {
+                log();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("{0}() Error: {1}", caller, e);
+            }
         }
     }
 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Obvs.Logging;
-using Obvs.Types;
 
 namespace Obvs.Configuration
 {
@@ -103,25 +102,20 @@ namespace Obvs.Configuration
 
         private IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> GetEndpointClients()
         {
-            return _loggerFactory == null ? _endpointClients : _endpointClients.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory, _logLevelSend, _logLevelReceive));
+            return _loggerFactory == null
+                ? _endpointClients
+                : _endpointClients.Where(ep => _enableLogging(ep))
+                    .Select(ep => ep.CreateLoggingProxy(_loggerFactory, _logLevelSend, _logLevelReceive))
+                    .Union(_endpointClients.Where(ep => !_enableLogging(ep)));
         }
 
         private IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> GetEndpoints()
         {
-            return _loggerFactory == null ? _endpoints : _endpoints.Where(ep => _enableLogging(ep)).Select(ep => ep.CreateLoggingProxy(_loggerFactory, _logLevelSend, _logLevelReceive));
-        }
-    }
-
-    public static class ServiceBusFluentCreatorExtensions
-    {
-        public static IServiceBus Create(this ICanCreate<IMessage, ICommand, IEvent, IRequest, IResponse> creator)
-        {
-            return new ServiceBus(creator.CreateServiceBus());
-        }
-
-        public static IServiceBusClient CreateClient(this ICanCreate<IMessage, ICommand, IEvent, IRequest, IResponse> creator)
-        {
-            return new ServiceBusClient(creator.CreateServiceBusClient());
+            return _loggerFactory == null
+                ? _endpoints
+                : _endpoints.Where(ep => _enableLogging(ep))
+                    .Select(ep => ep.CreateLoggingProxy(_loggerFactory, _logLevelSend, _logLevelReceive))
+                    .Union(_endpoints.Where(ep => !_enableLogging(ep)));
         }
     }
 }

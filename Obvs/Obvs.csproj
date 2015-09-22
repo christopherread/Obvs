@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\ICanAddEndpointOrLoggingOrCreate.cs" />
+    <Compile Include="Configuration\ServiceBusFluentCreatorExtensions.cs" />
     <Compile Include="Extensions\EndpointExtensions.cs" />
     <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="IEndpoint.cs" />
