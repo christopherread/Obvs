@@ -9,5 +9,6 @@
     <copyright>Copyright 2014</copyright>
     <releaseNotes>Fixed bug where endpoints without logging enabled would be discarded.</releaseNotes>
     <projectUrl>http://inter8ection.github.io/Obvs</projectUrl>
+    <tags>obvs messaging microservice bus messagebus rx reactive</tags>
   </metadata>
 </package>
