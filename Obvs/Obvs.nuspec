@@ -7,7 +7,7 @@
     <authors>$author$</authors>
     <description>An observable µServiceBus .NET library</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>ServiceBus will now dispose of all endpoints and resources</releaseNotes>
+    <releaseNotes>Fixed bug where endpoints without logging enabled would be discarded.</releaseNotes>
     <projectUrl>http://inter8ection.github.io/Obvs</projectUrl>
   </metadata>
 </package>
