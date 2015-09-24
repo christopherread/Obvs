@@ -36,14 +36,23 @@ namespace Obvs.Tests
         public IObservable<IResponse> GetResponses(IRequest request)
         {
             return Observable.Create<IResponse>(observer =>
-                Messages.OfType<IResponse>().Where(response => response.RequestId == request.RequestId && response.RequesterId == request.RequesterId).Select(ev =>
-                {
-                    if (ThrowException)
+            {
+                var disposable = Messages.OfType<IResponse>()
+                    .Where(response => response.RequestId == request.RequestId &&
+                                       response.RequesterId == request.RequesterId)
+                    .Select(ev =>
                     {
-                        throw new Exception();
-                    }
-                    return ev;
-                }).Subscribe(observer));
+                        if (ThrowException)
+                        {
+                            throw new Exception();
+                        }
+                        return ev;
+                    }).Subscribe(observer);
+
+                Messages.OnNext(request);
+
+                return disposable;
+            });
         }
 
         public IObservable<IEvent> Events

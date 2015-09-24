@@ -3,15 +3,15 @@ using System.Reflection;
 using Obvs.Logging;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
-using Obvs.Types;
 
 namespace Obvs.Configuration
 {
     public interface ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> :
-        ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse>, 
         ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>,
-        ICanSpecifyLogging<TMessage, TCommand, TEvent, TRequest, TResponse>,
-        ICanSpecifyRequestCorrelationProvider<TMessage, TCommand, TEvent, TRequest, TResponse>
+        ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyRequestCorrelationProvider<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyLocalBus<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage
@@ -63,9 +63,20 @@ namespace Obvs.Configuration
         where TRequest : class, TMessage
         where TResponse : class, TMessage
     {
-       ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingLogging(ILoggerFactory loggerFactory, Func<IEndpoint<TMessage>, bool> enableLogging = null, Func<Type, LogLevel> logLevelSend = null, Func<Type, LogLevel> logLevelReceive = null);
+        ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingLogging(ILoggerFactory loggerFactory, Func<IEndpoint<TMessage>, bool> enableLogging = null, Func<Type, LogLevel> logLevelSend = null, Func<Type, LogLevel> logLevelReceive = null);
         ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingDebugLogging(Func<IEndpoint<TMessage>, bool> enableLogging = null, Func<Type, LogLevel> logLevelSend = null, Func<Type, LogLevel> logLevelReceive = null);
         ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingConsoleLogging(Func<IEndpoint<TMessage>, bool> enableLogging = null, Func<Type, LogLevel> logLevelSend = null, Func<Type, LogLevel> logLevelReceive = null);
+    }
+
+   public interface ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> : 
+       ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse>,
+       ICanSpecifyLogging<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
     }
 
     public interface ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
@@ -108,5 +119,38 @@ namespace Obvs.Configuration
         where TResponse : class, TMessage
     {
         ICanSpecifyPropertyProviders<TMessage, TCommand, TEvent, TRequest, TResponse> UsingMessagePropertyProviderFor<T>(IMessagePropertyProvider<T> provider) where T : class, TMessage;
+    }
+
+    public interface ICanSpecifyLocalBus<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
+        /// <summary>
+        /// Messages sent to this ServiceBus will also be received by local subscribers
+        /// </summary>
+        /// <param name="localBus">Optionally allows your own local bus instance to be used</param>
+        /// <returns></returns>
+        ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> PublishLocally(IMessageBus<TMessage> localBus = null);
+    }
+
+    public interface ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
+        /// <summary>
+        /// Configures message types for which this process is configured as a server to also be sent and received by local subscribers
+        /// </summary>
+        ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AnyMessagesWithNoEndpointClients();
+
+        /// <summary>
+        /// Configures message types which have no endpoints configured to be sent and received by local subscribers
+        /// </summary>
+        ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> OnlyMessagesWithNoEndpoints();
     }
 }

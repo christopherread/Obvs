@@ -19,6 +19,8 @@ namespace Obvs.Configuration
         private IRequestCorrelationProvider<TRequest, TResponse> _requestCorrelationProvider;
         private Func<Type, LogLevel> _logLevelSend;
         private Func<Type, LogLevel> _logLevelReceive;
+        private IMessageBus<TMessage> _localBus;
+        private LocalBusOptions _localBusOption = LocalBusOptions.MessagesWithNoEndpointClients;
 
         public ServiceBusFluentCreator()
         {
@@ -50,12 +52,12 @@ namespace Obvs.Configuration
 
         public IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> CreateServiceBus()
         {
-            return new ServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse>(GetEndpointClients(), GetEndpoints(), _requestCorrelationProvider);
+            return new ServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse>(GetEndpointClients(), GetEndpoints(), _requestCorrelationProvider, _localBus, _localBusOption);
         }
 
         public IServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse> CreateServiceBusClient()
         {
-            return new ServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse>(GetEndpointClients(), _requestCorrelationProvider);
+            return new ServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse>(GetEndpointClients(), GetEndpoints(), _requestCorrelationProvider);
         }
 
         public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> WithEndpoint(IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> endpointClient)
@@ -117,5 +119,29 @@ namespace Obvs.Configuration
                     .Select(ep => ep.CreateLoggingProxy(_loggerFactory, _logLevelSend, _logLevelReceive))
                     .Union(_endpoints.Where(ep => !_enableLogging(ep)));
         }
+
+        ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> ICanSpecifyLocalBus<TMessage, TCommand, TEvent, TRequest, TResponse>.PublishLocally(IMessageBus<TMessage> localBus)
+        {
+            _localBus = localBus ?? new SubjectMessageBus<TMessage>(); // use default implementation if not supplied
+            return this;
+        }
+
+        public ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AnyMessagesWithNoEndpointClients()
+        {
+            _localBusOption = LocalBusOptions.MessagesWithNoEndpointClients;
+            return this;
+        }
+
+        public ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> OnlyMessagesWithNoEndpoints()
+        {
+            _localBusOption = LocalBusOptions.MessagesWithNoEndpoints;
+            return this;
+        }
+    }
+
+    public enum LocalBusOptions
+    {
+        MessagesWithNoEndpointClients = 0,
+        MessagesWithNoEndpoints = 1
     }
 }

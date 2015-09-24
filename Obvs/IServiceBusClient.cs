@@ -7,6 +7,7 @@ using System.Reactive.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading.Tasks;
+using Obvs.Configuration;
 using Obvs.Extensions;
 using Obvs.Types;
 
@@ -93,15 +94,24 @@ namespace Obvs
         where TRequest : class, TMessage
         where TResponse : class, TMessage
     {
+        protected readonly IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> Endpoints;
         private readonly IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> _endpointClients;
         private readonly IObservable<TEvent> _events;
         private readonly IRequestCorrelationProvider<TRequest, TResponse> _requestCorrelationProvider;
         private readonly List<KeyValuePair<object, IObservable<TMessage>>> _subscribers;
+        private readonly IMessageBus<TMessage> _localBus;
+        private readonly LocalBusOptions _localBusOption;
 
-        public ServiceBusClient(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider)
+        public ServiceBusClient(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, 
+                                IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> endpoints, 
+                                IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider, 
+                                IMessageBus<TMessage> localBus = null, LocalBusOptions localBusOption = LocalBusOptions.MessagesWithNoEndpointClients)
         {
+            _localBus = localBus;
+            _localBusOption = localBusOption;
+            Endpoints = endpoints.ToList();
             _endpointClients = endpointClients.ToArray();
-            _events = _endpointClients.Select(endpointClient => endpointClient.EventsWithErroHandling(_exceptions)).Merge().Publish().RefCount();
+            _events = _endpointClients.Select(endpointClient => endpointClient.EventsWithErroHandling(_exceptions)).Merge().Merge(GetLocalMessages<TEvent>()).Publish().RefCount();
             _requestCorrelationProvider = requestCorrelationProvider;
             _subscribers = new List<KeyValuePair<object, IObservable<TMessage>>>();
         }
@@ -115,7 +125,10 @@ namespace Obvs
         {
             List<Exception> exceptions = new List<Exception>();
 
-            var tasks = EndpointsThatCanHandle(command).Select(endpoint => Catch(() => endpoint.SendAsync(command), exceptions, CommandErrorMessage(endpoint))).ToArray();
+            var tasks = EndpointClientsThatCanHandle(command)
+                .Select(endpoint => Catch(() => endpoint.SendAsync(command), exceptions, CommandErrorMessage(endpoint)))
+                .Union(PublishLocal(command, exceptions))
+                .ToArray();
 
             if (exceptions.Any())
             {
@@ -125,10 +138,28 @@ namespace Obvs
             return Task.WhenAll(tasks);
         }
 
+        protected IObservable<T> GetLocalMessages<T>()
+        {
+            return _localBus == null ? Observable.Empty<T>() : _localBus.Messages.OfType<T>();
+        }
+
+        protected IEnumerable<Task> PublishLocal(TMessage message, List<Exception> exceptions)
+        {
+            return ShouldPublishLocally(message) ? new[] {Catch(() => _localBus.PublishAsync(message), exceptions)} : 
+                                                   Enumerable.Empty<Task>();
+        }
+
+        private bool ShouldPublishLocally(TMessage message)
+        {
+            return _localBus != null && 
+                   ( (_localBusOption == LocalBusOptions.MessagesWithNoEndpointClients && !_endpointClients.Any(e => e.CanHandle(message))) || 
+                     (_localBusOption == LocalBusOptions.MessagesWithNoEndpoints && !Endpoints.Any(e => e.CanHandle(message)) && !_endpointClients.Any(e => e.CanHandle(message))) );
+        }
+
         public Task SendAsync(IEnumerable<TCommand> commands)
         {
             List<Exception> exceptions = new List<Exception>();
-
+            
             var tasks = commands.ToArray().Select(command => Catch(() => SendAsync(command), exceptions)).ToArray();
 
             if (exceptions.Any())
@@ -148,15 +179,35 @@ namespace Obvs
 
             _requestCorrelationProvider.SetRequestCorrelationIds(request);
 
-            return EndpointsThatCanHandle(request).Select(endpoint => endpoint.GetResponses(request)
-                                                  .Where(response => _requestCorrelationProvider.AreCorrelated(request, response)))
-                                                  .Merge().Publish().RefCount();
+            return EndpointClientsThatCanHandle(request)
+                .Select(endpoint => endpoint.GetResponses(request)
+                .Where(response => _requestCorrelationProvider.AreCorrelated(request, response)))
+                .Merge()
+                .Merge(GetLocalResponses(request))
+                .Publish().RefCount();
+        }
+
+        private IObservable<TResponse> GetLocalResponses(TRequest request)
+        {
+            if (ShouldPublishLocally(request))
+            {
+                return Observable.Create<TResponse>(observer =>
+                {
+                    IDisposable disposable = _localBus.Messages.OfType<TResponse>()
+                        .Where(response => _requestCorrelationProvider.AreCorrelated(request, response))
+                        .Subscribe(observer);
+
+                    _localBus.PublishAsync(request);
+
+                    return disposable;
+                });
+            }
+            return Observable.Empty<TResponse>();
         }
 
         public IObservable<T> GetResponses<T>(TRequest request) where T : TResponse
         {
-            IObservable<TResponse> observable = GetResponses(request);
-            return observable.OfType<T>();
+            return GetResponses(request).OfType<T>();
         }
 
         public virtual IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
@@ -278,7 +329,7 @@ namespace Obvs
             return (Func<object, TParamType, TReturnType>)shim.CreateDelegate(typeof(Func<object, TParamType, TReturnType>));
         }
 
-        private IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> EndpointsThatCanHandle(TMessage message)
+        private IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> EndpointClientsThatCanHandle(TMessage message)
         {
             return _endpointClients.Where(endpoint => endpoint.CanHandle(message)).ToArray();
         }

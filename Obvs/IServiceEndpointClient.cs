@@ -43,7 +43,7 @@ namespace Obvs
         private readonly IMessagePublisher<TRequest> _requestPublisher;
         private readonly IMessagePublisher<TCommand> _commandPublisher;
         private readonly Type _serviceType;
-        private string _name;
+        private readonly string _name;
 
         public ServiceEndpointClient(IMessageSource<TEvent> eventSource,
             IMessageSource<TResponse> responseSource,

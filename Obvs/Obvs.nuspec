@@ -5,10 +5,10 @@
     <version>$version$</version>
     <title>$title$</title>
     <authors>$author$</authors>
-    <description>An observable µServiceBus .NET library</description>
+    <description>An observable µServiceBus .NET library. Search 'Obvs' for other transport, serialization, and logging extensions.</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Fixed bug where endpoints without logging enabled would be discarded.</releaseNotes>
+    <releaseNotes>ServiceBus can now be optionally configured to publish and receive messages locally.</releaseNotes>
     <projectUrl>http://inter8ection.github.io/Obvs</projectUrl>
-    <tags>obvs messaging microservice bus messagebus rx reactive</tags>
+    <tags>obvs messaging microservice bus messagebus rx reactive servicebus</tags>
   </metadata>
 </package>

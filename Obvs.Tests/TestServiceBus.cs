@@ -995,7 +995,8 @@ namespace Obvs.Tests
                 .WithEndpoint((IServiceEndpoint)erroringEndpoint)
                 .WithEndpoint((IServiceEndpointClient) serviceEndpoint)
                 .WithEndpoint((IServiceEndpoint)serviceEndpoint)
-                .UsingConsoleLogging().Create();
+                .UsingConsoleLogging()
+                .Create();
 
             ConcurrentBag<IMessage> messages = new ConcurrentBag<IMessage>();
             ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
@@ -1268,19 +1269,120 @@ namespace Obvs.Tests
             serviceBus.Events.Subscribe(messages.Add);
             serviceBus.Commands.Subscribe(messages.Add);
             
-            var testScheduler = new TestScheduler();
-            
             serviceEndpoint1.Messages.OnNext(new TestServiceEvent1());
-            testScheduler.AdvanceBy(1);
-
             serviceEndpoint1.Messages.OnNext(new TestServiceCommand1());
-            testScheduler.AdvanceBy(1);
 
             Assert.That(exceptions.Count(), Is.EqualTo(0));
-
             Assert.That(messages.Count(), Is.EqualTo(2));
             Assert.That(messages[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
             Assert.That(messages[1].GetType(), Is.EqualTo(typeof(TestServiceCommand1)));
+            
+        }
+
+        [Test]
+        public void ShouldPublishMessagesToLocalBusWhenConfigured()
+        {
+            FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
+            FakeServiceEndpoint fakeServer = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
+
+            var localBus = new SubjectMessageBus<IMessage>();
+
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithEndpoint((IServiceEndpoint)fakeServiceEndpoint)
+                .WithEndpoint((IServiceEndpointClient)fakeServer)
+                .PublishLocally(localBus).AnyMessagesWithNoEndpointClients()
+                .Create();
+
+            List<Exception> exceptions = new List<Exception>();
+            List<IMessage> serviceBusMessages = new List<IMessage>();
+            List<IMessage> localBusMessages = new List<IMessage>();
+            serviceBus.Exceptions.Subscribe(exceptions.Add);
+            serviceBus.Events.Subscribe(serviceBusMessages.Add);
+            serviceBus.Commands.Subscribe(serviceBusMessages.Add);
+            serviceBus.Requests.Subscribe(serviceBusMessages.Add);
+            localBus.Messages.Subscribe(localBusMessages.Add);
+
+            fakeServer.Commands.Subscribe(command => fakeServer.PublishAsync(new TestServiceEvent2()));
+            fakeServer.Requests.Subscribe(request => fakeServer.ReplyAsync(request, new TestServiceResponse2()));
+            serviceBus.Requests.OfType<TestServiceRequest1>().Subscribe(request =>
+            {
+                serviceBus.ReplyAsync(request, new TestServiceResponse1());
+            });
+
+            serviceBus.GetResponses(new TestServiceRequest1()).Subscribe(serviceBusMessages.Add);
+            serviceBus.GetResponses(new TestServiceRequest2()).Subscribe(serviceBusMessages.Add);
+            serviceBus.SendAsync(new TestServiceCommand2());
+            serviceBus.PublishAsync(new TestServiceEvent1());
+            serviceBus.SendAsync(new TestServiceCommand1());
+            serviceBus.PublishAsync(new TestEventBelongingToNoService());
+
+            Assert.That(exceptions.Count(), Is.EqualTo(0));
+
+            Assert.That(localBusMessages.Count(), Is.EqualTo(5));
+            Assert.That(localBusMessages[0].GetType(), Is.EqualTo(typeof(TestServiceResponse1)));
+            Assert.That(localBusMessages[1].GetType(), Is.EqualTo(typeof(TestServiceRequest1)));
+            Assert.That(localBusMessages[2].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
+            Assert.That(localBusMessages[3].GetType(), Is.EqualTo(typeof(TestServiceCommand1)));
+            Assert.That(localBusMessages[4].GetType(), Is.EqualTo(typeof(TestEventBelongingToNoService)));
+
+            Assert.That(serviceBusMessages.Count(), Is.EqualTo(7));
+            Assert.That(serviceBusMessages[0].GetType(), Is.EqualTo(typeof(TestServiceRequest1))); // locally published
+            Assert.That(serviceBusMessages[1].GetType(), Is.EqualTo(typeof(TestServiceResponse1))); // locally published
+            Assert.That(serviceBusMessages[2].GetType(), Is.EqualTo(typeof(TestServiceResponse2)));
+            Assert.That(serviceBusMessages[3].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
+            Assert.That(serviceBusMessages[4].GetType(), Is.EqualTo(typeof(TestServiceEvent1))); // locally published
+            Assert.That(serviceBusMessages[5].GetType(), Is.EqualTo(typeof(TestServiceCommand1))); // locally published
+            Assert.That(serviceBusMessages[6].GetType(), Is.EqualTo(typeof(TestEventBelongingToNoService))); // locally published
+            
+        }
+        
+        [Test]
+        public void ShouldPublishMessagesWithNoEndpointToLocalBusWhenConfigured()
+        {
+            FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
+            FakeServiceEndpoint fakeServer = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
+
+            var localBus = new SubjectMessageBus<IMessage>();
+
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithEndpoint((IServiceEndpoint)fakeServiceEndpoint)
+                .WithEndpoint((IServiceEndpointClient)fakeServer)
+                .PublishLocally(localBus).OnlyMessagesWithNoEndpoints()
+                .UsingConsoleLogging()
+                .Create();
+
+            List<Exception> exceptions = new List<Exception>();
+            List<IMessage> serviceBusMessages = new List<IMessage>();
+            List<IMessage> localBusMessages = new List<IMessage>();
+            serviceBus.Exceptions.Subscribe(exceptions.Add);
+            serviceBus.Events.Subscribe(serviceBusMessages.Add);
+            serviceBus.Commands.Subscribe(serviceBusMessages.Add);
+            serviceBus.Requests.Subscribe(serviceBusMessages.Add);
+            localBus.Messages.Subscribe(localBusMessages.Add);
+
+            fakeServer.Commands.Subscribe(command => fakeServer.PublishAsync(new TestServiceEvent2()));
+            fakeServer.Requests.Subscribe(request => fakeServer.ReplyAsync(request, new TestServiceResponse2()));
+            serviceBus.Requests.OfType<TestServiceRequest1>().Subscribe(request =>
+            {
+                serviceBus.ReplyAsync(request, new TestServiceResponse1());
+            });
+
+            serviceBus.GetResponses(new TestServiceRequest1()).Subscribe(serviceBusMessages.Add);
+            serviceBus.GetResponses(new TestServiceRequest2()).Subscribe(serviceBusMessages.Add);
+            serviceBus.SendAsync(new TestServiceCommand2());
+            serviceBus.PublishAsync(new TestServiceEvent1());
+            serviceBus.SendAsync(new TestServiceCommand1());
+            serviceBus.PublishAsync(new TestEventBelongingToNoService());
+
+            Assert.That(exceptions.Count(), Is.EqualTo(0));
+
+            Assert.That(localBusMessages.Count(), Is.EqualTo(1));
+            Assert.That(localBusMessages[0].GetType(), Is.EqualTo(typeof(TestEventBelongingToNoService)));
+
+            Assert.That(serviceBusMessages.Count(), Is.EqualTo(3));
+            Assert.That(serviceBusMessages[0].GetType(), Is.EqualTo(typeof(TestServiceResponse2)));
+            Assert.That(serviceBusMessages[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
+            Assert.That(serviceBusMessages[2].GetType(), Is.EqualTo(typeof(TestEventBelongingToNoService))); // locally published
             
         }
     }
@@ -1288,12 +1390,28 @@ namespace Obvs.Tests
     public interface ITestServiceMessage1 : IMessage {}
     public interface ITestServiceMessage2 : IMessage {}
     public class TestServiceEvent1 : ITestServiceMessage1, IEvent { }
+    public class TestEventBelongingToNoService : IEvent { }
     public class TestServiceEvent2 : TestServiceEventBase { }
     public class TestServiceCommand1 : ITestServiceMessage1, ICommand { }
     public class TestServiceCommand2 : TestServiceCommandBase { }
     public class TestServiceCommandBase : ITestServiceMessage2, ICommand { }
     public class TestServiceEventBase : ITestServiceMessage2, IEvent { }
     public class TestServiceRequest1 : ITestServiceMessage1, IRequest 
+    {
+        public string RequestId { get; set; }
+        public string RequesterId { get; set; }
+    }
+    public class TestServiceRequest2 : ITestServiceMessage2, IRequest 
+    {
+        public string RequestId { get; set; }
+        public string RequesterId { get; set; }
+    }
+    public class TestServiceResponse1 : ITestServiceMessage1, IResponse 
+    {
+        public string RequestId { get; set; }
+        public string RequesterId { get; set; }
+    }
+    public class TestServiceResponse2 : ITestServiceMessage2, IResponse 
     {
         public string RequestId { get; set; }
         public string RequesterId { get; set; }

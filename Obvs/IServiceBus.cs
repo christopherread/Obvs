@@ -10,7 +10,7 @@ using Obvs.Types;
 
 namespace Obvs
 {
-    public interface IServiceBus : IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse>
+    public interface IServiceBus : IServiceBusClient, IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse>
     {
     }
 
@@ -118,19 +118,18 @@ namespace Obvs
         where TResponse : class, TMessage
     {
         private readonly IRequestCorrelationProvider<TRequest, TResponse> _requestCorrelationProvider;
-        private readonly IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> _endpoints;
         private readonly IObservable<TRequest> _requests;
         private readonly IObservable<TCommand> _commands;
-
+        
         public ServiceBus(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, 
                           IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> endpoints, 
-                          IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider)
-            : base(endpointClients, requestCorrelationProvider)
+                          IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider, 
+                          IMessageBus<TMessage> localBus = null, LocalBusOptions localBusOption = LocalBusOptions.MessagesWithNoEndpointClients)
+            : base(endpointClients, endpoints, requestCorrelationProvider, localBus, localBusOption)
         {
             _requestCorrelationProvider = requestCorrelationProvider;
-            _endpoints = endpoints.ToList();
-            _requests = _endpoints.Select(endpoint => endpoint.RequestsWithErrorHandling(_exceptions)).Merge().Publish().RefCount();
-            _commands = _endpoints.Select(endpoint => endpoint.CommandsWithErrorHandling(_exceptions)).Merge().Publish().RefCount();
+            _requests = Endpoints.Select(endpoint => endpoint.RequestsWithErrorHandling(_exceptions)).Merge().Merge(GetLocalMessages<TRequest>()).Publish().RefCount();
+            _commands = Endpoints.Select(endpoint => endpoint.CommandsWithErrorHandling(_exceptions)).Merge().Merge(GetLocalMessages<TCommand>()).Publish().RefCount();
         }
 
         public IObservable<TRequest> Requests
@@ -147,7 +146,10 @@ namespace Obvs
         {
             List<Exception> exceptions = new List<Exception>();
 
-            var tasks = EndpointsThatCanHandle(ev).Select(endpoint => Catch(() => endpoint.PublishAsync(ev), exceptions, EventErrorMessage(endpoint))).ToArray();
+            var tasks = EndpointsThatCanHandle(ev)
+                .Select(endpoint => Catch(() => endpoint.PublishAsync(ev), exceptions, EventErrorMessage(endpoint)))
+                .Union(PublishLocal(ev, exceptions))
+                .ToArray();
 
             if (exceptions.Any())
             {
@@ -168,7 +170,10 @@ namespace Obvs
 
             List<Exception> exceptions = new List<Exception>();
 
-            var tasks = EndpointsThatCanHandle(response).Select(endpoint => Catch(() => endpoint.ReplyAsync(request, response), exceptions, ReplyErrorMessage(endpoint))).ToArray();
+            var tasks = EndpointsThatCanHandle(response)
+                    .Select(endpoint => Catch(() => endpoint.ReplyAsync(request, response), exceptions, ReplyErrorMessage(endpoint)))
+                    .Union(PublishLocal(response, exceptions))
+                    .ToArray();
 
             if (exceptions.Any())
             {
@@ -185,13 +190,13 @@ namespace Obvs
 
         private IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> EndpointsThatCanHandle(TMessage message)
         {
-            return _endpoints.Where(endpoint => endpoint.CanHandle(message)).ToList();
+            return Endpoints.Where(endpoint => endpoint.CanHandle(message)).ToArray();
         }
 
         public override void Dispose()
         {
             base.Dispose();
-            foreach (IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint in _endpoints)
+            foreach (IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint in Endpoints)
             {
                 endpoint.Dispose();
             }
