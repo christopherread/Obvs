@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using EmbedMq;
@@ -60,12 +61,15 @@ namespace Obvs.ActiveMQ.Tests
             AnonymousObserver<IMessage> observer = new AnonymousObserver<IMessage>(messages.Add, Console.WriteLine, () => Console.WriteLine("OnCompleted"));
 
             // subscribe to all messages on the ServiceBus
-            serviceBus.Events.Subscribe(observer);
-            serviceBus.Commands.Subscribe(observer);
-            serviceBus.Requests.Subscribe(observer);
-            serviceBus.Commands.OfType<TestCommand>().Subscribe(fakeService1);
-            serviceBus.Requests.OfType<TestRequest>().Subscribe(fakeService2);
-
+            CompositeDisposable subscriptions = new CompositeDisposable
+            {
+                serviceBus.Events.Subscribe(observer),
+                serviceBus.Commands.Subscribe(observer),
+                serviceBus.Requests.Subscribe(observer),
+                serviceBus.Commands.OfType<TestCommand>().Subscribe(fakeService1),
+                serviceBus.Requests.OfType<TestRequest>().Subscribe(fakeService2)
+            };
+            
             // send some messages
             serviceBus.SendAsync(new TestCommand { Id = 123 });
             serviceBus.SendAsync(new TestCommand2 { Id = 123 });
@@ -83,6 +87,7 @@ namespace Obvs.ActiveMQ.Tests
             Assert.That(messages.OfType<TestRequest>().Count() == 1, "TestRequest not received");
             Assert.That(messages.OfType<TestResponse>().Count() == 1, "TestResponse not received");
 
+            subscriptions.Dispose();
             ((IDisposable)serviceBus).Dispose();
             // win!
         }
@@ -107,6 +112,71 @@ namespace Obvs.ActiveMQ.Tests
                         .Named("Obvs.TestService2")
                         .SerializedAsJson()
                         .AsClientAndServer())
+                .UsingConsoleLogging()
+                .Create();
+
+            // create threadsafe collection to hold received messages in
+            ConcurrentBag<IMessage> messages = new ConcurrentBag<IMessage>();
+
+            // create some actions that will act as a fake services acting on incoming commands and requests
+            Action<TestCommand> fakeService1 = command => serviceBus.PublishAsync(new TestEvent {Id = command.Id});
+            Action<Test2Command> fakeService3 = command => serviceBus.PublishAsync(new Test2Event {Id = command.Id});
+            Action<TestRequest> fakeService2 = request => serviceBus.ReplyAsync(request, new TestResponse {Id = request.Id});
+            AnonymousObserver<IMessage> observer = new AnonymousObserver<IMessage>(messages.Add, Console.WriteLine, () => Console.WriteLine("OnCompleted"));
+
+            // subscribe to all messages on the ServiceBus
+            serviceBus.Events.Subscribe(observer);
+            serviceBus.Commands.Subscribe(observer);
+            serviceBus.Requests.Subscribe(observer);
+            serviceBus.Commands.OfType<TestCommand>().Subscribe(fakeService1);
+            serviceBus.Commands.OfType<Test2Command>().Subscribe(fakeService3);
+            serviceBus.Requests.OfType<TestRequest>().Subscribe(fakeService2);
+
+            // send some messages
+            serviceBus.SendAsync(new TestCommand { Id = 123 });
+            serviceBus.SendAsync(new Test2Command { Id = 123 });
+            serviceBus.SendAsync(new TestCommand2 { Id = 123 });
+            serviceBus.SendAsync(new TestCommand3 { Id = 123 });
+            serviceBus.GetResponses(new TestRequest { Id = 456 }).Subscribe(observer);
+
+            // wait some time until we think all messages have been sent and received over AMQ
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+
+            // test we got everything we expected
+            Assert.That(messages.OfType<TestCommand>().Count() == 1, "TestCommand not received");
+            Assert.That(messages.OfType<Test2Command>().Count() == 1, "Test2Command not received");
+            Assert.That(messages.OfType<TestCommand2>().Count() == 1, "TestCommand2 not received");
+            Assert.That(messages.OfType<TestCommand3>().Count() == 1, "TestCommand3 not received");
+            Assert.That(messages.OfType<TestEvent>().Count() == 1, "TestEvent not received");
+            Assert.That(messages.OfType<Test2Event>().Count() == 1, "Test2Event not received");
+            Assert.That(messages.OfType<TestRequest>().Count() == 1, "TestRequest not received");
+            Assert.That(messages.OfType<TestResponse>().Count() == 1, "TestResponse not received");
+
+            ((IDisposable)serviceBus).Dispose();
+            // win!
+        }
+        
+        [Test]
+        public void TestServiceBusWithEmbeddedBrokerAndSharedConnectionAndLocalBus()
+        {
+            // use the embedded broker
+            var brokerUri = _broker.FailoverUri;
+
+            // set up ServiceBus using fluent interfaces and all current endpoints and pointing at test AMQ broker
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithActiveMQSharedConnectionScope(brokerUri, config => config 
+                    .WithActiveMQEndpoints<ITestMessage1>()
+                        .Named("Obvs.TestService1")
+                        .UsingQueueFor<TestCommand>().ClientAcknowledge()
+                        .UsingQueueFor<TestCommand2>().ClientAcknowledge()
+                        .UsingQueueFor<IRequest>().AutoAcknowledge()
+                        .SerializedAsJson()
+                        .AsServer()
+                    .WithActiveMQEndpoints<ITestMessage2>()
+                        .Named("Obvs.TestService2")
+                        .SerializedAsJson()
+                        .AsServer())
+                .PublishLocally().AnyMessagesWithNoEndpointClients()
                 .UsingConsoleLogging()
                 .Create();
 
