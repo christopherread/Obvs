@@ -14,3 +14,5 @@
 /Obvs.RabbitMQ.Benchmark/Obvs.RabbitMQ.Benchmark.csproj.user
 *.ncrunchsolution
 *.ncrunchproject
+*.crunchsolution.cache
+*.ncrunchsolution.user

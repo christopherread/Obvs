@@ -30,31 +30,31 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs, Version=2.0.0.14, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs, Version=2.1.0.28, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.2.0.0.14\lib\net45\Obvs.dll</HintPath>
+      <HintPath>..\packages\Obvs.2.1.0.28\lib\net45\Obvs.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs.Serialization.Json, Version=2.0.0.11, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs.Serialization.Json, Version=2.0.0.12, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.Serialization.Json.2.0.0.11\lib\net45\Obvs.Serialization.Json.dll</HintPath>
+      <HintPath>..\packages\Obvs.Serialization.Json.2.0.0.12\lib\net45\Obvs.Serialization.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs.Serialization.ProtoBuf, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Obvs.Serialization.ProtoBuf, Version=2.0.0.12, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.Serialization.ProtoBuf.1.6.0\lib\net45\Obvs.Serialization.ProtoBuf.dll</HintPath>
+      <HintPath>..\packages\Obvs.Serialization.ProtoBuf.2.0.0.12\lib\net45\Obvs.Serialization.ProtoBuf.dll</HintPath>
     </Reference>
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
-    <Reference Include="RabbitMQ.Client, Version=3.5.3.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
+    <Reference Include="RabbitMQ.Client, Version=3.5.4.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\RabbitMQ.Client.3.5.3\lib\net40\RabbitMQ.Client.dll</HintPath>
+      <HintPath>..\packages\RabbitMQ.Client.3.5.4\lib\net40\RabbitMQ.Client.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

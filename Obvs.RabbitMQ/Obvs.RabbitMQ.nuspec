@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>RabbitMQ transport support for Obvs</description>
     <copyright>Copyright 2015</copyright>
-    <releaseNotes></releaseNotes>
+    <releaseNotes>Upgraded to Obvs 2.1 and RabbitMQ.Client 3.5.4</releaseNotes>
   </metadata>
 </package>
