@@ -49,6 +49,8 @@ namespace Obvs.ActiveMQ.Tests
                     .ConnectToBroker(brokerUri)
                     .SerializedAsJson()
                     .AsClientAndServer()
+                .PublishLocally()
+                    .OnlyMessagesWithNoEndpoints()
                 .UsingConsoleLogging()
                 .Create();
 

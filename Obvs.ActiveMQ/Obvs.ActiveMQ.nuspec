@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>ActiveMQ transport support for Obvs</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Allow ActiveMQ endpoints to be configured to share a single connection. Useful for client applications.</releaseNotes>
+    <releaseNotes>Upgraded to ActiveMQ 1.7.1.</releaseNotes>
   </metadata>
 </package>
