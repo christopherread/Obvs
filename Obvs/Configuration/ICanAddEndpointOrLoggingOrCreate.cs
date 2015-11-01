@@ -10,8 +10,7 @@ namespace Obvs.Configuration
         ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>,
         ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>,
         ICanSpecifyRequestCorrelationProvider<TMessage, TCommand, TEvent, TRequest, TResponse>,
-        ICanSpecifyLocalBus<TMessage, TCommand, TEvent, TRequest, TResponse>,
-        ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse>
+        ICanSpecifyLocalBus<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage

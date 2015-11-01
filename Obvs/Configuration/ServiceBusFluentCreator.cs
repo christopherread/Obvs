@@ -5,8 +5,7 @@ using Obvs.Logging;
 
 namespace Obvs.Configuration
 {
-    public class ServiceBusFluentCreator<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>
-        where TMessage : class
+    public class ServiceBusFluentCreator<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>, ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage
         where TRequest : class, TMessage
