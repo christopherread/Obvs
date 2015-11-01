@@ -30,9 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Obvs, Version=2.0.0.14, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.2.0.0.14\lib\net45\Obvs.dll</HintPath>
+    <Reference Include="Obvs, Version=2.1.0.30, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.2.1.0.30\lib\net45\Obvs.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
