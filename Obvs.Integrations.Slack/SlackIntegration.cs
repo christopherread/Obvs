@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
@@ -102,11 +101,11 @@ namespace Obvs.Integrations.Slack
             var getSlackChannels = request as GetSlackChannels;
             if (getSlackChannels != null)
             {
-                var response = new GetSlackChannelsResponse
+                return Observable.Return(new GetSlackChannelsResponse
                 {
                     RequestId = request.RequestId,
                     RequesterId = request.RequesterId,
-                    Channels = _channels.Values.ToArray().Select(c =>
+                    Channels = _channels.Values.Select(c =>
                         new GetSlackChannelsResponse.Channel
                         {
                             Id = c.ID,
@@ -114,11 +113,6 @@ namespace Obvs.Integrations.Slack
                             IsPrivate = c.IsPrivate,
                             IsMember = c.IsMember
                         }).ToList()
-                };
-                return Observable.Create<IResponse>(observer =>
-                {
-                    observer.OnNext(response);
-                    return Disposable.Create(() => {});
                 });
             }
             throw new Exception($"Unknown request type '{request.GetType().FullName}'");

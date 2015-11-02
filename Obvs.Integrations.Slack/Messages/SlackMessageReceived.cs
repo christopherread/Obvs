@@ -16,7 +16,7 @@ namespace Obvs.Integrations.Slack.Messages
 
         public override string ToString()
         {
-            return $"{ChannelName} - {UserName}: {Text}";
+            return $"{ChannelId} {ChannelName} - {UserId} {UserName}: {Text}";
         }
     }
 }
