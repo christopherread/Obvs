@@ -1,3 +1,4 @@
+using System;
 using Obvs.Types;
 
 namespace Obvs.Integrations.Slack.Messages
@@ -12,5 +13,10 @@ namespace Obvs.Integrations.Slack.Messages
         public string UserId { get; set; }
         public bool IsPrivate { get; set; }
         public bool IsMember { get; set; }
+
+        public override string ToString()
+        {
+            return $"{ChannelName} - {UserName}: {Text}";
+        }
     }
 }

@@ -5,6 +5,6 @@ namespace Obvs.Integrations.Slack.Configuration
 {
     public interface ICanSpecifySlackIntegrationToken
     {
-        ICanAddEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse> ConnectUsingToken(string token);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<IMessage, ICommand, IEvent, IRequest, IResponse> ConnectUsingToken(string token);
     }
 }

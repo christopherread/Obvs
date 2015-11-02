@@ -45,3 +45,5 @@ Temporary Items
 *.suo
 /Obvs.Integrations.Slack/bin
 /Obvs.Integrations.Slack/obj
+/Obvs.Integrations.Slack.Tests/bin
+/Obvs.Integrations.Slack.Tests/obj

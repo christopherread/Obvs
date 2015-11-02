@@ -97,6 +97,8 @@ namespace Obvs.Integrations.Slack
 
         public IObservable<IResponse> GetResponses(IRequest request)
         {
+            Connect();
+
             var getSlackChannels = request as GetSlackChannels;
             if (getSlackChannels != null)
             {
@@ -119,10 +121,7 @@ namespace Obvs.Integrations.Slack
                     return Disposable.Create(() => {});
                 });
             }
-            else
-            {
-                throw new Exception($"Unknown request type '{request.GetType().FullName}'");
-            }
+            throw new Exception($"Unknown request type '{request.GetType().FullName}'");
         }
 
         public IObservable<IEvent> Events
