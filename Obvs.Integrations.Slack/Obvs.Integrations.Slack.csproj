@@ -72,6 +72,7 @@
     <Compile Include="Messages\SlackMessageReceived.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Obvs.Integrations.Slack.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -116,7 +116,7 @@ namespace Obvs.Integrations.Slack
                 return Observable.Create<IResponse>(observer =>
                 {
                     observer.OnNext(response);
-                    return Disposable.Create(() => {});;
+                    return Disposable.Create(() => {});
                 });
             }
             else
