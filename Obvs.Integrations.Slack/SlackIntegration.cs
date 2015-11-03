@@ -4,13 +4,14 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
+using Obvs.Integrations.Slack.Api;
+using Obvs.Integrations.Slack.Bot;
 using Obvs.Integrations.Slack.Messages;
 using Obvs.Types;
-using SimpleSlackBot;
 
 namespace Obvs.Integrations.Slack
 {
-    public class SlackIntegration : Handler, IServiceEndpointClient
+    internal class SlackIntegration : Handler, IServiceEndpointClient
     {
         private readonly Subject<IEvent> _events = new Subject<IEvent>();
         private readonly ConcurrentDictionary<string, Channel> _channels = new ConcurrentDictionary<string, Channel>();
@@ -127,7 +128,7 @@ namespace Obvs.Integrations.Slack
             }
         }
 
-        public override async Task OnMessage(Channel channel, User user, string text, bool botIsMentioned)
+        protected override async Task OnMessage(Channel channel, User user, string text, bool botIsMentioned)
         {
             _channels.AddOrUpdate(channel.ID, channel, (s, c) => channel);
 

@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Obvs.Integrations.Slack</RootNamespace>
     <AssemblyName>Obvs.Integrations.Slack</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -34,10 +35,6 @@
       <HintPath>..\packages\Obvs.2.1.0.30\lib\net45\Obvs.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SimpleSlackBot, Version=0.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SimpleSlackBot.0.4.0.0\lib\net452\SimpleSlackBot.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -52,6 +49,7 @@
       <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -60,21 +58,48 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Api\Attachment.cs" />
+    <Compile Include="Api\AuthTestResponse.cs" />
+    <Compile Include="Api\BotUser.cs" />
+    <Compile Include="Api\Channel.cs" />
+    <Compile Include="Api\ChannelChangedEvent.cs" />
+    <Compile Include="Api\ChannelJoinedEvent.cs" />
+    <Compile Include="Api\Entity.cs" />
+    <Compile Include="Api\ErrorResponse.cs" />
+    <Compile Include="Api\Event.cs" />
+    <Compile Include="Api\Group.cs" />
+    <Compile Include="Api\IM.cs" />
+    <Compile Include="Api\MessageEvent.cs" />
+    <Compile Include="Api\PostMessageResponse.cs" />
+    <Compile Include="Api\Response.cs" />
+    <Compile Include="Api\RtmStartResponse.cs" />
+    <Compile Include="Api\Team.cs" />
+    <Compile Include="Api\TypingIndicator.cs" />
+    <Compile Include="Api\User.cs" />
+    <Compile Include="Api\UserChangedEvent.cs" />
+    <Compile Include="Bot\Bot.cs" />
     <Compile Include="Configuration\ConfigExtensions.cs" />
     <Compile Include="Configuration\ICanSpecifySlackIntegrationToken.cs" />
     <Compile Include="Configuration\SlackIntegrationConfig.cs" />
+    <Compile Include="Bot\ConsoleBot.cs" />
+    <Compile Include="Bot\Handler.cs" />
     <Compile Include="Messages\GetSlackChannels.cs" />
     <Compile Include="Messages\GetSlackChannelsResponse.cs" />
     <Compile Include="Messages\ISlackIntegrationMessage.cs" />
     <Compile Include="Messages\SendSlackMessage.cs" />
+    <Compile Include="Bot\RandomMessages.cs" />
+    <Compile Include="Bot\Serialiser.cs" />
+    <Compile Include="Bot\SlackBot.cs" />
     <Compile Include="SlackIntegration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Messages\SlackMessageReceived.cs" />
+    <Compile Include="Bot\SlackRestApiClient.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Obvs.Integrations.Slack.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
