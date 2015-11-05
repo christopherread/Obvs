@@ -12,7 +12,7 @@ namespace Obvs.Integrations.Slack.Tests
     {
         static void Main(string[] args)
         {
-            const string token = "xoxb-13657478324-zaLy8ERhYFl4plNtNOM5OvWb";
+            const string token = "";
 
             var serviceBus = ServiceBus.Configure()
                 .WithEndpoint(new FakeEndpoint())
