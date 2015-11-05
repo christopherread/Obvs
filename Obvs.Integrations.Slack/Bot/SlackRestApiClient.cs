@@ -8,8 +8,13 @@ using Obvs.Integrations.Slack.Api;
 
 namespace Obvs.Integrations.Slack.Bot
 {
-    internal class SlackRestApi
-	{
+    internal interface ISlackRestApi
+    {
+        Task<TResult> Post<TResult>(string method, IEnumerable<KeyValuePair<string, string>> args = null);
+    }
+
+    internal class SlackRestApi : ISlackRestApi
+    {
 		readonly Uri _endpoint = new Uri("https://slack.com/api/");
 		readonly HttpClient _http = new HttpClient();
 		readonly string _token;

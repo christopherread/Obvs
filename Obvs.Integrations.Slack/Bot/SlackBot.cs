@@ -10,18 +10,25 @@ using Obvs.Integrations.Slack.Api;
 
 namespace Obvs.Integrations.Slack.Bot
 {
-	internal class SlackBot : Bot, IDisposable
-	{
-		readonly SlackRestApi _api;
-		readonly ClientWebSocket _ws = new ClientWebSocket();
+    internal interface ISlackBot : IDisposable
+    {
+        Task Connect();
+        Task Disconnect();
+        void RegisterHandler(Handler handler);
+        Channel[] GetChannels();
+        User[] GetUsers();
+    }
 
-		User _self;
-		readonly Dictionary<string, User> _users = new Dictionary<string, User>(); // TODO: Handle new users joining/leaving
-		readonly Dictionary<string, Channel> _channels = new Dictionary<string, Channel>(); // TODO: Handle new channels/deleted
+    internal class SlackBot : Bot, ISlackBot
+    {
+		private readonly ISlackRestApi _api;
+		private readonly ClientWebSocket _webSocket = new ClientWebSocket();
 
-		#region Construction
+        private User _self;
+        private readonly Dictionary<string, User> _users = new Dictionary<string, User>(); // TODO: Handle new users joining/leaving
+        private readonly Dictionary<string, Channel> _channels = new Dictionary<string, Channel>(); // TODO: Handle new channels/deleted
 
-		private SlackBot(string token)
+	    private SlackBot(string token)
 		{
 			_api = new SlackRestApi(token);
 		}
@@ -35,11 +42,7 @@ namespace Obvs.Integrations.Slack.Bot
 			return bot;
 		}
 
-		#endregion
-
-		#region IDisposable
-
-		public void Dispose()
+	    public void Dispose()
 		{
 			Dispose(true);
 			GC.SuppressFinalize(this);
@@ -47,57 +50,61 @@ namespace Obvs.Integrations.Slack.Bot
 
 		protected virtual void Dispose(bool disposing)
 		{
-			if (disposing)
-				_ws.Dispose();
+		    if (disposing)
+		    {
+		        _webSocket.Dispose();
+		    }
 		}
 
-		#endregion
+        private Task<AuthTestResponse> AuthTest() => _api.Post<AuthTestResponse>("auth.test");
 
-		#region REST Methods
+        private Task<RtmStartResponse> RtmStart() => _api.Post<RtmStartResponse>("rtm.start");
 
-		Task<AuthTestResponse> AuthTest() => _api.Post<AuthTestResponse>("auth.test");
-
-		Task<RtmStartResponse> RtmStart() => _api.Post<RtmStartResponse>("rtm.start");
-
-		Task<PostMessageResponse> PostMessage(string channelID, string text, Attachment[] attachments = null) =>
+        private Task<PostMessageResponse> PostMessage(string channelId, string text, Attachment[] attachments = null) =>
 			_api.Post<PostMessageResponse>("chat.postMessage", new Dictionary<string, string> {
 				{ "as_user", "true" },
-				{ "channel", channelID },
+				{ "channel", channelId },
 				{ "text", text },
 				{ "attachments", attachments != null ? Serialiser.Serialise(attachments) : "" }
 			});
 
-		#endregion
-
-		public async Task Connect()
+	    public async Task Connect()
 		{
-			if (_ws.State == WebSocketState.Connecting || _ws.State == WebSocketState.Open)
-				throw new InvalidOperationException("Not is already connected");
+	        if (_webSocket.State == WebSocketState.Connecting || _webSocket.State == WebSocketState.Open)
+	        {
+	            throw new InvalidOperationException("Bot is already connected");
+	        }
 
 			// First check we can authenticate.
-			var authResponse = await this.AuthTest();
+			var authResponse = await AuthTest();
 			Debug.WriteLine("Authorised as " + authResponse.User);
 
 			// Issue a request to start a real time messaging session.
-			var rtmResponse = await this.RtmStart();
+			var rtmStartResponse = await RtmStart();
 
 			// Store users and channels so we can look them up by ID.
-			_self = rtmResponse.Self;
-			foreach (var user in rtmResponse.Users)
-				_users.Add(user.ID, user);
-			foreach (var channel in rtmResponse.Channels.Union(rtmResponse.IMs))
-				_channels.Add(channel.ID, channel);
+			_self = rtmStartResponse.Self;
+	        foreach (var user in rtmStartResponse.Users)
+	        {
+	            _users.Add(user.ID, user);
+	        }
+	        foreach (var channel in rtmStartResponse.Channels.Union(rtmStartResponse.IMs))
+	        {
+	            _channels.Add(channel.ID, channel);
+	        }
 
 			// Connect the WebSocket to the URL we were given back.
-			await _ws.ConnectAsync(rtmResponse.Url, CancellationToken.None);
+			await _webSocket.ConnectAsync(rtmStartResponse.Url, CancellationToken.None);
 			Debug.WriteLine("Connected...");
 
 			// Start the receive message loop.
 			var _ = Task.Run(ListenForApiMessages);
 
 			// Say hello in each of the channels the bot is a member of.
-			foreach (var channel in _channels.Values.Where(c => !c.IsPrivate && c.IsMember))
-				await SayHello(channel);
+	        foreach (var channel in _channels.Values.Where(c => !c.IsPrivate && c.IsMember))
+	        {
+	            await SayHello(channel);
+	        }
 		}
 
 		public async Task Disconnect()
@@ -106,34 +113,46 @@ namespace Obvs.Integrations.Slack.Bot
 			await CancelAllTasks();
 
 			// Say goodbye to each of the channels the bot is a member of.
-			foreach (var channel in _channels.Values.Where(c => !c.IsPrivate && c.IsMember))
-				await SayGoodbye(channel);
+		    foreach (var channel in _channels.Values.Where(c => !c.IsPrivate && c.IsMember))
+		    {
+		        await SayGoodbye(channel);
+		    }
 		}
 
-		async Task ListenForApiMessages()
+        public Channel[] GetChannels()
+        {
+            return _channels.Values.ToArray();
+        }
+
+        public User[] GetUsers()
+        {
+            return _users.Values.ToArray();
+        }
+
+        private async Task ListenForApiMessages()
 		{
 			var buffer = new byte[1024];
 			var segment = new ArraySegment<byte>(buffer);
-			while (_ws.State == WebSocketState.Open)
+			while (_webSocket.State == WebSocketState.Open)
 			{
 				var fullMessage = new StringBuilder();
 
 				while (true)
 				{
-					var msg = await _ws.ReceiveAsync(segment, CancellationToken.None);
+					var msg = await _webSocket.ReceiveAsync(segment, CancellationToken.None);
 
 					fullMessage.Append(Encoding.UTF8.GetString(buffer, 0, msg.Count));
-					if (msg.EndOfMessage)
-						break;
+				    if (msg.EndOfMessage)
+				    {
+				        break;
+				    }
 				}
 
 				await HandleApiMessage(fullMessage.ToString());
 			}
 		}
 
-		#region Message Handling
-
-		internal override async Task SendMessage(Channel channel, string text, Attachment[] attachments = null)
+	    internal override async Task SendMessage(Channel channel, string text, Attachment[] attachments = null)
 		{
 			try
 			{
@@ -154,10 +173,10 @@ namespace Obvs.Integrations.Slack.Bot
 		{
 			var json = Serialiser.Serialise(message);
 			Debug.WriteLine("SEND: " + json);
-			await _ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(json)), WebSocketMessageType.Text, true, CancellationToken.None);
+			await _webSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(json)), WebSocketMessageType.Text, true, CancellationToken.None);
 		}
 
-		async Task HandleApiMessage(string message)
+        private async Task HandleApiMessage(string message)
 		{
 			Debug.WriteLine("RCV: " + message);
 
@@ -185,15 +204,17 @@ namespace Obvs.Integrations.Slack.Bot
 			}
 		}
 
-		async Task HandleApiMessage(MessageEvent message)
+        private async Task HandleApiMessage(MessageEvent message)
 		{
 			var channelId = message.Message?.ChannelID ?? message.ChannelID;
 			var userId = message.Message?.UserID ?? message.UserID;
 			var text = message.Message?.Text ?? message.Text;
-
-			// If the message is from our bot, do not handle it.
-			if (userId == _self.ID)
-				return;
+            
+		    var messageIsFromBot = userId == _self.ID;
+		    if (messageIsFromBot)
+		    {
+		        return;
+		    }
 
 			var botIsMentioned = text.Contains($"<@{_self.ID}>");
 
@@ -202,27 +223,25 @@ namespace Obvs.Integrations.Slack.Bot
 			await Task.FromResult(true);
 		}
 
-		async Task HandleApiMessage(ChannelJoinedEvent message)
+        private async Task HandleApiMessage(ChannelJoinedEvent message)
 		{
 			Debug.WriteLine("JOINED: " + message.Channel.Name);
 
 			await SayHello(message.Channel);
 		}
 
-		void HandleApiMessage(ChannelChangedEvent message)
+        private void HandleApiMessage(ChannelChangedEvent message)
 		{
 			Debug.WriteLine("CHANNEL UPDATED: " + message.Channel.Name);
 
 			_channels[message.Channel.ID] = message.Channel;
 		}
 
-		void HandleApiMessage(UserChangedEvent message)
+        private void HandleApiMessage(UserChangedEvent message)
 		{
 			Debug.WriteLine("USER UPDATED: " + message.User.Name);
 
 			_users[message.User.ID] = message.User;
 		}
-
-		#endregion
 	}
 }

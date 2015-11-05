@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Obvs.Configuration;
@@ -12,17 +13,18 @@ namespace Obvs.Integrations.Slack.Tests
     {
         static void Main(string[] args)
         {
-            const string token = "";
+            const string token = "<insert your token here>";
 
             var serviceBus = ServiceBus.Configure()
                 .WithEndpoint(new FakeEndpoint())
                 .WithSlackIntegration()
                     .ConnectUsingToken(token)
                 .Create();
-           
-            var sub = serviceBus.Events.OfType<SlackMessageReceived>().Subscribe(msg =>
+
+            var sub1 = serviceBus.Events.Subscribe(Console.WriteLine);
+
+            var sub2 = serviceBus.Events.OfType<SlackMessageReceived>().Subscribe(msg =>
             {
-                Console.WriteLine(msg);
                 serviceBus.SendAsync(new SendSlackMessage
                 {
                     ChannelId = msg.ChannelId,
@@ -48,10 +50,25 @@ namespace Obvs.Integrations.Slack.Tests
                 });
             });
 
+            serviceBus.GetResponses<GetSlackChannelsResponse>(new GetSlackChannels())
+                .Subscribe(r =>
+                {
+                    var channels = r.Channels.Select(c => $"#{c.Name}").ToArray();
+                    Console.WriteLine(string.Join("\n", channels));
+                });
+
+            serviceBus.GetResponses<GetSlackUsersResponse>(new GetSlackUsers())
+                .Subscribe(r =>
+                {
+                    var users = r.Users.Select(user => $"@{user.Name}").ToArray();
+                    Console.WriteLine(string.Join("\n", users));
+                });
+
             Console.WriteLine("Hit enter to exit.");
             Console.ReadLine();
 
-            sub.Dispose();
+            sub1.Dispose();
+            sub2.Dispose();
             ((IDisposable)serviceBus).Dispose();
         } 
     }

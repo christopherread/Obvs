@@ -15,7 +15,8 @@ namespace Obvs.Integrations.Slack
     {
         private readonly Subject<IEvent> _events = new Subject<IEvent>();
         private readonly ConcurrentDictionary<string, Channel> _channels = new ConcurrentDictionary<string, Channel>();
-        private SlackBot _bot;
+        private readonly ConcurrentDictionary<string, User> _users = new ConcurrentDictionary<string, User>();
+        private ISlackBot _bot;
         private bool _connected;
         private readonly object _connectLock = new object();
         private readonly string _token;
@@ -37,6 +38,7 @@ namespace Obvs.Integrations.Slack
                         _bot = SlackBot.Connect(_token).Result;
                         _bot.RegisterHandler(this);
                         _connected = true;
+                        OnConnected();
                     }
                 }
             }
@@ -62,6 +64,7 @@ namespace Obvs.Integrations.Slack
         {
             Disconnect();
             _channels.Clear();
+            _users.Clear();
             _events.Dispose();
         }
 
@@ -91,7 +94,7 @@ namespace Obvs.Integrations.Slack
             }
             else
             {
-                throw new Exception($"Unknown command type '{command.GetType().FullName}'");
+                throw new Exception($"Unknown Command Type '{command.GetType().FullName}'");
             }
         }
 
@@ -125,17 +128,34 @@ namespace Obvs.Integrations.Slack
                 {
                     RequestId = request.RequestId,
                     RequesterId = request.RequesterId,
-                    Channels = _channels.Values.Select(c =>
+                    Channels = _channels.Values.Select(channel =>
                         new GetSlackChannelsResponse.Channel
                         {
-                            Id = c.ID,
-                            Name = c.Name,
-                            IsPrivate = c.IsPrivate,
-                            IsMember = c.IsMember
+                            Id = channel.ID,
+                            Name = channel.Name,
+                            IsPrivate = channel.IsPrivate,
+                            IsMember = channel.IsMember
                         }).ToList()
                 });
             }
-            throw new Exception($"Unknown request type '{request.GetType().FullName}'");
+
+            var getSlackUsers = request as GetSlackUsers;
+            if (getSlackUsers != null)
+            {
+                return Observable.Return(new GetSlackUsersResponse
+                {
+                    RequestId = request.RequestId,
+                    RequesterId = request.RequesterId,
+                    Users = _users.Values.Select(user =>
+                        new GetSlackUsersResponse.User
+                        {
+                            Id = user.ID,
+                            Name = user.Name
+                        }).ToList()
+                });
+            }
+
+            throw new Exception($"Unknown Request Type '{request.GetType().FullName}'");
         }
 
         public IObservable<IEvent> Events
@@ -164,6 +184,18 @@ namespace Obvs.Integrations.Slack
             });
 
             await Task.FromResult(true);
+        }
+
+        private void OnConnected()
+        {
+            foreach (var channel in _bot.GetChannels())
+            {
+                _channels.AddOrUpdate(channel.ID, channel, (s, c) => channel);
+            }
+            foreach (var user in _bot.GetUsers())
+            {
+                _users.AddOrUpdate(user.ID, user, (s, c) => user);
+            }
         }
     }
 }

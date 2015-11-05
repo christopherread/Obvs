@@ -20,8 +20,6 @@ namespace Obvs.Integrations.Slack.Bot
 
 	    protected virtual Task OnMessage(Channel channel, User user, string text, bool botIsMentioned)
 		{
-			// TODO:.NET 4.6.
-			//return Task.CompletedTask;
 			return Task.FromResult(true);
 		}
 

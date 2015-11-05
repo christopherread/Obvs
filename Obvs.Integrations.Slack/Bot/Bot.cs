@@ -10,10 +10,10 @@ namespace Obvs.Integrations.Slack.Bot
 {
 	internal abstract class Bot
 	{
-		readonly HashSet<Handler> _handlers = new HashSet<Handler>();
-		readonly ConcurrentBag<Task> _handlerTasks = new ConcurrentBag<Task>();
-		CancellationTokenSource _cancellationSource = new CancellationTokenSource();
-		readonly string[] _cancellationTerms = { "cancel", "abort", "stop" };
+		private readonly HashSet<Handler> _handlers = new HashSet<Handler>();
+        private readonly ConcurrentBag<Task> _handlerTasks = new ConcurrentBag<Task>();
+        private CancellationTokenSource _cancellationSource = new CancellationTokenSource();
+        private readonly string[] _cancellationTerms = { "cancel", "abort", "stop" };
 		
 		public void RegisterHandler(Handler handler)
 		{
@@ -21,7 +21,7 @@ namespace Obvs.Integrations.Slack.Bot
 			_handlers.Add(handler);
 		}
 
-		abstract internal Task SendMessage(Channel channel, string text, Attachment[] attachments = null);
+        abstract internal Task SendMessage(Channel channel, string text, Attachment[] attachments = null);
 
 		abstract internal Task SendTypingIndicator(Channel channel);
 
@@ -35,11 +35,13 @@ namespace Obvs.Integrations.Slack.Bot
 				return;
 			}
 
-			foreach (var handler in _handlers)
-				_handlerTasks.Add(SendMessageToHandlerAsync(channel, user, text, botIsMentioned, handler));
+		    foreach (var handler in _handlers)
+		    {
+		        _handlerTasks.Add(SendMessageToHandlerAsync(channel, user, text, botIsMentioned, handler));
+		    }
 		}
 
-		async Task SendMessageToHandlerAsync(Channel channel, User user, string text, bool botIsMentioned, Handler handler)
+        private async Task SendMessageToHandlerAsync(Channel channel, User user, string text, bool botIsMentioned, Handler handler)
 		{
 			try
 			{

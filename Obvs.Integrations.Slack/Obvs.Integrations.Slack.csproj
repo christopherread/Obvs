@@ -85,6 +85,8 @@
     <Compile Include="Bot\Handler.cs" />
     <Compile Include="Messages\GetSlackChannels.cs" />
     <Compile Include="Messages\GetSlackChannelsResponse.cs" />
+    <Compile Include="Messages\GetSlackUsers.cs" />
+    <Compile Include="Messages\GetSlackUsersResponse.cs" />
     <Compile Include="Messages\ISlackIntegrationMessage.cs" />
     <Compile Include="Messages\SendSlackMessage.cs" />
     <Compile Include="Bot\RandomMessages.cs" />
