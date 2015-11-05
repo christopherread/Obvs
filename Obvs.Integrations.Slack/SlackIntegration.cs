@@ -82,7 +82,7 @@ namespace Obvs.Integrations.Slack
                 Channel channel;
                 if (_channels.TryGetValue(sendSlackMessage.ChannelId, out channel))
                 {
-                    await SendMessage(channel, sendSlackMessage.Text);
+                    await SendMessage(channel, sendSlackMessage.Text, GetAttachments(sendSlackMessage));
                 }
                 else
                 {
@@ -93,6 +93,25 @@ namespace Obvs.Integrations.Slack
             {
                 throw new Exception($"Unknown command type '{command.GetType().FullName}'");
             }
+        }
+
+        private static Attachment[] GetAttachments(SendSlackMessage sendSlackMessage)
+        {
+            return sendSlackMessage.Attachments.Select(a => new Attachment
+            {
+                AuthorIcon = a.AuthorIcon,
+                Text = a.Text,
+                AuthorLink = a.AuthorLink,
+                AuthorName = a.AuthorName,
+                Colour = a.Colour,
+                Fallback = a.Fallback,
+                ImageUrl = a.ImageUrl,
+                Fields = a.Fields.Select(f => new Field(f.Title, f.Value, f.Short)).ToArray(),
+                Title = a.Title,
+                Pretext = a.Pretext,
+                ThumbUrl = a.ThumbUrl,
+                TitleLink = a.TitleLink
+            }).ToArray();
         }
 
         public IObservable<IResponse> GetResponses(IRequest request)

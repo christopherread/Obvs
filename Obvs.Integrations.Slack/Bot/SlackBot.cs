@@ -56,7 +56,9 @@ namespace Obvs.Integrations.Slack.Bot
 		#region REST Methods
 
 		Task<AuthTestResponse> AuthTest() => _api.Post<AuthTestResponse>("auth.test");
+
 		Task<RtmStartResponse> RtmStart() => _api.Post<RtmStartResponse>("rtm.start");
+
 		Task<PostMessageResponse> PostMessage(string channelID, string text, Attachment[] attachments = null) =>
 			_api.Post<PostMessageResponse>("chat.postMessage", new Dictionary<string, string> {
 				{ "as_user", "true" },
