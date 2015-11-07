@@ -73,7 +73,10 @@ namespace Obvs.Monitoring
 
         public void Dispose()
         {
-            _timer?.Dispose();
+            if (_timer != null)
+            {
+                _timer.Dispose();
+            }
         }
     }
 }

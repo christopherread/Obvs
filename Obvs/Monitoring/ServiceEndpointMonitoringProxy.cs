@@ -20,11 +20,11 @@ namespace Obvs.Monitoring
         {
             if (endpoint == null)
             {
-                throw new NullReferenceException($"{nameof(endpoint)} cannot be null");
+                throw new NullReferenceException("endpoint cannot be null");
             }
             if (monitorFactory == null)
             {
-                throw new NullReferenceException($"{nameof(monitorFactory)} cannot be null");
+                throw new NullReferenceException("monitorFactory cannot be null");
             }
 
             _endpoint = endpoint;
