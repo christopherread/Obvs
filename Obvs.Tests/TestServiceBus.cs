@@ -8,6 +8,7 @@ using FakeItEasy;
 using Microsoft.Reactive.Testing;
 using NUnit.Framework;
 using Obvs.Configuration;
+using Obvs.Monitoring;
 using Obvs.Types;
 
 namespace Obvs.Tests
@@ -1344,10 +1345,13 @@ namespace Obvs.Tests
 
             var localBus = new SubjectMessageBus<IMessage>();
 
+            var testScheduler = new TestScheduler();
+
             IServiceBus serviceBus = ServiceBus.Configure()
                 .WithEndpoint((IServiceEndpoint)fakeServiceEndpoint)
                 .WithEndpoint((IServiceEndpointClient)fakeServer)
                 .PublishLocally(localBus).OnlyMessagesWithNoEndpoints()
+                .UsingConsoleMonitor(TimeSpan.FromSeconds(5), testScheduler)
                 .UsingConsoleLogging()
                 .Create();
 
@@ -1383,10 +1387,66 @@ namespace Obvs.Tests
             Assert.That(serviceBusMessages[0].GetType(), Is.EqualTo(typeof(TestServiceResponse2)));
             Assert.That(serviceBusMessages[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
             Assert.That(serviceBusMessages[2].GetType(), Is.EqualTo(typeof(TestEventBelongingToNoService))); // locally published
+
+            testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
             
         }
-    }
 
+        [Test]
+        public async void ShouldMonitorAllMessagesSentAndReceived()
+        {
+            FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
+            FakeServiceEndpoint fakeServer = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
+
+            List<IMessage> monitorReceived = new List<IMessage>();
+            List<IMessage> monitorSent = new List<IMessage>();
+
+            var monitorFactory = A.Fake<IMonitorFactory<IMessage>>();
+            var monitor = A.Fake<IMonitor<IMessage>>();
+            A.CallTo(() => monitor.MessageReceived(A<IMessage>._, A<TimeSpan>._)).Invokes(call =>
+            {
+                var message = call.GetArgument<IMessage>(0);
+                Console.WriteLine("Received {0}", message);
+                monitorReceived.Add(message);
+            });
+            A.CallTo(() => monitor.MessageSent(A<IMessage>._, A<TimeSpan>._)).Invokes(call =>
+            {
+                var message = call.GetArgument<IMessage>(0);
+                Console.WriteLine("Sent {0}", message);
+                monitorSent.Add(message);
+            });
+            A.CallTo(() => monitorFactory.Create(A<string>._)).Returns(monitor);
+
+            IServiceBus serviceBus = ServiceBus.Configure()
+                .WithEndpoint((IServiceEndpoint)fakeServiceEndpoint)
+                .WithEndpoint((IServiceEndpointClient)fakeServer)
+                .UsingMonitor(monitorFactory)
+                .Create();
+
+            List<Exception> exceptions = new List<Exception>();
+            List<IMessage> serviceBusMessages = new List<IMessage>();
+            serviceBus.Exceptions.Subscribe(exceptions.Add);
+            serviceBus.Events.Subscribe(serviceBusMessages.Add);
+            serviceBus.Commands.Subscribe(serviceBusMessages.Add);
+            serviceBus.Requests.Subscribe(serviceBusMessages.Add);
+
+            fakeServer.Commands.OfType<TestServiceCommand1>().Subscribe(async command => await fakeServer.PublishAsync(new TestServiceEvent2()));
+            fakeServer.Requests.OfType<TestServiceRequest2>().Subscribe(async request => await fakeServer.ReplyAsync(request, new TestServiceResponse2()));
+
+            serviceBus.GetResponses(new TestServiceRequest2()).Subscribe(serviceBusMessages.Add);
+            await serviceBus.SendAsync(new TestServiceCommand2());
+            await serviceBus.PublishAsync(new TestServiceEvent1());
+
+            Assert.That(monitorSent.Count, Is.EqualTo(3));
+            Assert.That(monitorSent.OfType<TestServiceCommand2>().Count(), Is.EqualTo(1));
+            Assert.That(monitorSent.OfType<TestServiceEvent1>().Count(), Is.EqualTo(1));
+            Assert.That(monitorSent.OfType<TestServiceRequest2>().Count(), Is.EqualTo(1));
+
+            Assert.That(monitorReceived.Count, Is.EqualTo(1));
+            Assert.That(monitorReceived.OfType<TestServiceResponse2>().Count(), Is.EqualTo(1));
+        }
+    }
+    
     public interface ITestServiceMessage1 : IMessage {}
     public interface ITestServiceMessage2 : IMessage {}
     public class TestServiceEvent1 : ITestServiceMessage1, IEvent { }

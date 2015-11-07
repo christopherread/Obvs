@@ -64,9 +64,16 @@
     <Compile Include="IMessageBus.cs" />
     <Compile Include="IMessageConverter.cs" />
     <Compile Include="Logging\LogLevel.cs" />
+    <Compile Include="Monitoring\ServiceEndpointMonitoringExtensions.cs" />
     <Compile Include="MessageProperties\FuncMessagePropertyProvider.cs" />
     <Compile Include="MessageProperties\CompositeMessagePropertyProvider.cs" />
     <Compile Include="MessageProperties\MessagePropertyProviderManager.cs" />
+    <Compile Include="Monitoring\ConsoleTimerMonitor.cs" />
+    <Compile Include="Monitoring\ConsoleTimerMonitorFactory.cs" />
+    <Compile Include="Monitoring\IMonitor.cs" />
+    <Compile Include="Monitoring\IMonitorFactory.cs" />
+    <Compile Include="Monitoring\ServiceEndpointClientMonitoringProxy.cs" />
+    <Compile Include="Monitoring\ServiceEndpointMonitoringProxy.cs" />
     <Compile Include="Serialization\IMessageDeserializerFactory.cs" />
     <Compile Include="MessageProperties\IMessagePropertyProvider.cs" />
     <Compile Include="IMessagePublisher.cs" />
@@ -100,6 +107,7 @@
     <None Include="Obvs.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

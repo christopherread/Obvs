@@ -1,7 +1,9 @@
 using System;
+using System.Reactive.Concurrency;
 using System.Reflection;
 using Obvs.Logging;
 using Obvs.MessageProperties;
+using Obvs.Monitoring;
 using Obvs.Serialization;
 
 namespace Obvs.Configuration
@@ -10,7 +12,8 @@ namespace Obvs.Configuration
         ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>,
         ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>,
         ICanSpecifyRequestCorrelationProvider<TMessage, TCommand, TEvent, TRequest, TResponse>,
-        ICanSpecifyLocalBus<TMessage, TCommand, TEvent, TRequest, TResponse>
+        ICanSpecifyLocalBus<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage
@@ -70,6 +73,18 @@ namespace Obvs.Configuration
    public interface ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> : 
        ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse>,
        ICanSpecifyLogging<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
+    }
+
+   public interface ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> : 
+       ICanCreate<TMessage, TCommand, TEvent, TRequest, TResponse>,
+       ICanSpecifyLogging<TMessage, TCommand, TEvent, TRequest, TResponse>,
+       ICanSpecifyMonitoring<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage
@@ -145,11 +160,22 @@ namespace Obvs.Configuration
         /// <summary>
         /// Configures message types for which this process is configured as a server to also be sent and received by local subscribers
         /// </summary>
-        ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AnyMessagesWithNoEndpointClients();
+        ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AnyMessagesWithNoEndpointClients();
 
         /// <summary>
         /// Configures message types which have no endpoints configured to be sent and received by local subscribers
         /// </summary>
-        ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> OnlyMessagesWithNoEndpoints();
+        ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> OnlyMessagesWithNoEndpoints();
+    }
+
+    public interface ICanSpecifyMonitoring<TMessage, TCommand, TEvent, TRequest, TResponse> 
+        where TResponse : class, TMessage 
+        where TRequest : class, TMessage 
+        where TEvent : class, TMessage 
+        where TCommand : class, TMessage 
+        where TMessage : class
+    {
+        ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingMonitor(IMonitorFactory<TMessage> monitorFactory);
+        ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingConsoleMonitor(TimeSpan period, IScheduler scheduler = null);
     }
 }

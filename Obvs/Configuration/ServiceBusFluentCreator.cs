@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
 using Obvs.Logging;
+using Obvs.Monitoring;
 
 namespace Obvs.Configuration
 {
@@ -20,6 +22,7 @@ namespace Obvs.Configuration
         private Func<Type, LogLevel> _logLevelReceive;
         private IMessageBus<TMessage> _localBus;
         private LocalBusOptions _localBusOption = LocalBusOptions.MessagesWithNoEndpointClients;
+        private IMonitorFactory<TMessage> _monitorFactory;
 
         public ServiceBusFluentCreator()
         {
@@ -103,20 +106,32 @@ namespace Obvs.Configuration
 
         private IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> GetEndpointClients()
         {
-            return _loggerFactory == null
+            var endpointsWithLogging = _loggerFactory == null
                 ? _endpointClients
                 : _endpointClients.Where(ep => _enableLogging(ep))
                     .Select(ep => ep.CreateLoggingProxy(_loggerFactory, _logLevelSend, _logLevelReceive))
                     .Union(_endpointClients.Where(ep => !_enableLogging(ep)));
+
+            var endpointsWithMonitoring = _monitorFactory == null
+                ? endpointsWithLogging
+                : endpointsWithLogging.Select(ep => ep.CreateMonitoringProxy(_monitorFactory));
+
+            return endpointsWithMonitoring;
         }
 
         private IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> GetEndpoints()
         {
-            return _loggerFactory == null
+            var endpointsWithLogging = _loggerFactory == null
                 ? _endpoints
                 : _endpoints.Where(ep => _enableLogging(ep))
                     .Select(ep => ep.CreateLoggingProxy(_loggerFactory, _logLevelSend, _logLevelReceive))
                     .Union(_endpoints.Where(ep => !_enableLogging(ep)));
+
+            var endpointsWithMonitoring = _monitorFactory == null
+                ? endpointsWithLogging
+                : endpointsWithLogging.Select(ep => ep.CreateMonitoringProxy(_monitorFactory));
+
+            return endpointsWithMonitoring;
         }
 
         ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> ICanSpecifyLocalBus<TMessage, TCommand, TEvent, TRequest, TResponse>.PublishLocally(IMessageBus<TMessage> localBus)
@@ -125,15 +140,27 @@ namespace Obvs.Configuration
             return this;
         }
 
-        public ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AnyMessagesWithNoEndpointClients()
+        public ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AnyMessagesWithNoEndpointClients()
         {
             _localBusOption = LocalBusOptions.MessagesWithNoEndpointClients;
             return this;
         }
 
-        public ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> OnlyMessagesWithNoEndpoints()
+        public ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> OnlyMessagesWithNoEndpoints()
         {
             _localBusOption = LocalBusOptions.MessagesWithNoEndpoints;
+            return this;
+        }
+
+        public ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingMonitor(IMonitorFactory<TMessage> monitorFactory)
+        {
+            _monitorFactory = monitorFactory;
+            return this;
+        }
+
+        public ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingConsoleMonitor(TimeSpan period, IScheduler scheduler = null)
+        {
+            _monitorFactory = new ConsoleTimerMonitorFactory<TMessage>(period, scheduler ?? Scheduler.Default);
             return this;
         }
     }
