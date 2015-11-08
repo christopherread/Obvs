@@ -64,6 +64,8 @@
     <Compile Include="IMessageBus.cs" />
     <Compile Include="IMessageConverter.cs" />
     <Compile Include="Logging\LogLevel.cs" />
+    <Compile Include="Monitoring\MultiMonitor.cs" />
+    <Compile Include="Monitoring\MultiMonitorFactory.cs" />
     <Compile Include="Monitoring\ServiceEndpointMonitoringExtensions.cs" />
     <Compile Include="MessageProperties\FuncMessagePropertyProvider.cs" />
     <Compile Include="MessageProperties\CompositeMessagePropertyProvider.cs" />
