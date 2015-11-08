@@ -32,7 +32,7 @@ namespace Obvs.Monitoring
         {
             foreach (var monitor in _monitors)
             {
-                monitor.MessageSent(message, elapsed);
+                monitor.MessageReceived(message, elapsed);
             }
         }
     }
