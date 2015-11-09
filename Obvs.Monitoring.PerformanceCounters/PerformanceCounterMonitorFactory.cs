@@ -19,15 +19,15 @@ namespace Obvs.Monitoring.PerformanceCounters
         public const string MessagesReceivedRate = "Messages Received Rate";
         public const string MessagesReceivedRateDescription = "Rate of messages received";
 
-        public const string MessagesSentAverage = "Messages Sent Average";
-        public const string MessagesSentAverageDescription = "Average Average time of messages sent";
-        public const string MessagesSentAverageBase = "Messages Sent Average Base";
-        public const string MessagesSentAverageBaseDescription = "Average time of messages sent base";
+        public const string MessagesSentAverage = "Messages Sent Average Elapsed";
+        public const string MessagesSentAverageDescription = "Average elapsed time of messages sent";
+        public const string MessagesSentAverageBase = "Messages Sent Average Elapsed Base";
+        public const string MessagesSentAverageBaseDescription = "Average elapsed time of messages sent base";
 
-        public const string MessagesReceivedAverage = "Messages Received Average";
-        public const string MessagesReceivedAverageDescription = "Average Average time of messages received";
-        public const string MessagesReceivedAverageBase = "Messages Received Average Base";
-        public const string MessagesReceivedAverageBaseDescription = "Average time of messages received base";
+        public const string MessagesReceivedAverage = "Messages Received Average Elapsed";
+        public const string MessagesReceivedAverageDescription = "Average elapsed time of messages received";
+        public const string MessagesReceivedAverageBase = "Messages Received Average Elapsed Base";
+        public const string MessagesReceivedAverageBaseDescription = "Average elapsed time of messages received base";
     }
 
     public class PerformanceCounterMonitorFactory<TMessage> : IMonitorFactory<TMessage>

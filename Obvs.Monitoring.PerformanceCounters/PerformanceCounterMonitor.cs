@@ -20,15 +20,15 @@ namespace Obvs.Monitoring.PerformanceCounters
         {
             try
             {
-                _counterSent = new PerformanceCounter(Data.CategoryName, Data.MessagesSent, instanceName);
-                _counterSentRate = new PerformanceCounter(Data.CategoryName, Data.MessagesSentRate, instanceName);
-                _counterSentAverage = new PerformanceCounter(Data.CategoryName, Data.MessagesSentAverage, instanceName);
-                _counterSentAverageBase = new PerformanceCounter(Data.CategoryName, Data.MessagesSentAverageBase, instanceName);
+                _counterSent = new PerformanceCounter(Data.CategoryName, Data.MessagesSent, instanceName, false);
+                _counterSentRate = new PerformanceCounter(Data.CategoryName, Data.MessagesSentRate, instanceName, false);
+                _counterSentAverage = new PerformanceCounter(Data.CategoryName, Data.MessagesSentAverage, instanceName, false);
+                _counterSentAverageBase = new PerformanceCounter(Data.CategoryName, Data.MessagesSentAverageBase, instanceName, false);
 
-                _counterReceived = new PerformanceCounter(Data.CategoryName, Data.MessagesReceived, instanceName);
-                _counterReceivedRate = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedRate, instanceName);
-                _counterReceivedAverage = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedAverage, instanceName);
-                _counterReceivedAverageBase = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedAverageBase, instanceName);
+                _counterReceived = new PerformanceCounter(Data.CategoryName, Data.MessagesReceived, instanceName, false);
+                _counterReceivedRate = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedRate, instanceName, false);
+                _counterReceivedAverage = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedAverage, instanceName, false);
+                _counterReceivedAverageBase = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedAverageBase, instanceName, false);
             }
             catch (Exception exception)
             {
