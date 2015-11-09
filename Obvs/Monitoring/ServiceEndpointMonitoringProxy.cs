@@ -87,7 +87,7 @@ namespace Obvs.Monitoring
                 {
                     stopwatch.Stop();
                     _monitor.MessageSent(ev, stopwatch.Elapsed);
-                });
+                }, TaskContinuationOptions.ExecuteSynchronously);
         }
 
         public Task ReplyAsync(TRequest request, TResponse response)
@@ -98,7 +98,7 @@ namespace Obvs.Monitoring
                 {
                     stopwatch.Stop();
                     _monitor.MessageSent(response, stopwatch.Elapsed);
-                });
+                }, TaskContinuationOptions.ExecuteSynchronously);
         }
     }
 }

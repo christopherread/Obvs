@@ -71,7 +71,7 @@ namespace Obvs.Monitoring
                 {
                     stopwatch.Stop();
                     _monitor.MessageSent(command, stopwatch.Elapsed);
-                });
+                }, TaskContinuationOptions.ExecuteSynchronously);
         }
 
         public IObservable<TResponse> GetResponses(TRequest request)
