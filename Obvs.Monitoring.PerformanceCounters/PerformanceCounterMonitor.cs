@@ -16,19 +16,19 @@ namespace Obvs.Monitoring.PerformanceCounters
 
         private bool _enabled = true;
         
-        public PerformanceCounterMonitor(string name)
+        public PerformanceCounterMonitor(string instanceName)
         {
             try
             {
-                _counterSent = new PerformanceCounter(Data.CategoryName, Data.MessagesSent, name);
-                _counterSentRate = new PerformanceCounter(Data.CategoryName, Data.MessagesSentRate, name);
-                _counterSentAverage = new PerformanceCounter(Data.CategoryName, Data.MessagesSentAverage, name);
-                _counterSentAverageBase = new PerformanceCounter(Data.CategoryName, Data.MessagesSentAverageBase, name);
+                _counterSent = new PerformanceCounter(Data.CategoryName, Data.MessagesSent, instanceName);
+                _counterSentRate = new PerformanceCounter(Data.CategoryName, Data.MessagesSentRate, instanceName);
+                _counterSentAverage = new PerformanceCounter(Data.CategoryName, Data.MessagesSentAverage, instanceName);
+                _counterSentAverageBase = new PerformanceCounter(Data.CategoryName, Data.MessagesSentAverageBase, instanceName);
 
-                _counterReceived = new PerformanceCounter(Data.CategoryName, Data.MessagesReceived, name);
-                _counterReceivedRate = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedRate, name);
-                _counterReceivedAverage = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedAverage, name);
-                _counterReceivedAverageBase = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedAverageBase, name);
+                _counterReceived = new PerformanceCounter(Data.CategoryName, Data.MessagesReceived, instanceName);
+                _counterReceivedRate = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedRate, instanceName);
+                _counterReceivedAverage = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedAverage, instanceName);
+                _counterReceivedAverageBase = new PerformanceCounter(Data.CategoryName, Data.MessagesReceivedAverageBase, instanceName);
             }
             catch (Exception exception)
             {

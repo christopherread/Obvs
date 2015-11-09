@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Obvs.Monitoring.PerformanceCounters
@@ -31,6 +32,9 @@ namespace Obvs.Monitoring.PerformanceCounters
 
     public class PerformanceCounterMonitorFactory<TMessage> : IMonitorFactory<TMessage>
     {
+        private readonly List<Type> _types;
+        private readonly string _instancePrefix;
+
         public PerformanceCounterMonitorFactory()
         {
             try
@@ -57,9 +61,15 @@ namespace Obvs.Monitoring.PerformanceCounters
             }
         }
 
+        public PerformanceCounterMonitorFactory(List<Type> types, string instancePrefix)
+        {
+            _types = types;
+            _instancePrefix = instancePrefix;
+        }
+
         public IMonitor<TMessage> Create(string name)
         {
-            return new PerformanceCounterMonitor<TMessage>(name);
+            return new PerformanceCounterMonitor<TMessage>(string.Format("{0}-{1}", _instancePrefix, name));
         }
     }
 }

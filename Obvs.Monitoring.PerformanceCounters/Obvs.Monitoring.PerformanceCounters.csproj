@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\ConfigExtensions.cs" />
+    <Compile Include="Configuration\PerformanceCountersMonitoringConfig.cs" />
     <Compile Include="PerformanceCounterMonitor.cs" />
     <Compile Include="PerformanceCounterMonitorFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

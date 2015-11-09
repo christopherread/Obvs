@@ -6,14 +6,24 @@ using Obvs.Configuration;
 namespace Obvs.Monitoring.ElasticSearch.Configuration
 {
     public interface ICanSpecifyElasticSearchMonitoringType<TMessage, TCommand, TEvent, TRequest, TResponse> :
-        ICanSpecifyElasticSearchMonitoringIndex<TMessage, TCommand, TEvent, TRequest, TResponse>
+        ICanSpecifyElasticSearchMonitoringInstancePrefix<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
             where TCommand : class, TMessage
             where TEvent : class, TMessage
             where TRequest : class, TMessage
             where TResponse : class, TMessage
     {
-        ICanSpecifyElasticSearchMonitoringUri<TMessage, TCommand, TEvent, TRequest, TResponse> AddCounter<T>() where T : class, TMessage;
+        ICanSpecifyElasticSearchMonitoringType<TMessage, TCommand, TEvent, TRequest, TResponse> AddCounter<T>() where T : class, TMessage;
+    }
+
+    public interface ICanSpecifyElasticSearchMonitoringInstancePrefix<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+            where TCommand : class, TMessage
+            where TEvent : class, TMessage
+            where TRequest : class, TMessage
+            where TResponse : class, TMessage
+    {
+        ICanSpecifyElasticSearchMonitoringIndex<TMessage, TCommand, TEvent, TRequest, TResponse> PrefixInstanceWith(string instancePrefix);
     }
 
     public interface ICanSpecifyElasticSearchMonitoringIndex<TMessage, TCommand, TEvent, TRequest, TResponse>
@@ -38,6 +48,8 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
 
     internal class ElasticSearchMonitoringConfig<TMessage, TCommand, TEvent, TRequest, TResponse> :
         ICanSpecifyElasticSearchMonitoringType<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyElasticSearchMonitoringInstancePrefix<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyElasticSearchMonitoringIndex<TMessage, TCommand, TEvent, TRequest, TResponse>,
         ICanSpecifyElasticSearchMonitoringUri<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
@@ -48,6 +60,7 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
         private readonly ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> _config;
         private string _indexPrefix;
         private readonly List<Type> _types = new List<Type>();
+        private string _instancePrefix;
 
         public ElasticSearchMonitoringConfig(ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> config)
         {
@@ -62,13 +75,19 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
 
         public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToServer(string uri)
         {
-            _config.UsingMonitor(new ElasticSearchMonitorFactory<TMessage>(uri, _indexPrefix, _types, Scheduler.Default));
+            _config.UsingMonitor(new ElasticSearchMonitorFactory<TMessage>(uri, _indexPrefix, _types, _instancePrefix, Scheduler.Default));
             return _config;
         }
 
-        public ICanSpecifyElasticSearchMonitoringUri<TMessage, TCommand, TEvent, TRequest, TResponse> AddCounter<T>() where T : class, TMessage
+        public ICanSpecifyElasticSearchMonitoringType<TMessage, TCommand, TEvent, TRequest, TResponse> AddCounter<T>() where T : class, TMessage
         {
             _types.Add(typeof(T));
+            return this;
+        }
+
+        public ICanSpecifyElasticSearchMonitoringIndex<TMessage, TCommand, TEvent, TRequest, TResponse> PrefixInstanceWith(string instancePrefix)
+        {
+            _instancePrefix = instancePrefix;
             return this;
         }
     }
