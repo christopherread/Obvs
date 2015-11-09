@@ -7,7 +7,7 @@
     <authors>$author$</authors>
     <description>Monitoring extension for Obvs, using Windows Performance Counters</description>
     <copyright>Copyright 2015</copyright>
-    <releaseNotes></releaseNotes>
+    <releaseNotes>Fixed bug where Performance Counter creation was not being called in constructor</releaseNotes>
     <projectUrl>http://inter8ection.github.io/Obvs</projectUrl>
     <tags>obvs monitoring performancecounters</tags>
   </metadata>

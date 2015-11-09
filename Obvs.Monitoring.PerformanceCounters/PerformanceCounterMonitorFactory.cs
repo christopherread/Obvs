@@ -35,8 +35,11 @@ namespace Obvs.Monitoring.PerformanceCounters
         private readonly List<Type> _types;
         private readonly string _instancePrefix;
 
-        public PerformanceCounterMonitorFactory()
+        public PerformanceCounterMonitorFactory(List<Type> types, string instancePrefix)
         {
+            _types = types;
+            _instancePrefix = instancePrefix;
+
             try
             {
                 if (!PerformanceCounterCategory.Exists(Data.CategoryName))
@@ -57,14 +60,8 @@ namespace Obvs.Monitoring.PerformanceCounters
             }
             catch (Exception exception)
             {
-                Debug.WriteLine(exception);
+                Console.WriteLine(exception);
             }
-        }
-
-        public PerformanceCounterMonitorFactory(List<Type> types, string instancePrefix)
-        {
-            _types = types;
-            _instancePrefix = instancePrefix;
         }
 
         public IMonitor<TMessage> Create(string name)

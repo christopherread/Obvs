@@ -33,7 +33,7 @@ namespace Obvs.Monitoring.PerformanceCounters
             catch (Exception exception)
             {
                 _enabled = false;
-                Debug.WriteLine(exception);
+                Console.WriteLine(exception);
             }
         }
 
@@ -67,7 +67,7 @@ namespace Obvs.Monitoring.PerformanceCounters
                 catch (Exception exception)
                 {
                     _enabled = false;
-                    Debug.WriteLine(exception);
+                    Console.WriteLine(exception);
                 }
             }
         }
@@ -86,7 +86,7 @@ namespace Obvs.Monitoring.PerformanceCounters
                 catch (Exception exception)
                 {
                     _enabled = false;
-                    Debug.WriteLine(exception);
+                    Console.WriteLine(exception);
                 }
             }
         }
