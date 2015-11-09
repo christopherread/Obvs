@@ -6,7 +6,6 @@ using System.Net;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Threading.Tasks;
 using Nest;
 
 namespace Obvs.Monitoring.ElasticSearch
@@ -49,21 +48,20 @@ namespace Obvs.Monitoring.ElasticSearch
             _samplePeriod = TimeSpan.FromSeconds(1);
             var bufferPeriod = TimeSpan.FromSeconds(5);
            
-
             _subscription =
                 _queueSent.Buffer(_samplePeriod, scheduler).SelectMany(CreateSent)
                     .Merge(_queueReceived.Buffer(_samplePeriod, scheduler).SelectMany(CreateReceived))
                     .Buffer(bufferPeriod, scheduler)
                     .ObserveOn(scheduler)
-                    .Subscribe(async items => await Save(items));
+                    .Subscribe(Save);
         }
 
-        private async Task Save(IEnumerable<ObvsCounter> items)
+        private void Save(IEnumerable<ObvsCounter> items)
         {
             try
             {
                 var indexName = _indexName;
-                var response = await _client.IndexManyAsync(items, indexName);
+                var response = _client.IndexMany(items, indexName);
                 if (!response.IsValid && response.ServerError != null)
                 {
                     Debug.WriteLine(response.ServerError.Error);
@@ -91,7 +89,7 @@ namespace Obvs.Monitoring.ElasticSearch
             
             var list = new List<ObvsCounter>
             {
-                Create(direction, items.Count, items, _messageTypeName, timeStamp)
+                Create(direction, items, _messageTypeName, timeStamp)
             };
 
             if (_typeCounters)
@@ -99,23 +97,37 @@ namespace Obvs.Monitoring.ElasticSearch
                 list.AddRange(
                     items.GroupBy(t => t.Item1.GetType())
                     .Where(g => _types.Contains(g.Key))
-                    .Select(g => Create(direction, g.Count(), g, g.Key.Name, timeStamp))
+                    .Select(g => Create(direction, g.ToArray(), g.Key.Name, timeStamp))
                     .ToArray());
             }
 
             return list;
         }
 
-        private ObvsCounter Create(string direction, int count, IEnumerable<Tuple<TMessage, TimeSpan>> items, string messageType, DateTime timeStamp)
+        private ObvsCounter Create(string direction, IList<Tuple<TMessage, TimeSpan>> items, string messageType, DateTime timeStamp)
         {
+            var count = items.Count;
+            double max = 0;
+            double min = 0;
+            double total = 0;
+            foreach (double milliseconds in items.Select(item => item.Item2.TotalMilliseconds))
+            {
+                max = Math.Max(milliseconds, max);
+                min = Math.Min(milliseconds, min);
+                total += milliseconds;
+            }
+
             return new ObvsCounter
             {
+                Name = _name,
                 Direction = direction,
+                MessageType = messageType,
                 Count = count,
                 RatePerSec = count / _samplePeriod.TotalSeconds,
-                AvgElapsedMs = items.Average(t => t.Item2.TotalMilliseconds),
-                Name = _name,
-                MessageType = messageType,
+                AvgElapsedMs = total / count,
+                MaxElapsedMs = max,
+                MinElapsedMs = min,
+                TotalElapsedMs = total,
                 TimeStamp = timeStamp,
                 TimeStampUTC = timeStamp.ToUniversalTime(),
                 UserName = _userName,

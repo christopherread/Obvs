@@ -16,6 +16,9 @@ namespace Obvs.Monitoring.ElasticSearch
         public string UserName { get; set; }
         public string HostName { get; set; }
         public string ProcessName { get; set; }
+        public double MaxElapsedMs { get; set; }
+        public double MinElapsedMs { get; set; }
+        public double TotalElapsedMs { get; set; }
 
         public ObvsCounter()
         {

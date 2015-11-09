@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <description>Monitoring extension for Obvs, using Windows Performance Counters</description>
+    <copyright>Copyright 2015</copyright>
+    <releaseNotes></releaseNotes>
+    <projectUrl>http://inter8ection.github.io/Obvs</projectUrl>
+    <tags>obvs monitoring performancecounters</tags>
+  </metadata>
+</package>
