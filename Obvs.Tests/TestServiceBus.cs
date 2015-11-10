@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
@@ -101,12 +102,82 @@ namespace Obvs.Tests
 
             IDisposable sub1 = serviceBus.Events.Subscribe(observer1);
             IDisposable sub2 = serviceBus.Events.Subscribe(observer2);
+            sub1.Dispose();
+            IDisposable sub3 = serviceBus.Events.Subscribe(observer1);
+            IDisposable sub4 = serviceBus.Events.Subscribe(observer2);
             
             A.CallTo(() => observable1.Subscribe(A<IObserver<IEvent>>._)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => observable2.Subscribe(A<IObserver<IEvent>>._)).MustHaveHappened(Repeated.Exactly.Once);
 
-            sub1.Dispose();
             sub2.Dispose();
+            sub3.Dispose();
+            sub4.Dispose();
+        }
+        
+        [Test]
+        public void ShouldOnlySubscribeToUnderlyingMessageSourceEventsOnce()
+        {
+            var messageSource1 = A.Fake<IMessageSource<IEvent>>();
+            var messageSource2 = A.Fake<IMessageSource<IEvent>>();
+
+            IServiceEndpointClient serviceEndpointClient1 = new ServiceEndpointClient(
+                messageSource1,
+                A.Fake<IMessageSource<IResponse>>(), 
+                A.Fake<IMessagePublisher<IRequest>>(),
+                A.Fake<IMessagePublisher<ICommand>>(),
+                typeof(IMessage));
+           
+            IServiceEndpointClient serviceEndpointClient2 = new ServiceEndpointClient(
+                messageSource2,
+                A.Fake<IMessageSource<IResponse>>(),
+                A.Fake<IMessagePublisher<IRequest>>(),
+                A.Fake<IMessagePublisher<ICommand>>(),
+                typeof(IMessage));
+
+            int subscribed1 = 0;
+            int subscribed2 = 0;
+            int disposed1 = 0;
+            int disposed2 = 0;
+
+            IObservable<IEvent> observable1 = Observable.Create<IEvent>(observer =>
+            {
+                subscribed1++;
+                return Disposable.Create(() => disposed1++);
+            });
+
+            IObservable<IEvent> observable2 = Observable.Create<IEvent>(observer =>
+            {
+                subscribed2++;
+                return Disposable.Create(() => disposed2++);
+            });
+
+            A.CallTo(() => messageSource1.Messages).Returns(observable1);
+            A.CallTo(() => messageSource2.Messages).Returns(observable2);
+
+            IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new IServiceEndpoint[0]);
+
+            IObserver<IEvent> observer1 = A.Fake<IObserver<IEvent>>();
+            IObserver<IEvent> observer2 = A.Fake<IObserver<IEvent>>();
+            IObserver<IEvent> observer3 = A.Fake<IObserver<IEvent>>();
+            IObserver<IEvent> observer4 = A.Fake<IObserver<IEvent>>();
+
+            IDisposable sub1 = serviceBus.Events.Subscribe(observer1);
+            IDisposable sub2 = serviceBus.Events.Subscribe(observer2);
+            sub1.Dispose();
+            IDisposable sub3 = serviceBus.Events.Subscribe(observer3);
+            IDisposable sub4 = serviceBus.Events.Subscribe(observer4);
+            
+            Assert.That(subscribed1, Is.EqualTo(1));
+            Assert.That(subscribed2, Is.EqualTo(1));
+            Assert.That(disposed1, Is.EqualTo(0));
+            Assert.That(disposed2, Is.EqualTo(0));
+            
+            sub2.Dispose();
+            sub3.Dispose();
+            sub4.Dispose();
+
+            Assert.That(disposed1, Is.EqualTo(1));
+            Assert.That(disposed2, Is.EqualTo(1));
         }
         
         [Test]

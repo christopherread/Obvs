@@ -111,7 +111,9 @@ namespace Obvs
             _localBusOption = localBusOption;
             Endpoints = endpoints.ToList();
             _endpointClients = endpointClients.ToArray();
-            _events = _endpointClients.Select(endpointClient => endpointClient.EventsWithErroHandling(_exceptions)).Merge().Merge(GetLocalMessages<TEvent>()).Publish().RefCount();
+            _events = _endpointClients.Select(endpointClient => endpointClient.EventsWithErroHandling(_exceptions))
+                                      .Merge().Merge(GetLocalMessages<TEvent>())
+                                      .Publish().RefCount();
             _requestCorrelationProvider = requestCorrelationProvider;
             _subscribers = new List<KeyValuePair<object, IObservable<TMessage>>>();
         }
