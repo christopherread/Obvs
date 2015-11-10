@@ -32,31 +32,29 @@ namespace Obvs.Monitoring.ElasticSearch
         private readonly string _hostName;
         private readonly string _processName;
 
-        public ElasticSearchMonitor(string name, IConnectionSettingsValues connectionSettings, string indexName, 
-                                    IList<Type> types, IScheduler scheduler)
+        public ElasticSearchMonitor(string name, IConnectionSettingsValues connectionSettings, string indexName, IList<Type> types, TimeSpan samplePeriod, IScheduler scheduler)
         {
             _messageTypeName = typeof(TMessage).Name;
             _name = name;
             _indexName = indexName;
+            _samplePeriod = samplePeriod;
             _types = types ?? new List<Type>();
             _typeCounters = _types.Any();
-            _client = new ElasticClient(connectionSettings);
             _userName = Environment.UserName;
             _hostName = Dns.GetHostName();
             _processName = Process.GetCurrentProcess().ProcessName;
 
-            _samplePeriod = TimeSpan.FromSeconds(1);
-            var bufferPeriod = TimeSpan.FromSeconds(5);
-           
+            _client = new ElasticClient(connectionSettings);
+
             _subscription =
                 _queueSent.Buffer(_samplePeriod, scheduler).SelectMany(CreateSent)
                     .Merge(_queueReceived.Buffer(_samplePeriod, scheduler).SelectMany(CreateReceived))
-                    .Buffer(bufferPeriod, scheduler)
+                    .Buffer(TimeSpan.FromSeconds(5), scheduler)
                     .ObserveOn(scheduler)
                     .Subscribe(Save);
         }
 
-        private void Save(IEnumerable<ObvsCounter> items)
+        private void Save(IList<ObvsCounter> items)
         {
             try
             {
@@ -64,12 +62,12 @@ namespace Obvs.Monitoring.ElasticSearch
                 var response = _client.IndexMany(items, indexName);
                 if (!response.IsValid && response.ServerError != null)
                 {
-                    Debug.WriteLine(response.ServerError.Error);
+                    Console.WriteLine(response.ServerError.Error);
                 }
             }
             catch (Exception exception)
             {
-                Debug.WriteLine(exception);
+                Console.WriteLine(exception);
             }
         }
 

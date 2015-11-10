@@ -23,7 +23,17 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
             where TRequest : class, TMessage
             where TResponse : class, TMessage
     {
-        ICanSpecifyElasticSearchMonitoringIndex<TMessage, TCommand, TEvent, TRequest, TResponse> PrefixInstanceWith(string instancePrefix);
+        ICanSpecifyElasticSearchMonitoringSamplePeriod<TMessage, TCommand, TEvent, TRequest, TResponse> PrefixInstanceWith(string instancePrefix);
+    }
+
+    public interface ICanSpecifyElasticSearchMonitoringSamplePeriod<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+            where TCommand : class, TMessage
+            where TEvent : class, TMessage
+            where TRequest : class, TMessage
+            where TResponse : class, TMessage
+    {
+        ICanSpecifyElasticSearchMonitoringIndex<TMessage, TCommand, TEvent, TRequest, TResponse> SampleEvery(TimeSpan samplePeriod);
     }
 
     public interface ICanSpecifyElasticSearchMonitoringIndex<TMessage, TCommand, TEvent, TRequest, TResponse>
@@ -49,6 +59,7 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
     internal class ElasticSearchMonitoringConfig<TMessage, TCommand, TEvent, TRequest, TResponse> :
         ICanSpecifyElasticSearchMonitoringType<TMessage, TCommand, TEvent, TRequest, TResponse>,
         ICanSpecifyElasticSearchMonitoringInstancePrefix<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyElasticSearchMonitoringSamplePeriod<TMessage, TCommand, TEvent, TRequest, TResponse>,
         ICanSpecifyElasticSearchMonitoringIndex<TMessage, TCommand, TEvent, TRequest, TResponse>,
         ICanSpecifyElasticSearchMonitoringUri<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
@@ -61,6 +72,7 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
         private string _indexPrefix;
         private readonly List<Type> _types = new List<Type>();
         private string _instancePrefix;
+        private TimeSpan _samplePeriod;
 
         public ElasticSearchMonitoringConfig(ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> config)
         {
@@ -75,7 +87,7 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
 
         public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToServer(string uri)
         {
-            _config.UsingMonitor(new ElasticSearchMonitorFactory<TMessage>(uri, _indexPrefix, _types, _instancePrefix, Scheduler.Default));
+            _config.UsingMonitor(new ElasticSearchMonitorFactory<TMessage>(uri, _indexPrefix, _types, _instancePrefix, _samplePeriod, Scheduler.Default));
             return _config;
         }
 
@@ -85,9 +97,15 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
             return this;
         }
 
-        public ICanSpecifyElasticSearchMonitoringIndex<TMessage, TCommand, TEvent, TRequest, TResponse> PrefixInstanceWith(string instancePrefix)
+        public ICanSpecifyElasticSearchMonitoringSamplePeriod<TMessage, TCommand, TEvent, TRequest, TResponse> PrefixInstanceWith(string instancePrefix)
         {
             _instancePrefix = instancePrefix;
+            return this;
+        }
+
+        public ICanSpecifyElasticSearchMonitoringIndex<TMessage, TCommand, TEvent, TRequest, TResponse> SampleEvery(TimeSpan samplePeriod)
+        {
+            _samplePeriod = samplePeriod;
             return this;
         }
     }
