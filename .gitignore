@@ -45,3 +45,5 @@ Temporary Items
 /packages
 /*/bin/*
 /*/obj/*
+*.ncrunchproject
+*.ncrunchsolution

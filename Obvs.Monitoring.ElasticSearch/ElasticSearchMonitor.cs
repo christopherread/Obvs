@@ -22,7 +22,7 @@ namespace Obvs.Monitoring.ElasticSearch
         private readonly string _counterName;
         private readonly string _indexPrefix;
         private readonly IList<Type> _types;
-        private readonly ElasticClient _client;
+        private readonly IElasticClient _client;
         private readonly Subject<Tuple<TMessage, TimeSpan>> _queueSent = new Subject<Tuple<TMessage, TimeSpan>>(); 
         private readonly Subject<Tuple<TMessage, TimeSpan>> _queueReceived = new Subject<Tuple<TMessage, TimeSpan>>();
         private readonly TimeSpan _samplePeriod;
@@ -32,26 +32,31 @@ namespace Obvs.Monitoring.ElasticSearch
         private readonly string _userName;
         private readonly string _hostName;
         private readonly string _processName;
+        private readonly IList<ObvsCounter> _emptyList = new List<ObvsCounter>();
 
-        public ElasticSearchMonitor(string instanceName, string counterName, IConnectionSettingsValues connectionSettings, string indexPrefix, IList<Type> types, TimeSpan samplePeriod, IScheduler scheduler)
+        public ElasticSearchMonitor(string instanceName, string counterName, string indexPrefix, IList<Type> types, TimeSpan samplePeriod, IScheduler scheduler, IElasticClient client)
         {
             _messageTypeName = typeof(TMessage).Name;
             _instanceName = instanceName;
             _counterName = counterName;
             _indexPrefix = indexPrefix;
             _samplePeriod = samplePeriod;
+            _client = client;
             _types = types ?? new List<Type>();
             _typeCounters = _types.Any();
             _userName = Environment.UserName;
             _hostName = Dns.GetHostName();
             _processName = Process.GetCurrentProcess().ProcessName;
 
-            _client = new ElasticClient(connectionSettings);
-
             _subscription =
-                _queueSent.Buffer(_samplePeriod, scheduler).SelectMany(CreateSent)
-                    .Merge(_queueReceived.Buffer(_samplePeriod, scheduler).SelectMany(CreateReceived))
+                _queueSent.Buffer(_samplePeriod, scheduler)
+                          .Where(tuples => tuples.Any())
+                          .SelectMany(CreateSent)
+                    .Merge(_queueReceived.Buffer(_samplePeriod, scheduler)
+                                         .Where(tuples => tuples.Any())
+                                         .SelectMany(CreateReceived))
                     .Buffer(TimeSpan.FromSeconds(5), scheduler)
+                    .Where(counters => counters.Any())
                     .ObserveOn(scheduler)
                     .Subscribe(Save);
         }
@@ -60,11 +65,14 @@ namespace Obvs.Monitoring.ElasticSearch
         {
             try
             {
-                string indexName = string.Format("{0}-{1}", _indexPrefix, DateTime.Today.ToString("yyyy.MM.dd"));
-                var response = _client.IndexMany(items, indexName);
-                if (!response.IsValid && response.ServerError != null)
+                if (items.Any())
                 {
-                    Console.WriteLine(response.ServerError.Error);
+                    string indexName = string.Format("{0}-{1}", _indexPrefix, DateTime.Today.ToString("yyyy.MM.dd"));
+                    var response = _client.IndexMany(items, indexName);
+                    if (!response.IsValid && response.ServerError != null)
+                    {
+                        Console.WriteLine(response.ServerError.Error);
+                    }
                 }
             }
             catch (Exception exception)
@@ -85,23 +93,27 @@ namespace Obvs.Monitoring.ElasticSearch
 
         private IList<ObvsCounter> Create(IList<Tuple<TMessage, TimeSpan>> items, string direction)
         {
-            DateTime timeStamp = DateTime.Now;
-            
-            var list = new List<ObvsCounter>
+            if (items.Any())
             {
-                Create(direction, items, _messageTypeName, timeStamp)
-            };
+                DateTime timeStamp = DateTime.Now;
 
-            if (_typeCounters)
-            {
-                list.AddRange(
-                    items.GroupBy(t => t.Item1.GetType())
-                    .Where(g => _types.Contains(g.Key))
-                    .Select(g => Create(direction, g.ToArray(), g.Key.Name, timeStamp))
-                    .ToArray());
+                var list = new List<ObvsCounter>
+                {
+                    Create(direction, items, _messageTypeName, timeStamp)
+                };
+
+                if (_typeCounters)
+                {
+                    list.AddRange(
+                        items.GroupBy(t => t.Item1.GetType())
+                            .Where(g => _types.Contains(g.Key))
+                            .Select(g => Create(direction, g.ToArray(), g.Key.Name, timeStamp))
+                            .ToArray());
+                }
+
+                return list;
             }
-
-            return list;
+            return _emptyList;
         }
 
         private ObvsCounter Create(string direction, IList<Tuple<TMessage, TimeSpan>> items, string messageType, DateTime timeStamp)

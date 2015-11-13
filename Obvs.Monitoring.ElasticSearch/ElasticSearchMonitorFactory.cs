@@ -12,21 +12,21 @@ namespace Obvs.Monitoring.ElasticSearch
         private readonly string _instanceName;
         private readonly TimeSpan _samplePeriod;
         private readonly IScheduler _scheduler;
-        private readonly ConnectionSettings _connectionSettings;
+        private readonly IElasticClient _client;
 
-        public ElasticSearchMonitorFactory(string elasticSearchUri, string indexPrefx, IList<Type> types, string instanceName, TimeSpan samplePeriod, IScheduler scheduler)
+        public ElasticSearchMonitorFactory(string indexPrefx, IList<Type> types, string instanceName, TimeSpan samplePeriod, IScheduler scheduler, IElasticClient client)
         {
             _indexPrefx = indexPrefx;
             _types = types;
             _instanceName = instanceName;
             _samplePeriod = samplePeriod;
             _scheduler = scheduler;
-            _connectionSettings = new ConnectionSettings(new Uri(elasticSearchUri));
+            _client = client;
         }
 
         public IMonitor<TMessage> Create(string name)
         {
-            return new ElasticSearchMonitor<TMessage>(_instanceName, name, _connectionSettings, _indexPrefx, _types, _samplePeriod, _scheduler);
+            return new ElasticSearchMonitor<TMessage>(_instanceName, name, _indexPrefx, _types, _samplePeriod, _scheduler, _client);
         }
     }
 }

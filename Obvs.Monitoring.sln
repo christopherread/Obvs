@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Monitoring.Performance
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Monitoring.ElasticSearch", "Obvs.Monitoring.ElasticSearch\Obvs.Monitoring.ElasticSearch.csproj", "{66AF8CD7-4747-41CF-8924-773B1CF2B8D9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{573142BD-4F5B-436E-9CB8-FD112E336334}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Monitoring.ElasticSearch.Tests", "Obvs.Monitoring.ElasticSearch.Tests\Obvs.Monitoring.ElasticSearch.Tests.csproj", "{38871D5F-E07F-421A-8C7F-3E3B10EF6437}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,8 +25,15 @@ Global
 		{66AF8CD7-4747-41CF-8924-773B1CF2B8D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66AF8CD7-4747-41CF-8924-773B1CF2B8D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66AF8CD7-4747-41CF-8924-773B1CF2B8D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38871D5F-E07F-421A-8C7F-3E3B10EF6437}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38871D5F-E07F-421A-8C7F-3E3B10EF6437}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38871D5F-E07F-421A-8C7F-3E3B10EF6437}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38871D5F-E07F-421A-8C7F-3E3B10EF6437}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{38871D5F-E07F-421A-8C7F-3E3B10EF6437} = {573142BD-4F5B-436E-9CB8-FD112E336334}
 	EndGlobalSection
 EndGlobal
