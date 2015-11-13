@@ -22,6 +22,8 @@ namespace Obvs.Monitoring.ElasticSearch
             _samplePeriod = samplePeriod;
             _scheduler = scheduler;
             _client = client;
+
+            _client.Map<ObvsCounter>(m => m.MapFromAttributes());
         }
 
         public IMonitor<TMessage> Create(string name)
