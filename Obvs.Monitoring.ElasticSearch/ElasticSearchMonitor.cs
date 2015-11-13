@@ -18,8 +18,9 @@ namespace Obvs.Monitoring.ElasticSearch
             public const string Receive = "receive";
         }
 
-        private readonly string _name;
-        private readonly string _indexName;
+        private readonly string _instanceName;
+        private readonly string _counterName;
+        private readonly string _indexPrefix;
         private readonly IList<Type> _types;
         private readonly ElasticClient _client;
         private readonly Subject<Tuple<TMessage, TimeSpan>> _queueSent = new Subject<Tuple<TMessage, TimeSpan>>(); 
@@ -32,11 +33,12 @@ namespace Obvs.Monitoring.ElasticSearch
         private readonly string _hostName;
         private readonly string _processName;
 
-        public ElasticSearchMonitor(string name, IConnectionSettingsValues connectionSettings, string indexName, IList<Type> types, TimeSpan samplePeriod, IScheduler scheduler)
+        public ElasticSearchMonitor(string instanceName, string counterName, IConnectionSettingsValues connectionSettings, string indexPrefix, IList<Type> types, TimeSpan samplePeriod, IScheduler scheduler)
         {
             _messageTypeName = typeof(TMessage).Name;
-            _name = name;
-            _indexName = indexName;
+            _instanceName = instanceName;
+            _counterName = counterName;
+            _indexPrefix = indexPrefix;
             _samplePeriod = samplePeriod;
             _types = types ?? new List<Type>();
             _typeCounters = _types.Any();
@@ -58,7 +60,7 @@ namespace Obvs.Monitoring.ElasticSearch
         {
             try
             {
-                var indexName = _indexName;
+                string indexName = string.Format("{0}-{1}", _indexPrefix, DateTime.Today.ToString("yyyy.MM.dd"));
                 var response = _client.IndexMany(items, indexName);
                 if (!response.IsValid && response.ServerError != null)
                 {
@@ -117,7 +119,8 @@ namespace Obvs.Monitoring.ElasticSearch
 
             return new ObvsCounter
             {
-                Name = _name,
+                InstanceName = _instanceName,
+                CounterName = _counterName,
                 Direction = direction,
                 MessageType = messageType,
                 Count = count,

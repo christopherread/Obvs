@@ -7,7 +7,8 @@ namespace Obvs.Monitoring.ElasticSearch
         public string Id { get; set; }
         public DateTime TimeStamp { get; set; }
         public DateTime TimeStampUTC { get; set; }
-        public string Name { get; set; }
+        public string CounterName { get; set; }
+        public string InstanceName { get; set; }
         public string MessageType { get; set; }
         public string Direction { get; set; }
         public int Count { get; set; }

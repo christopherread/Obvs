@@ -7,7 +7,7 @@
     <authors>$author$</authors>
     <description>Monitoring extension for Obvs, using ElasticSearch</description>
     <copyright>Copyright 2015</copyright>
-    <releaseNotes></releaseNotes>
+    <releaseNotes>Added date suffix to ElasticSearch index name</releaseNotes>
     <projectUrl>http://inter8ection.github.io/Obvs</projectUrl>
     <tags>obvs monitoring elasticsearch</tags>
   </metadata>
