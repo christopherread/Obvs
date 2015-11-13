@@ -11,7 +11,7 @@ namespace Obvs.Extensions
             where TRequest : TMessage
             where TResponse : TMessage
         {
-            return endpoint.Events.CatchAndHandle(exceptions, () => endpoint.Events, string.Format("Error receiving {0} from endpoint {1}", typeof(TEvent), endpoint.GetType().FullName));
+            return endpoint.Events.CatchAndHandle(exceptions, () => endpoint.Events, string.Format("Error receiving {0} from endpoint {1}", typeof(TEvent), endpoint.Name));
         }
 
         public static IObservable<TCommand> CommandsWithErrorHandling<TMessage, TCommand, TEvent, TRequest, TResponse>(this IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint, IObserver<Exception> exceptions) 
@@ -21,7 +21,7 @@ namespace Obvs.Extensions
             where TRequest : TMessage 
             where TResponse : TMessage
         {
-            return endpoint.Commands.CatchAndHandle(exceptions, () => endpoint.Commands, string.Format("Error receiving {0} from endpoint {1}", typeof(TCommand), endpoint.GetType().FullName));
+            return endpoint.Commands.CatchAndHandle(exceptions, () => endpoint.Commands, string.Format("Error receiving {0} from endpoint {1}", typeof(TCommand), endpoint.Name));
         }
 
         public static IObservable<TRequest> RequestsWithErrorHandling<TMessage, TCommand, TEvent, TRequest, TResponse>(this IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint, IObserver<Exception> exceptions)
@@ -31,7 +31,7 @@ namespace Obvs.Extensions
             where TRequest : TMessage
             where TResponse : TMessage
         {
-            return endpoint.Requests.CatchAndHandle(exceptions, () => endpoint.Requests, string.Format("Error receiving {0} from endpoint {1}", typeof(TRequest), endpoint.GetType().FullName));
+            return endpoint.Requests.CatchAndHandle(exceptions, () => endpoint.Requests, string.Format("Error receiving {0} from endpoint {1}", typeof(TRequest), endpoint.Name));
         }
     }
 }
