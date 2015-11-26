@@ -31,9 +31,13 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly Lazy<IConnection> _endpointConnection;
         private readonly Lazy<IConnection> _endpointClientConnection;
 
-        public ActiveMQServiceEndpointProvider(string serviceName, string brokerUri, 
-                                               IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory,
-                                               List<Tuple<Type, AcknowledgementMode>> queueTypes, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
+        public ActiveMQServiceEndpointProvider(string serviceName,
+                                               string brokerUri, 
+                                               IMessageSerializer serializer,
+                                               IMessageDeserializerFactory deserializerFactory,
+                                               List<Tuple<Type, AcknowledgementMode>> queueTypes, 
+                                               Func<Assembly, bool> assemblyFilter = null, 
+                                               Func<Type, bool> typeFilter = null)
             : base(serviceName)
         {
             _serializer = serializer;

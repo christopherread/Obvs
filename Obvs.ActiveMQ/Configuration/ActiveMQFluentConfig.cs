@@ -35,7 +35,7 @@ namespace Obvs.ActiveMQ.Configuration
         where TResponse : class, TMessage
     {
         /// <summary>
-        /// The message is automatically acknowledged as soon as it is delivered from the broker
+        /// The message is automatically acknowledged as soon as it is delivered from the broker, Defaults to this.
         /// </summary>
         /// <returns></returns>
         ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AutoAcknowledge();
