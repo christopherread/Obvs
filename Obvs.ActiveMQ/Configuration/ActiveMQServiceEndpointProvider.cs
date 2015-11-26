@@ -33,11 +33,12 @@ namespace Obvs.ActiveMQ.Configuration
 
         public ActiveMQServiceEndpointProvider(string serviceName,
                                                string brokerUri, 
-                                               IMessageSerializer serializer,
+                                               IMessageSerializer serializer, 
                                                IMessageDeserializerFactory deserializerFactory,
                                                List<Tuple<Type, AcknowledgementMode>> queueTypes, 
                                                Func<Assembly, bool> assemblyFilter = null, 
-                                               Func<Type, bool> typeFilter = null)
+                                               Func<Type, bool> typeFilter = null,
+                                               Lazy<IConnection> sharedConnection = null)
             : base(serviceName)
         {
             _serializer = serializer;
@@ -45,13 +46,26 @@ namespace Obvs.ActiveMQ.Configuration
             _queueTypes = queueTypes;
             _assemblyFilter = assemblyFilter;
             _typeFilter = typeFilter;
+
+            if (string.IsNullOrEmpty(brokerUri) && sharedConnection == null)
+            {
+                throw new InvalidOperationException(string.Format("For service endpoint '{0}', please specify a brokerUri to connect to. To do this you can use either ConnectToBroker() per endpoint, or WithActiveMQSharedConnectionScope() to share a connection across multiple endpoints.", serviceName));
+            }
             
             _scheduler = new EventLoopScheduler(start => new Thread(start){Name = string.Format("{0}.Publisher", serviceName), IsBackground = true});
 
-            IConnectionFactory endpointConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.Endpoint", serviceName)));
-            IConnectionFactory endpointClientConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.EndpointClient", serviceName)));
-            _endpointConnection = endpointConnectionFactory.GetLazyConnection();           
-            _endpointClientConnection = endpointClientConnectionFactory.GetLazyConnection();
+            if (sharedConnection == null)
+            {
+                IConnectionFactory endpointConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.Endpoint", serviceName)));
+                IConnectionFactory endpointClientConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.EndpointClient", serviceName)));
+                _endpointConnection = endpointConnectionFactory.GetLazyConnection();
+                _endpointClientConnection = endpointClientConnectionFactory.GetLazyConnection();
+            }
+            else
+            {
+                _endpointConnection = sharedConnection;
+                _endpointClientConnection = sharedConnection;
+            }
         }
 
         public override IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpoint()
@@ -154,7 +168,8 @@ namespace Obvs.ActiveMQ.Configuration
         {
             return Disposable.Create(() =>
             {
-                if (lazyConnection.IsValueCreated)
+                if (lazyConnection.IsValueCreated && 
+                    lazyConnection.Value.IsStarted)
                 {
                     lazyConnection.Value.Stop();
                     lazyConnection.Value.Close();

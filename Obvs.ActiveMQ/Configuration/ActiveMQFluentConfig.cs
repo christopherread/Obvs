@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Apache.NMS;
 using Obvs.Configuration;
 using Obvs.Serialization;
 
@@ -47,7 +48,7 @@ namespace Obvs.ActiveMQ.Configuration
         ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> ClientAcknowledge();
     }
 
-    public interface ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanSpecifyActiveMQQueue<TMessage, TCommand, TEvent, TRequest, TResponse>
+    public interface ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanSpecifyActiveMQQueue<TMessage, TCommand, TEvent, TRequest, TResponse>, ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage
@@ -60,7 +61,6 @@ namespace Obvs.ActiveMQ.Configuration
     internal class ActiveMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
         ICanSpecifyActiveMQServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>, 
         ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse>, 
-        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>,
         ICanSpecifyActiveMQQueueAcknowledge<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TServiceMessage : class 
@@ -113,7 +113,7 @@ namespace Obvs.ActiveMQ.Configuration
 
         private ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> CreateProvider()
         {
-            return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, _typeFilter);
+            return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, _typeFilter, ActiveMQFluentConfigContext.SharedConnection);
         }
 
         public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri)
@@ -121,7 +121,7 @@ namespace Obvs.ActiveMQ.Configuration
             _brokerUri = brokerUri;
             return this;
         }
-
+        
         public ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
         {
             _serializer = serializer;

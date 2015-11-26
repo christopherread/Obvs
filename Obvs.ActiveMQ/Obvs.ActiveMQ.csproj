@@ -30,17 +30,17 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Apache.NMS, Version=1.7.0.3635, Culture=neutral, PublicKeyToken=82756feee3957618, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Apache.NMS.1.7.0\lib\net40\Apache.NMS.dll</HintPath>
+    <Reference Include="Apache.NMS, Version=1.7.1.3894, Culture=neutral, PublicKeyToken=82756feee3957618, processorArchitecture=MSIL">
+      <HintPath>..\packages\Apache.NMS.1.7.1\lib\net40\Apache.NMS.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="Apache.NMS.ActiveMQ, Version=1.7.0.3660, Culture=neutral, PublicKeyToken=82756feee3957618, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Apache.NMS.ActiveMQ.1.7.0\lib\net40\Apache.NMS.ActiveMQ.dll</HintPath>
+    <Reference Include="Apache.NMS.ActiveMQ, Version=1.7.1.3924, Culture=neutral, PublicKeyToken=82756feee3957618, processorArchitecture=MSIL">
+      <HintPath>..\packages\Apache.NMS.ActiveMQ.1.7.1\lib\net40\Apache.NMS.ActiveMQ.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="Obvs, Version=2.0.0.22, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Obvs.2.0.0.22\lib\net45\Obvs.dll</HintPath>
+    <Reference Include="Obvs, Version=2.1.0.30, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.2.1.0.30\lib\net45\Obvs.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -60,6 +60,7 @@
   <ItemGroup>
     <Compile Include="AcknowledgementMode.cs" />
     <Compile Include="Configuration\ActiveMQConfigExtensions.cs" />
+    <Compile Include="Configuration\ActiveMQFluentConfigContext.cs" />
     <Compile Include="Configuration\ActiveMQServiceEndpointProvider.cs" />
     <Compile Include="Configuration\ConnectionClientId.cs" />
     <Compile Include="Configuration\ConnectionFactoryExtensions.cs" />

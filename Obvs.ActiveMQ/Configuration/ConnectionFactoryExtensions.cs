@@ -15,5 +15,14 @@ namespace Obvs.ActiveMQ.Configuration
                 return connection;
             }, LazyThreadSafetyMode.ExecutionAndPublication);
         }
+        
+        public static Lazy<IConnection> GetLazyConnection(this IConnection connection)
+        {
+            return new Lazy<IConnection>(() =>
+            {
+                connection.Start();
+                return connection;
+            }, LazyThreadSafetyMode.ExecutionAndPublication);
+        }
     }
 }
