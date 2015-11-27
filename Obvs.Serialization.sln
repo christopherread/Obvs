@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.MessagePack", "Obvs.Serialization.MessagePack\Obvs.Serialization.MessagePack.csproj", "{4E1D1BEA-02E3-4BC5-96AD-799D27ACA32C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.NetJson", "Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj", "{A7032830-495A-4B81-AE4E-A883125CF7A0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,10 @@ Global
 		{4E1D1BEA-02E3-4BC5-96AD-799D27ACA32C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4E1D1BEA-02E3-4BC5-96AD-799D27ACA32C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E1D1BEA-02E3-4BC5-96AD-799D27ACA32C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7032830-495A-4B81-AE4E-A883125CF7A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7032830-495A-4B81-AE4E-A883125CF7A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7032830-495A-4B81-AE4E-A883125CF7A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7032830-495A-4B81-AE4E-A883125CF7A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

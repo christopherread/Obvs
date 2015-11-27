@@ -66,6 +66,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TestNetJsonSerialization.cs" />
     <Compile Include="TestJsonSerialization.cs" />
     <Compile Include="TestMessage.cs" />
     <Compile Include="TestMsgPackSerialization.cs" />
@@ -84,6 +85,10 @@
     <ProjectReference Include="..\Obvs.Serialization.MessagePack\Obvs.Serialization.MessagePack.csproj">
       <Project>{4E1D1BEA-02E3-4BC5-96AD-799D27ACA32C}</Project>
       <Name>Obvs.Serialization.MessagePack</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj">
+      <Project>{A7032830-495A-4B81-AE4E-A883125CF7A0}</Project>
+      <Name>Obvs.Serialization.NetJson</Name>
     </ProjectReference>
     <ProjectReference Include="..\Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj">
       <Project>{204D0EC4-7029-4080-BA27-23AEDB6831D9}</Project>
