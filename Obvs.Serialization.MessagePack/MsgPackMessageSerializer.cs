@@ -10,10 +10,7 @@ namespace Obvs.Serialization.MessagePack
             using (MemoryStream stream = new MemoryStream())
             {
                 Serialize(stream, message);
-                byte[] buffer = new byte[stream.Length];
-                stream.Position = 0;
-                stream.Read(buffer, 0, buffer.Length);
-                return buffer;
+                return stream.ToArray();
             }
         }
 
