@@ -30,8 +30,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NetJSON, Version=1.0.15.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NetJSON.1.0.15.1\lib\net40\NetJSON.dll</HintPath>
+    <Reference Include="NetJSON, Version=1.0.15.2, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetJSON.1.0.15.2\lib\net40\NetJSON.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Obvs, Version=2.2.0.37, Culture=neutral, processorArchitecture=MSIL">

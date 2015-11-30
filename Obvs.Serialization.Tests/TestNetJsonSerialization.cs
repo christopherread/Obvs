@@ -34,8 +34,6 @@ namespace Obvs.Serialization.Tests
             IMessageDeserializer<TestMessage> deserializer = new NetJsonMessageDeserializer<TestMessage>();
 
             var message = new TestMessage { Id = 123, Name = "SomeName" };
-            // Truncate to nearest Ms
-            message.Date = message.Date.AddTicks(-(message.Date.Ticks % TimeSpan.FromMilliseconds(1).Ticks));
 
             var serialize = serializer.Serialize(message);
             var deserialize = deserializer.Deserialize(serialize);
