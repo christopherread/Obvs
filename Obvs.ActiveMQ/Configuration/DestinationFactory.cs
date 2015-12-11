@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reactive.Concurrency;
 using System.Reflection;
+using System.Threading.Tasks;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ.Commands;
 using Obvs.MessageProperties;
@@ -10,8 +11,16 @@ namespace Obvs.ActiveMQ.Configuration
 {
     public static class DestinationFactory
     {
-        public static MessagePublisher<TMessage> CreatePublisher<TMessage>(Lazy<IConnection> lazyConnection, string destination, DestinationType destinationType, IMessageSerializer messageSerializer, IScheduler scheduler,
-                                                                           IMessagePropertyProvider<TMessage> propertyProvider = null, Func<TMessage, MsgDeliveryMode> deliveryMode = null, Func<TMessage, MsgPriority> priority = null, Func<TMessage, TimeSpan> timeToLive = null) 
+        public static MessagePublisher<TMessage> CreatePublisher<TMessage>(
+            Lazy<IConnection> lazyConnection, 
+            string destination, 
+            DestinationType destinationType,
+            IMessageSerializer messageSerializer,
+            TaskScheduler scheduler = null,
+            IMessagePropertyProvider<TMessage> propertyProvider = null, 
+            Func<TMessage, MsgDeliveryMode> deliveryMode = null, 
+            Func<TMessage, MsgPriority> priority = null, 
+            Func<TMessage, TimeSpan> timeToLive = null) 
             where TMessage : class
         {
             return new MessagePublisher<TMessage>(
