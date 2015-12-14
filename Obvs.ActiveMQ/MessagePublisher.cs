@@ -119,7 +119,9 @@ namespace Obvs.ActiveMQ
 
         public void Dispose()
         {
-            _disposable?.Dispose();
+            var disp = _disposable;
+            if (disp != null)
+                disp.Dispose();
         }
     }
 }
