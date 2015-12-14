@@ -86,7 +86,7 @@ namespace Obvs.Kafka
             if (Interlocked.CompareExchange(ref _connected, 1, 0) == 0)
             {
                 var producerConfiguration = new ProducerConfiguration(_topic,
-                    batchFlushTime: TimeSpan.Zero,
+                    batchFlushTime: TimeSpan.FromMilliseconds(50),
                     batchFlushSize: _producerConfig.BatchFlushSize,
                     requiredAcks: 1,
                     autoGrowSendBuffers: true,
