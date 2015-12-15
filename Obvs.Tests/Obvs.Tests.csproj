@@ -79,6 +79,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TestSubjectMessageBus.cs" />
+    <Compile Include="TestScheduledSubjectMessageBus.cs" />
     <Compile Include="FakeServiceEndpoint.cs" />
     <Compile Include="TestMergedMessageSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
