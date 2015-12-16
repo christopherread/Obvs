@@ -104,7 +104,7 @@ namespace Obvs.ActiveMQ.Configuration
             if (TryGetMultipleQueueTypes<T>(out queueTypes))
             {
                 var topicTypes = MessageTypes.Get<T, TServiceMessage>().Where(type => queueTypes.All(qt => qt.Item1 != type));
-                var topicPublisher = new MessagePublisher<T>(connection, new ActiveMQTopic(destination), _serializer, new DefaultPropertyProvider<T>());
+                var topicPublisher = new MessagePublisher<T>(connection, new ActiveMQTopic(destination), _serializer, new DefaultPropertyProvider<T>(), Scheduler.Default);
                 var topicPublishers = topicTypes.Select(tt => new KeyValuePair<Type, IMessagePublisher<T>>(tt, topicPublisher));
                 var queuePubishers = queueTypes.Select(qt =>
                     new KeyValuePair<Type, IMessagePublisher<T>>(qt.Item1,
@@ -112,7 +112,8 @@ namespace Obvs.ActiveMQ.Configuration
                             connection,
                             new ActiveMQQueue(GetTypedQueueName(destination, qt.Item1)),
                             _serializer,
-                            new DefaultPropertyProvider<T>())));
+                            new DefaultPropertyProvider<T>(), 
+                            Scheduler.Default)));
 
                 return new TypeRoutingMessagePublisher<T>(topicPublishers.Concat(queuePubishers));
             }

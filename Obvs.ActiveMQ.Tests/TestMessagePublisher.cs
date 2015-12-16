@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using FakeItEasy;
+using Microsoft.Reactive.Testing;
 using NUnit.Framework;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
@@ -27,6 +29,7 @@ namespace Obvs.ActiveMQ.Tests
         private ITextMessage _message;
         private IMessagePropertyProvider<IMessage> _messagePropertyProvider;
         private Lazy<IConnection> _lazyConnection;
+        private readonly IScheduler _testScheduler = Scheduler.Immediate;
 
         private interface ITestMessage : IEvent
         {
@@ -78,7 +81,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _session.CreateTextMessage(A<string>._)).Returns(_message);
             A.CallTo(() => _serializer.Serialize(A<object>._)).Returns("SerializedString");
 
-            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider);
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
         }
 
         [Test]
@@ -195,13 +198,15 @@ namespace Obvs.ActiveMQ.Tests
                 lazyConnection,
                 new ActiveMQTopic(topicName1),
                 new JsonMessageSerializer(),
-                getProperties);
+                getProperties,
+                _testScheduler);
 
             IMessagePublisher<IMessage> publisher2 = new MessagePublisher<IMessage>(
                 lazyConnection,
                 new ActiveMQTopic(topicName2),
                 new JsonMessageSerializer(),
-                getProperties);
+                getProperties,
+                _testScheduler);
 
             IMessageDeserializer<IMessage>[] deserializers =
             {

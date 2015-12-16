@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
-using System.Threading;
 using System.Threading.Tasks;
 using Apache.NMS;
 using Obvs.ActiveMQ.Extensions;
@@ -14,14 +14,19 @@ namespace Obvs.ActiveMQ
     public class MessagePublisher<TMessage> : IMessagePublisher<TMessage>
         where TMessage : class
     {
+        private const int DrainTimeoutSecs = 2;
+
+        private readonly Lazy<IConnection> _connection;
         private readonly IDestination _destination;
         private readonly IMessageSerializer _serializer;
         private readonly IMessagePropertyProvider<TMessage> _propertyProvider;
-        private readonly TaskFactory _taskFactory;
         private readonly Func<TMessage, MsgDeliveryMode> _deliveryMode;
         private readonly Func<TMessage, MsgPriority> _priority;
         private readonly Func<TMessage, TimeSpan> _timeToLive;
-        private readonly Lazy<IConnection> _connection;
+
+        private readonly Func<TMessage, Task> _publishMethod;
+        private readonly Func<Task> _drainMethod;
+
         private readonly object _gate = new object();
 
         private ISession _session;
@@ -29,12 +34,12 @@ namespace Obvs.ActiveMQ
         private volatile IDisposable _disposable;
         private volatile bool _disposed;
 
-        public MessagePublisher(
+
+        protected MessagePublisher(
             Lazy<IConnection> lazyConnection,
             IDestination destination,
             IMessageSerializer serializer,
             IMessagePropertyProvider<TMessage> propertyProvider,
-            TaskScheduler taskScheduler = null,
             Func<TMessage, MsgDeliveryMode> deliveryMode = null,
             Func<TMessage, MsgPriority> priority = null,
             Func<TMessage, TimeSpan> timeToLive = null)
@@ -43,10 +48,39 @@ namespace Obvs.ActiveMQ
             _destination = destination;
             _serializer = serializer;
             _propertyProvider = propertyProvider;
-            _taskFactory = new TaskFactory(taskScheduler ?? TaskScheduler.Default);
             _deliveryMode = deliveryMode ?? (message => MsgDeliveryMode.NonPersistent);
             _priority = priority ?? (message => MsgPriority.Normal);
             _timeToLive = timeToLive ?? (message => TimeSpan.Zero);
+        }
+
+        public MessagePublisher(Lazy<IConnection> lazyConnection,
+            IDestination destination,
+            IMessageSerializer serializer,
+            IMessagePropertyProvider<TMessage> propertyProvider,
+            IScheduler scheduler,
+            Func<TMessage, MsgDeliveryMode> deliveryMode = null,
+            Func<TMessage, MsgPriority> priority = null,
+            Func<TMessage, TimeSpan> timeToLive = null)
+            : this(lazyConnection, destination, serializer, propertyProvider, deliveryMode, priority, timeToLive)
+        {
+            _publishMethod = message => scheduler.ScheduleAsync(() => Publish(message));
+            _drainMethod = () => scheduler.ScheduleAsync(() => { });
+        }
+
+        public MessagePublisher(
+            Lazy<IConnection> lazyConnection,
+            IDestination destination,
+            IMessageSerializer serializer,
+            IMessagePropertyProvider<TMessage> propertyProvider,
+            TaskScheduler taskScheduler,
+            Func<TMessage, MsgDeliveryMode> deliveryMode = null,
+            Func<TMessage, MsgPriority> priority = null,
+            Func<TMessage, TimeSpan> timeToLive = null)
+            : this(lazyConnection, destination, serializer, propertyProvider, deliveryMode, priority, timeToLive)
+        {
+            var taskFactory = new TaskFactory(taskScheduler);
+            _publishMethod = message => taskFactory.StartNew(() => Publish(message));
+            _drainMethod = () => taskFactory.StartNew(() => { });
         }
 
         public Task PublishAsync(TMessage message)
@@ -56,7 +90,7 @@ namespace Obvs.ActiveMQ
                 throw new InvalidOperationException("Publisher has been disposed already.");
             }
 
-            return _taskFactory.StartNew(() => Publish(message));
+            return _publishMethod(message);
         }
 
         private void Publish(TMessage message)
@@ -104,8 +138,7 @@ namespace Obvs.ActiveMQ
                         {
                             _disposed = true;
 
-                            // Await end of queue (if _taskFactory is a queue/orderedtaskscheduler)
-                            _taskFactory.StartNew(() => { }).Wait(TimeSpan.FromSeconds(5));
+                            DrainScheduler();
 
                             _producer.Close();
                             _producer.Dispose();
@@ -115,6 +148,12 @@ namespace Obvs.ActiveMQ
                     }
                 }
             }
+        }
+
+        private void DrainScheduler()
+        {
+            // Await end of queue (if _taskFactory is a queue/orderedtaskscheduler)
+            _drainMethod().Wait(TimeSpan.FromSeconds(DrainTimeoutSecs));
         }
 
         public void Dispose()
