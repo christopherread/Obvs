@@ -27,7 +27,6 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly List<Tuple<Type, AcknowledgementMode>> _queueTypes;
         private readonly Func<Assembly, bool> _assemblyFilter;
         private readonly Func<Type, bool> _typeFilter;
-        private readonly IScheduler _scheduler;
         private readonly Lazy<IConnection> _endpointConnection;
         private readonly Lazy<IConnection> _endpointClientConnection;
 
@@ -51,8 +50,6 @@ namespace Obvs.ActiveMQ.Configuration
             {
                 throw new InvalidOperationException(string.Format("For service endpoint '{0}', please specify a brokerUri to connect to. To do this you can use either ConnectToBroker() per endpoint, or WithActiveMQSharedConnectionScope() to share a connection across multiple endpoints.", serviceName));
             }
-            
-            _scheduler = new EventLoopScheduler(start => new Thread(start){Name = string.Format("{0}.Publisher", serviceName), IsBackground = true});
 
             if (sharedConnection == null)
             {
@@ -107,7 +104,7 @@ namespace Obvs.ActiveMQ.Configuration
             if (TryGetMultipleQueueTypes<T>(out queueTypes))
             {
                 var topicTypes = MessageTypes.Get<T, TServiceMessage>().Where(type => queueTypes.All(qt => qt.Item1 != type));
-                var topicPublisher = new MessagePublisher<T>(connection, new ActiveMQTopic(destination), _serializer, new DefaultPropertyProvider<T>(), _scheduler);
+                var topicPublisher = new MessagePublisher<T>(connection, new ActiveMQTopic(destination), _serializer, new DefaultPropertyProvider<T>(), Scheduler.Default);
                 var topicPublishers = topicTypes.Select(tt => new KeyValuePair<Type, IMessagePublisher<T>>(tt, topicPublisher));
                 var queuePubishers = queueTypes.Select(qt =>
                     new KeyValuePair<Type, IMessagePublisher<T>>(qt.Item1,
@@ -115,13 +112,13 @@ namespace Obvs.ActiveMQ.Configuration
                             connection,
                             new ActiveMQQueue(GetTypedQueueName(destination, qt.Item1)),
                             _serializer,
-                            new DefaultPropertyProvider<T>(),
-                            _scheduler)));
+                            new DefaultPropertyProvider<T>(), 
+                            Scheduler.Default)));
 
                 return new TypeRoutingMessagePublisher<T>(topicPublishers.Concat(queuePubishers));
             }
 
-            return DestinationFactory.CreatePublisher<T>(connection, destination, GetDestinationType<T>(), _serializer, _scheduler);
+            return DestinationFactory.CreatePublisher<T>(connection, destination, GetDestinationType<T>(), _serializer);
         }
 
         private static string GetTypedQueueName(string destination, Type type)
