@@ -2,6 +2,7 @@
 using System.Reactive.Concurrency;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Schedulers;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ.Commands;
 using Obvs.MessageProperties;
@@ -28,7 +29,7 @@ namespace Obvs.ActiveMQ.Configuration
                 CreateDestination(destination, destinationType),
                 messageSerializer,
                 propertyProvider ?? new DefaultPropertyProvider<TMessage>(),
-                scheduler,
+                scheduler ?? new OrderedTaskScheduler(),
                 deliveryMode, 
                 priority, 
                 timeToLive);
