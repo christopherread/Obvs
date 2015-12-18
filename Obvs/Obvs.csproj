@@ -98,6 +98,7 @@
     <Compile Include="Serialization\IMessageDeserializer.cs" />
     <Compile Include="Serialization\IMessageSerializer.cs" />
     <Compile Include="ServiceBusErrorHandlingBase.cs" />
+    <Compile Include="SubjectMessageBus.cs" />
     <Compile Include="TypeRoutingMessagePublisher.cs" />
     <Compile Include="Types\ICommand.cs" />
     <Compile Include="Types\IEvent.cs" />
