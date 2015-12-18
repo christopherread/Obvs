@@ -56,9 +56,20 @@ namespace Obvs.Integrations.Slack.Bot
 		{
 		    if (disposing)
 		    {
-                _cancellation?.Cancel();
-		        _listenTask?.Wait(3000);
-                _webSocket?.Dispose();
+		        if (_cancellation != null)
+		        {
+		            _cancellation.Cancel();
+		        }
+
+		        if (_listenTask != null)
+		        {
+		            _listenTask.Wait(3000);
+		        }
+
+		        if (_webSocket != null)
+		        {
+		            _webSocket.Dispose();
+		        }
 		    }
 		}
 
@@ -76,7 +87,10 @@ namespace Obvs.Integrations.Slack.Bot
 
 	    public async Task Connect()
 		{
-	        _webSocket?.Dispose();
+	        if (_webSocket != null)
+	        {
+	            _webSocket.Dispose();
+	        }
 
 	        _webSocket = new ClientWebSocket();
 
