@@ -10,7 +10,7 @@ namespace Obvs.Integrations.Slack.Bot
 	{
 		Bot _bot;
 
-		internal void SetBot(Slack.Bot.Bot bot)
+		internal void SetBot(Bot bot)
 		{
 			if (_bot != null)
 				throw new Exception("This handler belongs to another :(");

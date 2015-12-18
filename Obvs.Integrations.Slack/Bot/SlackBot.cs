@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Configuration;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -22,13 +23,16 @@ namespace Obvs.Integrations.Slack.Bot
     internal class SlackBot : Bot, ISlackBot
     {
 		private readonly ISlackRestApi _api;
-		private readonly ClientWebSocket _webSocket = new ClientWebSocket();
+		private ClientWebSocket _webSocket;
+        private bool _saidHello;
 
         private User _self;
         private readonly Dictionary<string, User> _users = new Dictionary<string, User>(); // TODO: Handle new users joining/leaving
         private readonly Dictionary<string, Channel> _channels = new Dictionary<string, Channel>(); // TODO: Handle new channels/deleted
+        private Task _listenTask;
+        private CancellationTokenSource _cancellation;
 
-	    private SlackBot(string token)
+        private SlackBot(string token)
 		{
 			_api = new SlackRestApi(token);
 		}
@@ -52,7 +56,9 @@ namespace Obvs.Integrations.Slack.Bot
 		{
 		    if (disposing)
 		    {
-		        _webSocket.Dispose();
+                _cancellation?.Cancel();
+		        _listenTask?.Wait(3000);
+                _webSocket?.Dispose();
 		    }
 		}
 
@@ -70,13 +76,12 @@ namespace Obvs.Integrations.Slack.Bot
 
 	    public async Task Connect()
 		{
-	        if (_webSocket.State == WebSocketState.Connecting || _webSocket.State == WebSocketState.Open)
-	        {
-	            throw new InvalidOperationException("Bot is already connected");
-	        }
+	        _webSocket?.Dispose();
 
-			// First check we can authenticate.
-			var authResponse = await AuthTest();
+	        _webSocket = new ClientWebSocket();
+
+            // First check we can authenticate.
+            var authResponse = await AuthTest();
 			Debug.WriteLine("Authorised as " + authResponse.User);
 
 			// Issue a request to start a real time messaging session.
@@ -84,26 +89,34 @@ namespace Obvs.Integrations.Slack.Bot
 
 			// Store users and channels so we can look them up by ID.
 			_self = rtmStartResponse.Self;
+
+            _users.Clear();
 	        foreach (var user in rtmStartResponse.Users)
 	        {
 	            _users.Add(user.ID, user);
 	        }
+
+            _channels.Clear();
 	        foreach (var channel in rtmStartResponse.Channels.Union(rtmStartResponse.IMs))
 	        {
 	            _channels.Add(channel.ID, channel);
 	        }
-
 			// Connect the WebSocket to the URL we were given back.
 			await _webSocket.ConnectAsync(rtmStartResponse.Url, CancellationToken.None);
 			Debug.WriteLine("Connected...");
 
-			// Start the receive message loop.
-			var _ = Task.Run(ListenForApiMessages);
+            // Start the receive message loop.
+            _cancellation = new CancellationTokenSource();
+            _listenTask = Task.Factory.StartNew(() => ListenForApiMessages(_cancellation.Token), _cancellation.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+
+	        if (_saidHello)
+	            return;
 
 			// Say hello in each of the channels the bot is a member of.
 	        foreach (var channel in _channels.Values.Where(c => !c.IsPrivate && c.IsMember))
 	        {
 	            await SayHello(channel);
+	            _saidHello = true;
 	        }
 		}
 
@@ -129,27 +142,38 @@ namespace Obvs.Integrations.Slack.Bot
             return _users.Values.ToArray();
         }
 
-        private async Task ListenForApiMessages()
+        private async Task ListenForApiMessages(CancellationToken ct)
 		{
-			var buffer = new byte[1024];
-			var segment = new ArraySegment<byte>(buffer);
-			while (_webSocket.State == WebSocketState.Open)
-			{
-				var fullMessage = new StringBuilder();
+            try
+            {
+                var buffer = new byte[1024];
+                var segment = new ArraySegment<byte>(buffer);
+                while (!ct.IsCancellationRequested)
+                {
+                    var fullMessage = new StringBuilder();
 
-				while (true)
-				{
-					var msg = await _webSocket.ReceiveAsync(segment, CancellationToken.None);
+                    WebSocketReceiveResult msg;
 
-					fullMessage.Append(Encoding.UTF8.GetString(buffer, 0, msg.Count));
-				    if (msg.EndOfMessage)
-				    {
-				        break;
-				    }
-				}
+                    do
+                    {
+                        msg = await _webSocket.ReceiveAsync(segment, ct);
 
-				await HandleApiMessage(fullMessage.ToString());
-			}
+                        fullMessage.Append(Encoding.UTF8.GetString(buffer, 0, msg.Count));
+
+                    } while (!msg.EndOfMessage);
+
+                    await HandleApiMessage(fullMessage.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+				Debug.WriteLine(ex.ToString());
+
+                if (!ct.IsCancellationRequested)
+                {
+                    await Connect();
+                }
+            }
 		}
 
 	    internal override async Task SendMessage(Channel channel, string text, Attachment[] attachments = null)
@@ -204,7 +228,7 @@ namespace Obvs.Integrations.Slack.Bot
 			}
 		}
 
-        private async Task HandleApiMessage(MessageEvent message)
+        private Task HandleApiMessage(MessageEvent message)
 		{
 			var channelId = message.Message?.ChannelID ?? message.ChannelID;
 			var userId = message.Message?.UserID ?? message.UserID;
@@ -213,14 +237,14 @@ namespace Obvs.Integrations.Slack.Bot
 		    var messageIsFromBot = userId == _self.ID;
 		    if (messageIsFromBot)
 		    {
-		        return;
-		    }
+			    return Task.FromResult(true);
+            }
 
 			var botIsMentioned = text.Contains($"<@{_self.ID}>");
 
 			HandleRecievedMessage(_channels[channelId], _users[userId], text, botIsMentioned);
 
-			await Task.FromResult(true);
+			return Task.FromResult(true);
 		}
 
         private async Task HandleApiMessage(ChannelJoinedEvent message)
