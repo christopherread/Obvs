@@ -32,9 +32,10 @@ namespace Obvs
     {
         private readonly IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse> _serviceBus;
 
-        public ServiceBus(IEnumerable<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>> endpointClients,
-            IEnumerable<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>> endpoints) :
-            this(new ServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse>(endpointClients, endpoints, new DefaultRequestCorrelationProvider()))
+        public ServiceBus(IEnumerable<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>> endpointClients, 
+            IEnumerable<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>> endpoints, 
+            IRequestCorrelationProvider<IRequest, IResponse> requestCorrelationProvider = null) :
+            this(new ServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse>(endpointClients, endpoints, requestCorrelationProvider ?? new DefaultRequestCorrelationProvider()))
         {
         }
 
@@ -71,6 +72,11 @@ namespace Obvs
         public IObservable<T> GetResponses<T>(IRequest request) where T : IResponse
         {
             return _serviceBus.GetResponses<T>(request);
+        }
+
+        public IObservable<T> GetResponse<T>(IRequest request) where T : IResponse
+        {
+            return _serviceBus.GetResponse<T>(request);
         }
 
         public IObservable<Exception> Exceptions

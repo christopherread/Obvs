@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using FakeItEasy;
 using Microsoft.Reactive.Testing;
@@ -34,7 +35,7 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpoint1.Requests).Returns(observable1);
             A.CallTo(() => serviceEndpoint2.Requests).Returns(observable2);
 
-            IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2 });
+            IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2 } );
 
             IDisposable sub1 = serviceBus.Requests.Subscribe(observer1);
             IDisposable sub2 = serviceBus.Requests.Subscribe(observer2);
@@ -817,6 +818,37 @@ namespace Obvs.Tests
 
             sub1.Dispose();
             sub2.Dispose();
+        }
+
+        [Test]
+        public void ShouldCompleteGetResponseWhenOneResponseReturned()
+        {
+            IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
+            IServiceEndpointClient serviceEndpointClient1 = A.Fake<IServiceEndpointClient>();
+            
+            IRequest request = A.Fake<IRequest>();
+            var response = A.Fake<IResponse>();
+            var subject = new Subject<IResponse>();
+            var requestCorrelationProvider = A.Fake<IRequestCorrelationProvider>();
+
+            A.CallTo(() => requestCorrelationProvider.AreCorrelated(request, response)).Returns(true);
+            A.CallTo(() => serviceEndpointClient1.CanHandle(request)).Returns(true);
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).Returns(subject);
+
+            IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1 }, new[] { serviceEndpoint1  }, requestCorrelationProvider);
+
+            var observer = A.Fake<IObserver<IResponse>>();
+            IDisposable sub1 = serviceBus.GetResponse<IResponse>(request).Subscribe(observer);
+
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappened(Repeated.Exactly.Once);
+
+            subject.OnNext(response);
+
+            A.CallTo(() => observer.OnNext(response)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer.OnCompleted()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer.OnError(A<Exception>._)).MustNotHaveHappened();
+            
+            sub1.Dispose();
         }
         
         [Test]

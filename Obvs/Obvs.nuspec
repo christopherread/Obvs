@@ -7,7 +7,7 @@
     <authors>$author$</authors>
     <description>An observable µServiceBus .NET library. Search 'Obvs' for other transport, serialization, and logging extensions.</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Use endpoint Name in OnError message rather than endpoint Type name</releaseNotes>
+    <releaseNotes>Added ServiceBusClient.GetResponse() method that for convenience completes after a single response is received</releaseNotes>
     <projectUrl>http://inter8ection.github.io/Obvs</projectUrl>
     <tags>obvs messaging microservice bus messagebus rx reactive servicebus</tags>
   </metadata>

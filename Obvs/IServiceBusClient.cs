@@ -31,6 +31,7 @@ namespace Obvs
 
         IObservable<TResponse> GetResponses(TRequest request);
         IObservable<T> GetResponses<T>(TRequest request) where T : TResponse;
+        IObservable<T> GetResponse<T>(TRequest request) where T : TResponse;
 
         IObservable<Exception> Exceptions { get; }
 
@@ -69,6 +70,11 @@ namespace Obvs
         public IObservable<T> GetResponses<T>(IRequest request) where T : IResponse
         {
             return _serviceBusClient.GetResponses<T>(request);
+        }
+
+        public IObservable<T> GetResponse<T>(IRequest request) where T : IResponse
+        {
+            return _serviceBusClient.GetResponse<T>(request);
         }
 
         public IObservable<Exception> Exceptions
@@ -210,6 +216,11 @@ namespace Obvs
         public IObservable<T> GetResponses<T>(TRequest request) where T : TResponse
         {
             return GetResponses(request).OfType<T>();
+        }
+
+        public IObservable<T> GetResponse<T>(TRequest request) where T : TResponse
+        {
+            return GetResponses(request).OfType<T>().Take(1);
         }
 
         public virtual IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
