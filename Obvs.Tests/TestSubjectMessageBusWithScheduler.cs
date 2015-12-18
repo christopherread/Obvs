@@ -5,16 +5,16 @@ using NUnit.Framework;
 namespace Obvs.Tests
 {
     [TestFixture]
-    public class TestScheduledSubjectMessageBus
+    public class TestSubjectMessageBusWithScheduler
     {
         TestScheduler _scheduler = new TestScheduler();
-        ScheduledSubjectMessageBus<string> _testObj;
+        SubjectMessageBus<string> _testObj;
 
         [SetUp]
         public void Setup()
         {
             _scheduler = new TestScheduler();
-            _testObj = new ScheduledSubjectMessageBus<string>(_scheduler);
+            _testObj = new SubjectMessageBus<string>(_scheduler);
         }
 
         [TearDown]
