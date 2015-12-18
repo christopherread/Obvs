@@ -185,7 +185,13 @@ namespace Obvs.Integrations.Slack.Bot
 
                 if (!ct.IsCancellationRequested)
                 {
-                    await Connect();
+                    // Incase it's a temporary network blip.
+                    await Task.Delay(2500, ct);
+
+                    if (!ct.IsCancellationRequested)
+                    {
+                        await Connect();
+                    }
                 }
             }
 		}
