@@ -55,7 +55,7 @@ namespace Obvs.Integrations.Slack.Bot
 					break;
 				}
 
-				HandleRecievedMessage(_consoleChannel, _consoleUser, text, text.Contains("@bot"));
+				HandleRecievedMessage(_consoleChannel, _consoleUser, text, text != null && text.Contains("@bot"));
 			}
 		}
 	}

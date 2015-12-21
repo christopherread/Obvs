@@ -1,4 +1,3 @@
-using System;
 using Obvs.Types;
 
 namespace Obvs.Integrations.Slack.Messages

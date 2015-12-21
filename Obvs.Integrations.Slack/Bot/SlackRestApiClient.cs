@@ -21,7 +21,7 @@ namespace Obvs.Integrations.Slack.Bot
 
 		public SlackRestApi(string token)
 		{
-			this._token = token;
+			_token = token;
 
 			// Make things faster.
 			_http.DefaultRequestHeaders.ExpectContinue = false;
@@ -33,7 +33,7 @@ namespace Obvs.Integrations.Slack.Bot
 			var postArgs =
 				(args ?? Enumerable.Empty<KeyValuePair<string, string>>())
 				.Union(new[] {
-					new KeyValuePair<string, string>("token", this._token)
+					new KeyValuePair<string, string>("token", _token)
 				});
 
 			var postData = new FormUrlEncodedContent(postArgs);
