@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>Slack integration for Obvs</description>
     <copyright>Copyright 2015</copyright>
-    <releaseNotes></releaseNotes>
+    <releaseNotes>Improved error handling when listening for Slack messages</releaseNotes>
   </metadata>
 </package>
