@@ -21,9 +21,9 @@ namespace Obvs.Integrations.Slack.Bot
 			_handlers.Add(handler);
 		}
 
-        abstract internal Task SendMessage(Channel channel, string text, Attachment[] attachments = null);
+        internal abstract Task SendMessage(Channel channel, string text, Attachment[] attachments = null);
 
-		abstract internal Task SendTypingIndicator(Channel channel);
+		internal abstract Task SendTypingIndicator(Channel channel);
 
 		protected void HandleRecievedMessage(Channel channel, User user, string text, bool botIsMentioned)
 		{
