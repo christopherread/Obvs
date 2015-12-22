@@ -169,7 +169,7 @@ namespace Obvs.Integrations.Slack
 
         protected override async Task OnMessage(Channel channel, User user, string text, bool botIsMentioned)
         {
-            _channels.AddOrUpdate(channel.ID, channel, (s, c) => channel);
+            _channels[channel.ID] = channel;
 
             _events.OnNext(new SlackMessageReceived
             {
@@ -190,11 +190,11 @@ namespace Obvs.Integrations.Slack
         {
             foreach (var channel in _bot.GetChannels())
             {
-                _channels.AddOrUpdate(channel.ID, channel, (s, c) => channel);
+                _channels[channel.ID] = channel;
             }
             foreach (var user in _bot.GetUsers())
             {
-                _users.AddOrUpdate(user.ID, user, (s, c) => user);
+                _users[user.ID] = user;
             }
         }
     }
