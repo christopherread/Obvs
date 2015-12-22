@@ -3,7 +3,7 @@ using Obvs.Types;
 
 namespace Obvs.Integrations.Slack.Messages
 {
-    public class SlackMessageReceived : IEvent, ISlackIntegrationMessage
+    public class SlackMessageReceived : IEvent, ISlackIntegrationMessage, IHasSlackSenderDetails, IHasSlackChannelDetails
     {
         public string ChannelId { get; set; }
         public string ChannelName { get; set; }

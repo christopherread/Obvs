@@ -1,6 +1,6 @@
 namespace Obvs.Integrations.Slack.Messages
 {
-    public interface ISlackIntegrationMessage : IHasSlackSenderDetails, IHasSlackChannelDetails
+    public interface ISlackIntegrationMessage
     {
     }
 
