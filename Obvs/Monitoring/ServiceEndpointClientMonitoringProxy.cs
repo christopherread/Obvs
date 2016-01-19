@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Obvs.Extensions;
 
 namespace Obvs.Monitoring
 {
@@ -59,7 +60,7 @@ namespace Obvs.Monitoring
                         observer.OnNext(ev);
                         _monitor.MessageReceived(ev, stopwatch.Elapsed);
                     }, observer.OnError, observer.OnCompleted);
-                }).Publish().RefCount();
+                });
             }
         }
 
@@ -89,7 +90,7 @@ namespace Obvs.Monitoring
                         observer.OnNext(response);
                         _monitor.MessageReceived(response, stopwatch2.Elapsed);
                     }, observer.OnError, observer.OnCompleted);
-            }).Publish().RefCount();
+            });
         }
     }
 }

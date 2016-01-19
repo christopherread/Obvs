@@ -59,7 +59,7 @@ namespace Obvs.Monitoring
                         observer.OnNext(request);
                         _monitor.MessageReceived(request, stopwatch.Elapsed);
                     }, observer.OnError, observer.OnCompleted);
-                }).Publish().RefCount();
+                });
             }
         }
 
@@ -75,7 +75,7 @@ namespace Obvs.Monitoring
                         observer.OnNext(command);
                         _monitor.MessageReceived(command, stopwatch.Elapsed);
                     }, observer.OnError, observer.OnCompleted);
-                }).Publish().RefCount();
+                });
             }
         }
 

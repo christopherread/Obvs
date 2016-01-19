@@ -1,11 +1,47 @@
 using System;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace Obvs.Extensions
 {
     internal static class ObservableExtensions
     {
+        class IndependentSubscriptionsSubject<T> : ISubject<T>
+        {
+            private volatile ISubject<T> _innerSubject = new Subject<T>();
+
+            public IDisposable Subscribe(IObserver<T> observer)
+            {
+                return _innerSubject.Subscribe(observer);
+            }
+
+            public void OnNext(T value)
+            {
+                _innerSubject.OnNext(value);
+            }
+
+            public void OnCompleted()
+            {
+                var erroringInnerSubject = _innerSubject;
+                _innerSubject = new Subject<T>();
+                erroringInnerSubject.OnCompleted();
+            }
+
+            public void OnError(Exception ex)
+            {
+                var erroringInnerSubject = _innerSubject;
+                _innerSubject = new Subject<T>();
+                erroringInnerSubject.OnError(ex);
+            }
+        }
+        internal static IObservable<T> PublishRefCountRetriable<T>(this IObservable<T> observable)
+        {
+            return observable
+                .Multicast(new IndependentSubscriptionsSubject<T>())
+                .RefCount();
+        }
+
         internal static IObservable<T> CatchAndHandle<T>(this IObservable<T> observable, IObserver<Exception> observer, Func<IObservable<T>> continueWith, string message)
         {
             //return observable.RetryWithBackoffStrategy(continueWith, observer, message, 2);

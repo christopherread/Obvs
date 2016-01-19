@@ -3,6 +3,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
+using Obvs.Extensions;
 
 namespace Obvs
 {
@@ -20,7 +21,7 @@ namespace Obvs
         {
             _subject = new Subject<TMessage>();
 
-            Messages = scheduler == null ? _subject.AsObservable() : _subject.ObserveOn(scheduler).Publish().RefCount().AsObservable();
+            Messages = scheduler == null ? _subject.AsObservable() : _subject.ObserveOn(scheduler).PublishRefCountRetriable().AsObservable();
         }
 
         public Task PublishAsync(TMessage message)
