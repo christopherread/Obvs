@@ -56,6 +56,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="XmlMessageDeserializer.cs" />
     <Compile Include="XmlMessageSerializer.cs" />
+    <Compile Include="XmlSerializerDefaults.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Obvs.Serialization.Xml.nuspec" />

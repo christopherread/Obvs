@@ -15,13 +15,6 @@ namespace Obvs.Serialization.Json
                 return Deserialize(ms);
             }
         }
-        //public override TMessage Deserialize(object obj)
-        //{
-        //    using (var ms = new MemoryStream((byte[])obj))
-        //    {
-        //        return Deserialize(ms);
-        //    }
-        //}
 
         public override TMessage Deserialize(Stream stream)
         {

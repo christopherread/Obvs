@@ -11,16 +11,20 @@ namespace Obvs.Serialization.Xml
 
         public object Serialize(object obj)
         {
-            using (TextWriter writer = new StringWriter())
+            using (MemoryStream ms = new MemoryStream())
             {
-                Serializer(obj.GetType()).Serialize(writer, obj);
-                return writer.ToString();
+                Serialize(ms, obj);
+
+                return ms.ToArray();
             }
         }
 
         public void Serialize(Stream stream, object obj)
         {
-            Serializer(obj.GetType()).Serialize(stream, obj);
+            using (TextWriter writer = new StreamWriter(stream, XmlSerializerDefaults.Encoding))
+            {
+                Serializer(obj.GetType()).Serialize(writer, obj);
+            }
         }
 
         private XmlSerializer Serializer(Type type)

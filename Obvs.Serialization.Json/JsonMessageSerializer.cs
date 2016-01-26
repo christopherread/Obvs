@@ -1,17 +1,16 @@
 using System.IO;
-using System.Text;
+using System.Security.Cryptography.X509Certificates;
 using Newtonsoft.Json;
 
 namespace Obvs.Serialization.Json
 {
     public class JsonMessageSerializer : IMessageSerializer
     {
-        private static readonly Encoding Encoding = new UTF8Encoding(false);
         private readonly JsonSerializer _serializer;
 
         public JsonMessageSerializer()
         {
-            _serializer = new JsonSerializer() { DateFormatHandling = DateFormatHandling.IsoDateFormat };
+            _serializer = new JsonSerializer();
         }
 
         public virtual object Serialize(object message)
@@ -26,7 +25,7 @@ namespace Obvs.Serialization.Json
 
         public virtual void Serialize(Stream stream, object message)
         {
-            using (var streamWriter = new StreamWriter(stream, Encoding, 1024, true))
+            using (var streamWriter = new StreamWriter(stream, JsonMessageDefaults.Encoding, 1024, true))
             {
                 _serializer.Serialize(streamWriter, message);
             }

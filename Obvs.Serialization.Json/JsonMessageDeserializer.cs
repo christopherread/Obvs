@@ -25,7 +25,7 @@ namespace Obvs.Serialization.Json
 
         public override TMessage Deserialize(Stream stream)
         {
-            using (var streamReader = new StreamReader(stream, Encoding, false, 1024, true))
+            using (var streamReader = new StreamReader(stream, JsonMessageDefaults.Encoding, false, 1024, true))
             {
                 return DeserializeCore(streamReader);
             }

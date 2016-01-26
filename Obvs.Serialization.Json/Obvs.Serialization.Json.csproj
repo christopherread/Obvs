@@ -56,6 +56,7 @@
   <ItemGroup>
     <Compile Include="Configuration\FluentConfigExtensions.cs" />
     <Compile Include="GzippedJsonMessageDeserializer.cs" />
+    <Compile Include="JsonMessageDefaults.cs" />
     <Compile Include="JsonMessageDeserializer.cs" />
     <Compile Include="JsonMessageDeserializerFactory.cs" />
     <Compile Include="GzippedJsonMessageSerializer.cs" />

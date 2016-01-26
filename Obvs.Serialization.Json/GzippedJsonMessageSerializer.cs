@@ -15,15 +15,6 @@ namespace Obvs.Serialization.Json
                 return ms.ToArray();
             }
         }
-        //public override object Serialize(object message)
-        //{
-        //    using (var ms = new MemoryStream())
-        //    {
-        //        Serialize(ms, message);
-
-        //        return ms.ToArray();
-        //    }
-        //}
 
         public override void Serialize(Stream stream, object message)
         {
