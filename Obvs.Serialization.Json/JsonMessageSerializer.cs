@@ -1,29 +1,35 @@
 using System.IO;
+using System.Text;
 using Newtonsoft.Json;
 
 namespace Obvs.Serialization.Json
 {
     public class JsonMessageSerializer : IMessageSerializer
     {
+        private static readonly Encoding Encoding = new UTF8Encoding(false);
         private readonly JsonSerializer _serializer;
 
         public JsonMessageSerializer()
         {
-            _serializer = new JsonSerializer();
+            _serializer = new JsonSerializer() { DateFormatHandling = DateFormatHandling.IsoDateFormat };
         }
 
-        public object Serialize(object message)
+        public virtual object Serialize(object message)
         {
-            using (TextWriter writer = new StringWriter())
+            using (MemoryStream memoryStream = new MemoryStream())
             {
-                _serializer.Serialize(writer, message);
-                return writer.ToString();
+                Serialize(memoryStream, message);
+                
+                return memoryStream.ToArray();
             }
         }
 
-        public void Serialize(Stream stream, object message)
+        public virtual void Serialize(Stream stream, object message)
         {
-            _serializer.Serialize(new StreamWriter(stream) {AutoFlush = true}, message);
+            using (var streamWriter = new StreamWriter(stream, Encoding, 1024, true))
+            {
+                _serializer.Serialize(streamWriter, message);
+            }
         }
     }
 }

@@ -31,11 +31,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="MsgPack, Version=0.6.0.0, Culture=neutral, PublicKeyToken=a2625990d5dc0167, processorArchitecture=MSIL">
-      <HintPath>..\packages\MsgPack.Cli.0.6.5\lib\net45\MsgPack.dll</HintPath>
+      <HintPath>..\packages\MsgPack.Cli.0.6.7\lib\net45\MsgPack.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Obvs, Version=2.2.0.37, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obvs.2.2.0.37\lib\net45\Obvs.dll</HintPath>
+    <Reference Include="Obvs, Version=2.2.0.42, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.2.2.0.42\lib\net45\Obvs.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
