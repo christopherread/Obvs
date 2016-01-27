@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -10,7 +11,7 @@ using Obvs.Serialization;
 
 namespace Obvs.ActiveMQ
 {
-    public class MessageSource<TMessage> : IMessageSource<TMessage> 
+    public class MessageSource<TMessage> : IMessageSource<TMessage>
         where TMessage : class
     {
         private readonly string _selector;
@@ -20,9 +21,9 @@ namespace Obvs.ActiveMQ
         private readonly Lazy<IConnection> _lazyConnection;
 
         public MessageSource(Lazy<IConnection> lazyConnection,
-            IEnumerable<IMessageDeserializer<TMessage>> deserializers, 
+            IEnumerable<IMessageDeserializer<TMessage>> deserializers,
             IDestination destination,
-            AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge, 
+            AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge,
             string selector = null)
         {
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
@@ -68,17 +69,12 @@ namespace Obvs.ActiveMQ
 
             TMessage deserializedMessage = default(TMessage);
 
-            ITextMessage textMessage = message as ITextMessage;
-            if (textMessage != null)
+            IBytesMessage bytesMessage = message as IBytesMessage;
+            if (bytesMessage != null)
             {
-                deserializedMessage = deserializer.Deserialize(textMessage.Text);
-            }
-            else
-            {
-                IBytesMessage bytesMessage = message as IBytesMessage;
-                if (bytesMessage != null)
+                using (MemoryStream ms = new MemoryStream(bytesMessage.Content))
                 {
-                    deserializedMessage = deserializer.Deserialize(bytesMessage.Content);
+                    deserializedMessage = deserializer.Deserialize(ms);
                 }
             }
 
@@ -99,7 +95,7 @@ namespace Obvs.ActiveMQ
 
         private void Acknowledge(IMessage message)
         {
-            if (_mode !=  Apache.NMS.AcknowledgementMode.AutoAcknowledge)
+            if (_mode != Apache.NMS.AcknowledgementMode.AutoAcknowledge)
             {
                 message.Acknowledge();
             }

@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Text;
 using System.Xml.Serialization;
 using Apache.NMS;
 using FakeItEasy;
@@ -95,13 +97,13 @@ namespace Obvs.ActiveMQ.Tests
                 AcknowledgementMode.ClientAcknowledge);
 
             Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
-            ITextMessage textMessage = A.Fake<ITextMessage>();
-            A.CallTo(() => _deserializer.Deserialize(A<string>.Ignored)).Throws<Exception>();
+            IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
+            A.CallTo(() => _deserializer.Deserialize(A<Stream>.Ignored)).Throws<Exception>();
 
             _source.Messages.Subscribe(_observer);
-            mockConsumer.RaiseFakeMessage(textMessage);
+            mockConsumer.RaiseFakeMessage(bytesMessage);
 
-            A.CallTo(() => textMessage.Acknowledge()).MustNotHaveHappened();
+            A.CallTo(() => bytesMessage.Acknowledge()).MustNotHaveHappened();
         }
 
         [Test]
@@ -123,14 +125,17 @@ namespace Obvs.ActiveMQ.Tests
         public void ShouldDeserializeAndPublishMessageWhenReceived()
         {
             Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
-            ITextMessage textMessage = A.Fake<ITextMessage>();
+            IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
+
             const string serializedFixtureString = "<xml>Some fixture XML</xml>";
-            A.CallTo(() => textMessage.Text).Returns(serializedFixtureString);
-            A.CallTo(() => _deserializer.Deserialize(serializedFixtureString)).Returns(message);
+            var bytes = Encoding.UTF8.GetBytes(serializedFixtureString);
+
+            A.CallTo(() => bytesMessage.Content).Returns(bytes);
+            A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
 
             _source.Messages.Subscribe(_observer);
-            mockConsumer.RaiseFakeMessage(textMessage);
+            mockConsumer.RaiseFakeMessage(bytesMessage);
 
             A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
         }
@@ -143,7 +148,7 @@ namespace Obvs.ActiveMQ.Tests
             ITestMessage message = A.Fake<ITestMessage>();
             byte[] bytes = new byte[0];
             A.CallTo(() => bytesMessage.Content).Returns(bytes);
-            A.CallTo(() => _deserializer.Deserialize(bytes)).Returns(message);
+            A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
 
             _source.Messages.Subscribe(_observer);
             mockConsumer.RaiseFakeMessage(bytesMessage);
@@ -155,21 +160,23 @@ namespace Obvs.ActiveMQ.Tests
         public void ShouldDeserializeAndPublishMessageOfRightTypeName()
         {
             Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
-            ITextMessage textMessage = A.Fake<ITextMessage>();
+            IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
-            const string serializedFixtureString = "<xml>Some fixture XML</xml>";
 
-            A.CallTo(() => textMessage.Text).Returns(serializedFixtureString);
-            A.CallTo(() => textMessage.Properties.Contains(MessagePropertyNames.TypeName)).Returns(true);
-            A.CallTo(() => textMessage.Properties.GetString(MessagePropertyNames.TypeName)).Returns("SomeTypeName");
-            A.CallTo(() => _deserializer.Deserialize(serializedFixtureString)).Returns(message);
+            const string serializedFixtureString = "<xml>Some fixture XML</xml>";
+            var bytes = Encoding.UTF8.GetBytes(serializedFixtureString);
+
+            A.CallTo(() => bytesMessage.Content).Returns(bytes);
+            A.CallTo(() => bytesMessage.Properties.Contains(MessagePropertyNames.TypeName)).Returns(true);
+            A.CallTo(() => bytesMessage.Properties.GetString(MessagePropertyNames.TypeName)).Returns("SomeTypeName");
+            A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
             A.CallTo(() => _deserializer.GetTypeName()).Returns("SomeTypeName");
 
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
                 _acknowledgementMode);
 
             _source.Messages.Subscribe(_observer);
-            mockConsumer.RaiseFakeMessage(textMessage);
+            mockConsumer.RaiseFakeMessage(bytesMessage);
 
             A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
@@ -111,9 +112,16 @@ namespace Obvs.ActiveMQ
 
             AppendTypeNameProperty(message, properties);
 
-            object data = _serializer.Serialize(message);
+            byte[] data;
 
-            _session.CreateMessageFromData(data)
+            using (MemoryStream ms = new MemoryStream())
+            {
+                _serializer.Serialize(ms, message);
+
+                data = ms.ToArray();
+            }
+
+            _session.CreateBytesMessage(data)
                     .SetProperties(properties)
                     .Send(_producer, _deliveryMode(message), _priority(message), _timeToLive(message));
         }
