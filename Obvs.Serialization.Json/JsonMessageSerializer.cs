@@ -24,9 +24,14 @@ namespace Obvs.Serialization.Json
 
         public virtual void Serialize(Stream stream, object message)
         {
-            using (var streamWriter = new StreamWriter(stream, JsonMessageDefaults.Encoding, 1024, true))
+            using (StreamWriter sw = new StreamWriter(stream, JsonMessageDefaults.Encoding, 1024, true))
             {
-                _serializer.Serialize(streamWriter, message);
+                using (JsonTextWriter jtx = new JsonTextWriter(sw))
+                {
+                    jtx.ArrayPool = JsonArrayPool.Instance;
+
+                    _serializer.Serialize(jtx, message);
+                }
             }
         }
     }

@@ -8,7 +8,6 @@ namespace Obvs.Serialization.Json
         where TMessage : class
     {
         private readonly JsonSerializer _serializer;
-        private static readonly Encoding Encoding = new UTF8Encoding(false);
 
         public JsonMessageDeserializer()
         {
@@ -31,11 +30,14 @@ namespace Obvs.Serialization.Json
             }
         }
 
+
         protected TMessage DeserializeCore(TextReader textReader)
         {
-            using (var jsonTextReader = new JsonTextReader(textReader))
+            using (JsonTextReader jtr = new JsonTextReader(textReader))
             {
-                return _serializer.Deserialize<TMessage>(jsonTextReader);
+                jtr.ArrayPool = JsonArrayPool.Instance;
+
+                return _serializer.Deserialize<TMessage>(jtr);
             }
         }
     }
