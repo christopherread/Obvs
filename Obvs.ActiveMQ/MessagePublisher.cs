@@ -112,16 +112,18 @@ namespace Obvs.ActiveMQ
 
             AppendTypeNameProperty(message, properties);
 
-            byte[] data;
+            var bytesMessage = _session.CreateBytesMessage();
 
-            using (MemoryStream ms = new MemoryStream())
+            using (MemoryStream ms = StreamManager.Instance.GetStream())
             {
+                var offset = ms.Position;
+
                 _serializer.Serialize(ms, message);
 
-                data = ms.ToArray();
+                bytesMessage.WriteBytes(ms.GetBuffer(), (int)offset, (int)(ms.Position - offset));
             }
 
-            _session.CreateBytesMessage(data)
+            bytesMessage
                     .SetProperties(properties)
                     .Send(_producer, _deliveryMode(message), _priority(message), _timeToLive(message));
         }

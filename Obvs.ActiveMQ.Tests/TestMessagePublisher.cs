@@ -79,7 +79,7 @@ namespace Obvs.ActiveMQ.Tests
 
             A.CallTo(() => _connection.CreateSession(A<Apache.NMS.AcknowledgementMode>.Ignored)).Returns(_session);
             A.CallTo(() => _session.CreateProducer(_destination)).Returns(_producer);
-            A.CallTo(() => _session.CreateBytesMessage(A<byte[]>._)).Returns(_message);
+            A.CallTo(() => _session.CreateBytesMessage()).Returns(_message);
             A.CallTo(() => _serializer.Serialize(A<object>._)).Returns("SerializedString");
 
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
@@ -124,7 +124,7 @@ namespace Obvs.ActiveMQ.Tests
             byte[] bytes = new byte[0];
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             A.CallTo(() => _serializer.Serialize(A<Stream>._, testMessage)).Invokes(arg => arg.Arguments.Get<Stream>(0).Write(bytes, 0, bytes.Length));
-            A.CallTo(() => _session.CreateBytesMessage(A<byte[]>._)).Returns(bytesMessage);
+            A.CallTo(() => _session.CreateBytesMessage()).Returns(bytesMessage);
 
             await _publisher.PublishAsync(testMessage);
 
