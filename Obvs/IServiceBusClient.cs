@@ -115,11 +115,17 @@ namespace Obvs
         {
             _localBus = localBus;
             _localBusOption = localBusOption;
+
             Endpoints = endpoints.ToList();
+
             _endpointClients = endpointClients.ToArray();
-            _events = _endpointClients.Select(endpointClient => endpointClient.EventsWithErroHandling(_exceptions))
-                                      .Merge().Merge(GetLocalMessages<TEvent>())
-                                      .Publish().RefCount();
+
+            _events = _endpointClients
+                .Select(endpointClient => endpointClient.EventsWithErroHandling(_exceptions))
+                .Merge()
+                .Merge(GetLocalMessages<TEvent>())
+                .PublishRefCountRetriable();
+
             _requestCorrelationProvider = requestCorrelationProvider;
             _subscribers = new List<KeyValuePair<object, IObservable<TMessage>>>();
         }
@@ -192,7 +198,7 @@ namespace Obvs
                 .Where(response => _requestCorrelationProvider.AreCorrelated(request, response)))
                 .Merge()
                 .Merge(GetLocalResponses(request))
-                .Publish().RefCount();
+                .PublishRefCountRetriable();
         }
 
         private IObservable<TResponse> GetLocalResponses(TRequest request)
