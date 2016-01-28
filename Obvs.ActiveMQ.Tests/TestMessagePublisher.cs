@@ -8,7 +8,6 @@ using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using FakeItEasy;
-using Microsoft.Reactive.Testing;
 using NUnit.Framework;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
@@ -80,7 +79,6 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _connection.CreateSession(A<Apache.NMS.AcknowledgementMode>.Ignored)).Returns(_session);
             A.CallTo(() => _session.CreateProducer(_destination)).Returns(_producer);
             A.CallTo(() => _session.CreateBytesMessage()).Returns(_message);
-            A.CallTo(() => _serializer.Serialize(A<object>._)).Returns("SerializedString");
 
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
         }

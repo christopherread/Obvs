@@ -42,8 +42,8 @@
       <HintPath>..\packages\Microsoft.IO.RecyclableMemoryStream.1.1.0.0\lib\net45\Microsoft.IO.RecyclableMemoryStream.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Obvs, Version=2.2.0.42, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obvs.2.2.0.42\lib\net45\Obvs.dll</HintPath>
+    <Reference Include="Obvs, Version=3.0.0.47, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.3.0.0.47\lib\net45\Obvs.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="ParallelExtensionsExtras, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Apache.NMS;
 using Obvs.Configuration;
 using Obvs.Serialization;
 
