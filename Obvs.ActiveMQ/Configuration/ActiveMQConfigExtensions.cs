@@ -1,5 +1,4 @@
 ﻿using System;
-using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Obvs.Configuration;
 using Obvs.Types;

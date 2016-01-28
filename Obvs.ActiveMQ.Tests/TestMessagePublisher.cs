@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,7 +8,6 @@ using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using FakeItEasy;
-using Microsoft.Reactive.Testing;
 using NUnit.Framework;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
@@ -26,7 +26,7 @@ namespace Obvs.ActiveMQ.Tests
         private IMessageSerializer _serializer;
         private IMessagePublisher<IMessage> _publisher;
         private IDestination _destination;
-        private ITextMessage _message;
+        private IBytesMessage _message;
         private IMessagePropertyProvider<IMessage> _messagePropertyProvider;
         private Lazy<IConnection> _lazyConnection;
         private readonly IScheduler _testScheduler = Scheduler.Immediate;
@@ -73,13 +73,12 @@ namespace Obvs.ActiveMQ.Tests
             _producer = A.Fake<IMessageProducer>();
             _serializer = A.Fake<IMessageSerializer>();
             _destination = A.Fake<IDestination>();
-            _message = A.Fake<ITextMessage>();
+            _message = A.Fake<IBytesMessage>();
             _messagePropertyProvider = A.Fake<IMessagePropertyProvider<IMessage>>();
 
             A.CallTo(() => _connection.CreateSession(A<Apache.NMS.AcknowledgementMode>.Ignored)).Returns(_session);
             A.CallTo(() => _session.CreateProducer(_destination)).Returns(_producer);
-            A.CallTo(() => _session.CreateTextMessage(A<string>._)).Returns(_message);
-            A.CallTo(() => _serializer.Serialize(A<object>._)).Returns("SerializedString");
+            A.CallTo(() => _session.CreateBytesMessage()).Returns(_message);
 
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
         }
@@ -119,11 +118,11 @@ namespace Obvs.ActiveMQ.Tests
         public async Task ShouldSendBytesMessageSerializerReturnsBytes()
         {
             ITestMessage testMessage = new TestMessage();
-            byte[] bytes = new byte[0];
 
+            byte[] bytes = new byte[0];
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
-            A.CallTo(() => _serializer.Serialize(testMessage)).Returns(bytes);
-            A.CallTo(() => _session.CreateBytesMessage(bytes)).Returns(bytesMessage);
+            A.CallTo(() => _serializer.Serialize(A<Stream>._, testMessage)).Invokes(arg => arg.Arguments.Get<Stream>(0).Write(bytes, 0, bytes.Length));
+            A.CallTo(() => _session.CreateBytesMessage()).Returns(bytesMessage);
 
             await _publisher.PublishAsync(testMessage);
 
