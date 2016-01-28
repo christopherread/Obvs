@@ -134,8 +134,18 @@ namespace Obvs
             : base(endpointClients, endpoints, requestCorrelationProvider, localBus, localBusOption)
         {
             _requestCorrelationProvider = requestCorrelationProvider;
-            _requests = Endpoints.Select(endpoint => endpoint.RequestsWithErrorHandling(_exceptions)).Merge().Merge(GetLocalMessages<TRequest>()).Publish().RefCount();
-            _commands = Endpoints.Select(endpoint => endpoint.CommandsWithErrorHandling(_exceptions)).Merge().Merge(GetLocalMessages<TCommand>()).Publish().RefCount();
+
+            _requests = Endpoints
+                .Select(endpoint => endpoint.RequestsWithErrorHandling(_exceptions))
+                .Merge()
+                .Merge(GetLocalMessages<TRequest>())
+                .PublishRefCountRetriable();
+
+            _commands = Endpoints
+                .Select(endpoint => endpoint.CommandsWithErrorHandling(_exceptions))
+                .Merge()
+                .Merge(GetLocalMessages<TCommand>())
+                .PublishRefCountRetriable();
         }
 
         public IObservable<TRequest> Requests

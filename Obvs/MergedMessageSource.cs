@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using Obvs.Extensions;
 
 namespace Obvs
 {
@@ -12,7 +13,7 @@ namespace Obvs
 
         public MergedMessageSource(IEnumerable<IMessageSource<TMessage>> sources)
         {
-            _messages = sources.Select(source => source.Messages).Merge().Publish().RefCount();
+            _messages = sources.Select(source => source.Messages).Merge().PublishRefCountRetriable();
         }
 
         public IObservable<TMessage> Messages
