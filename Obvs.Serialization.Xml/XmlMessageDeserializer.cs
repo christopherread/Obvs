@@ -13,14 +13,6 @@ namespace Obvs.Serialization.Xml
             _xmlSerializer = new XmlSerializer(typeof(TMessage));
         }
 
-        public override TMessage Deserialize(object obj)
-        {
-            using (MemoryStream ms = new MemoryStream((byte[])obj))
-            {
-                return Deserialize(ms);
-            }
-        }
-
         public override TMessage Deserialize(Stream stream)
         {
             using (TextReader reader = new StreamReader(stream, XmlSerializerDefaults.Encoding))

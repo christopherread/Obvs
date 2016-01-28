@@ -12,16 +12,6 @@ namespace Obvs.Serialization.Json
             _serializer = new JsonSerializer();
         }
 
-        public virtual object Serialize(object message)
-        {
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                Serialize(memoryStream, message);
-                
-                return memoryStream.ToArray();
-            }
-        }
-
         public virtual void Serialize(Stream stream, object message)
         {
             using (StreamWriter sw = new StreamWriter(stream, JsonMessageDefaults.Encoding, 1024, true))

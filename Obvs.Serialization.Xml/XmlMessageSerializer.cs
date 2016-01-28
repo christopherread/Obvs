@@ -9,16 +9,6 @@ namespace Obvs.Serialization.Xml
     {
         private readonly ConcurrentDictionary<Type, XmlSerializer> _serializers = new ConcurrentDictionary<Type, XmlSerializer>();
 
-        public object Serialize(object obj)
-        {
-            using (MemoryStream ms = new MemoryStream())
-            {
-                Serialize(ms, obj);
-
-                return ms.ToArray();
-            }
-        }
-
         public void Serialize(Stream stream, object obj)
         {
             using (TextWriter writer = new StreamWriter(stream, XmlSerializerDefaults.Encoding))

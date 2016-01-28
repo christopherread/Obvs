@@ -1,6 +1,4 @@
 using System.IO;
-using System.Text;
-using NetJSON;
 
 namespace Obvs.Serialization.NetJson
 {
@@ -10,14 +8,6 @@ namespace Obvs.Serialization.NetJson
         static NetJsonMessageDeserializer()
         {
             NetJsonDefaults.Set();
-        }
-
-        public override TMessage Deserialize(object obj)
-        {
-            using (var memoryStream = new MemoryStream((byte[])obj))
-            {
-                return Deserialize(memoryStream);
-            }
         }
 
         public override TMessage Deserialize(Stream stream)

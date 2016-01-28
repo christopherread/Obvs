@@ -1,5 +1,4 @@
 using System.IO;
-using System.Text;
 using Newtonsoft.Json;
 
 namespace Obvs.Serialization.Json
@@ -12,14 +11,6 @@ namespace Obvs.Serialization.Json
         public JsonMessageDeserializer()
         {
             _serializer = new JsonSerializer();
-        }
-
-        public override TMessage Deserialize(object obj)
-        {
-            using (var memoryStream = new MemoryStream((byte[])obj))
-            {
-                return Deserialize(memoryStream);
-            }
         }
 
         public override TMessage Deserialize(Stream stream)

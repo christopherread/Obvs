@@ -17,7 +17,7 @@ namespace Obvs.Serialization.Tests
             IMessageSerializer serializer = new XmlMessageSerializer();
 
             var message = new TestMessage { Id = 123, Name = "SomeName" };
-            var serialize = serializer.Serialize(message) as string;
+            var serialize = XmlSerializerDefaults.Encoding.GetString(serializer.Serialize(message));
 
             Assert.That(serialize, Is.Not.Null);
             Assert.That(serialize, Is.Not.Empty);
@@ -32,7 +32,7 @@ namespace Obvs.Serialization.Tests
             IMessageDeserializer<TestMessage> deserializer = new XmlMessageDeserializer<TestMessage>();
 
             var message = new TestMessage {Id = 123, Name = "SomeName"};
-            var serialize = serializer.Serialize(message) as string;
+            var serialize = serializer.Serialize(message);
             var deserialize = deserializer.Deserialize(serialize);
 
             Assert.That(message, Is.EqualTo(deserialize));
@@ -45,8 +45,8 @@ namespace Obvs.Serialization.Tests
             IMessageDeserializer<TestMessage> deserializer = new XmlMessageDeserializer<TestMessage>();
 
             var message = new TestMessage {Id = 123, Name = "SomeName"};
-            var serialize = (string)serializer.Serialize(message);
-            string ascii = Encoding.ASCII.GetString(Encoding.Convert(Encoding.UTF8, Encoding.ASCII, Encoding.UTF8.GetBytes(serialize)));
+            var serialize = serializer.Serialize(message);
+            var ascii = Encoding.Convert(XmlSerializerDefaults.Encoding, Encoding.ASCII, serialize);
             var deserialize = deserializer.Deserialize(ascii);
 
             Assert.That(message, Is.EqualTo(deserialize));

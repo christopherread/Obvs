@@ -16,7 +16,7 @@ namespace Obvs.Serialization.Tests
             IMessageSerializer serializer = new JsonMessageSerializer();
 
             var message = new TestMessage { Id = 123, Name = "SomeName" };
-            var serialize = serializer.Serialize(message);
+            var serialize = JsonMessageDefaults.Encoding.GetString(serializer.Serialize(message));
 
             Assert.That(serialize, Is.Not.Null);
             Assert.That(serialize, Is.Not.Empty);

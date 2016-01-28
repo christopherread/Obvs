@@ -13,9 +13,9 @@ namespace Obvs.Serialization.Json.Utils
         internal DefaultArrayPool(int maxLength, int arraysPerBucket)
         {
             if (maxLength <= 0)
-                throw new ArgumentOutOfRangeException(nameof(maxLength));
+                throw new ArgumentOutOfRangeException("maxLength");
             if (arraysPerBucket <= 0)
-                throw new ArgumentOutOfRangeException(nameof(arraysPerBucket));
+                throw new ArgumentOutOfRangeException("arraysPerBucket");
 
             // Our bucketing algorithm has a minimum length of 16
             if (maxLength < MinimiumArraySize)
@@ -30,7 +30,7 @@ namespace Obvs.Serialization.Json.Utils
         public override T[] Rent(int minimumLength)
         {
             if (minimumLength <= 0)
-                throw new ArgumentOutOfRangeException(nameof(minimumLength));
+                throw new ArgumentOutOfRangeException("minimumLength");
                 
             T[] buffer = null;
             int index = Utilities.SelectBucketIndex(minimumLength);
@@ -60,7 +60,7 @@ namespace Obvs.Serialization.Json.Utils
         public override void Return(T[] buffer, bool clearArray = false)
         {
             if (buffer == null)
-                throw new ArgumentNullException(nameof(buffer));
+                throw new ArgumentNullException("buffer");
 
             // If we can tell that the buffer was allocated, drop it. Otherwise, check if we have space in the pool
             int bucket = Utilities.SelectBucketIndex(buffer.Length);
@@ -71,7 +71,6 @@ namespace Obvs.Serialization.Json.Utils
 
                 _buckets[bucket].Return(buffer);
             }
-
         }
     }
 }

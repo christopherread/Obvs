@@ -4,8 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Obvs.Serialization.NetJson
 {
@@ -17,16 +15,6 @@ namespace Obvs.Serialization.NetJson
         static NetJsonMessageSerializer()
         {
             NetJsonDefaults.Set();
-        }
-
-        public virtual object Serialize(object message)
-        {
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                Serialize(memoryStream, message);
-
-                return memoryStream.ToArray();
-            }
         }
 
         public virtual void Serialize(Stream stream, object message)
@@ -46,13 +34,16 @@ namespace Obvs.Serialization.NetJson
         private static Action<object, TextWriter> GetOrAddToStreamingSerializer(Type type)
         {
             Action<object, TextWriter> action;
-            if (!_streamingSerializers.TryGetValue(type, out action))
+
+            var streamingSerializers = _streamingSerializers;
+
+            if (!streamingSerializers.TryGetValue(type, out action))
             {
-                lock (_streamingSerializers)
+                lock (streamingSerializers)
                 {
                     action = CreateSerializer(type);
 
-                    IDictionary<Type, Action<object, TextWriter>> newCache = new Dictionary<Type, Action<object, TextWriter>>(_streamingSerializers);
+                    IDictionary<Type, Action<object, TextWriter>> newCache = new Dictionary<Type, Action<object, TextWriter>>(streamingSerializers);
                     newCache[type] = action;
 
                     _streamingSerializers = newCache;
@@ -69,7 +60,7 @@ namespace Obvs.Serialization.NetJson
                        typeof(NetJSON.NetJSON).GetMethods(BindingFlags.Static | BindingFlags.Public)
                            .Single(
                                mi => // This matches NetJSON.NetJSON.Serialize<T>(T message, TextWriter writer) method.
-                                   mi.Name == nameof(NetJSON.NetJSON.Serialize)
+                                   mi.Name == "Serialize"
                                    && mi.IsGenericMethodDefinition
                                    && mi.GetParameters().Length == 2));
         }
@@ -78,7 +69,7 @@ namespace Obvs.Serialization.NetJson
         {
             var methodInfo = GetUnboundedSerializeMethodInfo().MakeGenericMethod(type);
 
-            DynamicMethod shim = new DynamicMethod("SerializeWithType", typeof(void), new[] { typeof(object), typeof(TextWriter) }, typeof(NetJsonMessageSerializer));
+            DynamicMethod shim = new DynamicMethod("SerializeWithType_" + type.Name, typeof(void), new[] { typeof(object), typeof(TextWriter) }, typeof(NetJsonMessageSerializer));
             ILGenerator il = shim.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0); // Load message (object)
@@ -91,15 +82,5 @@ namespace Obvs.Serialization.NetJson
 
             return (Action<object, TextWriter>)shim.CreateDelegate(typeof(Action<object, TextWriter>));
         }
-
-        //public void Serialize(Stream stream, object message)
-        //{
-        //    using (TextWriter writer = new StreamWriter(stream))
-        //    {
-        //        writer.Write(Serialize(message));
-
-        //        writer.Flush();
-        //    }
-        //}
     }
 }
