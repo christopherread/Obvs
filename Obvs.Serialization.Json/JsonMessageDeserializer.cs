@@ -13,14 +13,23 @@ namespace Obvs.Serialization.Json
             _serializer = new JsonSerializer();
         }
 
-        public override TMessage Deserialize(object obj)
-        {
-            return _serializer.Deserialize<TMessage>(new JsonTextReader(new StringReader((string)obj)));
-        }
-
         public override TMessage Deserialize(Stream stream)
         {
-            return _serializer.Deserialize<TMessage>(new JsonTextReader(new StreamReader(stream)));
+            using (var streamReader = new StreamReader(stream, JsonMessageDefaults.Encoding, false, 1024, true))
+            {
+                return DeserializeCore(streamReader);
+            }
+        }
+
+
+        protected TMessage DeserializeCore(TextReader textReader)
+        {
+            using (JsonTextReader jtr = new JsonTextReader(textReader))
+            {
+                jtr.ArrayPool = JsonArrayPool.Instance;
+
+                return _serializer.Deserialize<TMessage>(jtr);
+            }
         }
     }
 }

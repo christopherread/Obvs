@@ -1,9 +1,6 @@
-﻿using System;
-using FakeItEasy;
+﻿using FakeItEasy;
 using NUnit.Framework;
 using Obvs.Configuration;
-using Obvs.Serialization.Json;
-using Obvs.Serialization.Json.Configuration;
 using Obvs.Serialization.NetJson;
 using Obvs.Serialization.NetJson.Configuration;
 using Obvs.Types;
@@ -19,7 +16,7 @@ namespace Obvs.Serialization.Tests
             IMessageSerializer serializer = new NetJsonMessageSerializer();
 
             var message = new TestMessage { Id = 123, Name = "SomeName" };
-            var serialize = serializer.Serialize(message);
+            var serialize = NetJsonDefaults.Encoding.GetString(serializer.Serialize(message));
 
             Assert.That(serialize, Is.Not.Null);
             Assert.That(serialize, Is.Not.Empty);
@@ -34,8 +31,6 @@ namespace Obvs.Serialization.Tests
             IMessageDeserializer<TestMessage> deserializer = new NetJsonMessageDeserializer<TestMessage>();
 
             var message = new TestMessage { Id = 123, Name = "SomeName" };
-            // Truncate to nearest Ms
-            message.Date = message.Date.AddTicks(-(message.Date.Ticks % TimeSpan.FromMilliseconds(1).Ticks));
 
             var serialize = serializer.Serialize(message);
             var deserialize = deserializer.Deserialize(serialize);

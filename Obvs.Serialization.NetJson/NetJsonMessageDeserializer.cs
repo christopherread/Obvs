@@ -1,5 +1,4 @@
 using System.IO;
-using NetJSON;
 
 namespace Obvs.Serialization.NetJson
 {
@@ -11,14 +10,17 @@ namespace Obvs.Serialization.NetJson
             NetJsonDefaults.Set();
         }
 
-        public override TMessage Deserialize(object obj)
-        {
-            return NetJSON.NetJSON.Deserialize<TMessage>((string)obj);
-        }
-
         public override TMessage Deserialize(Stream stream)
         {
-            return NetJSON.NetJSON.Deserialize<TMessage>(new StreamReader(stream));
+            return DeserializeCore(stream);
+        }
+
+        protected TMessage DeserializeCore(Stream stream)
+        {
+            using (var streamReader = new StreamReader(stream, NetJsonDefaults.Encoding, false, 1024, true))
+            {
+                return NetJSON.NetJSON.Deserialize<TMessage>(streamReader);
+            }
         }
     }
 }

@@ -30,12 +30,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="Obvs, Version=2.2.0.37, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obvs.2.2.0.37\lib\net45\Obvs.dll</HintPath>
+    <Reference Include="Obvs, Version=3.0.0.47, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.3.0.0.47\lib\net45\Obvs.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -55,10 +55,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\FluentConfigExtensions.cs" />
+    <Compile Include="GzippedJsonMessageDeserializer.cs" />
+    <Compile Include="JsonArrayPool.cs" />
+    <Compile Include="JsonMessageDefaults.cs" />
     <Compile Include="JsonMessageDeserializer.cs" />
     <Compile Include="JsonMessageDeserializerFactory.cs" />
+    <Compile Include="GzippedJsonMessageSerializer.cs" />
     <Compile Include="JsonMessageSerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\ArrayPool.cs" />
+    <Compile Include="Utils\DefaultArrayPool.cs" />
+    <Compile Include="Utils\DefaultArrayPoolBucket.cs" />
+    <Compile Include="Utils\Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Obvs.Serialization.Json.nuspec" />

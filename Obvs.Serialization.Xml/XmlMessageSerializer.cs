@@ -9,18 +9,12 @@ namespace Obvs.Serialization.Xml
     {
         private readonly ConcurrentDictionary<Type, XmlSerializer> _serializers = new ConcurrentDictionary<Type, XmlSerializer>();
 
-        public object Serialize(object obj)
-        {
-            using (TextWriter writer = new StringWriter())
-            {
-                Serializer(obj.GetType()).Serialize(writer, obj);
-                return writer.ToString();
-            }
-        }
-
         public void Serialize(Stream stream, object obj)
         {
-            Serializer(obj.GetType()).Serialize(stream, obj);
+            using (TextWriter writer = new StreamWriter(stream, XmlSerializerDefaults.Encoding))
+            {
+                Serializer(obj.GetType()).Serialize(writer, obj);
+            }
         }
 
         private XmlSerializer Serializer(Type type)

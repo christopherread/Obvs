@@ -30,12 +30,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NetJSON, Version=1.0.15.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NetJSON.1.0.15.1\lib\net40\NetJSON.dll</HintPath>
+    <Reference Include="NetJSON, Version=1.0.15.5, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetJSON.1.0.15.5\lib\net40\NetJSON.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Obvs, Version=2.2.0.37, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obvs.2.2.0.37\lib\net45\Obvs.dll</HintPath>
+    <Reference Include="Obvs, Version=3.0.0.47, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.3.0.0.47\lib\net45\Obvs.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -55,6 +55,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\FluentConfigExtensions.cs" />
+    <Compile Include="GzippedNetJsonMessageDeserializer.cs" />
+    <Compile Include="GzippedNetJsonMessageSerializer.cs" />
     <Compile Include="NetJsonDefaults.cs" />
     <Compile Include="NetJsonMessageDeserializer.cs" />
     <Compile Include="NetJsonMessageDeserializerFactory.cs" />

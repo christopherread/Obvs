@@ -12,18 +12,17 @@ namespace Obvs.Serialization.Json
             _serializer = new JsonSerializer();
         }
 
-        public object Serialize(object message)
+        public virtual void Serialize(Stream stream, object message)
         {
-            using (TextWriter writer = new StringWriter())
+            using (StreamWriter sw = new StreamWriter(stream, JsonMessageDefaults.Encoding, 1024, true))
             {
-                _serializer.Serialize(writer, message);
-                return writer.ToString();
-            }
-        }
+                using (JsonTextWriter jtx = new JsonTextWriter(sw))
+                {
+                    jtx.ArrayPool = JsonArrayPool.Instance;
 
-        public void Serialize(Stream stream, object message)
-        {
-            _serializer.Serialize(new StreamWriter(stream) {AutoFlush = true}, message);
+                    _serializer.Serialize(jtx, message);
+                }
+            }
         }
     }
 }
