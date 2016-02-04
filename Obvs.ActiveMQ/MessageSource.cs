@@ -33,7 +33,7 @@ namespace Obvs.ActiveMQ
             _selector = selector;
         }
 
-        public IObservable<TMessage> Messages
+        public virtual IObservable<TMessage> Messages
         {
             get
             {
@@ -56,12 +56,12 @@ namespace Obvs.ActiveMQ
             }
         }
 
-        private bool IsCorrectType(IMessage message)
+        protected virtual bool IsCorrectType(IMessage message)
         {
             return !HasTypeName(message) || _deserializers.ContainsKey(GetTypeName(message));
         }
 
-        private TMessage Deserialize(IMessage message)
+        protected virtual TMessage Deserialize(IMessage message)
         {
             IMessageDeserializer<TMessage> deserializer = HasTypeName(message)
                 ? _deserializers[GetTypeName(message)]
@@ -83,12 +83,12 @@ namespace Obvs.ActiveMQ
             return deserializedMessage;
         }
 
-        private static string GetTypeName(IMessage message)
+        protected virtual string GetTypeName(IMessage message)
         {
             return message.Properties.GetString(MessagePropertyNames.TypeName);
         }
 
-        private static bool HasTypeName(IMessage message)
+        protected virtual bool HasTypeName(IMessage message)
         {
             return message.Properties.Contains(MessagePropertyNames.TypeName);
         }

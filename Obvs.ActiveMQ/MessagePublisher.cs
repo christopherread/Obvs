@@ -84,7 +84,7 @@ namespace Obvs.ActiveMQ
             _drainMethod = () => taskFactory.StartNew(() => { });
         }
 
-        public Task PublishAsync(TMessage message)
+        public virtual Task PublishAsync(TMessage message)
         {
             if (_disposed)
             {
@@ -94,14 +94,14 @@ namespace Obvs.ActiveMQ
             return _publishMethod(message);
         }
 
-        private void Publish(TMessage message)
+        protected virtual void Publish(TMessage message)
         {
             List<KeyValuePair<string, object>> properties = _propertyProvider.GetProperties(message).ToList();
 
             Publish(message, properties);
         }
 
-        private void Publish(TMessage message, List<KeyValuePair<string, object>> properties)
+        protected virtual void Publish(TMessage message, List<KeyValuePair<string, object>> properties)
         {
             if (_disposed)
             {
@@ -114,18 +114,23 @@ namespace Obvs.ActiveMQ
 
             var bytesMessage = _session.CreateBytesMessage();
 
+            SerializeMessage(message, bytesMessage);
+
+            bytesMessage
+                    .SetProperties(properties)
+                    .Send(_producer, _deliveryMode(message), _priority(message), _timeToLive(message));
+        }
+
+        protected virtual void SerializeMessage(TMessage message, IBytesMessage bytesMessage)
+        {
             using (MemoryStream ms = StreamManager.Instance.GetStream())
             {
                 var offset = ms.Position;
 
                 _serializer.Serialize(ms, message);
 
-                bytesMessage.WriteBytes(ms.GetBuffer(), (int)offset, (int)(ms.Position - offset));
+                bytesMessage.WriteBytes(ms.GetBuffer(), (int) offset, (int) (ms.Position - offset));
             }
-
-            bytesMessage
-                    .SetProperties(properties)
-                    .Send(_producer, _deliveryMode(message), _priority(message), _timeToLive(message));
         }
 
         private static void AppendTypeNameProperty(TMessage message, List<KeyValuePair<string, object>> properties)
