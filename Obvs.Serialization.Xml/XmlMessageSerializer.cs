@@ -11,7 +11,7 @@ namespace Obvs.Serialization.Xml
 
         public void Serialize(Stream stream, object obj)
         {
-            using (TextWriter writer = new StreamWriter(stream, XmlSerializerDefaults.Encoding))
+            using (TextWriter writer = new StreamWriter(stream, XmlSerializerDefaults.Encoding, 1024, true))
             {
                 Serializer(obj.GetType()).Serialize(writer, obj);
             }
