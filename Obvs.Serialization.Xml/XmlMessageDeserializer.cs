@@ -15,7 +15,7 @@ namespace Obvs.Serialization.Xml
 
         public override TMessage Deserialize(Stream stream)
         {
-            using (TextReader reader = new StreamReader(stream, XmlSerializerDefaults.Encoding))
+            using (TextReader reader = new StreamReader(stream, XmlSerializerDefaults.Encoding, true, 1024, true))
             {
                 return (TMessage)_xmlSerializer.Deserialize(reader);
             }
