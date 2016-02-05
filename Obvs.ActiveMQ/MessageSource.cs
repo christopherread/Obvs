@@ -33,7 +33,7 @@ namespace Obvs.ActiveMQ
             _selector = selector;
         }
 
-        public virtual IObservable<TMessage> Messages
+        public IObservable<TMessage> Messages
         {
             get
             {
@@ -43,7 +43,7 @@ namespace Obvs.ActiveMQ
 
                     IDisposable subscription = session.ToObservable(_destination, _selector)
                         .Where(IsCorrectType)
-                        .Select(Deserialize)
+                        .Select(ProcessAMQMessage)
                         .Subscribe(observer);
 
                     return Disposable.Create(() =>
@@ -56,17 +56,26 @@ namespace Obvs.ActiveMQ
             }
         }
 
-        protected virtual bool IsCorrectType(IMessage message)
+        protected bool IsCorrectType(IMessage message)
         {
             return !HasTypeName(message) || _deserializers.ContainsKey(GetTypeName(message));
         }
 
-        protected virtual TMessage Deserialize(IMessage message)
+        private TMessage ProcessAMQMessage(IMessage message)
         {
             IMessageDeserializer<TMessage> deserializer = HasTypeName(message)
                 ? _deserializers[GetTypeName(message)]
                 : _deserializers.Values.Single();
 
+            var deserializedMessage = DeserializeMessage(message, deserializer);
+
+            Acknowledge(message);
+
+            return deserializedMessage;
+        }
+
+        protected virtual TMessage DeserializeMessage(IMessage message, IMessageDeserializer<TMessage> deserializer)
+        {
             TMessage deserializedMessage = default(TMessage);
 
             IBytesMessage bytesMessage = message as IBytesMessage;
@@ -78,17 +87,15 @@ namespace Obvs.ActiveMQ
                 }
             }
 
-            Acknowledge(message);
-
             return deserializedMessage;
         }
 
-        protected virtual string GetTypeName(IMessage message)
+        protected string GetTypeName(IMessage message)
         {
             return message.Properties.GetString(MessagePropertyNames.TypeName);
         }
 
-        protected virtual bool HasTypeName(IMessage message)
+        protected bool HasTypeName(IMessage message)
         {
             return message.Properties.Contains(MessagePropertyNames.TypeName);
         }

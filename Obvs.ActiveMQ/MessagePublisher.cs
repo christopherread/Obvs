@@ -84,7 +84,7 @@ namespace Obvs.ActiveMQ
             _drainMethod = () => taskFactory.StartNew(() => { });
         }
 
-        public virtual Task PublishAsync(TMessage message)
+        public Task PublishAsync(TMessage message)
         {
             if (_disposed)
             {
@@ -94,14 +94,14 @@ namespace Obvs.ActiveMQ
             return _publishMethod(message);
         }
 
-        protected virtual void Publish(TMessage message)
+        private void Publish(TMessage message)
         {
             List<KeyValuePair<string, object>> properties = _propertyProvider.GetProperties(message).ToList();
 
             Publish(message, properties);
         }
 
-        protected virtual void Publish(TMessage message, List<KeyValuePair<string, object>> properties)
+        protected void Publish(TMessage message, List<KeyValuePair<string, object>> properties)
         {
             if (_disposed)
             {
@@ -112,13 +112,20 @@ namespace Obvs.ActiveMQ
 
             AppendTypeNameProperty(message, properties);
 
+            var msg = GenerateMessage(message);
+
+            msg
+                .SetProperties(properties)
+                .Send(_producer, _deliveryMode(message), _priority(message), _timeToLive(message));
+        }
+
+        protected virtual IMessage GenerateMessage(TMessage message)
+        {
             var bytesMessage = _session.CreateBytesMessage();
 
             SerializeMessage(message, bytesMessage);
 
-            bytesMessage
-                    .SetProperties(properties)
-                    .Send(_producer, _deliveryMode(message), _priority(message), _timeToLive(message));
+            return bytesMessage;
         }
 
         protected virtual void SerializeMessage(TMessage message, IBytesMessage bytesMessage)
