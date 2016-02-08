@@ -31,6 +31,7 @@ namespace Obvs.ActiveMQ
         private readonly object _gate = new object();
 
         private ISession _session;
+
         private IMessageProducer _producer;
         private volatile IDisposable _disposable;
         private volatile bool _disposed;
@@ -84,7 +85,7 @@ namespace Obvs.ActiveMQ
             _drainMethod = () => taskFactory.StartNew(() => { });
         }
 
-        public virtual Task PublishAsync(TMessage message)
+        public Task PublishAsync(TMessage message)
         {
             if (_disposed)
             {
@@ -94,14 +95,14 @@ namespace Obvs.ActiveMQ
             return _publishMethod(message);
         }
 
-        protected virtual void Publish(TMessage message)
+        private void Publish(TMessage message)
         {
             List<KeyValuePair<string, object>> properties = _propertyProvider.GetProperties(message).ToList();
 
             Publish(message, properties);
         }
 
-        protected virtual void Publish(TMessage message, List<KeyValuePair<string, object>> properties)
+        protected void Publish(TMessage message, List<KeyValuePair<string, object>> properties)
         {
             if (_disposed)
             {
@@ -112,30 +113,38 @@ namespace Obvs.ActiveMQ
 
             AppendTypeNameProperty(message, properties);
 
-            var bytesMessage = _session.CreateBytesMessage();
+            var msg = GenerateMessage(message, _producer, _serializer);
 
-            SerializeMessage(message, bytesMessage);
+            SetMessageHeaders(msg, properties);
 
-            bytesMessage
-                    .SetProperties(properties)
-                    .Send(_producer, _deliveryMode(message), _priority(message), _timeToLive(message));
+            _producer.Send(msg, _deliveryMode(message), _priority(message), _timeToLive(message));
         }
 
-        protected virtual void SerializeMessage(TMessage message, IBytesMessage bytesMessage)
+
+        protected virtual IMessage GenerateMessage(TMessage message, IMessageProducer producer, IMessageSerializer serializer)
         {
+            var bytesMessage = producer.CreateBytesMessage();
+
             using (MemoryStream ms = StreamManager.Instance.GetStream())
             {
                 var offset = ms.Position;
 
-                _serializer.Serialize(ms, message);
+                serializer.Serialize(ms, message);
 
-                bytesMessage.WriteBytes(ms.GetBuffer(), (int) offset, (int) (ms.Position - offset));
+                bytesMessage.WriteBytes(ms.GetBuffer(), (int)offset, (int)(ms.Position - offset));
             }
+
+            return bytesMessage;
         }
 
         private static void AppendTypeNameProperty(TMessage message, List<KeyValuePair<string, object>> properties)
         {
             properties.Add(new KeyValuePair<string, object>(MessagePropertyNames.TypeName, message.GetType().Name));
+        }
+
+        protected virtual void SetMessageHeaders(IMessage msg, List<KeyValuePair<string, object>> properties)
+        {
+            msg.SetProperties(properties);
         }
 
         private void Connect()
