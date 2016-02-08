@@ -43,7 +43,7 @@ namespace Obvs.ActiveMQ
 
                     IDisposable subscription = session.ToObservable(_destination, _selector)
                         .Where(IsCorrectType)
-                        .Select(ProcessAMQMessage)
+                        .Select(ProcessMessage)
                         .Subscribe(observer);
 
                     return Disposable.Create(() =>
@@ -61,7 +61,7 @@ namespace Obvs.ActiveMQ
             return !HasTypeName(message) || _deserializers.ContainsKey(GetTypeName(message));
         }
 
-        private TMessage ProcessAMQMessage(IMessage message)
+        private TMessage ProcessMessage(IMessage message)
         {
             IMessageDeserializer<TMessage> deserializer = HasTypeName(message)
                 ? _deserializers[GetTypeName(message)]

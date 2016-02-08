@@ -31,6 +31,7 @@ namespace Obvs.ActiveMQ
         private readonly object _gate = new object();
 
         private ISession _session;
+
         private IMessageProducer _producer;
         private volatile IDisposable _disposable;
         private volatile bool _disposed;
@@ -112,37 +113,38 @@ namespace Obvs.ActiveMQ
 
             AppendTypeNameProperty(message, properties);
 
-            var msg = GenerateMessage(message);
+            var msg = GenerateMessage(message, _producer, _serializer);
 
-            msg
-                .SetProperties(properties)
-                .Send(_producer, _deliveryMode(message), _priority(message), _timeToLive(message));
+            SetMessageHeaders(msg, properties);
+
+            _producer.Send(msg, _deliveryMode(message), _priority(message), _timeToLive(message));
         }
 
-        protected virtual IMessage GenerateMessage(TMessage message)
+
+        protected virtual IMessage GenerateMessage(TMessage message, IMessageProducer producer, IMessageSerializer serializer)
         {
-            var bytesMessage = _session.CreateBytesMessage();
+            var bytesMessage = producer.CreateBytesMessage();
 
-            SerializeMessage(message, bytesMessage);
-
-            return bytesMessage;
-        }
-
-        protected virtual void SerializeMessage(TMessage message, IBytesMessage bytesMessage)
-        {
             using (MemoryStream ms = StreamManager.Instance.GetStream())
             {
                 var offset = ms.Position;
 
-                _serializer.Serialize(ms, message);
+                serializer.Serialize(ms, message);
 
-                bytesMessage.WriteBytes(ms.GetBuffer(), (int) offset, (int) (ms.Position - offset));
+                bytesMessage.WriteBytes(ms.GetBuffer(), (int)offset, (int)(ms.Position - offset));
             }
+
+            return bytesMessage;
         }
 
         private static void AppendTypeNameProperty(TMessage message, List<KeyValuePair<string, object>> properties)
         {
             properties.Add(new KeyValuePair<string, object>(MessagePropertyNames.TypeName, message.GetType().Name));
+        }
+
+        protected virtual void SetMessageHeaders(IMessage msg, List<KeyValuePair<string, object>> properties)
+        {
+            msg.SetProperties(properties);
         }
 
         private void Connect()
