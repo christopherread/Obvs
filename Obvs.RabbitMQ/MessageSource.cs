@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using Obvs.RabbitMQ.Extensions;
 using Obvs.Serialization;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -42,16 +43,19 @@ namespace Obvs.RabbitMQ
             {
                 return Observable.Create<TMessage>(observer =>
                 {
-                    var consumer = _channel.CreateConsumer(_exchange, _routingKey);
-
-                    var subscription = consumer.GetMessages()
+                    var queue = _channel.QueueDeclare();
+                    _channel.QueueBind(queue, _exchange, _routingKey);
+                    var consumer = new EventingBasicConsumer(_channel);
+                    
+                    var subscription = consumer.ToObservable()
                                                .Select(Deserialize)
                                                .Subscribe(observer);
+
+                    _channel.BasicConsume(queue, true, consumer);
 
                     return Disposable.Create(() =>
                     {
                         subscription.Dispose();
-                        consumer.Queue.Close();
                     });
                 });
             }

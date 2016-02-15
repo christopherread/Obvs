@@ -32,11 +32,8 @@ namespace Obvs.RabbitMQ
 
         private void Publish(TMessage message)
         {
-            object serializedMessage = _serializer.Serialize(message);
-            byte[] body = serializedMessage as byte[] ?? Encoding.UTF8.GetBytes((string) serializedMessage);
-            string contentType = serializedMessage is byte[] ? "bytes" : "text";
-
-            _channel.BasicPublish(_exchange, RoutingKey(message), new BasicProperties { ContentType = contentType }, body);
+            byte[] body = _serializer.Serialize(message);
+            _channel.BasicPublish(_exchange, RoutingKey(message), new BasicProperties { ContentType = "bytes" }, body);
         }
 
         private string RoutingKey(TMessage message)
