@@ -9,11 +9,10 @@ using NetMQ;
 using NetMQ.Sockets;
 using Obvs.NetMQ.Extensions;
 using Obvs.Serialization;
-using Obvs.Types;
 
 namespace Obvs.NetMQ
 {
-    public class MessageSource<TMessage> : IMessageSource<TMessage> where TMessage : IMessage
+    public class MessageSource<TMessage> : IMessageSource<TMessage> where TMessage : class
     {
         private readonly string _address;
         private readonly Dictionary<string, IMessageDeserializer<TMessage>> _deserializers;
@@ -35,11 +34,11 @@ namespace Obvs.NetMQ
             {
                 return Observable.Create<TMessage>(observer =>
                 {
-                    CancellationTokenSource tokenSource = new CancellationTokenSource();
-                    CancellationToken token = tokenSource.Token;
-                    ManualResetEventSlim subscribedEvent = new ManualResetEventSlim(false);
+                    var tokenSource = new CancellationTokenSource();
+                    var token = tokenSource.Token;
+                    var subscribedEvent = new ManualResetEventSlim(false);
 
-                    Task task = Task.Run(() => Subscriber(token, observer, subscribedEvent));
+                    var task = Task.Run(() => Subscriber(token, observer, subscribedEvent));
 
                     subscribedEvent.Wait();
 
@@ -56,7 +55,7 @@ namespace Obvs.NetMQ
         {
             try
             {
-                using (SubscriberSocket socket = _context.CreateSubscriberSocket())
+                using (var socket = _context.CreateSubscriberSocket())
                 {
                     socket.Connect(_address);
                     socket.Subscribe(_topic);
@@ -86,12 +85,12 @@ namespace Obvs.NetMQ
             try
             {
                 string topic;
-                object rawMessage;
+                byte[] rawMessage;
                 string typeName;
 
                 if (socket.TryReceive(_receiveTimeout, out topic, out typeName, out rawMessage) && MatchesTopic(topic))
                 {
-                    TMessage message = typeName == null
+                    var message = typeName == null
                         ? _deserializers.Values.Single().Deserialize(rawMessage)
                         : _deserializers[typeName].Deserialize(rawMessage);
 

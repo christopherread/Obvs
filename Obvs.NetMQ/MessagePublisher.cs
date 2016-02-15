@@ -1,33 +1,27 @@
 ﻿using System;
-using System.Reactive.Concurrency;
-using System.Reactive.Linq;
-using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using NetMQ;
 using NetMQ.Sockets;
 using Obvs.NetMQ.Extensions;
 using Obvs.Serialization;
-using Obvs.Types;
 
 namespace Obvs.NetMQ
 {
-    public class MessagePublisher<TMessage> : IMessagePublisher<TMessage> where TMessage : IMessage
+    public class MessagePublisher<TMessage> : IMessagePublisher<TMessage> where TMessage : class
     {
         private readonly string _address;
         private readonly IMessageSerializer _serializer;
         private readonly NetMQContext _context;
         private readonly string _topic;
-        private readonly IScheduler _scheduler;
         private readonly Lazy<PublisherSocket> _socket;
 
-        public MessagePublisher(string address, IMessageSerializer serializer, NetMQContext context, string topic, IScheduler scheduler)
+        public MessagePublisher(string address, IMessageSerializer serializer, NetMQContext context, string topic)
         {
             _address = address;
             _serializer = serializer;
             _context = context;
             _topic = topic;
-            _scheduler = scheduler;
 
             _socket = new Lazy<PublisherSocket>(() =>
             {
@@ -45,7 +39,8 @@ namespace Obvs.NetMQ
 
         public Task PublishAsync(TMessage message)
         {
-            return Observable.Start(() => Publish(message), _scheduler).ToTask();
+            Publish(message);
+            return Task.FromResult(true);
         }
 
         public void Dispose()

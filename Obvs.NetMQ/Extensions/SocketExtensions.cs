@@ -6,16 +6,19 @@ namespace Obvs.NetMQ.Extensions
 {
     internal static class SocketExtensions
     {
+        private const int ExpectedFrameCount = 4;
+        private static readonly string DataTypeName = typeof(byte[]).Name;
+
         public static bool TryReceive(this SubscriberSocket socket, TimeSpan timeOut,
-            out string topic, out string typeName, out object rawMessage)
+            out string topic, out string typeName, out byte[] rawMessage)
         {
             typeName = null;
             rawMessage = null;
             topic = null;
 
-            NetMQMessage message = socket.ReceiveMessage(timeOut);
+            var message = new NetMQMessage();
 
-            if (message != null)
+            if (socket.TryReceiveMultipartMessage(timeOut, ref message, ExpectedFrameCount))
             {
                 message.ParseFrames(out topic, out typeName, out rawMessage);
                 return true;
@@ -24,52 +27,35 @@ namespace Obvs.NetMQ.Extensions
             return false;
         }
 
-        public static void SendToTopic(this PublisherSocket socket, string topic, string typeName, object serializedMessage)
+        public static void SendToTopic(this PublisherSocket socket, string topic, string typeName, byte[] serializedMessage)
         {
-            NetMQMessage netMQMessage = new NetMQMessage();
-            netMQMessage.Append(topic);
-            netMQMessage.Append(typeName);
-            netMQMessage.Append(serializedMessage.GetType().Name);
-            netMQMessage.AppendMessage(serializedMessage);
-
-            socket.SendMessage(netMQMessage, true);
+            socket.TrySendMultipartMessage(
+                new NetMQMessage(new[]
+                {
+                    new NetMQFrame(topic),
+                    new NetMQFrame(typeName),
+                    new NetMQFrame(DataTypeName),
+                    new NetMQFrame(serializedMessage),
+                }));
         }
 
-        private static void AppendMessage(this NetMQMessage netMQMessage, object serializedMessage)
+        private static void ParseFrames(this NetMQMessage message, out string topic, out string typeName, out byte[] rawMessage)
         {
-            if (serializedMessage is string)
+            if (message.FrameCount != ExpectedFrameCount)
             {
-                netMQMessage.Append((string)serializedMessage);
-            }
-            else if (serializedMessage is byte[])
-            {
-                netMQMessage.Append((byte[])serializedMessage);
-            }
-        }
-
-        private static void ParseFrames(this NetMQMessage message, out string topic, out string typeName, out object rawMessage)
-        {
-            if (message.FrameCount != 4)
-            {
-                throw new Exception("Expected message with 4 frames (topic,typeName,dataType,data) but received " + message.FrameCount);
+                throw new Exception(string.Format("Expected message with {0} frames (topic,typeName,dataType,data) but received {1}", ExpectedFrameCount, message.FrameCount));
             }
 
             topic = message[0].ConvertToString();
             typeName = message[1].ConvertToString();
             string dataType = message[2].ConvertToString();
 
-            if (dataType == typeof(string).Name)
+            if (dataType != DataTypeName)
             {
-                rawMessage = message[3].ConvertToString();
+                throw new Exception(string.Format("Unknown serialization data type '{0}'", dataType));
             }
-            else if (dataType == typeof(byte[]).Name)
-            {
-                rawMessage = message[3].ToByteArray(true);
-            }
-            else
-            {
-                throw new Exception("Unknown serialization data type " + dataType);
-            }
+
+            rawMessage = message[3].ToByteArray(true);
         }
     }
 }

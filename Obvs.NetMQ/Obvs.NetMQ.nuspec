@@ -7,5 +7,6 @@
     <authors>$author$</authors>
     <description>NetMQ transport support for Obvs</description>
     <copyright>Copyright 2014</copyright>
+    <releaseNotes>Upgraded to Obvs v3.0 and NetMQ 3.3</releaseNotes>
   </metadata>
 </package>
