@@ -4,7 +4,7 @@ namespace Obvs.Extensions
 {
     public static class EndpointExtensions
     {
-        public static IObservable<TEvent> EventsWithErroHandling<TMessage, TCommand, TEvent, TRequest, TResponse>(this IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint, IObserver<Exception> exceptions)
+        public static IObservable<TEvent> EventsWithErrorHandling<TMessage, TCommand, TEvent, TRequest, TResponse>(this IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint, IObserver<Exception> exceptions)
             where TMessage : class
             where TCommand : TMessage
             where TEvent : TMessage

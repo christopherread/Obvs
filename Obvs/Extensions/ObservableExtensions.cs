@@ -24,7 +24,7 @@ namespace Obvs.Extensions
                 .RefCount();
         }
 
-        class IndependentSubscriptionsSubject<T> : ISubject<T>
+        private class IndependentSubscriptionsSubject<T> : ISubject<T>
         {
             private volatile ISubject<T> _innerSubject = new Subject<T>();
 

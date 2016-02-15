@@ -10,7 +10,7 @@ namespace Obvs
     public class SubjectMessageBus<TMessage> : IMessageBus<TMessage>
         where TMessage : class
     {
-        private readonly Subject<TMessage> _subject;
+        private readonly ISubject<TMessage, TMessage> _subject;
 
         public SubjectMessageBus()
             : this(null)
@@ -19,9 +19,13 @@ namespace Obvs
 
         public SubjectMessageBus(IScheduler scheduler)
         {
-            _subject = new Subject<TMessage>();
+            _subject = Subject.Synchronize(new Subject<TMessage>());
 
-            Messages = scheduler == null ? _subject.AsObservable() : _subject.ObserveOn(scheduler).PublishRefCountRetriable().AsObservable();
+            Messages = scheduler == null ? 
+                _subject.AsObservable() : 
+                _subject.ObserveOn(scheduler)
+                        .PublishRefCountRetriable()
+                        .AsObservable();
         }
 
         public Task PublishAsync(TMessage message)
@@ -32,7 +36,8 @@ namespace Obvs
 
         public void Dispose()
         {
-            _subject.Dispose();
+            // synchronized subject is annonymous subject underneath,
+            // which doesn't implment IDisposable
         }
 
         public IObservable<TMessage> Messages { get; private set; }

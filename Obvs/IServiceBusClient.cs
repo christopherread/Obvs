@@ -121,7 +121,7 @@ namespace Obvs
             _endpointClients = endpointClients.ToArray();
 
             _events = _endpointClients
-                .Select(endpointClient => endpointClient.EventsWithErroHandling(_exceptions))
+                .Select(endpointClient => endpointClient.EventsWithErrorHandling(_exceptions))
                 .Merge()
                 .Merge(GetLocalMessages<TEvent>())
                 .PublishRefCountRetriable();
@@ -165,14 +165,30 @@ namespace Obvs
 
         private bool ShouldPublishLocally(TMessage message)
         {
-            return _localBus != null && 
-                   ( (_localBusOption == LocalBusOptions.MessagesWithNoEndpointClients && !_endpointClients.Any(e => e.CanHandle(message))) || 
-                     (_localBusOption == LocalBusOptions.MessagesWithNoEndpoints && !Endpoints.Any(e => e.CanHandle(message)) && !_endpointClients.Any(e => e.CanHandle(message))) );
+            if (_localBus == null)
+            {
+                return false;
+            }
+
+            if (_localBusOption == LocalBusOptions.MessagesWithNoEndpointClients &&
+                !_endpointClients.Any(e => e.CanHandle(message)))
+            {
+                return true;
+            }
+
+            if (_localBusOption == LocalBusOptions.MessagesWithNoEndpoints && 
+                !Endpoints.Any(e => e.CanHandle(message)) &&
+                !_endpointClients.Any(e => e.CanHandle(message)))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public Task SendAsync(IEnumerable<TCommand> commands)
         {
-            List<Exception> exceptions = new List<Exception>();
+            var exceptions = new List<Exception>();
             
             var tasks = commands.ToArray().Select(command => Catch(() => SendAsync(command), exceptions)).ToArray();
 
@@ -323,8 +339,8 @@ namespace Obvs
         private static Action<object, TParamType> CreateSubscriberAction<TParamType>(Type subscriberType, MethodInfo methodInfo)
         {
             var name = subscriberType.Name + methodInfo.Name + "DynamicMethod";
-            DynamicMethod shim = new DynamicMethod(name, typeof(void), new[] { typeof(object), typeof(TParamType) }, subscriberType);
-            ILGenerator il = shim.GetILGenerator();
+            var shim = new DynamicMethod(name, typeof(void), new[] { typeof(object), typeof(TParamType) }, subscriberType);
+            var il = shim.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0); // Load subscriber
             il.Emit(OpCodes.Ldarg_1); // Load parameter
@@ -337,8 +353,8 @@ namespace Obvs
         private static Func<object, TParamType, TReturnType> CreateSubscriberFunc<TParamType, TReturnType>(Type subscriberType, MethodInfo methodInfo)
         {
             var name = subscriberType.Name + methodInfo.Name + "DynamicMethod";
-            DynamicMethod shim = new DynamicMethod(name, typeof(TReturnType), new[] { typeof(object), typeof(TParamType) }, subscriberType);
-            ILGenerator il = shim.GetILGenerator();
+            var shim = new DynamicMethod(name, typeof(TReturnType), new[] { typeof(object), typeof(TParamType) }, subscriberType);
+            var il = shim.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0); // Load subscriber
             il.Emit(OpCodes.Ldarg_1); // Load parameter
