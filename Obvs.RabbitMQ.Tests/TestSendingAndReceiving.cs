@@ -23,7 +23,7 @@ namespace Obvs.RabbitMQ.Tests
             string exchange = GetType().Name;
             const string routingKeyPrefix = "Messages";
 
-            IConnectionFactory connectionFactory = new ConnectionFactory { Uri = "amqp://localhost" };
+            IConnectionFactory connectionFactory = new ConnectionFactory { HostName = "localhost" };
             IMessageSource<IMessage> messageSource = CreateMessageSource(format, connectionFactory, exchange, routingKeyPrefix);
             IMessagePublisher<IMessage> messagePublisher = CreateMessagePublisher(format, connectionFactory, exchange, routingKeyPrefix);
 

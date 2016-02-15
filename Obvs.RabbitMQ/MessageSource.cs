@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Text;
 using Obvs.Serialization;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -61,12 +60,7 @@ namespace Obvs.RabbitMQ
         private TMessage Deserialize(BasicDeliverEventArgs deliverEventArgs)
         {
             var deserializer = GetDeserializer(deliverEventArgs);
-
-            byte[] body = deliverEventArgs.Body;
-            string contentType = deliverEventArgs.BasicProperties.ContentType;
-
-            return contentType == "text" ? deserializer.Deserialize(Encoding.UTF8.GetString(body)) : 
-                                           deserializer.Deserialize(body);
+            return deserializer.Deserialize(deliverEventArgs.Body); 
         }
 
         private IMessageDeserializer<TMessage> GetDeserializer(BasicDeliverEventArgs deliverEventArgs)
