@@ -9,7 +9,7 @@
 Features:
 
 * Leverage the power of messaging and RX to quickly construct a system of decoupled microservices
-* Add new services and message contracts with an absolutely minimum amount of code
+* Add new services and message contracts with an absolute minimum amount of required code
 * Simple RX based interfaces for doing pub/sub
 * Convention based messaging over topics/queues per service
 * Multiplexing of multiple message types over single topics/queues
