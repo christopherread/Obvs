@@ -8,6 +8,8 @@
 
 Features:
 
+* Leverage the power of messaging and RX to quickly construct a system of decoupled microservices
+* Add new services and message contracts with an absolutely minimum amount of code
 * Simple RX based interfaces for doing pub/sub
 * Convention based messaging over topics/queues per service
 * Multiplexing of multiple message types over single topics/queues
@@ -15,9 +17,11 @@ Features:
 * Asynchronous error handling on a separate channel
 * Easy to extend and customise, allowing integration with external systems
 * Fluent code based configuration
-* Supports ActiveMQ, NetMQ, and RabbitMQ transports
-* Provides serialization for XML, JSON, ProtoBuf, and MsgPack
-* Provides logging extensions, and support for NLog
+* Supports ActiveMQ, RabbitMQ, NetMQ, Kafka, Azure ServiceBus, and EventStore transports
+* Provides serialization for XML, JSON.Net, NetJson, ProtoBuf, and MsgPack
+* Provides logging extensions, and support for NLog and log4net
+* Provides monitoring extensions, and support for Windows Performance Counters, and ElasticSearch
+* Can be configured with a local memory bus for in-process service communication
 
 ## Example
 
