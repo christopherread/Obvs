@@ -8,7 +8,6 @@ using Obvs.Serialization;
 using Obvs.Serialization.ProtoBuf;
 using Obvs.Types;
 using ProtoBuf;
-using System;
 
 namespace Obvs.NetMQ.Tests.Console.Subscriber
 {
@@ -27,7 +26,7 @@ namespace Obvs.NetMQ.Tests.Console.Subscriber
 				var source = new MessageSource<IMessage>(endPoint,
 					new IMessageDeserializer<IMessage>[]
 					{
-						new ProtoBufMessageDeserializer<Message1>(),
+						new ProtoBufMessageDeserializer<Message1AndItIs32CharactersLongForSureDefinitionForSure>(),
 					},
 					context,
 					topic);
@@ -44,9 +43,9 @@ namespace Obvs.NetMQ.Tests.Console.Subscriber
 	}
 
 	[ProtoContract]
-	public class Message1 : IMessage
+	public class Message1AndItIs32CharactersLongForSureDefinitionForSure : IMessage
 	{
-		public Message1()
+		public Message1AndItIs32CharactersLongForSureDefinitionForSure()
 		{
 
 		}
@@ -56,7 +55,7 @@ namespace Obvs.NetMQ.Tests.Console.Subscriber
 
 		public override string ToString()
 		{
-			return "Message1-" + Id;
+			return "Message1AndItIs32CharactersLongForSureDefinitionForSure-" + Id;
 		}
 	}
 }

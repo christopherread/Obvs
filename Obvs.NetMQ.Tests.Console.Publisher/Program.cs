@@ -35,7 +35,7 @@ namespace Obvs.NetMQ.Tests.Console.Publisher
 
 				for (int i = 0; i < max; i++)
 				{
-					publisher.PublishAsync(new Message1()
+					publisher.PublishAsync(new Message1AndItIs32CharactersLongForSureDefinitionForSure()
 					{
 						Id = i
 					});
@@ -51,9 +51,9 @@ namespace Obvs.NetMQ.Tests.Console.Publisher
 	}
 
 	[ProtoContract]
-	public class Message1 : IMessage
+	public class Message1AndItIs32CharactersLongForSureDefinitionForSure : IMessage
 	{
-		public Message1()
+		public Message1AndItIs32CharactersLongForSureDefinitionForSure()
 		{
 
 		}
@@ -63,7 +63,7 @@ namespace Obvs.NetMQ.Tests.Console.Publisher
 
 		public override string ToString()
 		{
-			return "Message1-" + Id;
+			return "Message1AndItIs32CharactersLongForSureDefinitionForSure-" + Id;
 		}
 	}
 }
