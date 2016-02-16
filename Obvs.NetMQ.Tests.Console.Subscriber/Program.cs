@@ -27,7 +27,7 @@ namespace Obvs.NetMQ.Tests.Console.Subscriber
 				var source = new MessageSource<IMessage>(endPoint,
 					new IMessageDeserializer<IMessage>[]
 					{
-						new ProtoBufMessageDeserializer<TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters>(),
+						new ProtoBufMessageDeserializer<Message1>(),
 					},
 					context,
 					topic);
@@ -44,9 +44,9 @@ namespace Obvs.NetMQ.Tests.Console.Subscriber
 	}
 
 	[ProtoContract]
-	public class TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters : IMessage
+	public class Message1 : IMessage
 	{
-		public TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
+		public Message1()
 		{
 
 		}
@@ -56,7 +56,7 @@ namespace Obvs.NetMQ.Tests.Console.Subscriber
 
 		public override string ToString()
 		{
-			return "TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters-" + Id;
+			return "Message1-" + Id;
 		}
 	}
 }

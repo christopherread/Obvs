@@ -18,7 +18,7 @@ namespace Obvs.NetMQ.Tests.Console.Publisher
 	{
 		static void Main(string[] args)
 		{
-			int max = 5;
+			int max = 50;
 			CountdownEvent cd = new CountdownEvent(max);
 
 			string endPoint = "tcp://localhost:5557";
@@ -35,7 +35,7 @@ namespace Obvs.NetMQ.Tests.Console.Publisher
 
 				for (int i = 0; i < max; i++)
 				{
-					publisher.PublishAsync(new TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
+					publisher.PublishAsync(new Message1()
 					{
 						Id = i
 					});
@@ -44,13 +44,16 @@ namespace Obvs.NetMQ.Tests.Console.Publisher
 					System.Console.WriteLine("Published: {0}", i);
 				}
 			}
+
+			System.Console.WriteLine("[finished - any key to continue]");
+			System.Console.ReadKey();
 		}
 	}
 
 	[ProtoContract]
-	public class TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters : IMessage
+	public class Message1 : IMessage
 	{
-		public TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
+		public Message1()
 		{
 
 		}
@@ -60,7 +63,7 @@ namespace Obvs.NetMQ.Tests.Console.Publisher
 
 		public override string ToString()
 		{
-			return "TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters-" + Id;
+			return "Message1-" + Id;
 		}
 	}
 }

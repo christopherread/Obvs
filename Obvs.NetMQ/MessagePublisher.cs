@@ -34,6 +34,8 @@ namespace Obvs.NetMQ
 
         private void Publish(TMessage message)
         {
+
+
             _socket.Value.SendToTopic(_topic, message.GetType().Name, _serializer.Serialize(message));
         }
 
