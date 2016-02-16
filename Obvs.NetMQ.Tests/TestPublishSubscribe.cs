@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Reactive;
+using System.Threading;
 using System.Threading.Tasks;
 using NetMQ;
 using NUnit.Framework;
@@ -114,6 +115,53 @@ namespace Obvs.NetMQ.Tests
             source.Dispose();
         }
 
+		[Test]
+	    public void TestMessagesLongerThan32Characters()
+		{
+			int max = 5;
+			CountdownEvent cd = new CountdownEvent(max);
+
+			var context = NetMQContext.Create();
+			const string topic = "TestTopicxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+			IDisposable sub;
+			{
+			    var source = new MessageSource<IMessage>("tcp://localhost:5557",
+				    new IMessageDeserializer<IMessage>[]
+				    {
+						new ProtoBufMessageDeserializer<TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters>(), 
+					},
+				    context,
+				    topic);
+
+			     sub = source.Messages.Subscribe(msg =>
+					{
+						Console.WriteLine("Received: " + msg);
+						cd.Signal();
+					},
+					err => Console.WriteLine("Error: " + err));
+		    }
+
+		    {
+			    var publisher = new MessagePublisher<IMessage>("tcp://localhost:5557",
+				    new ProtoBufMessageSerializer(), 
+				    context,
+				    topic);
+
+			    for (int i = 0; i < max; i++)
+			    {
+				    publisher.PublishAsync(new TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
+				    {
+					    Id = i
+				    });
+			    }
+		    }
+
+			if (cd.Wait(TimeSpan.FromSeconds(10)) == false)
+			{
+				Assert.Fail("Error: Test should complete in 10 seconds or less.");
+			}
+	    }
+
         [ProtoContract]
         public class TestMessage1 : IMessage
         {
@@ -137,5 +185,22 @@ namespace Obvs.NetMQ.Tests
                 return "TestMessage2-" + Id;
             }
         }
-    }
+
+		[ProtoContract]
+		public class TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters : IMessage
+		{
+			public TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
+			{
+				
+			}
+
+			[ProtoMember(1)]
+			public int Id { get; set; }
+
+			public override string ToString()
+			{
+				return "TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters-" + Id;
+			}
+		}
+	}
 }
