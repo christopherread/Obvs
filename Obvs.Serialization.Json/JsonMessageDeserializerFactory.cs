@@ -12,7 +12,7 @@ namespace Obvs.Serialization.Json
         private readonly Type _deserializerType;
         private readonly JsonSerializerSettings _serializerSettings;
 
-        public JsonMessageDeserializerFactory(JsonSerializerSettings serializerSettings, Type deserializerType)
+        public JsonMessageDeserializerFactory(Type deserializerType, JsonSerializerSettings serializerSettings = null)
         {
             _serializerSettings = serializerSettings;
             _deserializerType = deserializerType;

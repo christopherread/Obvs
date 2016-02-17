@@ -19,12 +19,12 @@ namespace Obvs.Serialization.Json.Configuration
             {
                 return config.SerializedWith(
                     new GzippedJsonMessageSerializer(serializerSettings), 
-                    new JsonMessageDeserializerFactory(serializerSettings, typeof(GzippedJsonMessageDeserializer<>)));
+                    new JsonMessageDeserializerFactory(typeof(GzippedJsonMessageDeserializer<>), serializerSettings));
             }
 
             return config.SerializedWith(
                 new JsonMessageSerializer(serializerSettings),
-                new JsonMessageDeserializerFactory(serializerSettings, typeof(JsonMessageDeserializer<>)));
+                new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>), serializerSettings));
         }
     }
 }
