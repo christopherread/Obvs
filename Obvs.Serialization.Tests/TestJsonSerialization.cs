@@ -1,4 +1,5 @@
-﻿using FakeItEasy;
+﻿using System.Linq;
+using FakeItEasy;
 using NUnit.Framework;
 using Obvs.Configuration;
 using Obvs.Serialization.Json;
@@ -10,6 +11,23 @@ namespace Obvs.Serialization.Tests
     [TestFixture]
     public class TestJsonSerialization
     {
+        [Test]
+        public void JsonDeserializerFactoryShouldWork()
+        {
+            var factory = new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>));
+            var deses = factory.Create<TestMessage, IMessage>();
+
+            var des = deses.FirstOrDefault(d => d.GetTypeName() == typeof(TestMessage).Name);
+
+            IMessageSerializer serializer = new JsonMessageSerializer();
+            var messageBefore = new TestMessage { Id = 123, Name = "SomeName" };
+            var bytes = serializer.Serialize(messageBefore);
+
+            var messageAfter = des.Deserialize(bytes);
+
+            Assert.AreEqual(messageBefore, messageAfter);
+        }
+
         [Test]
         public void ShouldSerializeToJson()
         {
