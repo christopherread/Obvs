@@ -1,4 +1,5 @@
-﻿using Obvs.Configuration;
+﻿using Newtonsoft.Json;
+using Obvs.Configuration;
 
 namespace Obvs.Serialization.Json.Configuration
 {
@@ -6,6 +7,7 @@ namespace Obvs.Serialization.Json.Configuration
     {
         public static ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> SerializedAsJson<TMessage, TCommand, TEvent, TRequest, TResponse>(
             this ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> config,
+            JsonSerializerSettings serializerSettings = null,
             bool gzipped = false) 
             where TMessage : class 
             where TCommand : class, TMessage
@@ -16,13 +18,13 @@ namespace Obvs.Serialization.Json.Configuration
             if (gzipped)
             {
                 return config.SerializedWith(
-                    new GzippedJsonMessageSerializer(), 
-                    new JsonMessageDeserializerFactory(typeof(GzippedJsonMessageDeserializer<>)));
+                    new GzippedJsonMessageSerializer(serializerSettings), 
+                    new JsonMessageDeserializerFactory(serializerSettings, typeof(GzippedJsonMessageDeserializer<>)));
             }
 
             return config.SerializedWith(
-                new JsonMessageSerializer(),
-                new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>)));
+                new JsonMessageSerializer(serializerSettings),
+                new JsonMessageDeserializerFactory(serializerSettings, typeof(JsonMessageDeserializer<>)));
         }
     }
 }

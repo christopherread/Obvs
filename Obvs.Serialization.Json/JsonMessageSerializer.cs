@@ -7,9 +7,9 @@ namespace Obvs.Serialization.Json
     {
         private readonly JsonSerializer _serializer;
 
-        public JsonMessageSerializer()
+        public JsonMessageSerializer(JsonSerializerSettings serializerSettings = null)
         {
-            _serializer = new JsonSerializer();
+            _serializer = serializerSettings == null ? JsonSerializer.Create() : JsonSerializer.Create(serializerSettings);
         }
 
         public virtual void Serialize(Stream stream, object message)

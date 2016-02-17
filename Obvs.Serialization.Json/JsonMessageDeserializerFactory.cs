@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json;
 using Obvs.Configuration;
 
 namespace Obvs.Serialization.Json
@@ -9,9 +10,11 @@ namespace Obvs.Serialization.Json
     public class JsonMessageDeserializerFactory : IMessageDeserializerFactory
     {
         private readonly Type _deserializerType;
+        private readonly JsonSerializerSettings _serializerSettings;
 
-        public JsonMessageDeserializerFactory(Type deserializerType)
+        public JsonMessageDeserializerFactory(JsonSerializerSettings serializerSettings, Type deserializerType)
         {
+            _serializerSettings = serializerSettings;
             _deserializerType = deserializerType;
         }
 
@@ -21,7 +24,7 @@ namespace Obvs.Serialization.Json
         {
             return MessageTypes.Get<TMessage, TServiceMessage>(assemblyFilter, typeFilter)
                 .Select(type => _deserializerType.MakeGenericType(type))
-                .Select(deserializerGeneric => Activator.CreateInstance(deserializerGeneric) as IMessageDeserializer<TMessage>)
+                .Select(deserializerGeneric => Activator.CreateInstance(deserializerGeneric, _serializerSettings) as IMessageDeserializer<TMessage>)
                 .ToArray();
         }
     }
