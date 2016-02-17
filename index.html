@@ -5,14 +5,14 @@
     <title>Obvs by inter8ection</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
     <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
   </head>
   <body>
     <section class="page-header">
       <h1 class="project-name">Obvs</h1>
-      <h2 class="project-tagline">An observable µServiceBus .NET library that wraps the complexities of your particular message transport in simple Rx based interfaces. Supports ActiveMQ, NetMQ, and RabbitMQ.</h2>
+      <h2 class="project-tagline">An observable µServiceBus .NET library that wraps the complexities of your particular message transport in simple Rx based interfaces. Supported transports include: ActiveMQ, RabbitMQ, NetMQ, EventStore, and Kafka.</h2>
       <a href="https://github.com/inter8ection/Obvs" class="btn">View on GitHub</a>
       <a href="https://github.com/inter8ection/Obvs/zipball/master" class="btn">Download .zip</a>
       <a href="https://github.com/inter8ection/Obvs/tarball/master" class="btn">Download .tar.gz</a>
@@ -20,14 +20,16 @@
 
     <section class="main-content">
       <h2>
-<a id="why" class="anchor" href="#why" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why?</h2>
+<a id="why" class="anchor" href="#why" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Why?</h2>
 
 <p>Writing code to connect two processes can involve a lot of boilerplate. Every time you add a new service or message type, you find yourself repeating the same steps. Obvs takes care of this for you, and allows you to start connecting your services with very little code required, so you get more done.</p>
 
 <h2>
-<a id="features" class="anchor" href="#features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features</h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features</h2>
 
 <ul>
+<li>Leverage the power of messaging and RX to quickly construct a system of decoupled microservices</li>
+<li>Add new services and message contracts with an absolute minimum amount of required code</li>
 <li>Simple RX based interfaces for doing pub/sub</li>
 <li>Convention based messaging over topics/queues per service</li>
 <li>Multiplexing of multiple message types over single topics/queues</li>
@@ -35,13 +37,16 @@
 <li>Asynchronous error handling on a separate channel</li>
 <li>Easy to extend and customise, allowing integration with external systems</li>
 <li>Fluent code based configuration</li>
-<li>Supports ActiveMQ, NetMQ, RabbitMQ transports</li>
-<li>Provides serialization for XML, JSON, ProtoBuf, and MsgPack</li>
-<li>Provides logging extension points, and support for NLog</li>
+<li>Supports ActiveMQ, RabbitMQ, NetMQ, Kafka, Azure ServiceBus, and EventStore transports</li>
+<li>Provides serialization for XML, JSON.Net, NetJson, ProtoBuf, and MsgPack</li>
+<li>Provides logging extensions, and support for NLog and log4net</li>
+<li>Provides monitoring extensions, and support for Windows Performance Counters, and ElasticSearch</li>
+<li>Can be configured with a local memory bus for in-process service communication</li>
+<li>Being a library and not a framework allows you to compose your application as you see fit</li>
 </ul>
 
 <h2>
-<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h2>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting Started</h2>
 
 <p>All packages can be downloaded from <a href="https://www.nuget.org/packages?q=obvs">NuGet.org</a></p>
 
@@ -56,7 +61,7 @@
 </code></pre>
 
 <h2>
-<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h2>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example</h2>
 
 <p>Define a root message type to identify messages as belonging to your service:</p>
 
@@ -155,9 +160,9 @@ IServiceBus serviceBus = ServiceBus.Configure()
 </code></pre>
 
 <h2>
-<a id="whats-coming" class="anchor" href="#whats-coming" aria-hidden="true"><span class="octicon octicon-link"></span></a>What's coming?</h2>
+<a id="whats-coming" class="anchor" href="#whats-coming" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What's coming?</h2>
 
-<p>More transports and a portable core library.</p>
+<p>More transports and extensions.</p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/inter8ection/Obvs">Obvs</a> is maintained by <a href="https://github.com/inter8ection">inter8ection</a>.</span>
@@ -180,4 +185,3 @@ IServiceBus serviceBus = ServiceBus.Configure()
 
   </body>
 </html>
-
