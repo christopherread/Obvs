@@ -18,7 +18,6 @@ namespace Obvs.NetMQ.Tests.Console.Subscriber
 			string endPoint = "tcp://localhost:5557";
 			System.Console.WriteLine("Listening on {0}\n", endPoint);
 
-			var context = NetMQContext.Create();
 			const string topic = "TestTopicxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
 			IDisposable sub;
@@ -28,7 +27,6 @@ namespace Obvs.NetMQ.Tests.Console.Subscriber
 					{
 						new ProtoBufMessageDeserializer<Message1AndItIs32CharactersLongForSureDefinitionForSure>(),
 					},
-					context,
 					topic);
 
 				sub = source.Messages.Subscribe(msg =>

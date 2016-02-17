@@ -12,20 +12,18 @@ namespace Obvs.NetMQ
     {
         private readonly string _address;
         private readonly IMessageSerializer _serializer;
-        private readonly NetMQContext _context;
         private readonly string _topic;
         private readonly Lazy<PublisherSocket> _socket;
 
-        public MessagePublisher(string address, IMessageSerializer serializer, NetMQContext context, string topic)
+        public MessagePublisher(string address, IMessageSerializer serializer, string topic)
         {
             _address = address;
             _serializer = serializer;
-            _context = context;
             _topic = topic;
 
             _socket = new Lazy<PublisherSocket>(() =>
             {
-                var socket = _context.CreatePublisherSocket();
+	            var socket = new PublisherSocket(); //; _context.CreatePublisherSocket();
                 socket.Bind(_address);
                 Thread.Sleep(TimeSpan.FromSeconds(1)); // wait for subscribers
                 return socket;

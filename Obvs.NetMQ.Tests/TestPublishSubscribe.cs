@@ -31,20 +31,18 @@ namespace Obvs.NetMQ.Tests
 
             }, err => Console.WriteLine("Error: " + err));
 
-            var context = NetMQContext.Create();
-
             IMessageSource<IMessage> source = new MessageSource<IMessage>("tcp://localhost:5556",
                 new IMessageDeserializer<IMessage>[]
                 {
                     new JsonMessageDeserializer<TestMessage1>(), 
                     new JsonMessageDeserializer<TestMessage2>()
                 },
-                context, topic);
+                topic);
 
             var sub = source.Messages.Subscribe(observer);
 
             IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5556",
-                new JsonMessageSerializer(), context, topic);
+                new JsonMessageSerializer(), topic);
 
             await publisher.PublishAsync(new TestMessage1 { Id = 1 });
             await publisher.PublishAsync(new TestMessage1 { Id = 2 });
@@ -80,20 +78,18 @@ namespace Obvs.NetMQ.Tests
 
             }, err => Console.WriteLine("Error: " + err));
 
-            var context = NetMQContext.Create();
-
             IMessageSource<IMessage> source = new MessageSource<IMessage>("tcp://localhost:5556",
                 new IMessageDeserializer<IMessage>[]
                 {
                     new ProtoBufMessageDeserializer<TestMessage1>(), 
                     new ProtoBufMessageDeserializer<TestMessage2>()
                 },
-                context, topic);
+                topic);
             
             var sub = source.Messages.Subscribe(observer);
 
             IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5556",
-                new ProtoBufMessageSerializer(), context, topic);
+                new ProtoBufMessageSerializer(), topic);
 
             await publisher.PublishAsync(new TestMessage1 { Id = 1 });
             await publisher.PublishAsync(new TestMessage1 { Id = 2 });
@@ -115,13 +111,12 @@ namespace Obvs.NetMQ.Tests
             source.Dispose();
         }
 
-		[Test]
+		[Test, Explicit]
 	    public void TestMessagesLongerThan32Characters()
 		{
 			int max = 5;
 			CountdownEvent cd = new CountdownEvent(max);
 
-			var context = NetMQContext.Create();
 			const string topic = "TestTopicxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 			IDisposable sub;
 			{
@@ -130,7 +125,6 @@ namespace Obvs.NetMQ.Tests
 				    {
 						new ProtoBufMessageDeserializer<TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters>(), 
 					},
-				    context,
 				    topic);
 
 			     sub = source.Messages.Subscribe(msg =>
@@ -144,7 +138,6 @@ namespace Obvs.NetMQ.Tests
 		    {
 			    var publisher = new MessagePublisher<IMessage>("tcp://localhost:5557",
 				    new ProtoBufMessageSerializer(), 
-				    context,
 				    topic);
 
 			    for (int i = 0; i < max; i++)

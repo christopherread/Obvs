@@ -19,7 +19,6 @@ namespace Obvs.NetMQ.Configuration
         private readonly IMessageDeserializerFactory _deserializerFactory;
         private readonly Func<Assembly, bool> _assemblyFilter;
         private readonly Func<Type, bool> _typeFilter;
-        private readonly NetMQContext _context = NetMQContext.Create();
         private readonly string _requestAddress;
         private readonly string _responseAddress;
         private readonly string _commandAddress;
@@ -43,20 +42,20 @@ namespace Obvs.NetMQ.Configuration
         public override IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpoint()
         {
             return new ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
-               new MessageSource<TRequest>(_requestAddress, _deserializerFactory.Create<TRequest, TServiceMessage>(_assemblyFilter, _typeFilter), _context, RequestsDestination),
-               new MessageSource<TCommand>(_commandAddress, _deserializerFactory.Create<TCommand, TServiceMessage>(_assemblyFilter, _typeFilter), _context, CommandsDestination),
-               new MessagePublisher<TEvent>(_eventAddress, _serializer, _context, EventsDestination),
-               new MessagePublisher<TResponse>(_responseAddress, _serializer, _context, ResponsesDestination), 
+               new MessageSource<TRequest>(_requestAddress, _deserializerFactory.Create<TRequest, TServiceMessage>(_assemblyFilter, _typeFilter), RequestsDestination),
+               new MessageSource<TCommand>(_commandAddress, _deserializerFactory.Create<TCommand, TServiceMessage>(_assemblyFilter, _typeFilter), CommandsDestination),
+               new MessagePublisher<TEvent>(_eventAddress, _serializer, EventsDestination),
+               new MessagePublisher<TResponse>(_responseAddress, _serializer, ResponsesDestination), 
                typeof(TServiceMessage));
         }
 
         public override IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpointClient()
         {
             return new ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
-               new MessageSource<TEvent>(_eventAddress, _deserializerFactory.Create<TEvent, TServiceMessage>(_assemblyFilter, _typeFilter), _context, EventsDestination),
-               new MessageSource<TResponse>(_responseAddress, _deserializerFactory.Create<TResponse, TServiceMessage>(_assemblyFilter, _typeFilter), _context, ResponsesDestination),
-               new MessagePublisher<TRequest>(_requestAddress, _serializer, _context, RequestsDestination),
-               new MessagePublisher<TCommand>(_commandAddress, _serializer, _context, CommandsDestination), 
+               new MessageSource<TEvent>(_eventAddress, _deserializerFactory.Create<TEvent, TServiceMessage>(_assemblyFilter, _typeFilter), EventsDestination),
+               new MessageSource<TResponse>(_responseAddress, _deserializerFactory.Create<TResponse, TServiceMessage>(_assemblyFilter, _typeFilter), ResponsesDestination),
+               new MessagePublisher<TRequest>(_requestAddress, _serializer, RequestsDestination),
+               new MessagePublisher<TCommand>(_commandAddress, _serializer, CommandsDestination), 
                typeof(TServiceMessage));
         }
     }

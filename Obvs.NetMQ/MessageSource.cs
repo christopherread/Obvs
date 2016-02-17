@@ -16,15 +16,13 @@ namespace Obvs.NetMQ
     {
         private readonly string _address;
         private readonly Dictionary<string, IMessageDeserializer<TMessage>> _deserializers;
-        private readonly NetMQContext _context;
         private readonly string _topic;
         private readonly TimeSpan _receiveTimeout = TimeSpan.FromSeconds(1);
 
-        public MessageSource(string address, IEnumerable<IMessageDeserializer<TMessage>> deserializers, NetMQContext context, string topic)
+        public MessageSource(string address, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string topic)
         {
             _address = address;
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName(), d => d);
-            _context = context;
             _topic = topic;
         }
         
@@ -55,7 +53,7 @@ namespace Obvs.NetMQ
         {
             try
             {
-                using (var socket = _context.CreateSubscriberSocket())
+                using (var socket = new SubscriberSocket())
                 {
                     socket.Connect(_address);
                     socket.Subscribe(_topic);

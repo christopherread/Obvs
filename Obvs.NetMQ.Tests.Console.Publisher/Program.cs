@@ -24,13 +24,11 @@ namespace Obvs.NetMQ.Tests.Console.Publisher
 			string endPoint = "tcp://localhost:5557";
 			System.Console.WriteLine("Publishing on {0}\n", endPoint);
 
-			var context = NetMQContext.Create();
 			const string topic = "TestTopicxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
 			{
 				var publisher = new MessagePublisher<IMessage>("tcp://localhost:5557",
 					new ProtoBufMessageSerializer(),
-					context,
 					topic);
 
 				for (int i = 0; i < max; i++)
