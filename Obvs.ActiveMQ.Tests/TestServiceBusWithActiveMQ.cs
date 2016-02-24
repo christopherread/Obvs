@@ -104,7 +104,7 @@ namespace Obvs.ActiveMQ.Tests
             // property filters and providers
             Func<List<KeyValuePair<string, string>>, bool> propertyFilter = properties =>
             {
-                return properties.Any(p => p.Key == "Id" && p.Value == "122");
+                return properties.Any(p => p.Key == "Id" && p.Value == "123");
             };
 
             Func<IMessage, List<KeyValuePair<string, object>>> propertyProvider = message =>
