@@ -47,7 +47,10 @@ namespace Obvs.ActiveMQ.Configuration
         ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> ClientAcknowledge();
     }
 
-    public interface ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanSpecifyActiveMQQueue<TMessage, TCommand, TEvent, TRequest, TResponse>, ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
+    public interface ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : 
+        ICanSpecifyActiveMQQueue<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyActiveMQMessageFiltering<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage
@@ -55,6 +58,19 @@ namespace Obvs.ActiveMQ.Configuration
         where TResponse : class, TMessage
     {
         ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri);
+    }
+
+    public interface ICanSpecifyActiveMQMessageFiltering<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<List<KeyValuePair<string, string>>, bool> propertyFilter);
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(string brokerSelector);
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<List<KeyValuePair<string, string>>, bool> propertyFilter, string brokerSelector);
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AppendMessageProperties(Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider);
     }
 
     internal class ActiveMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
@@ -76,6 +92,9 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly List<Tuple<Type, AcknowledgementMode>> _queueTypes = new List<Tuple<Type, AcknowledgementMode>>();
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _typeFilter;
+        private Func<List<KeyValuePair<string, string>>, bool> _propertyFilter;
+        private string _brokerSelector;
+        private Func<TMessage, List<KeyValuePair<string, object>>> _propertyProvider;
 
         public ActiveMQFluentConfig(ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint)
         {
@@ -112,7 +131,10 @@ namespace Obvs.ActiveMQ.Configuration
 
         private ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> CreateProvider()
         {
-            return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(_serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, _typeFilter, ActiveMQFluentConfigContext.SharedConnection);
+            return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(
+                _serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, 
+                _typeFilter, ActiveMQFluentConfigContext.SharedConnection, _brokerSelector, _propertyFilter,
+                _propertyProvider);
         }
 
         public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri)
@@ -147,6 +169,31 @@ namespace Obvs.ActiveMQ.Configuration
             var existing = _queueTypes.Last();
             _queueTypes.Remove(existing);
             _queueTypes.Add(new Tuple<Type, AcknowledgementMode>(existing.Item1, AcknowledgementMode.ClientAcknowledge));
+            return this;
+        }
+
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<List<KeyValuePair<string, string>>, bool> propertyFilter)
+        {
+            _propertyFilter = propertyFilter;
+            return this;
+        }
+
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(string brokerSelector)
+        {
+            _brokerSelector = brokerSelector;
+            return this;
+        }
+
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<List<KeyValuePair<string, string>>, bool> propertyFilter, string brokerSelector)
+        {
+            _propertyFilter = propertyFilter;
+            _brokerSelector = brokerSelector;
+            return this;
+        }
+
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AppendMessageProperties(Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider)
+        {
+            _propertyProvider = propertyProvider;
             return this;
         }
     }

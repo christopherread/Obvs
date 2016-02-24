@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>ActiveMQ transport support for Obvs</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Added TextMessageSource implementation if required for consuming ActiveMQ TextMessages</releaseNotes>
+    <releaseNotes>Added endpoint configuration to filter messages by property, and append properties to messages</releaseNotes>
   </metadata>
 </package>

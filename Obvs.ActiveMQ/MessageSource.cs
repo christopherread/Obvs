@@ -15,6 +15,7 @@ namespace Obvs.ActiveMQ
         where TMessage : class
     {
         private readonly string _selector;
+        private readonly Func<List<KeyValuePair<string, string>>, bool> _messagePropertyFilter;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly IDestination _destination;
         private readonly Apache.NMS.AcknowledgementMode _mode;
@@ -24,13 +25,15 @@ namespace Obvs.ActiveMQ
             IEnumerable<IMessageDeserializer<TMessage>> deserializers,
             IDestination destination,
             AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge,
-            string selector = null)
+            string selector = null,
+            Func<List<KeyValuePair<string, string>>, bool> messagePropertyFilter = null)
         {
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
             _lazyConnection = lazyConnection;
             _destination = destination;
             _mode = mode == AcknowledgementMode.ClientAcknowledge ? Apache.NMS.AcknowledgementMode.ClientAcknowledge : Apache.NMS.AcknowledgementMode.AutoAcknowledge;
             _selector = selector;
+            _messagePropertyFilter = messagePropertyFilter;
         }
 
         public IObservable<TMessage> Messages
@@ -39,10 +42,11 @@ namespace Obvs.ActiveMQ
             {
                 return Observable.Create<TMessage>(observer =>
                 {
-                    ISession session = _lazyConnection.Value.CreateSession(_mode);
+                    var session = _lazyConnection.Value.CreateSession(_mode);
 
-                    IDisposable subscription = session.ToObservable(_destination, _selector)
-                        .Where(IsCorrectType)
+                    var subscription = session.ToObservable(_destination, _selector)
+                        .Where(message => IsCorrectType(message) &&
+                                          PassesFilter(message))
                         .Select(ProcessMessage)
                         .Subscribe(observer);
 
@@ -56,6 +60,12 @@ namespace Obvs.ActiveMQ
             }
         }
 
+        private bool PassesFilter(IMessage message)
+        {
+            return _messagePropertyFilter == null ||
+                   _messagePropertyFilter(message.GetProperties());
+        }
+
         protected bool IsCorrectType(IMessage message)
         {
             return !HasTypeName(message) || _deserializers.ContainsKey(GetTypeName(message));
@@ -63,31 +73,32 @@ namespace Obvs.ActiveMQ
 
         private TMessage ProcessMessage(IMessage message)
         {
-            IMessageDeserializer<TMessage> deserializer = HasTypeName(message)
+            var deserializer = GetDeserializer(message);
+            var deserializedMessage = DeserializeMessage(message, deserializer);
+            Acknowledge(message);
+            return deserializedMessage;
+        }
+
+        private IMessageDeserializer<TMessage> GetDeserializer(IMessage message)
+        {
+            return HasTypeName(message)
                 ? _deserializers[GetTypeName(message)]
                 : _deserializers.Values.Single();
-
-            var deserializedMessage = DeserializeMessage(message, deserializer);
-
-            Acknowledge(message);
-
-            return deserializedMessage;
         }
 
         protected virtual TMessage DeserializeMessage(IMessage message, IMessageDeserializer<TMessage> deserializer)
         {
-            TMessage deserializedMessage = default(TMessage);
+            var bytesMessage = message as IBytesMessage;
 
-            IBytesMessage bytesMessage = message as IBytesMessage;
-            if (bytesMessage != null)
+            if (bytesMessage == null)
             {
-                using (MemoryStream ms = new MemoryStream(bytesMessage.Content))
-                {
-                    deserializedMessage = deserializer.Deserialize(ms);
-                }
+                return null;
             }
 
-            return deserializedMessage;
+            using (var stream = new MemoryStream(bytesMessage.Content))
+            {
+                return deserializer.Deserialize(stream);
+            }
         }
 
         protected string GetTypeName(IMessage message)

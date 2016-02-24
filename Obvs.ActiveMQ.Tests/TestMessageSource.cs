@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using Apache.NMS;
+using Apache.NMS.ActiveMQ.Commands;
+using Apache.NMS.Util;
 using FakeItEasy;
 using Moq;
 using NUnit.Framework;
@@ -178,6 +182,39 @@ namespace Obvs.ActiveMQ.Tests
             _source.Messages.Subscribe(_observer);
             mockConsumer.RaiseFakeMessage(bytesMessage);
 
+            A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
+        }
+
+        [Test]
+        public void ShouldProcessMessagesAccordingToFilter()
+        {
+            const string typeName = "SomeTypeName";
+
+            Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
+            IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
+            ITestMessage message = A.Fake<ITestMessage>();
+            Func<List<KeyValuePair<string, string>>, bool> filter = properties => properties.Any(pair => pair.Key == "Id" && pair.Value == "123");
+            
+            const string serializedFixtureString = "<xml>Some fixture XML</xml>";
+            var bytes = Encoding.UTF8.GetBytes(serializedFixtureString);
+
+            // create a real IBytesMessage just to use Property field
+            IBytesMessage realbytesMessage = new ActiveMQBytesMessage();
+            realbytesMessage.Properties.SetString(MessagePropertyNames.TypeName, typeName);
+            realbytesMessage.Properties.SetInt("Id", 123);
+
+            A.CallTo(() => bytesMessage.Content).Returns(bytes);
+            A.CallTo(() => bytesMessage.Properties).Returns(realbytesMessage.Properties);
+            A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
+            A.CallTo(() => _deserializer.GetTypeName()).Returns(typeName);
+
+            _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
+                _acknowledgementMode, null, filter);
+
+            _source.Messages.Subscribe(_observer);
+            mockConsumer.RaiseFakeMessage(bytesMessage);
+
+            A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).MustHaveHappened();
             A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
         }
     }

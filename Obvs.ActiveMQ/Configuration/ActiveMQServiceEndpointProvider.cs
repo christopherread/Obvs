@@ -8,7 +8,6 @@ using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using Obvs.Configuration;
-using Obvs.MessageProperties;
 using Obvs.Serialization;
 
 namespace Obvs.ActiveMQ.Configuration
@@ -26,17 +25,23 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly List<Tuple<Type, AcknowledgementMode>> _queueTypes;
         private readonly Func<Assembly, bool> _assemblyFilter;
         private readonly Func<Type, bool> _typeFilter;
+        private readonly string _selector;
+        private readonly Func<List<KeyValuePair<string, string>>, bool> _propertyFilter;
+        private readonly Func<TMessage, List<KeyValuePair<string, object>>> _propertyProvider;
         private readonly Lazy<IConnection> _endpointConnection;
         private readonly Lazy<IConnection> _endpointClientConnection;
 
-        public ActiveMQServiceEndpointProvider(string serviceName,
-                                               string brokerUri, 
-                                               IMessageSerializer serializer, 
-                                               IMessageDeserializerFactory deserializerFactory,
-                                               List<Tuple<Type, AcknowledgementMode>> queueTypes, 
-                                               Func<Assembly, bool> assemblyFilter = null, 
-                                               Func<Type, bool> typeFilter = null,
-                                               Lazy<IConnection> sharedConnection = null)
+        public ActiveMQServiceEndpointProvider(string serviceName, 
+            string brokerUri, 
+            IMessageSerializer serializer, 
+            IMessageDeserializerFactory deserializerFactory, 
+            List<Tuple<Type, AcknowledgementMode>> queueTypes, 
+            Func<Assembly, bool> assemblyFilter = null, 
+            Func<Type, bool> typeFilter = null, 
+            Lazy<IConnection> sharedConnection = null, 
+            string selector = null,
+            Func<List<KeyValuePair<string, string>>, bool> propertyFilter = null, 
+            Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider = null)
             : base(serviceName)
         {
             _serializer = serializer;
@@ -44,6 +49,9 @@ namespace Obvs.ActiveMQ.Configuration
             _queueTypes = queueTypes;
             _assemblyFilter = assemblyFilter;
             _typeFilter = typeFilter;
+            _selector = selector;
+            _propertyFilter = propertyFilter;
+            _propertyProvider = propertyProvider;
 
             if (string.IsNullOrEmpty(brokerUri) && sharedConnection == null)
             {
@@ -88,12 +96,12 @@ namespace Obvs.ActiveMQ.Configuration
                     new MessageSource<T>(connection, 
                         deserializers,
                         new ActiveMQQueue(GetTypedQueueName(destination, qt.Item1)), 
-                        qt.Item2));
+                        qt.Item2, _selector, _propertyFilter));
 
                 return new MergedMessageSource<T>(topicSources.Concat(queueSources));
             }
 
-            return DestinationFactory.CreateSource<T, TServiceMessage>(connection, destination, GetDestinationType<T>(), _deserializerFactory, _assemblyFilter, _typeFilter, null, GetAcknowledgementMode<T>());
+            return DestinationFactory.CreateSource<T, TServiceMessage>(connection, destination, GetDestinationType<T>(), _deserializerFactory, _assemblyFilter, _typeFilter, _selector, GetAcknowledgementMode<T>());
         }
 
         private IMessagePublisher<T> CreatePublisher<T>(Lazy<IConnection> connection, string destination) where T : class, TMessage
@@ -103,7 +111,7 @@ namespace Obvs.ActiveMQ.Configuration
             if (TryGetMultipleQueueTypes<T>(out queueTypes))
             {
                 var topicTypes = MessageTypes.Get<T, TServiceMessage>().Where(type => queueTypes.All(qt => qt.Item1 != type));
-                var topicPublisher = new MessagePublisher<T>(connection, new ActiveMQTopic(destination), _serializer, new DefaultPropertyProvider<T>(), Scheduler.Default);
+                var topicPublisher = new MessagePublisher<T>(connection, new ActiveMQTopic(destination), _serializer, _propertyProvider, Scheduler.Default);
                 var topicPublishers = topicTypes.Select(tt => new KeyValuePair<Type, IMessagePublisher<T>>(tt, topicPublisher));
                 var queuePubishers = queueTypes.Select(qt =>
                     new KeyValuePair<Type, IMessagePublisher<T>>(qt.Item1,
@@ -111,7 +119,7 @@ namespace Obvs.ActiveMQ.Configuration
                             connection,
                             new ActiveMQQueue(GetTypedQueueName(destination, qt.Item1)),
                             _serializer,
-                            new DefaultPropertyProvider<T>(), 
+                            _propertyProvider, 
                             Scheduler.Default)));
 
                 return new TypeRoutingMessagePublisher<T>(topicPublishers.Concat(queuePubishers));

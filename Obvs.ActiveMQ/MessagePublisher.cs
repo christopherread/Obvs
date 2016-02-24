@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
@@ -20,28 +18,24 @@ namespace Obvs.ActiveMQ
         private readonly Lazy<IConnection> _connection;
         private readonly IDestination _destination;
         private readonly IMessageSerializer _serializer;
-        private readonly IMessagePropertyProvider<TMessage> _propertyProvider;
+        private readonly Func<TMessage, List<KeyValuePair<string, object>>> _propertyProvider;
         private readonly Func<TMessage, MsgDeliveryMode> _deliveryMode;
         private readonly Func<TMessage, MsgPriority> _priority;
         private readonly Func<TMessage, TimeSpan> _timeToLive;
-
         private readonly Func<TMessage, Task> _publishMethod;
         private readonly Func<Task> _drainMethod;
-
         private readonly object _gate = new object();
 
         private ISession _session;
-
         private IMessageProducer _producer;
         private volatile IDisposable _disposable;
         private volatile bool _disposed;
-
 
         protected MessagePublisher(
             Lazy<IConnection> lazyConnection,
             IDestination destination,
             IMessageSerializer serializer,
-            IMessagePropertyProvider<TMessage> propertyProvider,
+            Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider,
             Func<TMessage, MsgDeliveryMode> deliveryMode = null,
             Func<TMessage, MsgPriority> priority = null,
             Func<TMessage, TimeSpan> timeToLive = null)
@@ -49,7 +43,7 @@ namespace Obvs.ActiveMQ
             _connection = lazyConnection;
             _destination = destination;
             _serializer = serializer;
-            _propertyProvider = propertyProvider;
+            _propertyProvider = propertyProvider ?? (message => new List<KeyValuePair<string, object>>()) ;
             _deliveryMode = deliveryMode ?? (message => MsgDeliveryMode.NonPersistent);
             _priority = priority ?? (message => MsgPriority.Normal);
             _timeToLive = timeToLive ?? (message => TimeSpan.Zero);
@@ -58,7 +52,7 @@ namespace Obvs.ActiveMQ
         public MessagePublisher(Lazy<IConnection> lazyConnection,
             IDestination destination,
             IMessageSerializer serializer,
-            IMessagePropertyProvider<TMessage> propertyProvider,
+            Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider,
             IScheduler scheduler,
             Func<TMessage, MsgDeliveryMode> deliveryMode = null,
             Func<TMessage, MsgPriority> priority = null,
@@ -73,7 +67,7 @@ namespace Obvs.ActiveMQ
             Lazy<IConnection> lazyConnection,
             IDestination destination,
             IMessageSerializer serializer,
-            IMessagePropertyProvider<TMessage> propertyProvider,
+            Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider,
             TaskScheduler taskScheduler,
             Func<TMessage, MsgDeliveryMode> deliveryMode = null,
             Func<TMessage, MsgPriority> priority = null,
@@ -89,7 +83,7 @@ namespace Obvs.ActiveMQ
         {
             if (_disposed)
             {
-                throw new InvalidOperationException("Publisher has been disposed already.");
+                throw new InvalidOperationException("MessagePublisher has been disposed already.");
             }
 
             return _publishMethod(message);
@@ -97,9 +91,7 @@ namespace Obvs.ActiveMQ
 
         private void Publish(TMessage message)
         {
-            List<KeyValuePair<string, object>> properties = _propertyProvider.GetProperties(message).ToList();
-
-            Publish(message, properties);
+            Publish(message, _propertyProvider(message));
         }
 
         protected void Publish(TMessage message, List<KeyValuePair<string, object>> properties)
@@ -119,19 +111,18 @@ namespace Obvs.ActiveMQ
 
             _producer.Send(msg, _deliveryMode(message), _priority(message), _timeToLive(message));
         }
-
-
+        
         protected virtual IMessage GenerateMessage(TMessage message, IMessageProducer producer, IMessageSerializer serializer)
         {
             var bytesMessage = producer.CreateBytesMessage();
 
-            using (MemoryStream ms = StreamManager.Instance.GetStream())
+            using (var stream = StreamManager.Instance.GetStream())
             {
-                var offset = ms.Position;
+                var offset = stream.Position;
 
-                serializer.Serialize(ms, message);
-
-                bytesMessage.WriteBytes(ms.GetBuffer(), (int)offset, (int)(ms.Position - offset));
+                serializer.Serialize(stream, message);
+                
+                bytesMessage.WriteBytes(stream.GetBuffer(), (int)offset, (int)(stream.Position - offset));
             }
 
             return bytesMessage;

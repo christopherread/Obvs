@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Apache.NMS;
 
 namespace Obvs.ActiveMQ.Extensions
@@ -54,6 +55,14 @@ namespace Obvs.ActiveMQ.Extensions
             }
 
             return message;
+        }
+
+        public static List<KeyValuePair<string, string>> GetProperties(this IMessage message)
+        {
+            return message.Properties.Keys
+                .Cast<string>()
+                .Select(key => new KeyValuePair<string, string>(key, message.Properties.GetString(key)))
+                .ToList();
         }
 
         public static void Send(this IMessage message, IMessageProducer producer, MsgDeliveryMode deliveryMode, MsgPriority priority, TimeSpan timeToLive)

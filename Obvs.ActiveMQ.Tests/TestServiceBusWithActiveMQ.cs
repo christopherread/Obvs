@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
@@ -100,14 +101,30 @@ namespace Obvs.ActiveMQ.Tests
             // use the embedded broker
             var brokerUri = _broker.FailoverUri;
 
+            // property filters and providers
+            Func<List<KeyValuePair<string, string>>, bool> propertyFilter = properties =>
+            {
+                return properties.Any(p => p.Key == "Id" && p.Value == "122");
+            };
+
+            Func<IMessage, List<KeyValuePair<string, object>>> propertyProvider = message =>
+            {
+                var testMessage1 = message as ITestMessage1;
+                return testMessage1 != null
+                    ? new List<KeyValuePair<string, object>> { new KeyValuePair<string, object>("Id", testMessage1.Id) }
+                    : null;
+            };
+
             // set up ServiceBus using fluent interfaces and all current endpoints and pointing at test AMQ broker
             IServiceBus serviceBus = ServiceBus.Configure()
-                .WithActiveMQSharedConnectionScope(brokerUri, config => config 
+                .WithActiveMQSharedConnectionScope(brokerUri, config => config
                     .WithActiveMQEndpoints<ITestMessage1>()
                         .Named("Obvs.TestService1")
                         .UsingQueueFor<TestCommand>().ClientAcknowledge()
                         .UsingQueueFor<TestCommand2>().ClientAcknowledge()
                         .UsingQueueFor<IRequest>().AutoAcknowledge()
+                        .FilterReceivedMessages(propertyFilter)
+                        .AppendMessageProperties(propertyProvider)
                         .SerializedAsJson()
                         .AsClientAndServer()
                     .WithActiveMQEndpoints<ITestMessage2>()
@@ -226,6 +243,7 @@ namespace Obvs.ActiveMQ.Tests
 
         public interface ITestMessage1 : IMessage
         {
+            int Id { get; }
         }
 
         public interface ITestMessage2 : IMessage
@@ -317,6 +335,5 @@ namespace Obvs.ActiveMQ.Tests
             public string RequestId { get; set; }
             public string RequesterId { get; set; }
         }
-
     }
 }
