@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>ActiveMQ transport support for Obvs</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Added endpoint configuration to filter messages by property, and append properties to messages</releaseNotes>
+    <releaseNotes>Improved performance of message filtering</releaseNotes>
   </metadata>
 </package>

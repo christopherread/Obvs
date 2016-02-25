@@ -18,7 +18,7 @@ namespace Obvs.ActiveMQ
         private readonly Lazy<IConnection> _connection;
         private readonly IDestination _destination;
         private readonly IMessageSerializer _serializer;
-        private readonly Func<TMessage, List<KeyValuePair<string, object>>> _propertyProvider;
+        private readonly Func<TMessage, Dictionary<string, object>> _propertyProvider;
         private readonly Func<TMessage, MsgDeliveryMode> _deliveryMode;
         private readonly Func<TMessage, MsgPriority> _priority;
         private readonly Func<TMessage, TimeSpan> _timeToLive;
@@ -35,7 +35,7 @@ namespace Obvs.ActiveMQ
             Lazy<IConnection> lazyConnection,
             IDestination destination,
             IMessageSerializer serializer,
-            Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider,
+            Func<TMessage, Dictionary<string, object>> propertyProvider,
             Func<TMessage, MsgDeliveryMode> deliveryMode = null,
             Func<TMessage, MsgPriority> priority = null,
             Func<TMessage, TimeSpan> timeToLive = null)
@@ -43,7 +43,7 @@ namespace Obvs.ActiveMQ
             _connection = lazyConnection;
             _destination = destination;
             _serializer = serializer;
-            _propertyProvider = propertyProvider ?? (message => new List<KeyValuePair<string, object>>()) ;
+            _propertyProvider = propertyProvider ?? (message => new Dictionary<string, object>()) ;
             _deliveryMode = deliveryMode ?? (message => MsgDeliveryMode.NonPersistent);
             _priority = priority ?? (message => MsgPriority.Normal);
             _timeToLive = timeToLive ?? (message => TimeSpan.Zero);
@@ -52,7 +52,7 @@ namespace Obvs.ActiveMQ
         public MessagePublisher(Lazy<IConnection> lazyConnection,
             IDestination destination,
             IMessageSerializer serializer,
-            Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider,
+            Func<TMessage, Dictionary<string, object>> propertyProvider,
             IScheduler scheduler,
             Func<TMessage, MsgDeliveryMode> deliveryMode = null,
             Func<TMessage, MsgPriority> priority = null,
@@ -67,7 +67,7 @@ namespace Obvs.ActiveMQ
             Lazy<IConnection> lazyConnection,
             IDestination destination,
             IMessageSerializer serializer,
-            Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider,
+            Func<TMessage, Dictionary<string, object>> propertyProvider,
             TaskScheduler taskScheduler,
             Func<TMessage, MsgDeliveryMode> deliveryMode = null,
             Func<TMessage, MsgPriority> priority = null,
@@ -94,7 +94,7 @@ namespace Obvs.ActiveMQ
             Publish(message, _propertyProvider(message));
         }
 
-        protected void Publish(TMessage message, List<KeyValuePair<string, object>> properties)
+        protected void Publish(TMessage message, Dictionary<string, object> properties)
         {
             if (_disposed)
             {
@@ -128,12 +128,12 @@ namespace Obvs.ActiveMQ
             return bytesMessage;
         }
 
-        private static void AppendTypeNameProperty(TMessage message, List<KeyValuePair<string, object>> properties)
+        private static void AppendTypeNameProperty(TMessage message, Dictionary<string, object> properties)
         {
-            properties.Add(new KeyValuePair<string, object>(MessagePropertyNames.TypeName, message.GetType().Name));
+            properties.Add(MessagePropertyNames.TypeName, message.GetType().Name);
         }
 
-        protected virtual void SetMessageHeaders(IMessage msg, List<KeyValuePair<string, object>> properties)
+        protected virtual void SetMessageHeaders(IMessage msg, Dictionary<string, object> properties)
         {
             msg.SetProperties(properties);
         }
@@ -175,7 +175,9 @@ namespace Obvs.ActiveMQ
         {
             var disp = _disposable;
             if (disp != null)
+            {
                 disp.Dispose();
+            }
         }
     }
 }

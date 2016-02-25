@@ -1,11 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Schedulers;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ.Commands;
-using Obvs.MessageProperties;
 using Obvs.Serialization;
 
 namespace Obvs.ActiveMQ.Configuration
@@ -18,7 +18,7 @@ namespace Obvs.ActiveMQ.Configuration
             DestinationType destinationType,
             IMessageSerializer messageSerializer,
             TaskScheduler scheduler = null,
-            Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider = null, 
+            Func<TMessage, Dictionary<string, object>> propertyProvider = null, 
             Func<TMessage, MsgDeliveryMode> deliveryMode = null, 
             Func<TMessage, MsgPriority> priority = null, 
             Func<TMessage, TimeSpan> timeToLive = null) 
@@ -44,7 +44,7 @@ namespace Obvs.ActiveMQ.Configuration
             Func<Type, bool> typeFilter = null, 
             string selector = null, 
             AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge,
-            Func<List<KeyValuePair<string, string>>, bool> messagePropertyFilter = null)
+            Func<IDictionary, bool> propertyFilter = null)
             where TMessage : class
             where TServiceMessage : class
         {
@@ -52,7 +52,7 @@ namespace Obvs.ActiveMQ.Configuration
                 lazyConnection,
                 deserializerFactory.Create<TMessage, TServiceMessage>(assemblyFilter, typeFilter),
                 CreateDestination(destination, destinationType),
-                mode, selector, messagePropertyFilter);
+                mode, selector, propertyFilter);
         }
 
         private static IDestination CreateDestination(string name, DestinationType type)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,7 +7,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Apache.NMS;
 using Obvs.ActiveMQ.Extensions;
-using Obvs.MessageProperties;
+using Obvs.ActiveMQ.Utils;
 using Obvs.Serialization;
 
 namespace Obvs.ActiveMQ
@@ -15,25 +16,25 @@ namespace Obvs.ActiveMQ
         where TMessage : class
     {
         private readonly string _selector;
-        private readonly Func<List<KeyValuePair<string, string>>, bool> _messagePropertyFilter;
+        private readonly Func<IDictionary, bool> _propertyFilter;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly IDestination _destination;
         private readonly Apache.NMS.AcknowledgementMode _mode;
         private readonly Lazy<IConnection> _lazyConnection;
-
+        
         public MessageSource(Lazy<IConnection> lazyConnection,
             IEnumerable<IMessageDeserializer<TMessage>> deserializers,
             IDestination destination,
             AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge,
             string selector = null,
-            Func<List<KeyValuePair<string, string>>, bool> messagePropertyFilter = null)
+            Func<IDictionary, bool> propertyFilter = null)
         {
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
             _lazyConnection = lazyConnection;
             _destination = destination;
             _mode = mode == AcknowledgementMode.ClientAcknowledge ? Apache.NMS.AcknowledgementMode.ClientAcknowledge : Apache.NMS.AcknowledgementMode.AutoAcknowledge;
             _selector = selector;
-            _messagePropertyFilter = messagePropertyFilter;
+            _propertyFilter = propertyFilter;
         }
 
         public IObservable<TMessage> Messages
@@ -45,9 +46,10 @@ namespace Obvs.ActiveMQ
                     var session = _lazyConnection.Value.CreateSession(_mode);
 
                     var subscription = session.ToObservable(_destination, _selector)
-                        .Where(message => IsCorrectType(message) &&
-                                          PassesFilter(message))
-                        .Select(ProcessMessage)
+                        .Where(PassesFilter)
+                        .Select(message => new { message, deserializer = GetDeserializer(message) })
+                        .Where(msg => msg.deserializer != null)
+                        .Select(msg => DeserializeAndAcknowledge(msg.message, msg.deserializer))
                         .Subscribe(observer);
 
                     return Disposable.Create(() =>
@@ -62,18 +64,12 @@ namespace Obvs.ActiveMQ
 
         private bool PassesFilter(IMessage message)
         {
-            return _messagePropertyFilter == null ||
-                   _messagePropertyFilter(message.GetProperties());
+            return _propertyFilter == null ||
+                   _propertyFilter(new PrimitiveMapDictionary(message.Properties));
         }
 
-        protected bool IsCorrectType(IMessage message)
+        private TMessage DeserializeAndAcknowledge(IMessage message, IMessageDeserializer<TMessage> deserializer)
         {
-            return !HasTypeName(message) || _deserializers.ContainsKey(GetTypeName(message));
-        }
-
-        private TMessage ProcessMessage(IMessage message)
-        {
-            var deserializer = GetDeserializer(message);
             var deserializedMessage = DeserializeMessage(message, deserializer);
             Acknowledge(message);
             return deserializedMessage;
@@ -81,9 +77,14 @@ namespace Obvs.ActiveMQ
 
         private IMessageDeserializer<TMessage> GetDeserializer(IMessage message)
         {
-            return HasTypeName(message)
-                ? _deserializers[GetTypeName(message)]
-                : _deserializers.Values.Single();
+            string typeName;
+            IMessageDeserializer<TMessage> deserializer;
+
+            return message.TryGetTypeName(out typeName)
+                ? _deserializers.TryGetValue(typeName, out deserializer)
+                    ? deserializer
+                    : _deserializers.Values.SingleOrDefault()
+                : null;
         }
 
         protected virtual TMessage DeserializeMessage(IMessage message, IMessageDeserializer<TMessage> deserializer)
@@ -99,16 +100,6 @@ namespace Obvs.ActiveMQ
             {
                 return deserializer.Deserialize(stream);
             }
-        }
-
-        protected string GetTypeName(IMessage message)
-        {
-            return message.Properties.GetString(MessagePropertyNames.TypeName);
-        }
-
-        protected bool HasTypeName(IMessage message)
-        {
-            return message.Properties.Contains(MessagePropertyNames.TypeName);
         }
 
         private void Acknowledge(IMessage message)

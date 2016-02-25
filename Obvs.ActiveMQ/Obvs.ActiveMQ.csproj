@@ -74,6 +74,9 @@
     <Compile Include="Configuration\DisposingServiceEndpoint.cs" />
     <Compile Include="Configuration\DisposingServiceEndpointClient.cs" />
     <Compile Include="Extensions\MessageExtensions.cs" />
+    <Compile Include="Utils\PrimitiveMapUtils.cs" />
+    <Compile Include="Utils\PrimitiveMapDictionary.cs" />
+    <Compile Include="Utils\PrimitiveMapEnumerator.cs" />
     <Compile Include="MessagePublisher.cs" />
     <Compile Include="MessageSource.cs" />
     <Compile Include="Extensions\SessionExtensions.cs" />

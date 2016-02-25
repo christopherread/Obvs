@@ -28,7 +28,7 @@ namespace Obvs.ActiveMQ.Tests
         private IMessagePublisher<IMessage> _publisher;
         private IDestination _destination;
         private IBytesMessage _message;
-        private Func<object, List<KeyValuePair<string, object>>> _messagePropertyProvider;
+        private Func<object, Dictionary<string, object>> _propertyProvider;
         private Lazy<IConnection> _lazyConnection;
         private readonly IScheduler _testScheduler = Scheduler.Immediate;
 
@@ -84,7 +84,7 @@ namespace Obvs.ActiveMQ.Tests
         [Test]
         public async Task ShouldCreateSessionsOnceOnFirstPublish()
         {
-            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
 
             await _publisher.PublishAsync(new TestMessage());
 
@@ -101,17 +101,16 @@ namespace Obvs.ActiveMQ.Tests
         [Test]
         public async Task ShouldSendMessageWithPropertiesWhenPublishing()
         {
-            _messagePropertyProvider = o =>
-                    new Dictionary<string, object>
-                    {
-                        {"key1", 1},
-                        {"key2", "2"},
-                        {"key3", 3.0},
-                        {"key4", 4L},
-                        {"key5", true}
-                    }.ToList();
+            _propertyProvider = _ => new Dictionary<string, object>
+            {
+                {"key1", 1},
+                {"key2", "2"},
+                {"key3", 3.0},
+                {"key4", 4L},
+                {"key5", true}
+            };
 
-            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
 
             ITestMessage testMessage = new TestMessage();
             
@@ -129,7 +128,7 @@ namespace Obvs.ActiveMQ.Tests
         [Test]
         public async Task ShouldSendBytesMessageSerializerReturnsBytes()
         {
-            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
 
             ITestMessage testMessage = new TestMessage();
 
@@ -146,7 +145,7 @@ namespace Obvs.ActiveMQ.Tests
         [Test]
         public async Task ShouldSendMessageWithTypeNamePropertySet()
         {
-            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
 
             ITestMessage testMessage = new TestMessage();
 
@@ -159,7 +158,7 @@ namespace Obvs.ActiveMQ.Tests
         [Test]
         public async Task ShouldCloseSessionWhenDisposed()
         {
-            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
 
             await _publisher.PublishAsync(new TestMessage());
             _publisher.Dispose();
@@ -171,7 +170,7 @@ namespace Obvs.ActiveMQ.Tests
         [Test, ExpectedException(typeof(InvalidOperationException))]
         public async Task ShouldThrowExceptionIfPublishAttemptedAfterDisposed()
         {
-            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
 
             await _publisher.PublishAsync(new TestMessage());
             _publisher.Dispose();
@@ -181,7 +180,7 @@ namespace Obvs.ActiveMQ.Tests
         [Test]
         public async Task ShouldDiscardMessagesThatAreStillQueuedOnSchedulerAfterDispose()
         {
-            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _messagePropertyProvider, _testScheduler);
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
 
             var message1 = new TestMessage();
             var message2 = new TestMessage();
@@ -204,7 +203,7 @@ namespace Obvs.ActiveMQ.Tests
             const string topicName1 = "Obvs.Tests.ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics1";
             const string topicName2 = "Obvs.Tests.ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics2";
 
-            Func<IMessage, List<KeyValuePair<string, object>>> getProperties = message => new List<KeyValuePair<string, object>>();
+            Func<IMessage, Dictionary<string, object>> getProperties = message => new Dictionary<string, object>();
 
             IConnectionFactory connectionFactory = new ConnectionFactory(brokerUri);
             var lazyConnection = new Lazy<IConnection>(() =>

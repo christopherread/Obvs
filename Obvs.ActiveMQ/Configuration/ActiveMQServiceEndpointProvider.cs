@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
@@ -26,8 +27,8 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly Func<Assembly, bool> _assemblyFilter;
         private readonly Func<Type, bool> _typeFilter;
         private readonly string _selector;
-        private readonly Func<List<KeyValuePair<string, string>>, bool> _propertyFilter;
-        private readonly Func<TMessage, List<KeyValuePair<string, object>>> _propertyProvider;
+        private readonly Func<IDictionary, bool> _propertyFilter;
+        private readonly Func<TMessage, Dictionary<string, object>> _propertyProvider;
         private readonly Lazy<IConnection> _endpointConnection;
         private readonly Lazy<IConnection> _endpointClientConnection;
 
@@ -40,8 +41,8 @@ namespace Obvs.ActiveMQ.Configuration
             Func<Type, bool> typeFilter = null, 
             Lazy<IConnection> sharedConnection = null, 
             string selector = null,
-            Func<List<KeyValuePair<string, string>>, bool> propertyFilter = null, 
-            Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider = null)
+            Func<IDictionary, bool> propertyFilter = null, 
+            Func<TMessage, Dictionary<string, object>> propertyProvider = null)
             : base(serviceName)
         {
             _serializer = serializer;

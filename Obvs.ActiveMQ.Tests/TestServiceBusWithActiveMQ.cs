@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -102,16 +104,18 @@ namespace Obvs.ActiveMQ.Tests
             var brokerUri = _broker.FailoverUri;
 
             // property filters and providers
-            Func<List<KeyValuePair<string, string>>, bool> propertyFilter = properties =>
+            Func<IDictionary, bool> propertyFilter = properties =>
             {
-                return properties.Any(p => p.Key == "Id" && p.Value == "123");
+                Console.WriteLine("Filtering message by properties");
+                return properties.Count > 0 && (int?)properties["Id"] == 123;
             };
 
-            Func<IMessage, List<KeyValuePair<string, object>>> propertyProvider = message =>
+            Func<IMessage, Dictionary<string, object>> propertyProvider = message =>
             {
+                Console.WriteLine("Providing message properties");
                 var testMessage1 = message as ITestMessage1;
                 return testMessage1 != null
-                    ? new List<KeyValuePair<string, object>> { new KeyValuePair<string, object>("Id", testMessage1.Id) }
+                    ? new Dictionary<string, object> {{"Id", testMessage1.Id}, {"HostName", Dns.GetHostName()}}
                     : null;
             };
 

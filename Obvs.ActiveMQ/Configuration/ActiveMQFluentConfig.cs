@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -67,10 +68,10 @@ namespace Obvs.ActiveMQ.Configuration
         where TRequest : class, TMessage
         where TResponse : class, TMessage
     {
-        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<List<KeyValuePair<string, string>>, bool> propertyFilter);
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<IDictionary, bool> propertyFilter);
         ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(string brokerSelector);
-        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<List<KeyValuePair<string, string>>, bool> propertyFilter, string brokerSelector);
-        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AppendMessageProperties(Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider);
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<IDictionary, bool> propertyFilter, string brokerSelector);
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AppendMessageProperties(Func<TMessage, Dictionary<string, object>> propertyProvider);
     }
 
     internal class ActiveMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
@@ -92,9 +93,9 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly List<Tuple<Type, AcknowledgementMode>> _queueTypes = new List<Tuple<Type, AcknowledgementMode>>();
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _typeFilter;
-        private Func<List<KeyValuePair<string, string>>, bool> _propertyFilter;
+        private Func<IDictionary, bool> _propertyFilter;
         private string _brokerSelector;
-        private Func<TMessage, List<KeyValuePair<string, object>>> _propertyProvider;
+        private Func<TMessage, Dictionary<string, object>> _propertyProvider;
 
         public ActiveMQFluentConfig(ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint)
         {
@@ -172,7 +173,7 @@ namespace Obvs.ActiveMQ.Configuration
             return this;
         }
 
-        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<List<KeyValuePair<string, string>>, bool> propertyFilter)
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<IDictionary, bool> propertyFilter)
         {
             _propertyFilter = propertyFilter;
             return this;
@@ -184,14 +185,14 @@ namespace Obvs.ActiveMQ.Configuration
             return this;
         }
 
-        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<List<KeyValuePair<string, string>>, bool> propertyFilter, string brokerSelector)
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<IDictionary, bool> propertyFilter, string brokerSelector)
         {
             _propertyFilter = propertyFilter;
             _brokerSelector = brokerSelector;
             return this;
         }
 
-        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AppendMessageProperties(Func<TMessage, List<KeyValuePair<string, object>>> propertyProvider)
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AppendMessageProperties(Func<TMessage, Dictionary<string, object>> propertyProvider)
         {
             _propertyProvider = propertyProvider;
             return this;

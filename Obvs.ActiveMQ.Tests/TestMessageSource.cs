@@ -1,7 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using Apache.NMS;
@@ -193,18 +193,17 @@ namespace Obvs.ActiveMQ.Tests
             Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
-            Func<List<KeyValuePair<string, string>>, bool> filter = properties => properties.Any(pair => pair.Key == "Id" && pair.Value == "123");
+            Func<IDictionary, bool> filter = properties => (int?) properties["Id"] == 123;
             
             const string serializedFixtureString = "<xml>Some fixture XML</xml>";
             var bytes = Encoding.UTF8.GetBytes(serializedFixtureString);
 
-            // create a real IBytesMessage just to use Property field
-            IBytesMessage realbytesMessage = new ActiveMQBytesMessage();
-            realbytesMessage.Properties.SetString(MessagePropertyNames.TypeName, typeName);
-            realbytesMessage.Properties.SetInt("Id", 123);
-
+            var messageProperties = new PrimitiveMap();
+            messageProperties.SetString(MessagePropertyNames.TypeName, typeName);
+            messageProperties.SetInt("Id", 123);
+            
             A.CallTo(() => bytesMessage.Content).Returns(bytes);
-            A.CallTo(() => bytesMessage.Properties).Returns(realbytesMessage.Properties);
+            A.CallTo(() => bytesMessage.Properties).Returns(messageProperties);
             A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
             A.CallTo(() => _deserializer.GetTypeName()).Returns(typeName);
 
