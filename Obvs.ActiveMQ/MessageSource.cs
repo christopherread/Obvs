@@ -78,13 +78,14 @@ namespace Obvs.ActiveMQ
         private IMessageDeserializer<TMessage> GetDeserializer(IMessage message)
         {
             string typeName;
-            IMessageDeserializer<TMessage> deserializer;
 
-            return message.TryGetTypeName(out typeName)
-                ? _deserializers.TryGetValue(typeName, out deserializer)
-                    ? deserializer
-                    : _deserializers.Values.SingleOrDefault()
-                : null;
+            if (!message.Properties.TryGetTypeName(out typeName))
+            {
+                return _deserializers.Values.SingleOrDefault();
+            }
+
+            IMessageDeserializer<TMessage> deserializer;
+            return _deserializers.TryGetValue(typeName, out deserializer) ? deserializer : null;
         }
 
         protected virtual TMessage DeserializeMessage(IMessage message, IMessageDeserializer<TMessage> deserializer)

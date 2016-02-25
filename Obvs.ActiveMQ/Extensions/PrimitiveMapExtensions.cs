@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Apache.NMS;
+using Obvs.MessageProperties;
 
 namespace Obvs.ActiveMQ.Extensions
 {
@@ -63,6 +64,12 @@ namespace Obvs.ActiveMQ.Extensions
                     primitiveMap.SetList(keyValuePair.Key, (IList) keyValuePair.Value);
                 }
             }
+        }
+
+        public static bool TryGetTypeName(this IPrimitiveMap properties, out string typeName)
+        {
+            typeName = properties.GetString(MessagePropertyNames.TypeName);
+            return typeName != null;
         }
     }
 }

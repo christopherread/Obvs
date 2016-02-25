@@ -186,6 +186,30 @@ namespace Obvs.ActiveMQ.Tests
         }
 
         [Test]
+        public void ShouldProcessMessagesWithoutTypeNameIfOnlyOneDeserializerSupplied()
+        {
+            Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
+            IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
+            ITestMessage message = A.Fake<ITestMessage>();
+            
+            const string serializedFixtureString = "<xml>Some fixture XML</xml>";
+            var bytes = Encoding.UTF8.GetBytes(serializedFixtureString);
+            
+            A.CallTo(() => bytesMessage.Content).Returns(bytes);
+            A.CallTo(() => bytesMessage.Properties).Returns(new PrimitiveMap());
+            A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
+            A.CallTo(() => _deserializer.GetTypeName()).Returns("");
+
+            _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination, _acknowledgementMode);
+
+            _source.Messages.Subscribe(_observer);
+            mockConsumer.RaiseFakeMessage(bytesMessage);
+
+            A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).MustHaveHappened();
+            A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
+        }
+
+        [Test]
         public void ShouldProcessMessagesAccordingToFilter()
         {
             const string typeName = "SomeTypeName";

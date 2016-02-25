@@ -73,7 +73,6 @@
     <Compile Include="Configuration\ActiveMQFluentConfig.cs" />
     <Compile Include="Configuration\DisposingServiceEndpoint.cs" />
     <Compile Include="Configuration\DisposingServiceEndpointClient.cs" />
-    <Compile Include="Extensions\MessageExtensions.cs" />
     <Compile Include="Extensions\PrimitiveMapExtensions.cs" />
     <Compile Include="TextMessagePublisher.cs" />
     <Compile Include="Utils\PrimitiveMapUtils.cs" />

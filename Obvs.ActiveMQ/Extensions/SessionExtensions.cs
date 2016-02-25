@@ -25,6 +25,5 @@ namespace Obvs.ActiveMQ.Extensions
                         });
                 });
         }
-
     }
 }
