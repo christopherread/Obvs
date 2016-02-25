@@ -94,7 +94,7 @@ namespace Obvs.ActiveMQ
             Publish(message, _propertyProvider(message));
         }
 
-        protected void Publish(TMessage message, Dictionary<string, object> properties)
+        private void Publish(TMessage message, Dictionary<string, object> properties)
         {
             if (_disposed)
             {
@@ -107,7 +107,7 @@ namespace Obvs.ActiveMQ
 
             var msg = GenerateMessage(message, _producer, _serializer);
 
-            SetMessageHeaders(msg, properties);
+            msg.Properties.AddProperties(properties);
 
             _producer.Send(msg, _deliveryMode(message), _priority(message), _timeToLive(message));
         }
@@ -131,11 +131,6 @@ namespace Obvs.ActiveMQ
         private static void AppendTypeNameProperty(TMessage message, Dictionary<string, object> properties)
         {
             properties.Add(MessagePropertyNames.TypeName, message.GetType().Name);
-        }
-
-        protected virtual void SetMessageHeaders(IMessage msg, Dictionary<string, object> properties)
-        {
-            msg.SetProperties(properties);
         }
 
         private void Connect()
@@ -173,10 +168,10 @@ namespace Obvs.ActiveMQ
 
         public void Dispose()
         {
-            var disp = _disposable;
-            if (disp != null)
+            var disposable = _disposable;
+            if (disposable != null)
             {
-                disp.Dispose();
+                disposable.Dispose();
             }
         }
     }

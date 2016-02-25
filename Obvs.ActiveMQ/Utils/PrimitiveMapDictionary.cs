@@ -75,10 +75,13 @@ namespace Obvs.ActiveMQ.Utils
 
         public void CopyTo(Array array, int index)
         {
-            int i = index;
-            foreach (var value in Values)
+            int i = 0;
+            foreach (var value in _original.Values)
             {
-                array.SetValue(value, i);
+                if (i >= index)
+                {
+                    array.SetValue(value, i-index);
+                }
                 i++;
             }
         }

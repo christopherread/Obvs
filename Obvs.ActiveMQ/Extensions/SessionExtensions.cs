@@ -5,7 +5,7 @@ using Apache.NMS;
 
 namespace Obvs.ActiveMQ.Extensions
 {
-    public static class SessionExtensions
+    internal static class SessionExtensions
     {
         public static IObservable<IMessage> ToObservable(this ISession session, IDestination destination, string selector = null)
         {
