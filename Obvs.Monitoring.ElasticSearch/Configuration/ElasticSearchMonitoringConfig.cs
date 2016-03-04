@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reactive.Concurrency;
+using Elasticsearch.Net;
 using Nest;
 using Obvs.Configuration;
 
@@ -55,6 +56,8 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
         where TResponse : class, TMessage
     {
         ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToServer(string uri);
+
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToServer(IConnectionPool elasticConnectionPool);
     }
 
     internal class ElasticSearchMonitoringConfig<TMessage, TCommand, TEvent, TRequest, TResponse> :
@@ -92,6 +95,17 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
                 _indexPrefix, _types, _instanceName,
                 _samplePeriod, Scheduler.Default, 
                 new ElasticClient(new ConnectionSettings(new Uri(uri))));
+
+            _config.UsingMonitor(monitorFactory);
+            return _config;
+        }
+
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToServer(IConnectionPool elasticConnectionPool)
+        {
+            var monitorFactory = new ElasticSearchMonitorFactory<TMessage>(
+                _indexPrefix, _types, _instanceName,
+                _samplePeriod, Scheduler.Default,
+                new ElasticClient(new ConnectionSettings(elasticConnectionPool)));
 
             _config.UsingMonitor(monitorFactory);
             return _config;
