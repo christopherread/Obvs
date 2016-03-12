@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -16,8 +17,9 @@ namespace Obvs.ActiveMQ
         private readonly Encoding _encoding;
 
         public TextMessageSource(Lazy<IConnection> lazyConnection, IEnumerable<IMessageDeserializer<TMessage>> deserializers,
-            IDestination destination, AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge, string selector = null, Encoding encoding = null)
-            : base(lazyConnection, deserializers, destination, mode, selector)
+            IDestination destination, AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge, string selector = null, 
+            Encoding encoding = null, Func<IDictionary, bool> propertyFilter = null)
+            : base(lazyConnection, deserializers, destination, mode, selector, propertyFilter)
         {
             _encoding = encoding ?? Encoding.UTF8;
         }
