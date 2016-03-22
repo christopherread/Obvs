@@ -103,16 +103,19 @@ namespace Obvs.ActiveMQ.Tests
             // use the embedded broker
             var brokerUri = _broker.FailoverUri;
 
+            const int idToFilter = 123;
+
             // property filters and providers
             Func<IDictionary, bool> propertyFilter = properties =>
             {
-                Console.WriteLine("Filtering message by properties");
-                return properties.Count > 0 && (int?)properties["Id"] == 123;
+                var filtered = properties.Count > 0 && (int?)properties["Id"] == idToFilter;
+                Console.WriteLine("Filtering {0} message by properties", filtered);
+                return filtered;
             };
 
             Func<IMessage, Dictionary<string, object>> propertyProvider = message =>
             {
-                Console.WriteLine("Providing message properties");
+                Console.WriteLine("Providing message properties for " + message.GetType().Name);
                 var testMessage1 = message as ITestMessage1;
                 return testMessage1 != null
                     ? new Dictionary<string, object> {{"Id", testMessage1.Id}, {"HostName", Dns.GetHostName()}}
@@ -156,11 +159,11 @@ namespace Obvs.ActiveMQ.Tests
             serviceBus.Requests.OfType<TestRequest>().Subscribe(fakeService2);
 
             // send some messages
-            serviceBus.SendAsync(new TestCommand { Id = 123 });
-            serviceBus.SendAsync(new Test2Command { Id = 123 });
-            serviceBus.SendAsync(new TestCommand2 { Id = 123 });
-            serviceBus.SendAsync(new TestCommand3 { Id = 123 });
-            serviceBus.GetResponses(new TestRequest { Id = 456 }).Subscribe(observer);
+            serviceBus.SendAsync(new TestCommand { Id = idToFilter });
+            serviceBus.SendAsync(new Test2Command { Id = idToFilter });
+            serviceBus.SendAsync(new TestCommand2 { Id = idToFilter });
+            serviceBus.SendAsync(new TestCommand3 { Id = idToFilter });
+            serviceBus.GetResponses(new TestRequest { Id = idToFilter }).Subscribe(observer);
 
             // wait some time until we think all messages have been sent and received over AMQ
             Thread.Sleep(TimeSpan.FromSeconds(1));

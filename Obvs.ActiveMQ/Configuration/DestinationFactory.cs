@@ -15,10 +15,10 @@ namespace Obvs.ActiveMQ.Configuration
         public static MessagePublisher<TMessage> CreatePublisher<TMessage>(
             Lazy<IConnection> lazyConnection, 
             string destination, 
-            DestinationType destinationType,
-            IMessageSerializer messageSerializer,
-            TaskScheduler scheduler = null,
-            Func<TMessage, Dictionary<string, object>> propertyProvider = null, 
+            DestinationType destinationType, 
+            IMessageSerializer messageSerializer, 
+            Func<TMessage, Dictionary<string, object>> propertyProvider, 
+            TaskScheduler scheduler = null, 
             Func<TMessage, MsgDeliveryMode> deliveryMode = null, 
             Func<TMessage, MsgPriority> priority = null, 
             Func<TMessage, TimeSpan> timeToLive = null) 
@@ -40,11 +40,11 @@ namespace Obvs.ActiveMQ.Configuration
             string destination, 
             DestinationType destinationType, 
             IMessageDeserializerFactory deserializerFactory, 
+            Func<IDictionary, bool> propertyFilter, 
             Func<Assembly, bool> assemblyFilter = null, 
             Func<Type, bool> typeFilter = null, 
             string selector = null, 
-            AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge,
-            Func<IDictionary, bool> propertyFilter = null)
+            AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge)
             where TMessage : class
             where TServiceMessage : class
         {

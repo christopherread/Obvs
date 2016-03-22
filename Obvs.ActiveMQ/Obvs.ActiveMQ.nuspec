@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>ActiveMQ transport support for Obvs</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Added optional propertyFilter param to TextMessageSource constructor</releaseNotes>
+    <releaseNotes>Fixed bug where message properties were not being appended</releaseNotes>
   </metadata>
 </package>
