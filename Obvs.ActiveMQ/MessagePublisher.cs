@@ -91,7 +91,7 @@ namespace Obvs.ActiveMQ
 
         private void Publish(TMessage message)
         {
-            Publish(message, _propertyProvider(message));
+            Publish(message, _propertyProvider(message) ?? new Dictionary<string, object>());
         }
 
         private void Publish(TMessage message, Dictionary<string, object> properties)
@@ -130,7 +130,14 @@ namespace Obvs.ActiveMQ
 
         private static void AppendTypeNameProperty(TMessage message, Dictionary<string, object> properties)
         {
-            properties.Add(MessagePropertyNames.TypeName, message.GetType().Name);
+            try
+            {
+                properties.Add(MessagePropertyNames.TypeName, message.GetType().Name);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new Exception(string.Format("Failed to add '{0}' property to message property dictionary. Please ensure the property dictionary provided has not been used before, and doesn't contain a property called '{0}' already.", MessagePropertyNames.TypeName), exception);
+            }
         }
 
         private void Connect()

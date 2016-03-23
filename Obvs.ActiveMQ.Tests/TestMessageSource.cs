@@ -1,11 +1,9 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
 using Apache.NMS;
-using Apache.NMS.ActiveMQ.Commands;
 using Apache.NMS.Util;
 using FakeItEasy;
 using Moq;

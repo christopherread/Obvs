@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reactive.Concurrency;
-using System.Threading;
 using System.Threading.Tasks;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ;
@@ -177,6 +175,25 @@ namespace Obvs.ActiveMQ.Tests
             await _publisher.PublishAsync(new TestMessage());
         }
 
+        [Test, ExpectedException(typeof(Exception))]
+        public async Task ShouldThrowExceptionIfPropertyDictionaryAlreadyContainsTypeName()
+        {
+            Func<IMessage, Dictionary<string, object>> propertyProvider =
+                msg => new Dictionary<string, object> {{MessagePropertyNames.TypeName, "Blah"}};
+
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, propertyProvider, _testScheduler);
+
+            try
+            {
+                await _publisher.PublishAsync(new TestMessage());
+            }
+            catch (Exception exception)
+            {
+                Assert.That(exception.Message, Contains.Substring(MessagePropertyNames.TypeName));
+                throw;
+            }
+        }
+
         [Test]
         public async Task ShouldDiscardMessagesThatAreStillQueuedOnSchedulerAfterDispose()
         {
@@ -194,6 +211,18 @@ namespace Obvs.ActiveMQ.Tests
             _publisher.Dispose();
 
             A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Twice);
+        }
+
+        [Test]
+        public async Task ShouldNotThrowExceptionIfPropertyProviderReturnsNull()
+        {
+            Func<IMessage, Dictionary<string, object>> propertyProviderWhichReturnsNull = msg => null;
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, propertyProviderWhichReturnsNull, _testScheduler);
+
+            var message = new TestMessage();
+            await _publisher.PublishAsync(message);
+
+            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test, Explicit]
@@ -253,7 +282,7 @@ namespace Obvs.ActiveMQ.Tests
             await publisher2.PublishAsync(new TestMessage { Id = 8910 });
             await publisher2.PublishAsync(new TestMessage2 { Id = 1112 });
 
-            Thread.Sleep(TimeSpan.FromSeconds(3));
+            await Task.Delay(TimeSpan.FromSeconds(3));
         }
     }
 }
