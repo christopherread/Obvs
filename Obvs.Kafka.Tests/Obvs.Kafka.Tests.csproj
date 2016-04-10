@@ -42,8 +42,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\FakeItEasy.1.25.2\lib\net40\FakeItEasy.dll</HintPath>
     </Reference>
-    <Reference Include="kafka4net, Version=1.2.5816.28225, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\kafka4net.1.2.5816.28225\lib\net45\kafka4net.dll</HintPath>
+    <Reference Include="kafka4net, Version=1.5.1.22222, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\kafka4net.1.5.1.22222\lib\net45\kafka4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Reactive.Testing">
@@ -62,8 +62,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\NUnit.2.6.2\lib\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="Obvs, Version=2.1.0.30, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obvs.2.1.0.30\lib\net45\Obvs.dll</HintPath>
+    <Reference Include="Obvs, Version=3.0.0.49, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.3.0.0.49\lib\net45\Obvs.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Obvs.ActiveMQ, Version=2.0.0.19, Culture=neutral, processorArchitecture=MSIL">
