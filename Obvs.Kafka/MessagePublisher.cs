@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
 using kafka4net;
-using Obvs.MessageProperties;
+using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
 
 namespace Obvs.Kafka
@@ -19,14 +17,14 @@ namespace Obvs.Kafka
         private readonly string _topic;
         private readonly KafkaProducerConfiguration _producerConfig;
         private readonly IMessageSerializer _serializer;
-        private readonly IMessagePropertyProvider<TMessage> _propertyProvider;
+        private readonly Func<TMessage, Dictionary<string, string>> _propertyProvider;
 
         private IDisposable _disposable;
         private bool _disposed;
         private long _connected;
         private Producer _producer;
 
-        public MessagePublisher(KafkaConfiguration kafkaConfiguration, KafkaProducerConfiguration producerConfig, string topic, IMessageSerializer serializer, IMessagePropertyProvider<TMessage> propertyProvider)
+        public MessagePublisher(KafkaConfiguration kafkaConfiguration, KafkaProducerConfiguration producerConfig, string topic, IMessageSerializer serializer, Func<TMessage, Dictionary<string, string>> propertyProvider)
         {
             _kafkaConfiguration = kafkaConfiguration;
             _topic = topic;
@@ -47,12 +45,12 @@ namespace Obvs.Kafka
 
         private Task Publish(TMessage message)
         {
-            List<KeyValuePair<string, object>> properties = _propertyProvider.GetProperties(message).ToList();
+            var properties = _propertyProvider != null ? _propertyProvider(message) : null;
 
             return Publish(message, properties);
         }
 
-        private async Task Publish(TMessage message, List<KeyValuePair<string, object>> properties)
+        private async Task Publish(TMessage message, Dictionary<string, string> properties)
         {
             if (_disposed)
             {
@@ -61,24 +59,31 @@ namespace Obvs.Kafka
 
             await Connect();
 
-            KafkaHeaderedMessage kafkaHeaderedMessage = new KafkaHeaderedMessage
-            {
-                PayloadType = message.GetType().Name,
-            };
+            var kafkaHeaderedMessage = CreateKafkaHeaderedMessage(message, properties);
 
-            using (MemoryStream stream = new MemoryStream())
-            {
-                _serializer.Serialize(stream, message);
-
-                kafkaHeaderedMessage.Payload = stream.ToArray();
-            }
-
-            using (MemoryStream stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 ProtoBuf.Serializer.Serialize(stream, kafkaHeaderedMessage);
 
                 _producer.Send(new Message { Value = stream.ToArray() });
             }
+        }
+
+        private KafkaHeaderedMessage CreateKafkaHeaderedMessage(TMessage message, Dictionary<string, string> properties)
+        {
+            byte[] payload;
+            using (var stream = new MemoryStream())
+            {
+                _serializer.Serialize(stream, message);
+                payload = stream.ToArray();
+            }
+
+            return new KafkaHeaderedMessage
+            {
+                PayloadType = message.GetType().Name,
+                Properties = properties,
+                Payload = payload
+            };
         }
 
         private async Task Connect()

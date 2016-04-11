@@ -1,4 +1,4 @@
-namespace Obvs.Kafka
+namespace Obvs.Kafka.Configuration
 {
     public class KafkaProducerConfiguration
     {
