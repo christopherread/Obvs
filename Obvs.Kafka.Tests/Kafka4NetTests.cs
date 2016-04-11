@@ -112,6 +112,8 @@ namespace Obvs.Kafka.Tests
             IServiceBus serviceBus = ServiceBus.Configure()
                 .WithKafkaEndpoints<ITestMessage1>()
                     .Named("Obvs.TestService")
+                    .AppendMessageProperties(message => new Dictionary<string, string> { {"TestProperty", "123"} })
+                    .FilterReceivedMessages(properties => true)
                     .ConnectToKafka(_seed2Addresses)
                     .SerializedAsJson()
                     .AsClientAndServer()

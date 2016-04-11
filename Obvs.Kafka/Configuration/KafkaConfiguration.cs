@@ -1,7 +1,7 @@
 using System.Linq;
 using System.Net;
 
-namespace Obvs.Kafka
+namespace Obvs.Kafka.Configuration
 {
     public class KafkaConfiguration
     {

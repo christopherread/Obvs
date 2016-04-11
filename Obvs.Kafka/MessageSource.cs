@@ -6,6 +6,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using kafka4net;
 using kafka4net.ConsumerImpl;
+using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
 using ProtoBuf;
 
@@ -17,18 +18,23 @@ namespace Obvs.Kafka
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly KafkaConfiguration _kafkaConfig;
         private readonly string _topicName;
+        private readonly Func<Dictionary<string, string>, bool> _propertyFilter;
 
         private readonly KafkaSourceConfiguration _sourceConfig;
+        private readonly bool _applyFilter;
 
         public MessageSource(KafkaConfiguration kafkaConfig,
             KafkaSourceConfiguration sourceConfig, 
             string topicName,
-            IEnumerable<IMessageDeserializer<TMessage>> deserializers)
+            IEnumerable<IMessageDeserializer<TMessage>> deserializers,
+            Func<Dictionary<string, string>, bool> propertyFilter)
         {
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
             _kafkaConfig = kafkaConfig;
             _topicName = topicName;
+            _propertyFilter = propertyFilter;
             _sourceConfig = sourceConfig;
+            _applyFilter = propertyFilter != null;
         }
 
         public IObservable<TMessage> Messages
@@ -54,22 +60,28 @@ namespace Obvs.Kafka
 
                     return consumer
                         .OnMessageArrived
-                        .Select(Deserialize)
+                        .Select(DeserializeMessage)
+                        .Where(PassesFilter)
+                        .Select(DeserializePayload)
                         .Subscribe(observer);
                 });
             }
         }
 
-
-        private TMessage Deserialize(ReceivedMessage message)
+        private static KafkaHeaderedMessage DeserializeMessage(ReceivedMessage message)
         {
-            KafkaHeaderedMessage headeredMessage = Serializer.Deserialize<KafkaHeaderedMessage>(KafkaHeaderedMessage.ToStream(message.Value));
+            return Serializer.Deserialize<KafkaHeaderedMessage>(KafkaHeaderedMessage.ToStream(message.Value));
+        }
 
-            IMessageDeserializer<TMessage> deserializer = _deserializers[headeredMessage.PayloadType];
+        private bool PassesFilter(KafkaHeaderedMessage message)
+        {
+            return !_applyFilter || _propertyFilter(message.Properties);
+        }
 
-            TMessage deserializedMessage = deserializer.Deserialize(new MemoryStream(headeredMessage.Payload));
-
-            return deserializedMessage;
+        private TMessage DeserializePayload(KafkaHeaderedMessage message)
+        {
+            var deserializer = _deserializers[message.PayloadType];
+            return deserializer.Deserialize(new MemoryStream(message.Payload));
         }
 
         public void Dispose()

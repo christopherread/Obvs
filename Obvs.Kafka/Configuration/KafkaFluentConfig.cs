@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Obvs.Configuration;
 using Obvs.Serialization;
@@ -16,7 +17,10 @@ namespace Obvs.Kafka.Configuration
     }
 
 
-    public interface ICanSpecifyKafkaBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanSpecifyKafkaServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>, ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
+    public interface ICanSpecifyKafkaBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : 
+        ICanSpecifyKafkaServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyKafkaMessageFiltering<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage
@@ -26,6 +30,20 @@ namespace Obvs.Kafka.Configuration
         ICanSpecifyKafkaBroker<TMessage, TCommand, TEvent, TRequest, TResponse> WithKafkaProducerConfiguration(KafkaProducerConfiguration kafkaProducerConfiguration);
         ICanSpecifyKafkaBroker<TMessage, TCommand, TEvent, TRequest, TResponse> WithKafkaSourceConfiguration(KafkaSourceConfiguration kafkaSourceConfiguration);
         ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToKafka(string connectionString);
+    }
+
+    public interface ICanSpecifyKafkaMessageFiltering<TMessage, TCommand, TEvent, TRequest, TResponse>
+       where TMessage : class
+       where TCommand : class, TMessage
+       where TEvent : class, TMessage
+       where TRequest : class, TMessage
+       where TResponse : class, TMessage
+    {
+        ICanSpecifyKafkaBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(
+            Func<Dictionary<string, string>, bool> propertyFilter);
+
+        ICanSpecifyKafkaBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AppendMessageProperties(
+            Func<TMessage, Dictionary<string, string>> propertyProvider);
     }
 
     internal class KafkaFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
@@ -47,6 +65,8 @@ namespace Obvs.Kafka.Configuration
         private Func<Type, bool> _typeFilter;
         private KafkaProducerConfiguration _kafkaProducerConfig;
         private KafkaSourceConfiguration _kafkaSourceConfig;
+        private Func<TMessage, Dictionary<string, string>> _propertyProvider;
+        private Func<Dictionary<string, string>, bool> _propertyFilter;
 
         public KafkaFluentConfig(ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint)
         {
@@ -102,6 +122,8 @@ namespace Obvs.Kafka.Configuration
                 _kafkaProducerConfig,
                 _serializer, 
                 _deserializerFactory, 
+                _propertyFilter,
+                _propertyProvider, 
                 _assemblyFilter, 
                 _typeFilter);
         }
@@ -116,6 +138,18 @@ namespace Obvs.Kafka.Configuration
         {
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
+            return this;
+        }
+
+        public ICanSpecifyKafkaBroker<TMessage, TCommand, TEvent, TRequest, TResponse> FilterReceivedMessages(Func<Dictionary<string, string>, bool> propertyFilter)
+        {
+            _propertyFilter = propertyFilter;
+            return this;
+        }
+
+        public ICanSpecifyKafkaBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AppendMessageProperties(Func<TMessage, Dictionary<string, string>> propertyProvider)
+        {
+            _propertyProvider = propertyProvider;
             return this;
         }
     }

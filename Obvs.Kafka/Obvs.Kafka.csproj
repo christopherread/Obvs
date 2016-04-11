@@ -63,16 +63,17 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Configuration\DestinationFactory.cs" />
+    <Compile Include="Configuration\SourceFactory.cs" />
+    <Compile Include="Configuration\PublisherFactory.cs" />
     <Compile Include="Configuration\KafkaConfigExtensions.cs" />
     <Compile Include="Configuration\KafkaServiceEndpointProvider.cs" />
     <Compile Include="Configuration\KafkaFluentConfig.cs" />
     <Compile Include="Configuration\DisposingServiceEndpoint.cs" />
     <Compile Include="Configuration\DisposingServiceEndpointClient.cs" />
-    <Compile Include="KafkaConfiguration.cs" />
+    <Compile Include="Configuration\KafkaConfiguration.cs" />
     <Compile Include="KafkaHeaderedMessage.cs" />
-    <Compile Include="KafkaProducerConfiguration.cs" />
-    <Compile Include="KafkaSourceConfiguration.cs" />
+    <Compile Include="Configuration\KafkaProducerConfiguration.cs" />
+    <Compile Include="Configuration\KafkaSourceConfiguration.cs" />
     <Compile Include="MessagePublisher.cs" />
     <Compile Include="MessageSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -85,9 +86,7 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="kafka4net\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
