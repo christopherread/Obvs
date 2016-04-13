@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using NetMQ;
 using NetMQ.Sockets;
 using Obvs.NetMQ.Extensions;
 using Obvs.Serialization;
@@ -23,7 +22,7 @@ namespace Obvs.NetMQ
 
             _socket = new Lazy<PublisherSocket>(() =>
             {
-	            var socket = new PublisherSocket(); //; _context.CreatePublisherSocket();
+	            var socket = new PublisherSocket();
                 socket.Bind(_address);
                 Thread.Sleep(TimeSpan.FromSeconds(1)); // wait for subscribers
                 return socket;
@@ -32,8 +31,6 @@ namespace Obvs.NetMQ
 
         private void Publish(TMessage message)
         {
-
-
             _socket.Value.SendToTopic(_topic, message.GetType().Name, _serializer.Serialize(message));
         }
 

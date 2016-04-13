@@ -5,7 +5,6 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NetMQ;
 using NetMQ.Sockets;
 using Obvs.NetMQ.Extensions;
 using Obvs.Serialization;
