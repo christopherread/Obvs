@@ -1,5 +1,5 @@
 ﻿
-# Obvs: an observable µService bus
+# Obvs: an observable microservice bus
 ## observable services, *obviously*
 
 [![Join the chat at https://gitter.im/inter8ection/Obvs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/inter8ection/Obvs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
@@ -8,42 +8,53 @@
 
 Features:
 
-* Leverage the power of messaging and RX to quickly construct a system of decoupled microservices
-* Add new services and message contracts with an absolute minimum amount of required code
-* Simple RX based interfaces for doing pub/sub
-* Convention based messaging over topics/queues per service
-* Multiplexing of multiple message types over single topics/queues
-* Dynamic creation of deserializers per type
-* Asynchronous error handling on a separate channel
-* Easy to extend and customise, allowing integration with external systems
-* Fluent code based configuration
-* Supports ActiveMQ, RabbitMQ, NetMQ, Kafka, Azure ServiceBus, and EventStore transports
-* Provides serialization for XML, JSON.Net, NetJson, ProtoBuf, and MsgPack
-* Provides logging extensions, and support for NLog and log4net
-* Provides monitoring extensions, and support for Windows Performance Counters, and ElasticSearch
-* Can be configured with a local memory bus for in-process service communication
+* Obvs is just a library, not a framework - use as much or as little as you need.
+* Leverage messaging and Reactive Extensions to quickly compose a system of decoupled microservices.
+* Add new services and message contracts with a minimal amount of code and effort.
+* Using RabbitMQ but really want to use to Kafka instead? Switch transports with minimal code changes required.
+* Declare a new Obvs ServiceBus easily using the fluent code based configuration.
+* Don't want to use Obvs message contract interfaces? Use the generic ServiceBus and supply your own.
+* Standardize on messaging semantics throughout by wrapping integrations with external API's as custom endpoints.
+* Don't distribute if you don't need to, Obvs ServiceBus includes a local in-memory bus.
+* Use one of the many available serialization extensions, or even write your own.
+* Easily debug and monitor your application using logging and performance counter extensions.
+
+More Details:
+
+* Convention based messaging over topics/queues/streams per service.
+* Multiplexing of multiple message types over single topics/queues/streams.
+* Dynamic creation of deserializers per type, auto-discovery of message contracts.
+* Exceptions are caught and raised on an asynchronous error channel.
+
+Extensions:
+
+* Transports: ActiveMQ / RabbitMQ / NetMQ / AzureServiceBus / Kafka / EventStore
+* Serialization: XML / JSON.Net / NetJson / ProtoBuf / MsgPack
+* Logging: NLog / log4net
+* Monitoring: Performance Counters / ElasticSearch
+* Integrations: Slack
 
 ## Example
 
 Define a root message type to identify messages as belonging to your service:
 
-	public interface ITestServiceMessage : IMessage { }
+	public interface IMyServiceMessage : IMessage { }
 
 Create command/event/request/response message types:
 
-	public class TestCommand : ITestServiceMessage, ICommand { }
+	public class MyCommand : IMyServiceMessage, ICommand { }
 
-	public class TestEvent : ITestServiceMessage, IEvent { }
+	public class MyEvent : IMyServiceMessage, IEvent { }
 
-	public class TestRequest: ITestServiceMessage, IRequest { }
+	public class MyRequest: IMyServiceMessage, IRequest { }
 	
-	public class TestResponse : ITestServiceMessage, IResponse { }
+	public class MyResponse : IMyServiceMessage, IResponse { }
 
 Create your service bus:
 
 	IServiceBus serviceBus = ServiceBus.Configure()
-        .WithActiveMQEndpoints<ITestMessage>()
-            .Named("Obvs.TestService")
+        .WithActiveMQEndpoints<IMyServiceMessage>()
+            .Named("MyService")
             .UsingQueueFor<ICommand>()
             .ConnectToBroker("tcp://localhost:61616")
             .SerializedAsJson()
@@ -53,21 +64,21 @@ Create your service bus:
 Send commands:
 
 	serviceBus.Commands.Subscribe(c => Console.WriteLine("Received a command!"));
-	serviceBus.SendAsync(new TestCommand())
+	await serviceBus.SendAsync(new MyCommand());
 
 Publish events:
 
 	serviceBus.Events.Subscribe(e => Console.WriteLine("Received an event!"));
-	serviceBus.PublishAsync(new TestEvent())
+	await serviceBus.PublishAsync(new MyEvent());
 	
 Request/response:
 
 	serviceBus.Requests
-		  .OfType<TestRequest>()
-		  .Subscribe(request => serviceBus.ReplyAsync(request, new TestResponse()));
+		  .OfType<MyRequest>()
+		  .Subscribe(request => serviceBus.ReplyAsync(request, new MyResponse()));
 	
-	serviceBus.GetResponses(new TestRequest())
-		  .OfType<TestResponse>()
+	serviceBus.GetResponses(new MyRequest())
+		  .OfType<MyResponse>()
 		  .Take(1)
 		  .Timeout(TimeSpan.FromSeconds(1))
 		  .Subscribe(r => Console.WriteLine("Received a response!"), err => Console.WriteLine("Oh no!"));
@@ -86,7 +97,7 @@ Define custom endpoints that can wrap API calls or integrations with other syste
             		}
         	}
 
-        	public void Send(ICommand command)
+        	public Task SendAsync(ICommand command)
         	{
             		// call external API
         	}
@@ -105,8 +116,8 @@ Define custom endpoints that can wrap API calls or integrations with other syste
 	...
 
 	IServiceBus serviceBus = ServiceBus.Configure()
-        .WithActiveMQEndpoints<ITestMessage>()
-            .Named("Obvs.TestService")
+        .WithActiveMQEndpoints<IMyServiceMessage>()
+            .Named("MyService")
             .UsingQueueFor<ICommand>()
             .ConnectToBroker("tcp://localhost:61616")
             .SerializedAsJson()
