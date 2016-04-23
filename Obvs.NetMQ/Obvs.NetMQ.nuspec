@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>NetMQ transport support for Obvs</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Upgraded to Obvs v3.0 and NetMQ 3.3</releaseNotes>
+    <releaseNotes>Fixed a serious issue where you were prevented from having more than one client connecting to a server endpoint as it would bind to the socket. Added optional SocketType parameter to MessageSource and MessagePublisher constructors, used to determine whether to Bind or Connect.</releaseNotes>
   </metadata>
 </package>

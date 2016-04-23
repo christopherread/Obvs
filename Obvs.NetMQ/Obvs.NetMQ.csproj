@@ -64,6 +64,7 @@
     <Compile Include="Configuration\NetMqConfigExtensions.cs" />
     <Compile Include="Configuration\NetMqFluentConfig.cs" />
     <Compile Include="Configuration\NetMqServiceEndpointProvider.cs" />
+    <Compile Include="Configuration\SocketType.cs" />
     <Compile Include="MessagePublisher.cs" />
     <Compile Include="MessageSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

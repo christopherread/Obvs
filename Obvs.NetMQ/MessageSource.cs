@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NetMQ.Sockets;
+using Obvs.NetMQ.Configuration;
 using Obvs.NetMQ.Extensions;
 using Obvs.Serialization;
 
@@ -16,13 +17,15 @@ namespace Obvs.NetMQ
         private readonly string _address;
         private readonly Dictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly string _topic;
+        private readonly SocketType _socketType;
         private readonly TimeSpan _receiveTimeout = TimeSpan.FromSeconds(1);
 
-        public MessageSource(string address, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string topic)
+        public MessageSource(string address, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string topic, SocketType socketType = SocketType.Client)
         {
             _address = address;
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName(), d => d);
             _topic = topic;
+            _socketType = socketType;
         }
         
         public IObservable<TMessage> Messages
@@ -54,7 +57,7 @@ namespace Obvs.NetMQ
             {
                 using (var socket = new SubscriberSocket())
                 {
-                    socket.Connect(_address);
+                    socket.Start(_address, _socketType);
                     socket.Subscribe(_topic);
                     subscribedEvent.Set();
                  
@@ -64,8 +67,7 @@ namespace Obvs.NetMQ
                     }
 
                     socket.Unsubscribe(_topic);
-                    socket.Disconnect(_address);
-                    socket.Close();
+                    socket.Stop(_address, _socketType);
                 }
             }
             finally

@@ -1,6 +1,7 @@
 ﻿using System;
 using NetMQ;
 using NetMQ.Sockets;
+using Obvs.NetMQ.Configuration;
 
 namespace Obvs.NetMQ.Extensions
 {
@@ -56,6 +57,37 @@ namespace Obvs.NetMQ.Extensions
             }
 
             rawMessage = message[3].ToByteArray(true);
+        }
+
+        internal static void Start(this NetMQSocket socket, string address, SocketType socketType)
+        {
+            switch (socketType)
+            {
+                case SocketType.Client:
+                    socket.Connect(address);
+                    break;
+                case SocketType.Server:
+                    socket.Bind(address);
+                    break;
+                default:
+                    throw new ArgumentException(string.Format("Unknown SocketType {0}", socketType), "socketType");
+            }
+        }
+
+        internal static void Stop(this NetMQSocket socket, string address, SocketType socketType)
+        {
+            switch (socketType)
+            {
+                case SocketType.Client:
+                    socket.Disconnect(address);
+                    break;
+                case SocketType.Server:
+                    socket.Unbind(address);
+                    break;
+                default:
+                    throw new ArgumentException(string.Format("Unknown SocketType {0}", socketType), "socketType");
+            }
+            socket.Close();
         }
     }
 }

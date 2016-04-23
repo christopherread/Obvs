@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
-using NetMQ;
 using NUnit.Framework;
 using Obvs.Serialization;
 using Obvs.Serialization.Json;
@@ -153,6 +152,8 @@ namespace Obvs.NetMQ.Tests
 			{
 				Assert.Fail("Error: Test should complete in 10 seconds or less.");
 			}
+
+            sub.Dispose();
 	    }
 
         [ProtoContract]
@@ -182,12 +183,7 @@ namespace Obvs.NetMQ.Tests
 		[ProtoContract]
 		public class TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters : IMessage
 		{
-			public TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
-			{
-				
-			}
-
-			[ProtoMember(1)]
+		    [ProtoMember(1)]
 			public int Id { get; set; }
 
 			public override string ToString()
