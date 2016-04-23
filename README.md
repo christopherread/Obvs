@@ -6,12 +6,13 @@
 
 ![build](https://ci.appveyor.com/api/projects/status/hcv02eeulvfdr9de?svg=true)
 
-Features:
+### Features
 
 * Obvs is just a library, not a framework - use as much or as little as you need.
 * Leverage messaging and Reactive Extensions to quickly compose a system of decoupled microservices.
 * Add new services and message contracts with a minimal amount of code and effort.
-* Using RabbitMQ but really want to use to Kafka instead? Switch transports with minimal code changes required.
+* Don't tie yourself to any one transport, migrate between transports with minimal code changes required
+* Use a mix of transports and serialization formats, allowing you to pick what works for your services.
 * Declare a new Obvs ServiceBus easily using the fluent code based configuration.
 * Don't want to use Obvs message contract interfaces? Use the generic ServiceBus and supply your own.
 * Standardize on messaging semantics throughout by wrapping integrations with external API's as custom endpoints.
@@ -19,14 +20,14 @@ Features:
 * Use one of the many available serialization extensions, or even write your own.
 * Easily debug and monitor your application using logging and performance counter extensions.
 
-More Details:
+### More Details
 
 * Convention based messaging over topics/queues/streams per service.
 * Multiplexing of multiple message types over single topics/queues/streams.
 * Dynamic creation of deserializers per type, auto-discovery of message contracts.
 * Exceptions are caught and raised on an asynchronous error channel.
 
-Extensions:
+### Extensions
 
 * Transports: ActiveMQ / RabbitMQ / NetMQ / AzureServiceBus / Kafka / EventStore
 * Serialization: XML / JSON.Net / NetJson / ProtoBuf / MsgPack
