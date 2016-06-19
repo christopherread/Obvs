@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs", "Obvs\Obvs.csproj", "{325264EE-18AA-4DF4-9306-3FE7A1F49A98}"
 EndProject
@@ -9,6 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Tests", "Obvs.Tests\Ob
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".docs", ".docs", "{AE31114F-DC26-40D3-9569-11B9EC07879C}"
 	ProjectSection(SolutionItems) = preProject
+		LICENSE.txt.txt = LICENSE.txt.txt
 		README.md = README.md
 	EndProjectSection
 EndProject
