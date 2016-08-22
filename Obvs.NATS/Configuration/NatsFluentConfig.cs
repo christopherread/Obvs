@@ -39,11 +39,11 @@ namespace Obvs.NATS.Configuration
 
         private NatsServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> CreateServiceEndpointProvider()
         {
-            return new NatsServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(
-                _settings.ServiceName, _settings.BrokerUri, _serializer, _deserializerFactory,
-                _assemblyFilter, _typeFilter,
-                propertyFilter: _settings.MessageProperties.Filter, 
-                propertyProvider: _settings.MessageProperties.Provider);
+            return new NatsServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(_settings,
+                _serializer, _deserializerFactory,
+                
+                _assemblyFilter, 
+                _typeFilter, propertyFilter: _settings.MessageProperties.Filter, propertyProvider: _settings.MessageProperties.Provider);
         }
 
         public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>

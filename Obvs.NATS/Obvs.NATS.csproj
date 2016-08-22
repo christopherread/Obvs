@@ -66,13 +66,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncSubscriptionExtensions.cs" />
-    <Compile Include="Configuration\ConnectionFactoryExtensions.cs" />
     <Compile Include="Configuration\DisposingServiceEndpoint.cs" />
     <Compile Include="Configuration\DisposingServiceEndpointClient.cs" />
     <Compile Include="Configuration\NatsConfigExtensions.cs" />
     <Compile Include="Configuration\NatsEndpointSettings.cs" />
     <Compile Include="Configuration\NatsFluentConfig.cs" />
     <Compile Include="Configuration\NatsServiceEndpointProvider.cs" />
+    <Compile Include="Configuration\SharedConnectionFactory.cs" />
     <Compile Include="MessagePublisher.cs" />
     <Compile Include="MessageSource.cs" />
     <Compile Include="MessageWrapper.cs" />

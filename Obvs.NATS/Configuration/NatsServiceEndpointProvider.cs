@@ -18,24 +18,16 @@ namespace Obvs.NATS.Configuration
     {
         private readonly IMessageSerializer _serializer;
         private readonly IMessageDeserializerFactory _deserializerFactory;
+        
         private readonly Func<Assembly, bool> _assemblyFilter;
         private readonly Func<Type, bool> _typeFilter;
         
         private readonly Func<IDictionary<string, string>, bool> _propertyFilter;
         private readonly Func<TMessage, Dictionary<string, string>> _propertyProvider;
-        private readonly Lazy<IConnection> _endpointConnection;
-        private readonly Lazy<IConnection> _endpointClientConnection;
+        private readonly Lazy<IConnection> _connection;
 
-        public NatsServiceEndpointProvider(string serviceName,
-            string brokerUri,
-            IMessageSerializer serializer,
-            IMessageDeserializerFactory deserializerFactory,
-            Func<Assembly, bool> assemblyFilter = null,
-            Func<Type, bool> typeFilter = null,
-            Lazy<IConnection> sharedConnection = null,
-            Func<IDictionary<string, string>, bool> propertyFilter = null,
-            Func<TMessage, Dictionary<string, string>> propertyProvider = null)
-            : base(serviceName)
+        public NatsServiceEndpointProvider(NatsEndpointSettings<TMessage> settings, IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null, Func<IDictionary<string, string>, bool> propertyFilter = null, Func<TMessage, Dictionary<string, string>> propertyProvider = null)
+            : base(settings.ServiceName)
         {
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
@@ -44,34 +36,24 @@ namespace Obvs.NATS.Configuration
             _propertyFilter = propertyFilter;
             _propertyProvider = propertyProvider;
 
-            if (string.IsNullOrEmpty(brokerUri) && sharedConnection == null)
+            if (string.IsNullOrEmpty(settings.Connection?.Url))
             {
-                throw new InvalidOperationException(string.Format("For service endpoint '{0}', please specify a brokerUri to connect to.", serviceName));
+                throw new InvalidOperationException(string.Format("For service endpoint '{0}', please specify a broker URL to connect to.", settings.ServiceName));
             }
 
-            if (sharedConnection == null)
-            {
-                var factory = new ConnectionFactory();
-                _endpointConnection = factory.GetLazyConnection(brokerUri);
-                _endpointClientConnection = factory.GetLazyConnection(brokerUri);
-            }
-            else
-            {
-                _endpointConnection = sharedConnection;
-                _endpointClientConnection = sharedConnection;
-            }
+            _connection = SharedConnectionFactory.Get(settings.Connection.Url, settings.Connection.IsShared);
         }
 
         public override IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpoint()
         {
             return new DisposingServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
                 new ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                    CreateSource<TRequest>(_endpointConnection, RequestsDestination),
-                    CreateSource<TCommand>(_endpointConnection, CommandsDestination),
-                    CreatePublisher<TEvent>(_endpointConnection, EventsDestination),
-                    CreatePublisher<TResponse>(_endpointConnection, ResponsesDestination),
+                    CreateSource<TRequest>(_connection, RequestsDestination),
+                    CreateSource<TCommand>(_connection, CommandsDestination),
+                    CreatePublisher<TEvent>(_connection, EventsDestination),
+                    CreatePublisher<TResponse>(_connection, ResponsesDestination),
                     typeof(TServiceMessage)),
-                GetConnectionDisposable(_endpointConnection));
+                GetConnectionDisposable(_connection));
         }
 
         private IMessageSource<T> CreateSource<T>(Lazy<IConnection> connection, string subject) where T : class, TMessage
@@ -90,12 +72,12 @@ namespace Obvs.NATS.Configuration
         {
             return new DisposingServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
                 new ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                    CreateSource<TEvent>(_endpointClientConnection, EventsDestination),
-                    CreateSource<TResponse>(_endpointClientConnection, ResponsesDestination),
-                    CreatePublisher<TRequest>(_endpointClientConnection, RequestsDestination),
-                    CreatePublisher<TCommand>(_endpointClientConnection, CommandsDestination),
+                    CreateSource<TEvent>(_connection, EventsDestination),
+                    CreateSource<TResponse>(_connection, ResponsesDestination),
+                    CreatePublisher<TRequest>(_connection, RequestsDestination),
+                    CreatePublisher<TCommand>(_connection, CommandsDestination),
                     typeof(TServiceMessage)),
-                GetConnectionDisposable(_endpointClientConnection));
+                GetConnectionDisposable(_connection));
         }
         
         private static IDisposable GetConnectionDisposable(Lazy<IConnection> lazyConnection)

@@ -19,8 +19,12 @@ namespace Obvs.NATS.Tests
             var bus = ServiceBus.Configure()
                 .WithNatsEndpoint<ITestService, IMessage, ICommand, IEvent, IRequest, IResponse>(settings =>
                 {
-                    settings.BrokerUri = "nats://localhost:4222";
                     settings.ServiceName = "Obvs.NATS.TestService";
+                    settings.Configure(connection =>
+                    {
+                        connection.Url = "nats://localhost:4222";
+                        connection.IsShared = true;
+                    });
                     settings.Configure(messageProperty =>
                     {
                         messageProperty.Filter = properties => properties.ContainsKey("blah");
