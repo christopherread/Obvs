@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{48DC4D8D-6225-4DED-8B46-0742AFB14531}</ProjectGuid>
+    <ProjectGuid>{7F7B4872-3728-4E99-83BE-72D9F5BF46E1}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Obvs.NATS</RootNamespace>
-    <AssemblyName>Obvs.NATS</AssemblyName>
+    <RootNamespace>Obvs.NATS.Tests</RootNamespace>
+    <AssemblyName>Obvs.NATS.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -34,12 +34,20 @@
       <HintPath>..\packages\NATS.Client.0.6.0\lib\net45\NATS.Client.DLL</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="nunit.framework, Version=3.4.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.4.1\lib\net45\nunit.framework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Obvs, Version=3.0.0.49, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Obvs.3.0.0.49\lib\net45\Obvs.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="protobuf-net, Version=2.1.0.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
-      <HintPath>..\packages\protobuf-net.2.1.0\lib\net45\protobuf-net.dll</HintPath>
+    <Reference Include="Obvs.Serialization.Json, Version=3.0.1.27, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.Serialization.Json.3.0.1.27\lib\net45\Obvs.Serialization.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -65,21 +73,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AsyncSubscriptionExtensions.cs" />
-    <Compile Include="Configuration\ConnectionFactoryExtensions.cs" />
-    <Compile Include="Configuration\DisposingServiceEndpoint.cs" />
-    <Compile Include="Configuration\DisposingServiceEndpointClient.cs" />
-    <Compile Include="Configuration\NatsConfigExtensions.cs" />
-    <Compile Include="Configuration\NatsEndpointSettings.cs" />
-    <Compile Include="Configuration\NatsFluentConfig.cs" />
-    <Compile Include="Configuration\NatsServiceEndpointProvider.cs" />
-    <Compile Include="MessagePublisher.cs" />
-    <Compile Include="MessageSource.cs" />
-    <Compile Include="MessageWrapper.cs" />
+    <Compile Include="TestMessage.cs" />
+    <Compile Include="TestServiceBus.cs" />
+    <Compile Include="TestSourceAndPublisher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs.NATS\Obvs.NATS.csproj">
+      <Project>{48DC4D8D-6225-4DED-8B46-0742AFB14531}</Project>
+      <Name>Obvs.NATS</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
