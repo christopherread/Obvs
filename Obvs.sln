@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Tests", "Obvs.Tests\Ob
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".docs", ".docs", "{AE31114F-DC26-40D3-9569-11B9EC07879C}"
 	ProjectSection(SolutionItems) = preProject
-		LICENSE.txt.txt = LICENSE.txt.txt
+		LICENSE.txt = LICENSE.txt
 		README.md = README.md
 	EndProjectSection
 EndProject
