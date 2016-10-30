@@ -7,7 +7,7 @@
     <authors>$author$</authors>
     <description>Monitoring extension for Obvs, using ElasticSearch</description>
     <copyright>Copyright 2015</copyright>
-    <releaseNotes>Removed automatic mapping creation of ObvsCounter type</releaseNotes>
+    <releaseNotes>Updated to </releaseNotes>
     <projectUrl>http://inter8ection.github.io/Obvs</projectUrl>
     <tags>obvs monitoring elasticsearch</tags>
   </metadata>
