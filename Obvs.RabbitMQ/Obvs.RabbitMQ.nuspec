@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>RabbitMQ transport support for Obvs</description>
     <copyright>Copyright 2015</copyright>
-    <releaseNotes>Fixed publisher to use the byte array returned from the serializer. Use EventingBasicConsumer to consume messages asynchronously.</releaseNotes>
+    <releaseNotes>Upgraded to RabbitMQ.Client 4.1 and changed target to .NET 4.5.1 to allow this.</releaseNotes>
   </metadata>
 </package>
