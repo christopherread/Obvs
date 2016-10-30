@@ -55,6 +55,8 @@ namespace Obvs.Serialization.NetJson
 
         private static MethodInfo GetUnboundedSerializeMethodInfo()
         {
+         
+
             return _serializeMethod
                    ?? (_serializeMethod =
                        typeof(NetJSON.NetJSON).GetMethods(BindingFlags.Static | BindingFlags.Public)
@@ -62,7 +64,8 @@ namespace Obvs.Serialization.NetJson
                                mi => // This matches NetJSON.NetJSON.Serialize<T>(T message, TextWriter writer) method.
                                    mi.Name == "Serialize"
                                    && mi.IsGenericMethodDefinition
-                                   && mi.GetParameters().Length == 2));
+                                   && mi.GetParameters().Length == 2 &&
+                                    mi.GetParameters()[1].ParameterType == typeof(TextWriter)));
         }
 
         private static Action<object, TextWriter> CreateSerializer(Type type)
