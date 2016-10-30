@@ -202,7 +202,6 @@ namespace Obvs.ActiveMQ.Tests
                         .Named("Obvs.TestService2")
                         .SerializedAsJson()
                         .AsServer())
-                .WithActiveMQEndpoint<ITestMessage1>(endpoint => endpoint.)
                 .PublishLocally().AnyMessagesWithNoEndpointClients()
                 .UsingConsoleLogging()
                 .Create();
