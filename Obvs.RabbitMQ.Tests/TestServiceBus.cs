@@ -22,19 +22,19 @@ namespace Obvs.RabbitMQ.Tests
             IServiceBus serviceBus = ServiceBus.Configure()
                     .WithRabbitMQEndpoints<ITestMessage>()
                         .Named("Obvs.TestService")
-                        .ConnectToBroker("amqp://localhost")
+                        .ConnectToBroker("amqp://192.168.99.100:32777") // local rabbitmq from docker hub
                         .SerializedAsJson()
                         .AsClientAndServer()
                     .UsingConsoleLogging()
                     .Create();
 
             // create threadsafe collection to hold received messages in
-            ConcurrentBag<IMessage> messages = new ConcurrentBag<IMessage>();
+            var messages = new ConcurrentBag<IMessage>();
 
             // create some actions that will act as a fake services acting on incoming commands and requests
             Action<TestCommand> fakeService1 = command => serviceBus.PublishAsync(new TestEvent { Id = command.Id });
             Action<TestRequest> fakeService2 = request => serviceBus.ReplyAsync(request, new TestResponse { Id = request.Id });
-            AnonymousObserver<IMessage> observer = new AnonymousObserver<IMessage>(msg => { messages.Add(msg); Console.WriteLine(msg); }, exception => Console.WriteLine(exception));
+            var observer = new AnonymousObserver<IMessage>(msg => { messages.Add(msg); Console.WriteLine(msg); }, exception => Console.WriteLine(exception));
 
             // subscribe to all messages on the ServiceBus
             serviceBus.Events.Subscribe(observer);
@@ -55,6 +55,9 @@ namespace Obvs.RabbitMQ.Tests
             Assert.That(messages.OfType<TestEvent>().Count() == 1, "TestEvent not received");
             Assert.That(messages.OfType<TestRequest>().Count() == 1, "TestRequest not received");
             Assert.That(messages.OfType<TestResponse>().Count() == 1, "TestResponse not received");
+
+            // always call Dispose on serviceBus when exiting process
+            ((IDisposable)serviceBus).Dispose();
         }
     }
 

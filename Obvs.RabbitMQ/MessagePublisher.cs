@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿using System;
 using System.Threading.Tasks;
 using Obvs.Serialization;
 using RabbitMQ.Client;
@@ -11,17 +11,15 @@ namespace Obvs.RabbitMQ
         private readonly IMessageSerializer _serializer;
         private readonly string _exchange;
         private readonly string _routingKeyPrefix;
-        private readonly IConnection _connection;
-        private readonly IModel _channel;
+        private readonly Lazy<IModel> _channel;
 
-        public MessagePublisher(IConnectionFactory connectionFactory, IMessageSerializer serializer, string exchange, string routingKeyPrefix)
+        public MessagePublisher(Lazy<IModel> channel, IMessageSerializer serializer, string exchange,
+            string routingKeyPrefix)
         {
+            _channel = channel;
             _serializer = serializer;
             _exchange = exchange;
             _routingKeyPrefix = routingKeyPrefix;
-            _connection = connectionFactory.CreateConnection();
-            _channel = _connection.CreateModel();
-            _channel.ExchangeDeclare(_exchange, ExchangeType.Topic);
         }
 
         public Task PublishAsync(TMessage message)
@@ -33,7 +31,8 @@ namespace Obvs.RabbitMQ
         private void Publish(TMessage message)
         {
             byte[] body = _serializer.Serialize(message);
-            _channel.BasicPublish(_exchange, RoutingKey(message), new BasicProperties { ContentType = "bytes" }, body);
+            _channel.Value.BasicPublish(_exchange, RoutingKey(message), new BasicProperties {ContentType = "bytes"},
+                body);
         }
 
         private string RoutingKey(TMessage message)
@@ -43,13 +42,6 @@ namespace Obvs.RabbitMQ
 
         public void Dispose()
         {
-            if (_channel != null)
-            {
-                _channel.Close();
-                _channel.Dispose();
-                _connection.Close();
-                _connection.Dispose();
-            }
         }
     }
 }

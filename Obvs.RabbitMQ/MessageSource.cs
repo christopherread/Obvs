@@ -14,27 +14,19 @@ namespace Obvs.RabbitMQ
     {
         private readonly string _exchange;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
-        private readonly IConnection _connection;
-        private readonly IModel _channel;
+        private readonly Lazy<IModel> _channel;
         private readonly string _routingKey;
 
-        public MessageSource(IConnectionFactory connectionFactory, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string exchange, string routingKeyPrefix)
+        public MessageSource(Lazy<IModel> channel, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string exchange, string routingKeyPrefix)
         {
+            _channel = channel;
             _exchange = exchange;
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
-
-            _connection = connectionFactory.CreateConnection();
-            _channel = _connection.CreateModel();
-            _channel.ExchangeDeclare(_exchange, ExchangeType.Topic);
             _routingKey = string.Format("{0}.*", routingKeyPrefix);
         }
 
         public void Dispose()
         {
-            _channel.Close();
-            _channel.Dispose();
-            _connection.Close();
-            _connection.Dispose();
         }
 
         public IObservable<TMessage> Messages
@@ -43,15 +35,15 @@ namespace Obvs.RabbitMQ
             {
                 return Observable.Create<TMessage>(observer =>
                 {
-                    var queue = _channel.QueueDeclare();
-                    _channel.QueueBind(queue, _exchange, _routingKey);
-                    var consumer = new EventingBasicConsumer(_channel);
+                    var queue = _channel.Value.QueueDeclare();
+                    _channel.Value.QueueBind(queue, _exchange, _routingKey);
+                    var consumer = new EventingBasicConsumer(_channel.Value);
                     
                     var subscription = consumer.ToObservable()
                                                .Select(Deserialize)
                                                .Subscribe(observer);
 
-                    _channel.BasicConsume(queue, true, consumer);
+                    _channel.Value.BasicConsume(queue, true, consumer);
 
                     return Disposable.Create(() =>
                     {

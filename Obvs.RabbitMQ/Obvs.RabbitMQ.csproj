@@ -57,6 +57,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\DisposingServiceEndpoint.cs" />
+    <Compile Include="Configuration\DisposingServiceEndpointClient.cs" />
     <Compile Include="Configuration\RabbitMQConfigExtensions.cs" />
     <Compile Include="Configuration\RabbitMQFluentConfig.cs" />
     <Compile Include="Configuration\RabbitMQServiceEndpointProvider.cs" />

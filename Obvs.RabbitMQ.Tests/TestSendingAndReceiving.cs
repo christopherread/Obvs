@@ -23,21 +23,32 @@ namespace Obvs.RabbitMQ.Tests
             string exchange = GetType().Name;
             const string routingKeyPrefix = "Messages";
 
-            IConnectionFactory connectionFactory = new ConnectionFactory { HostName = "localhost" };
-            IMessageSource<IMessage> messageSource = CreateMessageSource(format, connectionFactory, exchange, routingKeyPrefix);
-            IMessagePublisher<IMessage> messagePublisher = CreateMessagePublisher(format, connectionFactory, exchange, routingKeyPrefix);
+            IConnectionFactory connectionFactory = new ConnectionFactory
+            {
+                HostName = "192.168.99.100", // local rabbitmq from docker hub
+                Port = 32777
+            };
+            var connection = connectionFactory.CreateConnection();
+            var channel = new Lazy<IModel>(() =>
+            {
+                var chan = connection.CreateModel();
+                chan.ExchangeDeclare(exchange, ExchangeType.Topic);
+                return chan;
+            });
+            var messageSource = CreateMessageSource(format, channel, exchange, routingKeyPrefix);
+            var messagePublisher = CreateMessagePublisher(format, channel, exchange, routingKeyPrefix);
 
-            List<TestMessage> receivedMessages1 = new List<TestMessage>();
+            var receivedMessages1 = new List<TestMessage>();
             messageSource.Messages
                          .OfType<TestMessage>()
                          .Subscribe(msg => { Console.WriteLine(msg); receivedMessages1.Add(msg); }, Console.WriteLine, () => Console.WriteLine("Completed!"));
 
-            List<TestMessage> receivedMessages2 = new List<TestMessage>();
+            var receivedMessages2 = new List<TestMessage>();
             messageSource.Messages
                          .OfType<TestMessage>()
                          .Subscribe(msg => { Console.WriteLine(msg); receivedMessages2.Add(msg); }, Console.WriteLine, () => Console.WriteLine("Completed!"));
 
-            List<TestMessage> messages = new List<TestMessage>
+            var messages = new List<TestMessage>
             {
                 new TestMessage {Data = "Hello"},
                 new TestMessage {Data = "World!"},
@@ -48,7 +59,7 @@ namespace Obvs.RabbitMQ.Tests
                 new TestMessage {Data = "World"}
             };
 
-            foreach (TestMessage message in messages)
+            foreach (var message in messages)
             {
                 messagePublisher.PublishAsync(message);
             }
@@ -60,28 +71,28 @@ namespace Obvs.RabbitMQ.Tests
 
             for (int index = 0; index < messages.Count; index++)
             {
-                TestMessage message = messages[index];
-                TestMessage received1 = receivedMessages1[index];
-                TestMessage received2 = receivedMessages2[index];
+                var message = messages[index];
+                var received1 = receivedMessages1[index];
+                var received2 = receivedMessages2[index];
                 Assert.That(received1.Data == message.Data && received1.Timestamp == message.Timestamp, string.Format("Incorrect message1: {0}", received1));
                 Assert.That(received2.Data == message.Data && received2.Timestamp == message.Timestamp, string.Format("Incorrect message2: {0}", received2));
             }
         }
 
-        private static IMessagePublisher<IMessage> CreateMessagePublisher(string format, IConnectionFactory connectionFactory,
+        private static IMessagePublisher<IMessage> CreateMessagePublisher(string format, Lazy<IModel> channel,
             string exchange, string routingKeyPrefix)
         {
-            return new MessagePublisher<IMessage>(connectionFactory,
+            return new MessagePublisher<IMessage>(channel,
                 format == "Json"
                     ? (IMessageSerializer) new JsonMessageSerializer()
                     : new ProtoBufMessageSerializer(),
                 exchange, routingKeyPrefix);
         }
 
-        private static IMessageSource<IMessage> CreateMessageSource(string format, IConnectionFactory connectionFactory, string exchange,
+        private static IMessageSource<IMessage> CreateMessageSource(string format, Lazy<IModel> channel, string exchange,
             string routingKeyPrefix)
         {
-            return new MessageSource<IMessage>(connectionFactory,
+            return new MessageSource<IMessage>(channel,
                 new List<IMessageDeserializer<TestMessage>>
                 {
                     format == "Json"
