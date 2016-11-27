@@ -7,5 +7,6 @@
     <authors>$author$</authors>
     <description>NLog support for Obvs</description>
     <copyright>Copyright 2015</copyright>
+    <releaseNotes>Updated to NLog 4.3.11</releaseNotes>
   </metadata>
 </package>
