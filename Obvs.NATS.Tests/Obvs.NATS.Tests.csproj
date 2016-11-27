@@ -30,8 +30,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NATS.Client, Version=0.6.1.0, Culture=neutral, PublicKeyToken=5b58bc7249e111a9, processorArchitecture=MSIL">
-      <HintPath>..\packages\NATS.Client.0.6.1\lib\net45\NATS.Client.DLL</HintPath>
+    <Reference Include="NATS.Client, Version=0.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NATS.Client.0.7.0\lib\net45\NATS.Client.DLL</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
