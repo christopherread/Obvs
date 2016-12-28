@@ -1225,7 +1225,7 @@ namespace Obvs.Tests
             Assert.That(subscriber.Received.Count(), Is.EqualTo(0));
         }
 
-        [Test, ExpectedException(typeof(ArgumentException))]
+        [Test]
         public void ShouldThrowExceptionIfAlreadySubscribed()
         {
             FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1241,7 +1241,8 @@ namespace Obvs.Tests
             FakeSubscriber subscriber = new FakeSubscriber();
 
             serviceBus.Subscribe(subscriber);
-            serviceBus.Subscribe(subscriber);
+
+            Assert.Throws<ArgumentException>(() => serviceBus.Subscribe(subscriber));
         }
         
         [Test]
@@ -1273,7 +1274,7 @@ namespace Obvs.Tests
             Assert.That(subscriber.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
         }
         
-        [Test, ExpectedException(typeof(ArgumentNullException))]
+        [Test]
         public void ShouldThrowExceptionIfSubscriberIsNull()
         {
             FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1286,10 +1287,10 @@ namespace Obvs.Tests
                 .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
                 .UsingConsoleLogging().Create();
 
-            serviceBus.Subscribe(null);
+            Assert.Throws<ArgumentNullException>(() => serviceBus.Subscribe(null));
         }
         
-        [Test, ExpectedException(typeof(ArgumentException))]
+        [Test]
         public void ShouldThrowExceptionIfSubscriberHasNoValidMessageHandlers()
         {
             FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1302,7 +1303,7 @@ namespace Obvs.Tests
                 .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
                 .UsingConsoleLogging().Create();
 
-            serviceBus.Subscribe(new object());
+            Assert.Throws<ArgumentException>(() => serviceBus.Subscribe(new object()));
         }
         
         [Test]
@@ -1496,7 +1497,7 @@ namespace Obvs.Tests
         }
 
         [Test]
-        public async void ShouldMonitorAllMessagesSentAndReceived()
+        public async Task ShouldMonitorAllMessagesSentAndReceived()
         {
             FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
             FakeServiceEndpoint fakeServer = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
