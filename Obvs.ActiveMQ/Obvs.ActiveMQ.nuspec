@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>ActiveMQ transport support for Obvs</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Ensure property provider which returns a null dictionary doesn't cause exception when publishing. Throw a clearly worded exception if property provider dictionary already contains the TypeName property, as this can be indicative of the caller re-using the same dictionary for multiple messages.</releaseNotes>
+    <releaseNotes>Updated to ActiveMQ 1.7.2</releaseNotes>
   </metadata>
 </package>
