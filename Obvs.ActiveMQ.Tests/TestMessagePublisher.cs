@@ -165,17 +165,20 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _producer.Close()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test, ExpectedException(typeof(InvalidOperationException))]
-        public async Task ShouldThrowExceptionIfPublishAttemptedAfterDisposed()
+        [Test]
+        public void ShouldThrowExceptionIfPublishAttemptedAfterDisposed()
         {
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
-
-            await _publisher.PublishAsync(new TestMessage());
-            _publisher.Dispose();
-            await _publisher.PublishAsync(new TestMessage());
+            
+            Assert.ThrowsAsync<InvalidOperationException>(async () => 
+            {    
+                await _publisher.PublishAsync(new TestMessage());
+                _publisher.Dispose();
+                await _publisher.PublishAsync(new TestMessage());
+            });
         }
 
-        [Test, ExpectedException(typeof(Exception))]
+        [Test]
         public async Task ShouldThrowExceptionIfPropertyDictionaryAlreadyContainsTypeName()
         {
             Func<IMessage, Dictionary<string, object>> propertyProvider =
@@ -190,7 +193,6 @@ namespace Obvs.ActiveMQ.Tests
             catch (Exception exception)
             {
                 Assert.That(exception.Message, Contains.Substring(MessagePropertyNames.TypeName));
-                throw;
             }
         }
 
