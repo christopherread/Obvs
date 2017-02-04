@@ -5,7 +5,8 @@
     <version>$version$</version>
     <title>$title$</title>
     <authors>$author$</authors>
-    <description>log4net support for Obvs</description>
+    <description>log4net extension for Obvs</description>
     <copyright>Copyright 2015</copyright>
+    <releaseNotes>Updated to log4net 2.0.7</releaseNotes>
   </metadata>
 </package>
