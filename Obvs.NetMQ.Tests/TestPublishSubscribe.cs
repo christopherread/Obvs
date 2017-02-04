@@ -17,7 +17,7 @@ namespace Obvs.NetMQ.Tests
     public class TestPublishSubscribe
     {
         [Test, Explicit]
-        public async void TestSendingAndReceivingStringsOverLocalHost()
+        public async Task TestSendingAndReceivingStringsOverLocalHost()
         {
             const string topic = "TestTopic";
 
@@ -64,7 +64,7 @@ namespace Obvs.NetMQ.Tests
         }
 
         [Test, Explicit]
-        public async void TestSendingAndReceivingBytesOverLocalHost()
+        public async Task TestSendingAndReceivingBytesOverLocalHost()
         {
             const string topic = "TestTopic";
 
@@ -111,7 +111,7 @@ namespace Obvs.NetMQ.Tests
         }
 
 		[Test, Explicit]
-	    public void TestMessagesLongerThan32Characters()
+	    public async Task TestMessagesLongerThan32Characters()
 		{
 			int max = 5;
 			CountdownEvent cd = new CountdownEvent(max);
@@ -141,17 +141,14 @@ namespace Obvs.NetMQ.Tests
 
 			    for (int i = 0; i < max; i++)
 			    {
-				    publisher.PublishAsync(new TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
+				    await publisher.PublishAsync(new TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
 				    {
 					    Id = i
 				    });
 			    }
 		    }
 
-			if (cd.Wait(TimeSpan.FromSeconds(10)) == false)
-			{
-				Assert.Fail("Error: Test should complete in 10 seconds or less.");
-			}
+            await Task.Delay(TimeSpan.FromSeconds(2));
 
             sub.Dispose();
 	    }

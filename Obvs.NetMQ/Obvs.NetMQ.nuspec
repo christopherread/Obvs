@@ -5,8 +5,8 @@
     <version>$version$</version>
     <title>$title$</title>
     <authors>$author$</authors>
-    <description>NetMQ transport support for Obvs</description>
+    <description>NetMQ transport extension for Obvs</description>
     <copyright>Copyright 2014</copyright>
-    <releaseNotes>Updated to latest stable NetMQ client 3.3.3.4</releaseNotes>
+    <releaseNotes>Upgraded to NetMQ client version 4.0</releaseNotes>
   </metadata>
 </package>
