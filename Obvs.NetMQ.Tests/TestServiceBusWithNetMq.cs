@@ -22,7 +22,7 @@ namespace Obvs.NetMQ.Tests
         /// and two client each in their own process, but there are many other possibilties!
         /// </summary>
         [Test, Explicit]
-        public async void TestServiceEndpointsOverLocalHostSockets()
+        public async Task TestServiceEndpointsOverLocalHostSockets()
         {
             // create a server that hosts endpoints for two services
             var serviceBus = ServiceBus.Configure()
