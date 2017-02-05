@@ -21,7 +21,6 @@ namespace Obvs.RabbitMQ.Configuration
         private readonly IMessageDeserializerFactory _deserializerFactory;
         private readonly Func<Assembly, bool> _assemblyFilter;
         private readonly Func<Type, bool> _typeFilter;
-        private readonly Lazy<IModel> _channel;
         private readonly Lazy<IConnection> _connection;
 
         public RabbitMQServiceEndpointProvider(string serviceName, string brokerUri, IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
@@ -35,26 +34,23 @@ namespace Obvs.RabbitMQ.Configuration
 
             _connection = new Lazy<IConnection>(() =>
             {
-                var connectionFactory = new ConnectionFactory { Uri = brokerUri, AutomaticRecoveryEnabled = true, };
+                var connectionFactory = new ConnectionFactory
+                {
+                    Uri = brokerUri,
+                    AutomaticRecoveryEnabled = true,
+                };
                 var conn = connectionFactory.CreateConnection();
                 return conn;
-            }, LazyThreadSafetyMode.ExecutionAndPublication);
-
-            _channel = new Lazy<IModel>(() =>
-            {
-                var channel = _connection.Value.CreateModel();
-                channel.ExchangeDeclare(ServiceName, ExchangeType.Topic);
-                return channel;
             }, LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
         public override IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpoint()
         {
             return new ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                SourcePublisherFactory.CreateSource<TRequest, TServiceMessage>(_brokerUri, RequestsDestination, ServiceName, _deserializerFactory, _channel, _assemblyFilter, _typeFilter),
-                SourcePublisherFactory.CreateSource<TCommand, TServiceMessage>(_brokerUri, CommandsDestination, ServiceName, _deserializerFactory, _channel, _assemblyFilter, _typeFilter),
-                SourcePublisherFactory.CreatePublisher<TEvent>(_brokerUri, EventsDestination, ServiceName, _serializer, _channel),
-                SourcePublisherFactory.CreatePublisher<TResponse>(_brokerUri, ResponsesDestination, ServiceName, _serializer, _channel),
+                SourcePublisherFactory.CreateSource<TRequest, TServiceMessage>(_brokerUri, RequestsDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter),
+                SourcePublisherFactory.CreateSource<TCommand, TServiceMessage>(_brokerUri, CommandsDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter),
+                SourcePublisherFactory.CreatePublisher<TEvent>(_brokerUri, EventsDestination, ServiceName, _serializer, _connection),
+                SourcePublisherFactory.CreatePublisher<TResponse>(_brokerUri, ResponsesDestination, ServiceName, _serializer, _connection),
                 typeof(TServiceMessage));
         }
 
@@ -63,27 +59,19 @@ namespace Obvs.RabbitMQ.Configuration
 
             return new DisposingServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
                 new ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                SourcePublisherFactory.CreateSource<TEvent, TServiceMessage>(_brokerUri, EventsDestination, ServiceName, _deserializerFactory, _channel, _assemblyFilter, _typeFilter),
-                SourcePublisherFactory.CreateSource<TResponse, TServiceMessage>(_brokerUri, ResponsesDestination, ServiceName, _deserializerFactory, _channel, _assemblyFilter, _typeFilter),
-                SourcePublisherFactory.CreatePublisher<TRequest>(_brokerUri, RequestsDestination, ServiceName, _serializer, _channel),
-                SourcePublisherFactory.CreatePublisher<TCommand>(_brokerUri, CommandsDestination, ServiceName, _serializer, _channel),
+                SourcePublisherFactory.CreateSource<TEvent, TServiceMessage>(_brokerUri, EventsDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter),
+                SourcePublisherFactory.CreateSource<TResponse, TServiceMessage>(_brokerUri, ResponsesDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter),
+                SourcePublisherFactory.CreatePublisher<TRequest>(_brokerUri, RequestsDestination, ServiceName, _serializer, _connection),
+                SourcePublisherFactory.CreatePublisher<TCommand>(_brokerUri, CommandsDestination, ServiceName, _serializer, _connection),
                 typeof(TServiceMessage)),
-                GetConnectionDisposable(_connection, _channel));
+                GetConnectionDisposable(_connection));
         }
 
-        private static IDisposable GetConnectionDisposable(Lazy<IConnection> connection, Lazy<IModel> channel)
+        private static IDisposable GetConnectionDisposable(Lazy<IConnection> connection)
         {
             return Disposable.Create(() =>
             {
-                if (channel.IsValueCreated &&
-                    channel.Value.IsOpen)
-                {
-                    channel.Value.Close();
-                    channel.Value.Dispose();
-                }
-
-                if (connection.IsValueCreated &&
-                    connection.Value.IsOpen)
+                if (connection.IsValueCreated)
                 {
                     connection.Value.Close();
                     connection.Value.Dispose();

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Obvs.RabbitMQ.Tests.Messages;
 using Obvs.Serialization;
@@ -18,33 +19,33 @@ namespace Obvs.RabbitMQ.Tests
         [Test, Explicit]
         [TestCase("Json")]
         [TestCase("ProtoBuf")]
-        public void TestSendReceiveAs(string format)
+        public async Task TestSendReceiveAs(string format)
         {
-            string exchange = GetType().Name;
+            var exchange = GetType().Name;
             const string routingKeyPrefix = "Messages";
 
-            IConnectionFactory connectionFactory = new ConnectionFactory
+            // edit to correspond with 5672 port on local RabbitMQ from DockerHub
+            var connectionFactory = new ConnectionFactory
             {
-                HostName = "192.168.99.100", // local rabbitmq from docker hub
-                Port = 32777
+                HostName = "192.168.99.100", 
+                Port = 32773
             };
-            var connection = connectionFactory.CreateConnection();
-            var channel = new Lazy<IModel>(() =>
+            var connection = new Lazy<IConnection>(() =>
             {
-                var chan = connection.CreateModel();
-                chan.ExchangeDeclare(exchange, ExchangeType.Topic);
-                return chan;
-            });
-            var messageSource = CreateMessageSource(format, channel, exchange, routingKeyPrefix);
-            var messagePublisher = CreateMessagePublisher(format, channel, exchange, routingKeyPrefix);
+                var conn = connectionFactory.CreateConnection();
+                return conn;
+            }, LazyThreadSafetyMode.ExecutionAndPublication);
+
+            var messageSource = CreateMessageSource(format, connection, exchange, routingKeyPrefix);
+            var messagePublisher = CreateMessagePublisher(format, connection, exchange, routingKeyPrefix);
 
             var receivedMessages1 = new List<TestMessage>();
-            messageSource.Messages
+            var sub1 = messageSource.Messages
                          .OfType<TestMessage>()
                          .Subscribe(msg => { Console.WriteLine(msg); receivedMessages1.Add(msg); }, Console.WriteLine, () => Console.WriteLine("Completed!"));
 
             var receivedMessages2 = new List<TestMessage>();
-            messageSource.Messages
+            var sub2 = messageSource.Messages
                          .OfType<TestMessage>()
                          .Subscribe(msg => { Console.WriteLine(msg); receivedMessages2.Add(msg); }, Console.WriteLine, () => Console.WriteLine("Completed!"));
 
@@ -61,13 +62,13 @@ namespace Obvs.RabbitMQ.Tests
 
             foreach (var message in messages)
             {
-                messagePublisher.PublishAsync(message);
+                await messagePublisher.PublishAsync(message);
             }
 
-            Thread.Sleep(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(2));
 
-            Assert.That(receivedMessages1.Count, Is.EqualTo(7), "Incorrect number of messages received for first subscription");
-            Assert.That(receivedMessages2.Count, Is.EqualTo(7), "Incorrect number of messages received for second subscription");
+            Assert.That(receivedMessages1.Count, Is.EqualTo(messages.Count), "Incorrect number of messages received for first subscription");
+            Assert.That(receivedMessages2.Count, Is.EqualTo(messages.Count), "Incorrect number of messages received for second subscription");
 
             for (int index = 0; index < messages.Count; index++)
             {
@@ -77,22 +78,28 @@ namespace Obvs.RabbitMQ.Tests
                 Assert.That(received1.Data == message.Data && received1.Timestamp == message.Timestamp, string.Format("Incorrect message1: {0}", received1));
                 Assert.That(received2.Data == message.Data && received2.Timestamp == message.Timestamp, string.Format("Incorrect message2: {0}", received2));
             }
+
+            sub1.Dispose();
+            sub2.Dispose();
+            messagePublisher.Dispose();
+            messageSource.Dispose();
+            connection.Value.Close();
         }
 
-        private static IMessagePublisher<IMessage> CreateMessagePublisher(string format, Lazy<IModel> channel,
+        private static IMessagePublisher<IMessage> CreateMessagePublisher(string format, Lazy<IConnection> connection,
             string exchange, string routingKeyPrefix)
         {
-            return new MessagePublisher<IMessage>(channel,
+            return new MessagePublisher<IMessage>(connection,
                 format == "Json"
                     ? (IMessageSerializer) new JsonMessageSerializer()
                     : new ProtoBufMessageSerializer(),
                 exchange, routingKeyPrefix);
         }
 
-        private static IMessageSource<IMessage> CreateMessageSource(string format, Lazy<IModel> channel, string exchange,
+        private static IMessageSource<IMessage> CreateMessageSource(string format, Lazy<IConnection> connection, string exchange,
             string routingKeyPrefix)
         {
-            return new MessageSource<IMessage>(channel,
+            return new MessageSource<IMessage>(connection,
                 new List<IMessageDeserializer<TestMessage>>
                 {
                     format == "Json"

@@ -14,7 +14,7 @@ namespace Obvs.RabbitMQ.Extensions
                 {
                     EventHandler<BasicDeliverEventArgs> onReceived = (sender, args) => observer.OnNext(args);
                     EventHandler<ConsumerEventArgs> consumerCancelled = (sender, args) => observer.OnCompleted();
-
+                    
                     consumer.Received += onReceived;
                     consumer.ConsumerCancelled += consumerCancelled;
 

@@ -12,14 +12,14 @@ namespace Obvs.RabbitMQ
 {
     public class MessageSource<TMessage> : IMessageSource<TMessage> where TMessage : class
     {
+        private readonly Lazy<IConnection> _connection;
         private readonly string _exchange;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
-        private readonly Lazy<IModel> _channel;
         private readonly string _routingKey;
 
-        public MessageSource(Lazy<IModel> channel, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string exchange, string routingKeyPrefix)
+        public MessageSource(Lazy<IConnection> connection, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string exchange, string routingKeyPrefix)
         {
-            _channel = channel;
+            _connection = connection;
             _exchange = exchange;
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
             _routingKey = string.Format("{0}.*", routingKeyPrefix);
@@ -35,19 +35,28 @@ namespace Obvs.RabbitMQ
             {
                 return Observable.Create<TMessage>(observer =>
                 {
-                    var queue = _channel.Value.QueueDeclare();
-                    _channel.Value.QueueBind(queue, _exchange, _routingKey);
-                    var consumer = new EventingBasicConsumer(_channel.Value);
+                    var channel = _connection.Value.CreateModel();
+                    channel.ExchangeDeclare(_exchange, ExchangeType.Topic);
+
+                    var queue = channel.QueueDeclare();
+                    channel.QueueBind(queue, _exchange, _routingKey);
+
+                    var consumer = new EventingBasicConsumer(channel);
                     
                     var subscription = consumer.ToObservable()
                                                .Select(Deserialize)
                                                .Subscribe(observer);
 
-                    _channel.Value.BasicConsume(queue, true, consumer);
+                    channel.BasicConsume(queue, true, consumer);
 
                     return Disposable.Create(() =>
                     {
                         subscription.Dispose();
+                        channel.BasicCancel(consumer.ConsumerTag);
+                        channel.QueueUnbind(queue, _exchange, _routingKey);
+                        channel.QueueDelete(queue);
+                        channel.Close();
+                        channel.Dispose();
                     });
                 });
             }
@@ -61,11 +70,25 @@ namespace Obvs.RabbitMQ
 
         private IMessageDeserializer<TMessage> GetDeserializer(BasicDeliverEventArgs deliverEventArgs)
         {
-            string typeName = deliverEventArgs.RoutingKey.Split('.').LastOrDefault();
+            var typeName = deliverEventArgs.RoutingKey.Split('.').LastOrDefault();
 
-            return _deserializers.ContainsKey(typeName)
-                ? _deserializers[typeName]
-                : _deserializers.Values.Single();
+            if (typeName == null)
+            {
+                throw new Exception(string.Format("Unable to parse typeName from RoutingKey '{0}'", deliverEventArgs.RoutingKey));
+            }
+
+            IMessageDeserializer<TMessage> deserializer;
+            if (_deserializers.TryGetValue(typeName, out deserializer))
+            {
+                return deserializer;
+            }
+
+            if (_deserializers.Count == 1)
+            {
+                return _deserializers.Single().Value;
+            }
+
+            throw new Exception(string.Format("Unable to find deserializer for typeName '{0}'", typeName));
         }
     }
 }

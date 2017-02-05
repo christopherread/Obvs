@@ -22,7 +22,7 @@ namespace Obvs.RabbitMQ.Tests
             IServiceBus serviceBus = ServiceBus.Configure()
                     .WithRabbitMQEndpoints<ITestMessage>()
                         .Named("Obvs.TestService")
-                        .ConnectToBroker("amqp://192.168.99.100:32777") // local rabbitmq from docker hub
+                        .ConnectToBroker("amqp://192.168.99.100:32773") // edit to correspond with 5672 port on local RabbitMQ from DockerHub
                         .SerializedAsJson()
                         .AsClientAndServer()
                     .UsingConsoleLogging()
