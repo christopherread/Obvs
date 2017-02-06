@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Obvs.Configuration;
 using Obvs.RabbitMQ.Configuration;
@@ -17,7 +18,7 @@ namespace Obvs.RabbitMQ.Tests
     public class TestServiceBus
     {
         [Test, Explicit]
-        public void ShouldSendAndReceiveMessagesOverServiceBus()
+        public async Task ShouldSendAndReceiveMessagesOverServiceBus()
         {
             IServiceBus serviceBus = ServiceBus.Configure()
                     .WithRabbitMQEndpoints<ITestMessage>()
@@ -37,24 +38,32 @@ namespace Obvs.RabbitMQ.Tests
             var observer = new AnonymousObserver<IMessage>(msg => { messages.Add(msg); Console.WriteLine(msg); }, exception => Console.WriteLine(exception));
 
             // subscribe to all messages on the ServiceBus
-            serviceBus.Events.Subscribe(observer);
-            serviceBus.Commands.Subscribe(observer);
-            serviceBus.Requests.Subscribe(observer);
-            serviceBus.Commands.OfType<TestCommand>().Subscribe(fakeService1);
-            serviceBus.Requests.OfType<TestRequest>().Subscribe(fakeService2);
+            var sub1 = serviceBus.Events.Subscribe(observer);
+            var sub2 = serviceBus.Commands.Subscribe(observer);
+            var sub3 = serviceBus.Requests.Subscribe(observer);
+            var sub4 = serviceBus.Commands.OfType<TestCommand>().Subscribe(fakeService1);
+            var sub5 = serviceBus.Requests.OfType<TestRequest>().Subscribe(fakeService2);
 
             // send some messages
-            serviceBus.SendAsync(new TestCommand { Id = 123 });
-            serviceBus.GetResponses(new TestRequest { Id = 456 }).Subscribe(observer);
+            await serviceBus.SendAsync(new TestCommand { Id = 123 });
+            var sub6 = serviceBus.GetResponses(new TestRequest { Id = 456 }).Subscribe(observer);
 
             // wait some time until we think all messages have been sent and received from RabbitMQ
-            Thread.Sleep(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(1));
 
             // test we got everything we expected
             Assert.That(messages.OfType<TestCommand>().Count() == 1, "TestCommand not received");
             Assert.That(messages.OfType<TestEvent>().Count() == 1, "TestEvent not received");
             Assert.That(messages.OfType<TestRequest>().Count() == 1, "TestRequest not received");
             Assert.That(messages.OfType<TestResponse>().Count() == 1, "TestResponse not received");
+
+            // dispose subscriptions
+            sub1.Dispose();
+            sub2.Dispose();
+            sub3.Dispose();
+            sub4.Dispose();
+            sub5.Dispose();
+            sub6.Dispose();
 
             // always call Dispose on serviceBus when exiting process
             ((IDisposable)serviceBus).Dispose();

@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>RabbitMQ transport extension for Obvs</description>
     <copyright>Copyright 2015</copyright>
-    <releaseNotes>Fixed bug where multiple connections were created per service, and properly dispose on shutdown.</releaseNotes>
+    <releaseNotes>Subscriber queues are now created with unique readable names based on service name.</releaseNotes>
   </metadata>
 </package>

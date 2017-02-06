@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading;
 using Obvs.RabbitMQ.Extensions;
 using Obvs.Serialization;
 using RabbitMQ.Client;
@@ -14,13 +16,27 @@ namespace Obvs.RabbitMQ
     {
         private readonly Lazy<IConnection> _connection;
         private readonly string _exchange;
+        private readonly string _routingKeyPrefix;
+        private readonly string _uniqueQueueSuffix;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly string _routingKey;
+        private int _subscriberCount = 0;
 
-        public MessageSource(Lazy<IConnection> connection, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string exchange, string routingKeyPrefix)
+        /// <summary>
+        /// Creates a new MessageSource
+        /// </summary>
+        /// <param name="connection">Lazy connection to RabbitMQ which will connect on first subscription</param>
+        /// <param name="deserializers">Collection of deserializers, one per message type</param>
+        /// <param name="exchange">RabbitMQ Exchange name</param>
+        /// <param name="routingKeyPrefix">Any routing key prefix for filtering messages</param>
+        /// <param name="uniqueQueueSuffix">Only required if you intend to create two or more message sources to subscribe to the same source in the same process</param>
+        public MessageSource(Lazy<IConnection> connection, IEnumerable<IMessageDeserializer<TMessage>> deserializers, 
+            string exchange, string routingKeyPrefix, string uniqueQueueSuffix = "")
         {
             _connection = connection;
             _exchange = exchange;
+            _routingKeyPrefix = routingKeyPrefix;
+            _uniqueQueueSuffix = uniqueQueueSuffix;
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
             _routingKey = string.Format("{0}.*", routingKeyPrefix);
         }
@@ -38,7 +54,8 @@ namespace Obvs.RabbitMQ
                     var channel = _connection.Value.CreateModel();
                     channel.ExchangeDeclare(_exchange, ExchangeType.Topic);
 
-                    var queue = channel.QueueDeclare();
+                    var queueName = GetQueueName();
+                    var queue = channel.QueueDeclare(queueName);
                     channel.QueueBind(queue, _exchange, _routingKey);
 
                     var consumer = new EventingBasicConsumer(channel);
@@ -52,14 +69,41 @@ namespace Obvs.RabbitMQ
                     return Disposable.Create(() =>
                     {
                         subscription.Dispose();
-                        channel.BasicCancel(consumer.ConsumerTag);
-                        channel.QueueUnbind(queue, _exchange, _routingKey);
-                        channel.QueueDelete(queue);
-                        channel.Close();
+                        if (channel.IsOpen)
+                        {
+                            if (consumer.IsRunning)
+                            {
+                                channel.BasicCancel(consumer.ConsumerTag);
+                            }
+                            channel.QueueUnbind(queue, _exchange, _routingKey);
+                            channel.QueueDelete(queue);
+                            channel.Close();
+                        }
                         channel.Dispose();
                     });
                 });
             }
+        }
+
+        private string GetQueueName()
+        {
+            // thread-safe increment of the subscriber count
+            Interlocked.Increment(ref _subscriberCount);
+
+            // ensure queue name is readable, but also unique to the process and subscriber
+            // as we are using an exclusive queue per consumer/subscription
+            var queueName = string.Format("{0}.{1}-{2}-{3}-{4}-{5}*", _exchange, _routingKeyPrefix, 
+                Environment.MachineName,
+                Environment.UserName, 
+                Process.GetCurrentProcess().Id,
+                _subscriberCount);
+
+            if (!string.IsNullOrEmpty(_uniqueQueueSuffix))
+            {
+                queueName = string.Format("{0}-{1}", queueName, _uniqueQueueSuffix);
+            }
+
+            return queueName;
         }
 
         private TMessage Deserialize(BasicDeliverEventArgs deliverEventArgs)

@@ -67,8 +67,8 @@ namespace Obvs.RabbitMQ.Tests
 
             await Task.Delay(TimeSpan.FromSeconds(2));
 
-            Assert.That(receivedMessages1.Count, Is.EqualTo(messages.Count), "Incorrect number of messages received for first subscription");
-            Assert.That(receivedMessages2.Count, Is.EqualTo(messages.Count), "Incorrect number of messages received for second subscription");
+            Assert.That(receivedMessages1.Count, Is.EqualTo(7), "Incorrect number of messages received for first subscription");
+            Assert.That(receivedMessages2.Count, Is.EqualTo(7), "Incorrect number of messages received for second subscription");
 
             for (int index = 0; index < messages.Count; index++)
             {
