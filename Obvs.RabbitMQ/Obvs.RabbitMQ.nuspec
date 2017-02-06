@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>RabbitMQ transport extension for Obvs</description>
     <copyright>Copyright 2015</copyright>
-    <releaseNotes>Subscriber queues are now created with unique readable names based on service name.</releaseNotes>
+    <releaseNotes>Fixed bug in queue naming</releaseNotes>
   </metadata>
 </package>

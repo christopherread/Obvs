@@ -26,6 +26,7 @@ namespace Obvs.RabbitMQ.Tests
                         .ConnectToBroker("amqp://192.168.99.100:32773") // edit to correspond with 5672 port on local RabbitMQ from DockerHub
                         .SerializedAsJson()
                         .AsClientAndServer()
+                    .PublishLocally().AnyMessagesWithNoEndpointClients()
                     .UsingConsoleLogging()
                     .Create();
 

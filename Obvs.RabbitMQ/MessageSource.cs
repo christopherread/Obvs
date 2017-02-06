@@ -16,11 +16,11 @@ namespace Obvs.RabbitMQ
     {
         private readonly Lazy<IConnection> _connection;
         private readonly string _exchange;
-        private readonly string _routingKeyPrefix;
+        private readonly string _queueNamePrefix;
         private readonly string _uniqueQueueSuffix;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly string _routingKey;
-        private int _subscriberCount = 0;
+        private int _subscriberCount;
 
         /// <summary>
         /// Creates a new MessageSource
@@ -35,10 +35,10 @@ namespace Obvs.RabbitMQ
         {
             _connection = connection;
             _exchange = exchange;
-            _routingKeyPrefix = routingKeyPrefix;
             _uniqueQueueSuffix = uniqueQueueSuffix;
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
             _routingKey = string.Format("{0}.*", routingKeyPrefix);
+            _queueNamePrefix = routingKeyPrefix.StartsWith(exchange) ? routingKeyPrefix : string.Format("{0}.{1}*", _exchange, routingKeyPrefix);
         }
 
         public void Dispose()
@@ -92,7 +92,8 @@ namespace Obvs.RabbitMQ
 
             // ensure queue name is readable, but also unique to the process and subscriber
             // as we are using an exclusive queue per consumer/subscription
-            var queueName = string.Format("{0}.{1}-{2}-{3}-{4}-{5}*", _exchange, _routingKeyPrefix, 
+            var queueName = string.Format("{0}-{1}-{2}-{3}-{4}", 
+                _queueNamePrefix, 
                 Environment.MachineName,
                 Environment.UserName, 
                 Process.GetCurrentProcess().Id,
