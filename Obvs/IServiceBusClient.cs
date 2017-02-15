@@ -149,6 +149,11 @@ namespace Obvs
                 throw new AggregateException(CommandErrorMessage(command), exceptions);
             }
 
+            if (tasks.Length == 0)
+            {
+                throw new Exception(string.Format("No endpoint or local bus configured for {0}, please check your ServiceBus configuration.", command));
+            }
+
             return Task.WhenAll(tasks);
         }
 
@@ -195,6 +200,11 @@ namespace Obvs
             if (exceptions.Any())
             {
                 throw new AggregateException(CommandErrorMessage(), exceptions.Cast<AggregateException>().SelectMany(e => e.InnerExceptions));
+            }
+
+            if (tasks.Length == 0)
+            {
+                throw new Exception("No endpoint or local bus configured for any of these commands, please check your ServiceBus configuration.");
             }
 
             return Task.WhenAll(tasks);

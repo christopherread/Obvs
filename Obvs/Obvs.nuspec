@@ -5,9 +5,9 @@
     <version>$version$</version>
     <title>$title$</title>
     <authors>$author$</authors>
-    <description>An observable µServiceBus .NET library. Search 'Obvs' for other transport, serialization, and logging extensions.</description>
+    <description>An observable microservice bus .NET library, based on Reactive Extensions. Search 'Obvs' for other transport, serialization, and logging extensions.</description>
     <copyright>Copyright 2016</copyright>
-    <releaseNotes>SubjectMessageBus is now threadsafe</releaseNotes>
+    <releaseNotes>Trying to send a Command or publish an Event with no Endpoint or Localbus configured will result in an exception, alerting the user to possible incorrect configuration.</releaseNotes>
     <projectUrl>http://inter8ection.github.io/Obvs</projectUrl>
     <tags>obvs messaging microservice bus messagebus rx reactive servicebus</tags>
   </metadata>

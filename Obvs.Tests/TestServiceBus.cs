@@ -1479,7 +1479,6 @@ namespace Obvs.Tests
             serviceBus.GetResponses(new TestServiceRequest2()).Subscribe(serviceBusMessages.Add);
             serviceBus.SendAsync(new TestServiceCommand2());
             serviceBus.PublishAsync(new TestServiceEvent1());
-            serviceBus.SendAsync(new TestServiceCommand1());
             serviceBus.PublishAsync(new TestEventBelongingToNoService());
 
             Assert.That(exceptions.Count(), Is.EqualTo(0));
