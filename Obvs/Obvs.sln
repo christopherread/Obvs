@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs", "Obvs\Obvs.csproj", "{325264EE-18AA-4DF4-9306-3FE7A1F49A98}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Tests", "Obvs.Tests\Obvs.Tests.csproj", "{A50FE991-84FA-4E48-BEF7-B0DB8F0F09D8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".docs", ".docs", "{AE31114F-DC26-40D3-9569-11B9EC07879C}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{325264EE-18AA-4DF4-9306-3FE7A1F49A98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{325264EE-18AA-4DF4-9306-3FE7A1F49A98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{325264EE-18AA-4DF4-9306-3FE7A1F49A98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{325264EE-18AA-4DF4-9306-3FE7A1F49A98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A50FE991-84FA-4E48-BEF7-B0DB8F0F09D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A50FE991-84FA-4E48-BEF7-B0DB8F0F09D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A50FE991-84FA-4E48-BEF7-B0DB8F0F09D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A50FE991-84FA-4E48-BEF7-B0DB8F0F09D8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

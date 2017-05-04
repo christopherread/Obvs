@@ -1,0 +1,44 @@
+﻿@model dynamic
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Obvs MVC 5 Sample</title>
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.1.2.min.js"></script>
+    <script src="/signalr/hubs"></script>
+    <script>
+    $(function() {
+        var hub = $.connection.busHub;
+        hub.client.busResponse = function(message) {
+            $('#messages').append("<p>" + message + "</p>");
+        }
+        $.connection.hub
+            .start()
+            .done(function() {
+                $('#sendCommand').click(function () {
+
+                    hub.server.busCommand();
+                });
+                $('#sendEvent').click(function () {
+
+                    hub.server.busEvent();
+                });
+            });
+    });
+    </script>
+</head>
+<body>
+<div>
+    <h2>Bus Operations</h2>
+    <button id="sendCommand">Send Command</button>
+    <button id="sendEvent">Publish Event</button>
+    <p id="messages"></p>
+</div>
+</body>
+</html>
