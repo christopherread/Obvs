@@ -38,24 +38,24 @@
       <HintPath>..\packages\NetMQ.4.0.0.1\lib\net40\NetMQ.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="nunit.framework, Version=3.6.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.6.0\lib\net45\nunit.framework.dll</HintPath>
+    <Reference Include="nunit.framework, Version=3.6.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.6.1\lib\net45\nunit.framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Obvs, Version=3.0.0.49, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obvs.3.0.0.49\lib\net45\Obvs.dll</HintPath>
+    <Reference Include="Obvs, Version=3.0.1.58, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.3.0.1.58\lib\net45\Obvs.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Obvs.Serialization.Json, Version=3.0.1.30, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obvs.Serialization.Json.3.0.1.30\lib\net45\Obvs.Serialization.Json.dll</HintPath>
+    <Reference Include="Obvs.Serialization.Json, Version=3.0.2.33, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.Serialization.Json.3.0.2.33\lib\net45\Obvs.Serialization.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Obvs.Serialization.ProtoBuf, Version=3.0.1.30, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obvs.Serialization.ProtoBuf.3.0.1.30\lib\net45\Obvs.Serialization.ProtoBuf.dll</HintPath>
+    <Reference Include="Obvs.Serialization.ProtoBuf, Version=3.0.2.33, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.Serialization.ProtoBuf.3.0.2.33\lib\net45\Obvs.Serialization.ProtoBuf.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="protobuf-net, Version=2.1.0.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
