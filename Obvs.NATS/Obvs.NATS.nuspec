@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>NATS transport support for Obvs</description>
     <copyright>Christopher Read 2016</copyright>
-    <releaseNotes>Updated to latest NATS client 0.7</releaseNotes>
+    <releaseNotes>Updated to latest NATS client 0.7.1</releaseNotes>
   </metadata>
 </package>
