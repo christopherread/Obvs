@@ -6,7 +6,7 @@
     <title>$title$</title>
     <authors>$author$</authors>
     <description>JSON serialization for Obvs</description>
-    <releaseNotes>Added settings to JSON serializer</releaseNotes>
+    <releaseNotes>Updated to JSON.Net v10</releaseNotes>
     <copyright>Copyright 2014</copyright>
   </metadata>
 </package>
