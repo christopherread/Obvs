@@ -28,7 +28,7 @@ namespace Obvs.RabbitMQ.Tests
             var connectionFactory = new ConnectionFactory
             {
                 HostName = "192.168.99.100", 
-                Port = 32773
+                Port = 32769
             };
             var connection = new Lazy<IConnection>(() =>
             {

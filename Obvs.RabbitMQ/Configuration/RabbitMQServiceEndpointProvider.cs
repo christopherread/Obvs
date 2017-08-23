@@ -36,7 +36,7 @@ namespace Obvs.RabbitMQ.Configuration
             {
                 var connectionFactory = new ConnectionFactory
                 {
-                    Uri = brokerUri,
+                    Uri =  new Uri(brokerUri),
                     AutomaticRecoveryEnabled = true,
                 };
                 var conn = connectionFactory.CreateConnection();

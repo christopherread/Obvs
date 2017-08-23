@@ -7,6 +7,6 @@
     <authors>$author$</authors>
     <description>RabbitMQ transport extension for Obvs</description>
     <copyright>Copyright 2015</copyright>
-    <releaseNotes>Updated to RabbitMQ client 4.1.3</releaseNotes>
+    <releaseNotes>Updated to RabbitMQ client 5.0.1</releaseNotes>
   </metadata>
 </package>
