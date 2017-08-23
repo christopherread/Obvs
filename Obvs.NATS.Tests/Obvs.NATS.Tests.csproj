@@ -30,24 +30,24 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NATS.Client, Version=0.7.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NATS.Client.0.7.1\lib\net45\NATS.Client.DLL</HintPath>
+    <Reference Include="NATS.Client, Version=0.8.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NATS.Client.0.8.0\lib\net45\NATS.Client.DLL</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="nunit.framework, Version=3.6.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.6.1\lib\net45\nunit.framework.dll</HintPath>
+    <Reference Include="nunit.framework, Version=3.7.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.7.1\lib\net45\nunit.framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Obvs, Version=3.0.1.58, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Obvs.3.0.1.58\lib\net45\Obvs.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Obvs.Serialization.Json, Version=3.0.1.30, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obvs.Serialization.Json.3.0.1.30\lib\net45\Obvs.Serialization.Json.dll</HintPath>
+    <Reference Include="Obvs.Serialization.Json, Version=3.0.3.35, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obvs.Serialization.Json.3.0.3.35\lib\net45\Obvs.Serialization.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />

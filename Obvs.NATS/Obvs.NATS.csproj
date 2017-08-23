@@ -30,16 +30,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NATS.Client, Version=0.7.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NATS.Client.0.7.1\lib\net45\NATS.Client.DLL</HintPath>
+    <Reference Include="NATS.Client, Version=0.8.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NATS.Client.0.8.0\lib\net45\NATS.Client.DLL</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Obvs, Version=3.0.1.58, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Obvs.3.0.1.58\lib\net45\Obvs.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="protobuf-net, Version=2.1.0.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
-      <HintPath>..\packages\protobuf-net.2.1.0\lib\net45\protobuf-net.dll</HintPath>
+    <Reference Include="protobuf-net, Version=2.3.2.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>..\packages\protobuf-net.2.3.2\lib\net40\protobuf-net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
