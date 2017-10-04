@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net45</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="1.6.1.2" />
+    <PackageReference Include="Obvs" Version="3.0.1.58" />
+  </ItemGroup>
+
+</Project>

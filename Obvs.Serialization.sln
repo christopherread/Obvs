@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.Json", "Obvs.Serialization.Json\Obvs.Serialization.Json.csproj", "{21A3DEDF-3CDE-4C64-87A2-3405E1F1DD77}"
 EndProject
@@ -16,6 +16,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.MessagePack", "Obvs.Serialization.MessagePack\Obvs.Serialization.MessagePack.csproj", "{4E1D1BEA-02E3-4BC5-96AD-799D27ACA32C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.NetJson", "Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj", "{A7032830-495A-4B81-AE4E-A883125CF7A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.MessagePack-CSharp", "Obvs.Serialization.MessagePack-CSharp\Obvs.Serialization.MessagePack-CSharp.csproj", "{1656F376-4065-49FF-AE18-9FF26183BA50}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,11 +49,18 @@ Global
 		{A7032830-495A-4B81-AE4E-A883125CF7A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7032830-495A-4B81-AE4E-A883125CF7A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7032830-495A-4B81-AE4E-A883125CF7A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1656F376-4065-49FF-AE18-9FF26183BA50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1656F376-4065-49FF-AE18-9FF26183BA50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1656F376-4065-49FF-AE18-9FF26183BA50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1656F376-4065-49FF-AE18-9FF26183BA50}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6FF57DDD-05DC-4FDC-9393-DB71C67D31A1} = {6C4475B7-D8EE-4769-A05F-84DCFA1A0340}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {007A4F16-6FC9-49C9-AC09-255F86300E80}
 	EndGlobalSection
 EndGlobal
