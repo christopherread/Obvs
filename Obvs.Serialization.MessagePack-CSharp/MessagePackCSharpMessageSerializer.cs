@@ -20,7 +20,7 @@ namespace Obvs.Serialization.MessagePack
 
         public void Serialize(Stream destination, object message)
         {
-            MessagePackSerializer.Serialize(destination, message, _resolver);
+            MessagePackSerializer.NonGeneric.Serialize(message.GetType(), destination, message, _resolver);
         }
     }
 }
