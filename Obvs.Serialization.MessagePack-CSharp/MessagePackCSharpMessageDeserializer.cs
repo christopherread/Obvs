@@ -1,5 +1,6 @@
 using System.IO;
 using MessagePack;
+using MessagePack.Resolvers;
 
 namespace Obvs.Serialization.MessagePack
 {
@@ -8,9 +9,14 @@ namespace Obvs.Serialization.MessagePack
     {
         private readonly IFormatterResolver _resolver;
 
+        public MessagePackCSharpMessageDeserializer()
+            : this(null)
+        {
+        }
+
         public MessagePackCSharpMessageDeserializer(IFormatterResolver resolver)
         {
-            _resolver = resolver;
+            _resolver = resolver ?? MessagePackSerializer.DefaultResolver;
         }
 
         public override TMessage Deserialize(Stream source)

@@ -24,7 +24,7 @@ namespace Obvs.Serialization.MessagePack.Configuration
             where TResponse : class, TMessage
         {
             // ReSharper disable once IntroduceOptionalParameters.Global
-            return SerializedAsMessagePackCSharp(config, null);
+            return SerializedAsMessagePackCSharp(config, MessagePackSerializer.DefaultResolver);
         }
 
         public static ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> SerializedAsMessagePackCSharp<TMessage, TCommand, TEvent, TRequest, TResponse>(

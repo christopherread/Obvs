@@ -19,7 +19,7 @@ namespace Obvs.Serialization.MessagePack
 
         public MessagePackCSharpMessageDeserializerFactory(IFormatterResolver resolver)
         {
-            _resolver = resolver ?? StandardResolver.Instance;
+            _resolver = resolver ?? MessagePackSerializer.DefaultResolver;
         }
 
         public IEnumerable<IMessageDeserializer<TMessage>> Create<TMessage, TServiceMessage>(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
