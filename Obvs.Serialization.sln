@@ -1,21 +1,21 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.Json", "Obvs.Serialization.Json\Obvs.Serialization.Json.csproj", "{21A3DEDF-3CDE-4C64-87A2-3405E1F1DD77}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.Json", "Obvs.Serialization.Json\Obvs.Serialization.Json.csproj", "{21A3DEDF-3CDE-4C64-87A2-3405E1F1DD77}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.Xml", "Obvs.Serialization.Xml\Obvs.Serialization.Xml.csproj", "{82BC1132-53E0-4846-8134-36B52A885CF4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.Xml", "Obvs.Serialization.Xml\Obvs.Serialization.Xml.csproj", "{82BC1132-53E0-4846-8134-36B52A885CF4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.ProtoBuf", "Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj", "{204D0EC4-7029-4080-BA27-23AEDB6831D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.ProtoBuf", "Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj", "{204D0EC4-7029-4080-BA27-23AEDB6831D9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{6C4475B7-D8EE-4769-A05F-84DCFA1A0340}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.Tests", "Obvs.Serialization.Tests\Obvs.Serialization.Tests.csproj", "{6FF57DDD-05DC-4FDC-9393-DB71C67D31A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.Tests", "Obvs.Serialization.Tests\Obvs.Serialization.Tests.csproj", "{6FF57DDD-05DC-4FDC-9393-DB71C67D31A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.MessagePack", "Obvs.Serialization.MessagePack\Obvs.Serialization.MessagePack.csproj", "{4E1D1BEA-02E3-4BC5-96AD-799D27ACA32C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.MessagePack", "Obvs.Serialization.MessagePack\Obvs.Serialization.MessagePack.csproj", "{4E1D1BEA-02E3-4BC5-96AD-799D27ACA32C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.NetJson", "Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj", "{A7032830-495A-4B81-AE4E-A883125CF7A0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.NetJson", "Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj", "{A7032830-495A-4B81-AE4E-A883125CF7A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,5 +53,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6FF57DDD-05DC-4FDC-9393-DB71C67D31A1} = {6C4475B7-D8EE-4769-A05F-84DCFA1A0340}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5DAAC849-DC2D-4C2B-AB72-F38E19FDBF44}
 	EndGlobalSection
 EndGlobal
