@@ -2,10 +2,14 @@
   <PropertyGroup>
     <TargetFrameworks>net45</TargetFrameworks>
     <Company>Christopher Read</Company>
-    <Copyright>Copyright © Christopher Read 2014</Copyright>
+    <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
     <Authors />
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageProjectUrl>http://inter8ection.github.io/Obvs</PackageProjectUrl>
+    <PackageTags>obvs messaging microservice bus messagebus rx reactive servicebus</PackageTags>
+    <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
+    <Description>An observable microservice bus .NET library, based on Reactive Extensions. Search 'Obvs' for other transport, serialization, and logging extensions.</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Reactive" Version="3.1.1" />
