@@ -11,7 +11,7 @@
     <Description>ProtoBuf (https://github.com/mgravell/protobuf-net) serialization for Obvs</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Obvs" Version="3.1.1.67" />
+    <PackageReference Include="Obvs" Version="4.0.0.1" />
     <PackageReference Include="protobuf-net" Version="2.3.2" />
   </ItemGroup>
 </Project>
