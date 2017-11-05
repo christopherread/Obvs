@@ -6,15 +6,13 @@ using System.Xml.Serialization;
 using Apache.NMS;
 using Apache.NMS.Util;
 using FakeItEasy;
-using Moq;
-using NUnit.Framework;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
+using Xunit;
 using IMessage = Obvs.Types.IMessage;
 
 namespace Obvs.ActiveMQ.Tests
 {
-    [TestFixture]
     public class TestMessageSource
     {
         private IConnection _connection;
@@ -36,8 +34,8 @@ namespace Obvs.ActiveMQ.Tests
         {
         }
 
-        [SetUp]
-        public void SetUp()
+
+        public TestMessageSource()
         {
             A.Fake<IConnectionFactory>();
             _connection = A.Fake<IConnection>();
@@ -60,7 +58,7 @@ namespace Obvs.ActiveMQ.Tests
                 _acknowledgementMode);
         }
 
-        [Test]
+        [Fact]
         public void ShouldConnectToBrokerWhenSubscribedTo()
         {
             _source.Messages.Subscribe(_observer);
@@ -68,7 +66,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _connection.Start()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldStartListeningToMessagesWhenSubscribedTo()
         {
             _source.Messages.Subscribe(_observer);
@@ -79,7 +77,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(_consumer).Where(x => x.Method.Name.Equals("add_Listener")).MustHaveHappened();
         }
 
-        [Test]
+        [Fact]
         public void ShouldCloseSessionWhenSubscriptionDisposed()
         {
             IDisposable subscription = _source.Messages.Subscribe(_observer);
@@ -92,41 +90,47 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _session.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldNotAcknowledgeMessagesIfInvalid()
         {
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
                 AcknowledgementMode.ClientAcknowledge);
 
-            Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
+            var consumer = A.Fake<IMessageConsumer>();
+            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             A.CallTo(() => _deserializer.Deserialize(A<Stream>.Ignored)).Throws<Exception>();
 
             _source.Messages.Subscribe(_observer);
-            mockConsumer.RaiseFakeMessage(bytesMessage);
+            consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
 
             A.CallTo(() => bytesMessage.Acknowledge()).MustNotHaveHappened();
         }
 
-        [Test]
+        [Fact]
         public void ShouldAcknowledgeMessagesIfValid()
         {
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
                 AcknowledgementMode.ClientAcknowledge);
 
-            Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
+            var consumer = A.Fake<IMessageConsumer>();
+            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+
             ITextMessage textMessage = A.Fake<ITextMessage>();
 
             _source.Messages.Subscribe(_observer);
-            mockConsumer.RaiseFakeMessage(textMessage);
+            consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) textMessage);
 
             A.CallTo(() => textMessage.Acknowledge()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldDeserializeAndPublishMessageWhenReceived()
         {
-            Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
+            var consumer = A.Fake<IMessageConsumer>();
+            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
 
@@ -137,15 +141,17 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
 
             _source.Messages.Subscribe(_observer);
-            mockConsumer.RaiseFakeMessage(bytesMessage);
+            consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
 
             A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
         }
 
-        [Test]
+        [Fact]
         public void ShouldDeserializeByteMessagesAndPublishMessageWhenReceived()
         {
-            Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
+            var consumer = A.Fake<IMessageConsumer>();
+            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
             byte[] bytes = new byte[0];
@@ -153,15 +159,17 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
 
             _source.Messages.Subscribe(_observer);
-            mockConsumer.RaiseFakeMessage(bytesMessage);
+            consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
 
             A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
         }
 
-        [Test]
+        [Fact]
         public void ShouldDeserializeAndPublishMessageOfRightTypeName()
         {
-            Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
+            var consumer = A.Fake<IMessageConsumer>();
+            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
 
@@ -178,15 +186,17 @@ namespace Obvs.ActiveMQ.Tests
                 _acknowledgementMode);
 
             _source.Messages.Subscribe(_observer);
-            mockConsumer.RaiseFakeMessage(bytesMessage);
+            consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
 
             A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
         }
 
-        [Test]
+        [Fact]
         public void ShouldProcessMessagesWithoutTypeNameIfOnlyOneDeserializerSupplied()
         {
-            Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
+            var consumer = A.Fake<IMessageConsumer>();
+            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
             
@@ -201,18 +211,20 @@ namespace Obvs.ActiveMQ.Tests
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination, _acknowledgementMode);
 
             _source.Messages.Subscribe(_observer);
-            mockConsumer.RaiseFakeMessage(bytesMessage);
+            consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
 
             A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).MustHaveHappened();
             A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
         }
 
-        [Test]
+        [Fact]
         public void ShouldProcessMessagesAccordingToFilter()
         {
             const string typeName = "SomeTypeName";
 
-            Mock<IMessageConsumer> mockConsumer = MockConsumerExtensions.Create(_session, _destination);
+            var consumer = A.Fake<IMessageConsumer>();
+            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
             Func<IDictionary, bool> filter = properties => (int?) properties["Id"] == 123;
@@ -233,7 +245,7 @@ namespace Obvs.ActiveMQ.Tests
                 _acknowledgementMode, null, filter);
 
             _source.Messages.Subscribe(_observer);
-            mockConsumer.RaiseFakeMessage(bytesMessage);
+            consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
 
             A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).MustHaveHappened();
             A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();

@@ -3,13 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Schedulers;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ.Commands;
+using Obvs.ActiveMQ.Utils;
 using Obvs.Serialization;
 
 namespace Obvs.ActiveMQ.Configuration
 {
+    // Provides a task scheduler that ensures a maximum concurrency level while 
+    // running on top of the thread pool.
     public static class DestinationFactory
     {
         public static MessagePublisher<TMessage> CreatePublisher<TMessage>(
@@ -29,7 +31,7 @@ namespace Obvs.ActiveMQ.Configuration
                 CreateDestination(destination, destinationType),
                 messageSerializer,
                 propertyProvider,
-                scheduler ?? new OrderedTaskScheduler(),
+                scheduler ?? new LimitedConcurrencyLevelTaskScheduler(1),
                 deliveryMode, 
                 priority, 
                 timeToLive);

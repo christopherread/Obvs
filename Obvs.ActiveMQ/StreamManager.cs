@@ -1,4 +1,4 @@
-using Microsoft.IO;
+using Obvs.ActiveMQ.RecyclableMemoryStream;
 
 namespace Obvs.ActiveMQ
 {
