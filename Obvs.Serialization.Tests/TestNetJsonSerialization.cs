@@ -1,5 +1,5 @@
 ﻿using FakeItEasy;
-using NUnit.Framework;
+using Xunit;
 using Obvs.Configuration;
 using Obvs.Serialization.NetJson;
 using Obvs.Serialization.NetJson.Configuration;
@@ -7,10 +7,10 @@ using Obvs.Types;
 
 namespace Obvs.Serialization.Tests
 {
-    [TestFixture]
+    
     public class TestNetJsonSerialization
     {
-        [Test]
+        [Fact]
         public void ShouldSerializeToNetJson()
         {
             IMessageSerializer serializer = new NetJsonMessageSerializer();
@@ -18,13 +18,13 @@ namespace Obvs.Serialization.Tests
             var message = new TestMessage { Id = 123, Name = "SomeName" };
             var serialize = NetJsonDefaults.Encoding.GetString(serializer.Serialize(message));
 
-            Assert.That(serialize, Is.Not.Null);
-            Assert.That(serialize, Is.Not.Empty);
-            Assert.That(serialize, Contains.Substring(message.Id.ToString()));
-            Assert.That(serialize, Contains.Substring(message.Name));
+
+            Assert.NotNull(serialize);
+            Assert.Contains(message.Id.ToString(), serialize);
+            Assert.Contains(message.Name, serialize);
         }
 
-        [Test]
+        [Fact]
         public void ShouldDeserializeFromNetJson()
         {
             IMessageSerializer serializer = new NetJsonMessageSerializer();
@@ -35,10 +35,10 @@ namespace Obvs.Serialization.Tests
             var serialize = serializer.Serialize(message);
             var deserialize = deserializer.Deserialize(serialize);
 
-            Assert.That(message, Is.EqualTo(deserialize));
+            Assert.Equal(message, deserialize);
         }
 
-        [Test]
+        [Fact]
         public void ShouldPassInCorrectFluentConfig()
         {
             var fakeConfigurator = A.Fake<ICanSpecifyEndpointSerializers<IMessage, ICommand, IEvent, IRequest, IResponse>>();
