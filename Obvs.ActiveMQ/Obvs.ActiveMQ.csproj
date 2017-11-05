@@ -12,6 +12,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.7.2" />
-    <PackageReference Include="Obvs" Version="3.1.1.66" />
+    <PackageReference Include="Obvs" Version="3.1.1.67" />
   </ItemGroup>
 </Project>
