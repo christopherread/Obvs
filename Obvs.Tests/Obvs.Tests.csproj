@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net45</TargetFramework>
+    <TargetFramework>net452</TargetFramework>
     <Company>Christopher Read</Company>
     <Copyright>Copyright © Christopher Read 2014</Copyright>
     <Authors />
