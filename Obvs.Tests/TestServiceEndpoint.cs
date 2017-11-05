@@ -1,14 +1,14 @@
 ﻿using FakeItEasy;
-using NUnit.Framework;
 using Obvs.Logging;
 using Obvs.Types;
+using Xunit;
 
 namespace Obvs.Tests
 {
-    [TestFixture]
+    
     public class TestServiceEndpoint
     {
-        [Test]
+        [Fact]
         public void ShouldDisposeSourcesAndPublishers()
         {
             IMessageSource<IRequest> requestSource = A.Fake<IMessageSource<IRequest>>();
@@ -26,7 +26,7 @@ namespace Obvs.Tests
         }
 
 
-        [Test]
+        [Fact]
         public void ShouldDisposeEndpointIfWrappedInLoggingProxy()
         {
             IServiceEndpoint endpoint = A.Fake<IServiceEndpoint>();

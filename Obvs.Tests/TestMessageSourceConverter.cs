@@ -1,16 +1,16 @@
 using System;
 using FakeItEasy;
-using NUnit.Framework;
 using Obvs.Types;
+using Xunit;
 
 namespace Obvs.Tests
 {
-    [TestFixture]
+    
     public class TestMessageSourceConverter
     {
         public class TestMessage : IMessage { }
 
-        [Test]
+        [Fact]
         public void ShouldSubscribeToUnderlyingSourceOnSubscribe()
         {
             IMessageSource<TestMessage> source = A.Fake<IMessageSource<TestMessage>>();
@@ -22,7 +22,7 @@ namespace Obvs.Tests
             A.CallTo(() => source.Messages.Subscribe(A<IObserver<TestMessage>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldConvertAndPublishMessages()
         {
             IMessageSource<TestMessage> source = A.Fake<IMessageSource<TestMessage>>();
@@ -44,7 +44,7 @@ namespace Obvs.Tests
             A.CallTo(() => consumer.OnNext(convertedMessage)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldNotPublishInvalidMessages()
         {
             IMessageSource<TestMessage> source = A.Fake<IMessageSource<TestMessage>>();

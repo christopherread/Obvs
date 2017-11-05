@@ -1,27 +1,20 @@
 ﻿using System;
 using System.Threading;
-using NUnit.Framework;
+using Xunit;
 
 namespace Obvs.Tests
 {
-    [TestFixture]
+    
     public class TestSubjectMessageBus
     {
-        SubjectMessageBus<string> _testObj;
+        readonly SubjectMessageBus<string> _testObj;
 
-        [SetUp]
-        public void Setup()
+        public TestSubjectMessageBus()
         {
             _testObj = new SubjectMessageBus<string>();
         }
 
-        [TearDown]
-        public void TearDown()
-        {
-
-        }
-
-        [Test]
+        [Fact]
         public void PublishBlocksUntilMessageHasBeenConsumed()
         {
             int subscriberThreadId = -1;
@@ -31,17 +24,17 @@ namespace Obvs.Tests
 
             var task = _testObj.PublishAsync("Bleb");
 
-            Assert.AreNotEqual(-1, subscriberThreadId);
-            Assert.AreEqual(threadId, subscriberThreadId);
+            Assert.NotEqual(-1, subscriberThreadId);
+            Assert.Equal(threadId, subscriberThreadId);
 
             task.Wait();
         }
 
 
-        [Test]
+        [Fact]
         public void PublishReturnsWithNoObservers()
         {
-            Assert.IsTrue(_testObj.PublishAsync("Bleb").Wait(1));
+            Assert.True(_testObj.PublishAsync("Bleb").Wait(1));
         }
     }
 }
