@@ -1,16 +1,16 @@
 using System;
 using FakeItEasy;
-using NUnit.Framework;
 using Obvs.Types;
+using Xunit;
 
 namespace Obvs.Tests
 {
-    [TestFixture]
+    
     public class TestMessageBridge
     {
         public class TestMessage : IMessage { }
 
-        [Test]
+        [Fact]
         public void ShouldSubscribeOnStart()
         {
             IMessageSource<TestMessage> source = A.Fake<IMessageSource<TestMessage>>();
@@ -21,7 +21,7 @@ namespace Obvs.Tests
             A.CallTo(() => source.Messages.Subscribe(A<IObserver<TestMessage>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldUnsubscribeOnStop()
         {
             IMessageSource<TestMessage> source = A.Fake<IMessageSource<TestMessage>>();
@@ -36,7 +36,7 @@ namespace Obvs.Tests
             A.CallTo(() => subscription.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldPublishTeamNewsWhenReceived()
         {
             IMessagePublisher<TestMessage> publisher = A.Fake<IMessagePublisher<TestMessage>>();
@@ -58,7 +58,7 @@ namespace Obvs.Tests
             A.CallTo(() => publisher.PublishAsync(objTo)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldUnsubcribeOnDispose()
         {
             IMessagePublisher<TestMessage> publisher = A.Fake<IMessagePublisher<TestMessage>>();

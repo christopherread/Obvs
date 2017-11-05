@@ -1,28 +1,22 @@
 ﻿using System;
 using Microsoft.Reactive.Testing;
-using NUnit.Framework;
+using Xunit;
 
 namespace Obvs.Tests
 {
-    [TestFixture]
+    
     public class TestSubjectMessageBusWithScheduler
     {
-        TestScheduler _scheduler = new TestScheduler();
-        SubjectMessageBus<string> _testObj;
+        readonly TestScheduler _scheduler;
+        readonly SubjectMessageBus<string> _testObj;
 
-        [SetUp]
-        public void Setup()
+        public TestSubjectMessageBusWithScheduler()
         {
             _scheduler = new TestScheduler();
             _testObj = new SubjectMessageBus<string>(_scheduler);
         }
 
-        [TearDown]
-        public void TearDown()
-        {
-        }
-
-        [Test]
+        [Fact]
         public void OnNextReturnsImmediatelyEvenIfMessageIsntEmitted()
         {
             bool received = false;
@@ -30,10 +24,10 @@ namespace Obvs.Tests
 
             _testObj.PublishAsync("Bleb").Wait();
 
-            Assert.IsFalse(received);
+            Assert.False(received);
         }
 
-        [Test]
+        [Fact]
         public void OnNextReturnsImmediatelyThenMessageEmitted()
         {
             bool received = false;
@@ -43,16 +37,16 @@ namespace Obvs.Tests
 
             _scheduler.AdvanceBy(1);
 
-            Assert.IsTrue(received);
+            Assert.True(received);
         }
 
-        [Test]
+        [Fact]
         public void PublishReturnsImmediatelyWithNoObservers()
         {
             _testObj.PublishAsync("Bleb").Wait();
         }
 
-        [Test]
+        [Fact]
         public void PublishReturnsImmediatelyWithNoObservers_NoCachedMessages()
         {
             _testObj.PublishAsync("Bleb").Wait();
@@ -62,7 +56,7 @@ namespace Obvs.Tests
 
             _scheduler.AdvanceBy(10);
 
-            Assert.IsFalse(received);
+            Assert.False(received);
         }
 
     }

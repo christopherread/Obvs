@@ -8,17 +8,17 @@ using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using FakeItEasy;
 using Microsoft.Reactive.Testing;
-using NUnit.Framework;
 using Obvs.Configuration;
 using Obvs.Monitoring;
 using Obvs.Types;
+using Xunit;
 
 namespace Obvs.Tests
 {
-    [TestFixture]
+    
     public class TestServiceBus
     {
-        [Test]
+        [Fact]
         public void ShouldOnlySubscribeToUnderlyingEndpointRequestsOnce()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -50,7 +50,7 @@ namespace Obvs.Tests
             sub2.Dispose();
         }
         
-        [Test]
+        [Fact]
         public void ShouldOnlySubscribeToUnderlyingEndpointCommandsOnce()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -82,7 +82,7 @@ namespace Obvs.Tests
             sub2.Dispose();
         }
         
-        [Test]
+        [Fact]
         public void ShouldOnlySubscribeToUnderlyingEndpointEventsOnce()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -115,7 +115,7 @@ namespace Obvs.Tests
             sub4.Dispose();
         }
         
-        [Test]
+        [Fact]
         public void ShouldOnlySubscribeToUnderlyingMessageSourceEventsOnce()
         {
             var messageSource1 = A.Fake<IMessageSource<IEvent>>();
@@ -168,20 +168,20 @@ namespace Obvs.Tests
             IDisposable sub3 = serviceBus.Events.Subscribe(observer3);
             IDisposable sub4 = serviceBus.Events.Subscribe(observer4);
             
-            Assert.That(subscribed1, Is.EqualTo(1));
-            Assert.That(subscribed2, Is.EqualTo(1));
-            Assert.That(disposed1, Is.EqualTo(0));
-            Assert.That(disposed2, Is.EqualTo(0));
+            Assert.Equal(subscribed1, 1);
+            Assert.Equal(subscribed2, 1);
+            Assert.Equal(disposed1, 0);
+            Assert.Equal(disposed2, 0);
             
             sub2.Dispose();
             sub3.Dispose();
             sub4.Dispose();
 
-            Assert.That(disposed1, Is.EqualTo(1));
-            Assert.That(disposed2, Is.EqualTo(1));
+            Assert.Equal(disposed1, 1);
+            Assert.Equal(disposed2, 1);
         }
         
-        [Test]
+        [Fact]
         public void ShouldOnlySubscribeToUnderlyingEndpointResponsesOnce()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -220,7 +220,7 @@ namespace Obvs.Tests
             sub2.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void ShouldReturnRequestsFromUnderlyingEndpoints()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -248,8 +248,8 @@ namespace Obvs.Tests
             IDisposable sub1 = serviceBus.Requests.Subscribe(observer1);
             IDisposable sub2 = serviceBus.Requests.Subscribe(observer2);
 
-            Assert.That(internalObserver1, Is.Not.Null);
-            Assert.That(internalObserver2, Is.Not.Null);
+            Assert.NotNull(internalObserver1);
+            Assert.NotNull(internalObserver2);
 
             IRequest request1 = A.Fake<IRequest>();
             IRequest request2 = A.Fake<IRequest>();
@@ -265,7 +265,7 @@ namespace Obvs.Tests
             sub2.Dispose();
         }
         
-        [Test]
+        [Fact]
         public void ShouldReturnCommandsFromUnderlyingEndpoints()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -293,8 +293,8 @@ namespace Obvs.Tests
             IDisposable sub1 = serviceBus.Commands.Subscribe(observer1);
             IDisposable sub2 = serviceBus.Commands.Subscribe(observer2);
 
-            Assert.That(internalObserver1, Is.Not.Null);
-            Assert.That(internalObserver2, Is.Not.Null);
+            Assert.NotNull(internalObserver1);
+            Assert.NotNull(internalObserver2);
 
             ICommand command1 = A.Fake<ICommand>();
             ICommand command2 = A.Fake<ICommand>();
@@ -310,7 +310,7 @@ namespace Obvs.Tests
             sub2.Dispose();
         }
         
-        [Test]
+        [Fact]
         public void ShouldReturnEventsFromUnderlyingEndpoints()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -338,8 +338,8 @@ namespace Obvs.Tests
             IDisposable sub1 = serviceBus.Events.Subscribe(observer1);
             IDisposable sub2 = serviceBus.Events.Subscribe(observer2);
 
-            Assert.That(internalObserver1, Is.Not.Null);
-            Assert.That(internalObserver2, Is.Not.Null);
+            Assert.NotNull(internalObserver1);
+            Assert.NotNull(internalObserver2);
 
             IEvent event1 = A.Fake<IEvent>();
             IEvent event2 = A.Fake<IEvent>();
@@ -355,7 +355,7 @@ namespace Obvs.Tests
             sub2.Dispose();
         }
         
-        [Test]
+        [Fact]
         public void ShouldReturnResponsesFromUnderlyingEndpoints()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -389,8 +389,8 @@ namespace Obvs.Tests
             IDisposable sub1 = responses.Subscribe(observer1);
             IDisposable sub2 = responses.Subscribe(observer2);
 
-            Assert.That(internalObserver1, Is.Not.Null);
-            Assert.That(internalObserver2, Is.Not.Null);
+            Assert.NotNull(internalObserver1);
+            Assert.NotNull(internalObserver2);
 
             // ensure id's on responses match those set on the request
             IResponse response1 = A.Fake<IResponse>();
@@ -412,7 +412,7 @@ namespace Obvs.Tests
             sub2.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void ShouldDisposeUnderlyingRequestSubscriptionOnlyWhenAllSubscriptionsDisposed()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -440,8 +440,8 @@ namespace Obvs.Tests
             IDisposable requestSub1 = serviceBus.Requests.Subscribe(observer1);
             IDisposable requestSub2 = serviceBus.Requests.Subscribe(observer2);
 
-            Assert.That(requestSource1, Is.Not.Null);
-            Assert.That(requestSource2, Is.Not.Null);
+            Assert.NotNull(requestSource1);
+            Assert.NotNull(requestSource2);
 
             IRequest request = A.Fake<IRequest>();
 
@@ -466,7 +466,7 @@ namespace Obvs.Tests
             A.CallTo(() => observer2.OnNext(request)).MustHaveHappened(Repeated.Exactly.Twice);
         }
 
-        [Test]
+        [Fact]
         public void ShouldDisposeUnderlyingCommandSubscriptionOnlyWhenAllSubscriptionsDisposed()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -494,8 +494,8 @@ namespace Obvs.Tests
             IDisposable commandSub1 = serviceBus.Commands.Subscribe(observer1);
             IDisposable commandSub2 = serviceBus.Commands.Subscribe(observer2);
 
-            Assert.That(commandSource1, Is.Not.Null);
-            Assert.That(commandSource2, Is.Not.Null);
+            Assert.NotNull(commandSource1);
+            Assert.NotNull(commandSource2);
 
             ICommand command = A.Fake<ICommand>();
 
@@ -520,7 +520,7 @@ namespace Obvs.Tests
             A.CallTo(() => observer2.OnNext(command)).MustHaveHappened(Repeated.Exactly.Twice);
         }
 
-        [Test]
+        [Fact]
         public void ShouldDisposeUnderlyingEventSubscriptionOnlyWhenAllSubscriptionsDisposed()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -548,8 +548,8 @@ namespace Obvs.Tests
             IDisposable eventSub1 = serviceBus.Events.Subscribe(observer1);
             IDisposable eventSub2 = serviceBus.Events.Subscribe(observer2);
 
-            Assert.That(eventSource1, Is.Not.Null);
-            Assert.That(eventSource2, Is.Not.Null);
+            Assert.NotNull(eventSource1);
+            Assert.NotNull(eventSource2);
 
             IEvent ev = A.Fake<IEvent>();
 
@@ -574,7 +574,7 @@ namespace Obvs.Tests
             A.CallTo(() => observer2.OnNext(ev)).MustHaveHappened(Repeated.Exactly.Twice);
         }
 
-        [Test]
+        [Fact]
         public void ShouldHandleUnderlyingEventSubscriptionErrorsOnTheExceptionChannel()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -604,8 +604,8 @@ namespace Obvs.Tests
             IDisposable eventSub2 = serviceBus.Events.Subscribe(observer2);
             IDisposable exceptionSub = serviceBus.Exceptions.Subscribe(observer3);
 
-            Assert.That(eventSource1, Is.Not.Null);
-            Assert.That(eventSource2, Is.Not.Null);
+            Assert.NotNull(eventSource1);
+            Assert.NotNull(eventSource2);
 
             IEvent event1 = A.Fake<IEvent>();
             IEvent event2 = A.Fake<IEvent>();
@@ -633,7 +633,7 @@ namespace Obvs.Tests
             exceptionSub.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void ShouldHandleUnderlyingCommandSubscriptionErrorsOnTheExceptionChannel()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -663,8 +663,8 @@ namespace Obvs.Tests
             IDisposable eventSub2 = serviceBus.Commands.Subscribe(observer2);
             IDisposable exceptionSub = serviceBus.Exceptions.Subscribe(observer3);
 
-            Assert.That(commandSource1, Is.Not.Null);
-            Assert.That(commandSource2, Is.Not.Null);
+            Assert.NotNull(commandSource1);
+            Assert.NotNull(commandSource2);
 
             ICommand command1 = A.Fake<ICommand>();
             ICommand command2 = A.Fake<ICommand>();
@@ -692,7 +692,7 @@ namespace Obvs.Tests
             exceptionSub.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void ShouldHandleUnderlyingRequestSubscriptionErrorsOnTheExceptionChannel()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -722,8 +722,8 @@ namespace Obvs.Tests
             IDisposable eventSub2 = serviceBus.Requests.Subscribe(observer2);
             IDisposable exceptionSub = serviceBus.Exceptions.Subscribe(observer3);
 
-            Assert.That(requestSource1, Is.Not.Null);
-            Assert.That(requestSource2, Is.Not.Null);
+            Assert.NotNull(requestSource1);
+            Assert.NotNull(requestSource2);
 
             IRequest request1 = A.Fake<IRequest>();
             IRequest request2 = A.Fake<IRequest>();
@@ -751,7 +751,7 @@ namespace Obvs.Tests
             exceptionSub.Dispose();
         }
         
-        [Test]
+        [Fact]
         public void ShouldSendCommandsToCorrectEndpoints()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -787,7 +787,7 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpointClient3.SendAsync(command3)).MustHaveHappened(Repeated.Exactly.Once);
         } 
         
-        [Test]
+        [Fact]
         public void ShouldSendRequestsToCorrectEndpoints()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -820,7 +820,7 @@ namespace Obvs.Tests
             sub2.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void ShouldCompleteGetResponseWhenOneResponseReturned()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -851,7 +851,7 @@ namespace Obvs.Tests
             sub1.Dispose();
         }
         
-        [Test]
+        [Fact]
         public void ShouldPublishEventsToCorrectEndpoints()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -875,7 +875,7 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldSendResponsesToCorrectEndpoints()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -900,7 +900,7 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldSetRequestIdsOnRequestsWhenUsingDefaultRequestCorrelationProvider()
         {
             const string requestId = "MyOwnRequestId";
@@ -935,18 +935,18 @@ namespace Obvs.Tests
             IDisposable sub1 = responses1.Subscribe(observer1);
             IDisposable sub2 = responses2.Subscribe(observer2);
 
-            Assert.That(!string.IsNullOrEmpty(request1.RequestId), "RequestId not set on request");
-            Assert.That(!string.IsNullOrEmpty(request1.RequesterId), "RequesterId not set on request");
+            Assert.True(!string.IsNullOrEmpty(request1.RequestId), "RequestId not set on request");
+            Assert.True(!string.IsNullOrEmpty(request1.RequesterId), "RequesterId not set on request");
 
-            Assert.That(request2.RequestId, Is.EqualTo(requestId), "Custom RequestId was overriden");
-            Assert.That(!string.IsNullOrEmpty(request2.RequesterId), "RequesterId not set on request");
-            Assert.That(request1.RequesterId, Is.EqualTo(request2.RequesterId), "RequesterId should the same on both requests");
+            Assert.Equal(request2.RequestId, requestId); // Custom RequestId was overriden
+            Assert.True(!string.IsNullOrEmpty(request2.RequesterId), "RequesterId not set on request");
+            Assert.Equal(request1.RequesterId, request2.RequesterId); // RequesterId should the same on both requests
 
             sub1.Dispose();
             sub2.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void ShouldAttemptToSendCommandToAllEndpointsWhenExceptionsAreThrown()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -980,15 +980,15 @@ namespace Obvs.Tests
                 Console.WriteLine(ex);
             }
 
-            Assert.That(aggregateException != null, "No aggregate exception was thrown");
-            Assert.That(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
+            Assert.True(aggregateException != null, "No aggregate exception was thrown");
+            Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
             A.CallTo(() => serviceEndpointClient1.SendAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => serviceEndpointClient2.SendAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => serviceEndpointClient3.SendAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldAttemptToPublishEventToAllEndpointsWhenExceptionsAreThrown()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -1021,15 +1021,15 @@ namespace Obvs.Tests
                 Console.WriteLine(ex);
             }
 
-            Assert.That(aggregateException != null, "No aggregate exception was thrown");
-            Assert.That(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
+            Assert.True(aggregateException != null, "No aggregate exception was thrown");
+            Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
             A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
         }
         
-        [Test]
+        [Fact]
         public void ShouldAttemptToSendResponseToAllEndpointsWhenExceptionsAreThrown()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -1062,15 +1062,15 @@ namespace Obvs.Tests
                 Console.WriteLine(ex);
             }
 
-            Assert.That(aggregateException != null, "No aggregate exception was thrown");
-            Assert.That(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
+            Assert.True(aggregateException != null, "No aggregate exception was thrown");
+            Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
             A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
             A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldDisposeEndpointsWhenDisposed()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
@@ -1088,7 +1088,7 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpointClient2.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldCatchAndHandleExceptionsThrownByEndpointObservables()
         {
             FakeServiceEndpoint erroringEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1)) { ThrowException = true };
@@ -1122,12 +1122,12 @@ namespace Obvs.Tests
             TestServiceEvent2 message2 = new TestServiceEvent2();
             serviceBus.PublishAsync(message2);
 
-            Assert.That(exceptions.Count(), Is.EqualTo(2));
-            Assert.That(messages.Contains(message1), "message1 not received");
-            Assert.That(messages.Contains(message2), "message2 not received");
+            Assert.Equal(exceptions.Count(), 2);
+            Assert.True(messages.Contains(message1), "message1 not received");
+            Assert.True(messages.Contains(message2), "message2 not received");
         }
 
-        [Test]
+        [Fact]
         public void ShouldSendAllMessagesToSubscribers()
         {
             FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1169,23 +1169,23 @@ namespace Obvs.Tests
             subscription.Dispose();
             subscription2.Dispose();
 
-            Assert.That(exceptions.Count(), Is.EqualTo(0));
-            Assert.That(subscriber.Received.Count(), Is.EqualTo(5));
-            Assert.That(subscriber.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
-            Assert.That(subscriber.Received[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
-            Assert.That(subscriber.Received[2].GetType(), Is.EqualTo(typeof(TestServiceCommand1)));
-            Assert.That(subscriber.Received[3].GetType(), Is.EqualTo(typeof(TestServiceCommand2)));
-            Assert.That(subscriber.Received[4].GetType(), Is.EqualTo(typeof(TestServiceRequest1)));
+            Assert.Equal(exceptions.Count(), 0);
+            Assert.Equal(subscriber.Received.Count(), 5);
+            Assert.Equal(subscriber.Received[0].GetType(), typeof(TestServiceEvent1));
+            Assert.Equal(subscriber.Received[1].GetType(), typeof(TestServiceEvent2));
+            Assert.Equal(subscriber.Received[2].GetType(), typeof(TestServiceCommand1));
+            Assert.Equal(subscriber.Received[3].GetType(), typeof(TestServiceCommand2));
+            Assert.Equal(subscriber.Received[4].GetType(), typeof(TestServiceRequest1));
             
-            Assert.That(subscriber2.Received.Count(), Is.EqualTo(5));
-            Assert.That(subscriber2.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
-            Assert.That(subscriber2.Received[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
-            Assert.That(subscriber2.Received[2].GetType(), Is.EqualTo(typeof(TestServiceCommand1)));
-            Assert.That(subscriber2.Received[3].GetType(), Is.EqualTo(typeof(TestServiceCommand2)));
-            Assert.That(subscriber2.Received[4].GetType(), Is.EqualTo(typeof(TestServiceRequest1)));
+            Assert.Equal(subscriber2.Received.Count(), 5);
+            Assert.Equal(subscriber2.Received[0].GetType(), typeof(TestServiceEvent1));
+            Assert.Equal(subscriber2.Received[1].GetType(), typeof(TestServiceEvent2));
+            Assert.Equal(subscriber2.Received[2].GetType(), typeof(TestServiceCommand1));
+            Assert.Equal(subscriber2.Received[3].GetType(), typeof(TestServiceCommand2));
+            Assert.Equal(subscriber2.Received[4].GetType(), typeof(TestServiceRequest1));
         }
         
-        [Test]
+        [Fact]
         public void ShouldEmitSubscriberExceptionsOnExceptionObservable()
         {
             FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1221,11 +1221,11 @@ namespace Obvs.Tests
 
             subscription.Dispose();
 
-            Assert.That(exceptions.Count(), Is.EqualTo(4));
-            Assert.That(subscriber.Received.Count(), Is.EqualTo(0));
+            Assert.Equal(exceptions.Count(), 4);
+            Assert.Equal(subscriber.Received.Count(), 0);
         }
 
-        [Test]
+        [Fact]
         public void ShouldThrowExceptionIfAlreadySubscribed()
         {
             FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1245,7 +1245,7 @@ namespace Obvs.Tests
             Assert.Throws<ArgumentException>(() => serviceBus.Subscribe(subscriber));
         }
         
-        [Test]
+        [Fact]
         public void ShouldNotDeliverMessagesToSubscriberAfterSubscriptionDisposed()
         {
             FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1270,11 +1270,11 @@ namespace Obvs.Tests
             serviceEndpoint1.Messages.OnNext(new TestServiceEvent2());
             testScheduler.AdvanceBy(1);
 
-            Assert.That(subscriber.Received.Count(), Is.EqualTo(1));
-            Assert.That(subscriber.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
+            Assert.Equal(subscriber.Received.Count(), 1);
+            Assert.Equal(subscriber.Received[0].GetType(), typeof(TestServiceEvent1));
         }
         
-        [Test]
+        [Fact]
         public void ShouldThrowExceptionIfSubscriberIsNull()
         {
             FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1290,7 +1290,7 @@ namespace Obvs.Tests
             Assert.Throws<ArgumentNullException>(() => serviceBus.Subscribe(null));
         }
         
-        [Test]
+        [Fact]
         public void ShouldThrowExceptionIfSubscriberHasNoValidMessageHandlers()
         {
             FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1306,7 +1306,7 @@ namespace Obvs.Tests
             Assert.Throws<ArgumentException>(() => serviceBus.Subscribe(new object()));
         }
         
-        [Test]
+        [Fact]
         public void ShouldSendAllMessagesToClientSubscribers()
         {
             FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1341,20 +1341,20 @@ namespace Obvs.Tests
             subscription.Dispose();
             subscription2.Dispose();
 
-            Assert.That(exceptions.Count(), Is.EqualTo(0));
+            Assert.Equal(exceptions.Count(), 0);
 
-            Assert.That(subscriber.Received.Count(), Is.EqualTo(3));
-            Assert.That(subscriber.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
-            Assert.That(subscriber.Received[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
-            Assert.That(subscriber.Received[2].GetType(), Is.EqualTo(typeof(TestServiceEventBase)));
+            Assert.Equal(subscriber.Received.Count(), 3);
+            Assert.Equal(subscriber.Received[0].GetType(), typeof(TestServiceEvent1));
+            Assert.Equal(subscriber.Received[1].GetType(), typeof(TestServiceEvent2));
+            Assert.Equal(subscriber.Received[2].GetType(), typeof(TestServiceEventBase));
             
-            Assert.That(subscriber2.Received.Count(), Is.EqualTo(3));
-            Assert.That(subscriber2.Received[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
-            Assert.That(subscriber2.Received[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
-            Assert.That(subscriber2.Received[2].GetType(), Is.EqualTo(typeof(TestServiceEventBase)));
+            Assert.Equal(subscriber2.Received.Count(), 3);
+            Assert.Equal(subscriber2.Received[0].GetType(), typeof(TestServiceEvent1));
+            Assert.Equal(subscriber2.Received[1].GetType(), typeof(TestServiceEvent2));
+            Assert.Equal(subscriber2.Received[2].GetType(), typeof(TestServiceEventBase));
         }
         
-        [Test]
+        [Fact]
         public void ShouldDeliverAllMessagesFromEndpointsWithoutLoggingEnabled()
         {
             FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1377,14 +1377,14 @@ namespace Obvs.Tests
             serviceEndpoint1.Messages.OnNext(new TestServiceEvent1());
             serviceEndpoint1.Messages.OnNext(new TestServiceCommand1());
 
-            Assert.That(exceptions.Count(), Is.EqualTo(0));
-            Assert.That(messages.Count(), Is.EqualTo(2));
-            Assert.That(messages[0].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
-            Assert.That(messages[1].GetType(), Is.EqualTo(typeof(TestServiceCommand1)));
+            Assert.Equal(exceptions.Count(), 0);
+            Assert.Equal(messages.Count(), 2);
+            Assert.Equal(messages[0].GetType(), typeof(TestServiceEvent1));
+            Assert.Equal(messages[1].GetType(), typeof(TestServiceCommand1));
             
         }
 
-        [Test]
+        [Fact]
         public void ShouldPublishMessagesToLocalBusWhenConfigured()
         {
             FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1421,27 +1421,27 @@ namespace Obvs.Tests
             serviceBus.SendAsync(new TestServiceCommand1());
             serviceBus.PublishAsync(new TestEventBelongingToNoService());
 
-            Assert.That(exceptions.Count(), Is.EqualTo(0));
+            Assert.Equal(exceptions.Count(), 0);
 
-            Assert.That(localBusMessages.Count(), Is.EqualTo(5));
-            Assert.That(localBusMessages[0].GetType(), Is.EqualTo(typeof(TestServiceResponse1)));
-            Assert.That(localBusMessages[1].GetType(), Is.EqualTo(typeof(TestServiceRequest1)));
-            Assert.That(localBusMessages[2].GetType(), Is.EqualTo(typeof(TestServiceEvent1)));
-            Assert.That(localBusMessages[3].GetType(), Is.EqualTo(typeof(TestServiceCommand1)));
-            Assert.That(localBusMessages[4].GetType(), Is.EqualTo(typeof(TestEventBelongingToNoService)));
+            Assert.Equal(localBusMessages.Count(), 5);
+            Assert.Equal(localBusMessages[0].GetType(), typeof(TestServiceResponse1));
+            Assert.Equal(localBusMessages[1].GetType(), typeof(TestServiceRequest1));
+            Assert.Equal(localBusMessages[2].GetType(), typeof(TestServiceEvent1));
+            Assert.Equal(localBusMessages[3].GetType(), typeof(TestServiceCommand1));
+            Assert.Equal(localBusMessages[4].GetType(), typeof(TestEventBelongingToNoService));
 
-            Assert.That(serviceBusMessages.Count(), Is.EqualTo(7));
-            Assert.That(serviceBusMessages[0].GetType(), Is.EqualTo(typeof(TestServiceRequest1))); // locally published
-            Assert.That(serviceBusMessages[1].GetType(), Is.EqualTo(typeof(TestServiceResponse1))); // locally published
-            Assert.That(serviceBusMessages[2].GetType(), Is.EqualTo(typeof(TestServiceResponse2)));
-            Assert.That(serviceBusMessages[3].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
-            Assert.That(serviceBusMessages[4].GetType(), Is.EqualTo(typeof(TestServiceEvent1))); // locally published
-            Assert.That(serviceBusMessages[5].GetType(), Is.EqualTo(typeof(TestServiceCommand1))); // locally published
-            Assert.That(serviceBusMessages[6].GetType(), Is.EqualTo(typeof(TestEventBelongingToNoService))); // locally published
+            Assert.Equal(serviceBusMessages.Count(), 7);
+            Assert.Equal(serviceBusMessages[0].GetType(), typeof(TestServiceRequest1)); // locally published
+            Assert.Equal(serviceBusMessages[1].GetType(), typeof(TestServiceResponse1)); // locally published
+            Assert.Equal(serviceBusMessages[2].GetType(), typeof(TestServiceResponse2));
+            Assert.Equal(serviceBusMessages[3].GetType(), typeof(TestServiceEvent2));
+            Assert.Equal(serviceBusMessages[4].GetType(), typeof(TestServiceEvent1)); // locally published
+            Assert.Equal(serviceBusMessages[5].GetType(), typeof(TestServiceCommand1)); // locally published
+            Assert.Equal(serviceBusMessages[6].GetType(), typeof(TestEventBelongingToNoService)); // locally published
             
         }
         
-        [Test]
+        [Fact]
         public void ShouldPublishMessagesWithNoEndpointToLocalBusWhenConfigured()
         {
             FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1481,21 +1481,21 @@ namespace Obvs.Tests
             serviceBus.PublishAsync(new TestServiceEvent1());
             serviceBus.PublishAsync(new TestEventBelongingToNoService());
 
-            Assert.That(exceptions.Count(), Is.EqualTo(0));
+            Assert.Equal(exceptions.Count(), 0);
 
-            Assert.That(localBusMessages.Count(), Is.EqualTo(1));
-            Assert.That(localBusMessages[0].GetType(), Is.EqualTo(typeof(TestEventBelongingToNoService)));
+            Assert.Equal(localBusMessages.Count(), 1);
+            Assert.Equal(localBusMessages[0].GetType(), typeof(TestEventBelongingToNoService));
 
-            Assert.That(serviceBusMessages.Count(), Is.EqualTo(3));
-            Assert.That(serviceBusMessages[0].GetType(), Is.EqualTo(typeof(TestServiceResponse2)));
-            Assert.That(serviceBusMessages[1].GetType(), Is.EqualTo(typeof(TestServiceEvent2)));
-            Assert.That(serviceBusMessages[2].GetType(), Is.EqualTo(typeof(TestEventBelongingToNoService))); // locally published
+            Assert.Equal(serviceBusMessages.Count(), 3);
+            Assert.Equal(serviceBusMessages[0].GetType(), typeof(TestServiceResponse2));
+            Assert.Equal(serviceBusMessages[1].GetType(), typeof(TestServiceEvent2));
+            Assert.Equal(serviceBusMessages[2].GetType(), typeof(TestEventBelongingToNoService)); // locally published
 
             testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
             
         }
 
-        [Test]
+        [Fact]
         public async Task ShouldMonitorAllMessagesSentAndReceived()
         {
             FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
@@ -1540,13 +1540,13 @@ namespace Obvs.Tests
             await serviceBus.SendAsync(new TestServiceCommand2());
             await serviceBus.PublishAsync(new TestServiceEvent1());
 
-            Assert.That(monitorSent.Count, Is.EqualTo(3));
-            Assert.That(monitorSent.OfType<TestServiceCommand2>().Count(), Is.EqualTo(1));
-            Assert.That(monitorSent.OfType<TestServiceEvent1>().Count(), Is.EqualTo(1));
-            Assert.That(monitorSent.OfType<TestServiceRequest2>().Count(), Is.EqualTo(1));
+            Assert.Equal(monitorSent.Count, 3);
+            Assert.Equal(monitorSent.OfType<TestServiceCommand2>().Count(), 1);
+            Assert.Equal(monitorSent.OfType<TestServiceEvent1>().Count(), 1);
+            Assert.Equal(monitorSent.OfType<TestServiceRequest2>().Count(), 1);
 
-            Assert.That(monitorReceived.Count, Is.EqualTo(1));
-            Assert.That(monitorReceived.OfType<TestServiceResponse2>().Count(), Is.EqualTo(1));
+            Assert.Equal(monitorReceived.Count, 1);
+            Assert.Equal(monitorReceived.OfType<TestServiceResponse2>().Count(), 1);
         }
     }
     
@@ -1625,7 +1625,7 @@ namespace Obvs.Tests
         {
             if (ThrowExceptions)
             {
-                throw new Exception("ThrowExceptions set to True");
+                throw new Exception("ThrowExceptions set to Equal");
             }
             Received.Add(message);
         }
@@ -1676,7 +1676,7 @@ namespace Obvs.Tests
         {
             if (ThrowExceptions)
             {
-                throw new Exception("ThrowExceptions set to True");
+                throw new Exception("ThrowExceptions set to Equal");
             }
             Received.Add(message);
         }

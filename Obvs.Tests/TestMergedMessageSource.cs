@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Reactive.Linq;
 using FakeItEasy;
-using NUnit.Framework;
 using Obvs.Types;
+using Xunit;
 
 namespace Obvs.Tests
 {
-    [TestFixture]
     public class TestMergedMessageSource
     {
-        [Test]
+        [Fact]
         public void ShouldOnlySubscribeToUnderlyingSourcesOnce()
         {
             IMessageSource<IEvent> source1 = A.Fake<IMessageSource<IEvent>>();
@@ -36,7 +35,7 @@ namespace Obvs.Tests
             sub2.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void ShouldReturnMessagesFromUnderlyingSources()
         {
             IMessageSource<IEvent> source1 = A.Fake<IMessageSource<IEvent>>();
@@ -57,8 +56,8 @@ namespace Obvs.Tests
             IDisposable sub1 = mergedMessageSource.Messages.OfType<IEvent>().Subscribe(observer);
             IDisposable sub2 = mergedMessageSource.Messages.OfType<IMessage>().Subscribe(observer);
 
-            Assert.That(internalObserver1, Is.Not.Null);
-            Assert.That(internalObserver2, Is.Not.Null);
+            Assert.NotNull(internalObserver1);
+            Assert.NotNull(internalObserver2);
 
             IEvent ev1 = A.Fake<IEvent>();
             IMessage msg2 = A.Fake<IMessage>();
@@ -72,7 +71,7 @@ namespace Obvs.Tests
             sub2.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void ShouldDisposeUnderlyingSubscriptionOnlyWhenAllSubscriptionsDisposed()
         {
             IMessageSource<IEvent> source1 = A.Fake<IMessageSource<IEvent>>();
@@ -93,8 +92,8 @@ namespace Obvs.Tests
             IDisposable sub1 = mergedMessageSource.Messages.OfType<IEvent>().Subscribe(observer);
             IDisposable sub2 = mergedMessageSource.Messages.OfType<IMessage>().Subscribe(observer);
 
-            Assert.That(internalObserver1, Is.Not.Null);
-            Assert.That(internalObserver2, Is.Not.Null);
+            Assert.NotNull(internalObserver1);
+            Assert.NotNull(internalObserver2);
 
             IEvent ev1 = A.Fake<IEvent>();
             IMessage msg1 = A.Fake<IMessage>();

@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using FakeItEasy;
-using NUnit.Framework;
 using Obvs.Types;
+using Xunit;
 
 namespace Obvs.Tests
 {
-    [TestFixture]
+    
     public class TestTypeRoutingMessagePublisher
     {
-        [Test]
+        [Fact]
         public void ShouldDispatchToCorrectPublisher()
         {
             IMessagePublisher<IMessage> eventPublisher = A.Fake<IMessagePublisher<IMessage>>();
