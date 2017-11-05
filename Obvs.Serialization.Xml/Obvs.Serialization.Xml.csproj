@@ -11,6 +11,6 @@
     <Description>XML serialization for Obvs</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Obvs" Version="3.1.1.66" />
+    <PackageReference Include="Obvs" Version="3.1.1.67" />
   </ItemGroup>
 </Project>
