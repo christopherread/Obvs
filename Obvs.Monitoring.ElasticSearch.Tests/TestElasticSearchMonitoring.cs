@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using FakeItEasy;
 using Microsoft.Reactive.Testing;
 using Nest;
-using NUnit.Framework;
+using Xunit;
 
 namespace Obvs.Monitoring.ElasticSearch.Tests
 {
-    [TestFixture]
     public class TestElasticSearchMonitoring
     {
-        [Test]
+        [Fact]
         public void ShouldBeAbleToCreateMonitor()
         {
             IElasticClient elasticClient = A.Fake<IElasticClient>();
@@ -20,10 +19,10 @@ namespace Obvs.Monitoring.ElasticSearch.Tests
 
             IMonitor<TestMessage> monitor = factory.Create("SomeName");
 
-            Assert.That(monitor, Is.Not.Null);
+            Assert.NotNull(monitor);
         }
 
-        [Test]
+        [Fact]
         public void ShouldNotAttemptToSaveIfNoMessages()
         {
             IElasticClient elasticClient = A.Fake<IElasticClient>();
@@ -33,14 +32,14 @@ namespace Obvs.Monitoring.ElasticSearch.Tests
 
             IMonitor<TestMessage> monitor = factory.Create("SomeName");
 
-            Assert.That(monitor, Is.Not.Null);
+            Assert.NotNull(monitor);
 
             testScheduler.AdvanceBy(TimeSpan.FromMinutes(1).Ticks);
 
             A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>._)).MustNotHaveHappened();
         }
 
-        [Test]
+        [Fact]
         public void ShouldAttemptToSaveIfMessagesSent()
         {
             IElasticClient elasticClient = A.Fake<IElasticClient>();
@@ -57,7 +56,7 @@ namespace Obvs.Monitoring.ElasticSearch.Tests
             A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>._)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldAttemptToSaveIfMessagesReceived()
         {
             IElasticClient elasticClient = A.Fake<IElasticClient>();
@@ -75,7 +74,7 @@ namespace Obvs.Monitoring.ElasticSearch.Tests
         }
 
 
-        [Test]
+        [Fact]
         public void ShouldAttemptToSaveMultipleCountersIfMessagesSent()
         {
             IElasticClient elasticClient = A.Fake<IElasticClient>();
@@ -93,7 +92,7 @@ namespace Obvs.Monitoring.ElasticSearch.Tests
             A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>.That.Matches(request => request.Operations.Count == 1 + types.Count))).MustHaveHappened(Repeated.Exactly.Once);
         }
         
-        [Test]
+        [Fact]
         public void ShouldAttemptToSaveMultipleCountersIfMessagesReceived()
         {
             IElasticClient elasticClient = A.Fake<IElasticClient>();
@@ -111,7 +110,7 @@ namespace Obvs.Monitoring.ElasticSearch.Tests
             A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>.That.Matches(request => request.Operations.Count == 1 + types.Count))).MustHaveHappened(Repeated.Exactly.Once);
         }
     
-        [Test]
+        [Fact]
         public void ShouldDisposeCleanly()
         {
             IElasticClient elasticClient = A.Fake<IElasticClient>();
