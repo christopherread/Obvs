@@ -7,16 +7,14 @@ using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using FakeItEasy;
-using NUnit.Framework;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
-using Obvs.Serialization.Json;
 using Obvs.Types;
+using Xunit;
 using IMessage = Obvs.Types.IMessage;
 
 namespace Obvs.ActiveMQ.Tests
 {
-    [TestFixture]
     public class TestMessagePublisher
     {
         private IConnection _connection;
@@ -58,10 +56,9 @@ namespace Obvs.ActiveMQ.Tests
             }
         }
 
-        [SetUp]
-        public void SetUp()
+        public TestMessagePublisher()
         {
-            A.Fake<IConnectionFactory>();
+        A.Fake<IConnectionFactory>();
             _connection = A.Fake<IConnection>();
             _lazyConnection = new Lazy<IConnection>(() =>
             {
@@ -79,7 +76,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _producer.CreateBytesMessage()).Returns(_message);
         }
 
-        [Test]
+        [Fact]
         public async Task ShouldCreateSessionsOnceOnFirstPublish()
         {
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
@@ -96,7 +93,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _connection.Start()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public async Task ShouldSendMessageWithPropertiesWhenPublishing()
         {
             _propertyProvider = _ => new Dictionary<string, object>
@@ -123,7 +120,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _message.Properties.SetBool("key5", true)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public async Task ShouldSendBytesMessageSerializerReturnsBytes()
         {
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
@@ -140,7 +137,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _producer.Send(bytesMessage, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public async Task ShouldSendMessageWithTypeNamePropertySet()
         {
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
@@ -153,7 +150,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _message.Properties.SetString(MessagePropertyNames.TypeName, typeof(TestMessage).Name)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public async Task ShouldCloseSessionWhenDisposed()
         {
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
@@ -165,7 +162,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _producer.Close()).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test]
+        [Fact]
         public void ShouldThrowExceptionIfPublishAttemptedAfterDisposed()
         {
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
@@ -178,7 +175,7 @@ namespace Obvs.ActiveMQ.Tests
             });
         }
 
-        [Test]
+        [Fact]
         public async Task ShouldThrowExceptionIfPropertyDictionaryAlreadyContainsTypeName()
         {
             Func<IMessage, Dictionary<string, object>> propertyProvider =
@@ -192,11 +189,11 @@ namespace Obvs.ActiveMQ.Tests
             }
             catch (Exception exception)
             {
-                Assert.That(exception.Message, Contains.Substring(MessagePropertyNames.TypeName));
+                Assert.Contains(MessagePropertyNames.TypeName, exception.Message);
             }
         }
 
-        [Test]
+        [Fact]
         public async Task ShouldDiscardMessagesThatAreStillQueuedOnSchedulerAfterDispose()
         {
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
@@ -215,7 +212,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Twice);
         }
 
-        [Test]
+        [Fact]
         public async Task ShouldNotThrowExceptionIfPropertyProviderReturnsNull()
         {
             Func<IMessage, Dictionary<string, object>> propertyProviderWhichReturnsNull = msg => null;
@@ -227,64 +224,64 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
-        [Test, Explicit]
-        public async Task ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics()
-        {
-            const string brokerUri = "tcp://localhost:61616";
-            const string topicName1 = "Obvs.Tests.ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics1";
-            const string topicName2 = "Obvs.Tests.ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics2";
+        //[Test, Explicit]
+        //public async Task ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics()
+        //{
+        //    const string brokerUri = "tcp://localhost:61616";
+        //    const string topicName1 = "Obvs.Tests.ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics1";
+        //    const string topicName2 = "Obvs.Tests.ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics2";
 
-            Func<IMessage, Dictionary<string, object>> getProperties = message => new Dictionary<string, object>();
+        //    Func<IMessage, Dictionary<string, object>> getProperties = message => new Dictionary<string, object>();
 
-            IConnectionFactory connectionFactory = new ConnectionFactory(brokerUri);
-            var lazyConnection = new Lazy<IConnection>(() =>
-            {
-                var conn = connectionFactory.CreateConnection();
-                conn.Start();
-                return conn;
-            });
+        //    IConnectionFactory connectionFactory = new ConnectionFactory(brokerUri);
+        //    var lazyConnection = new Lazy<IConnection>(() =>
+        //    {
+        //        var conn = connectionFactory.CreateConnection();
+        //        conn.Start();
+        //        return conn;
+        //    });
 
-            IMessagePublisher<IMessage> publisher1 = new MessagePublisher<IMessage>(
-                lazyConnection,
-                new ActiveMQTopic(topicName1),
-                new JsonMessageSerializer(),
-                getProperties,
-                _testScheduler);
+        //    IMessagePublisher<IMessage> publisher1 = new MessagePublisher<IMessage>(
+        //        lazyConnection,
+        //        new ActiveMQTopic(topicName1),
+        //        new JsonMessageSerializer(),
+        //        getProperties,
+        //        _testScheduler);
 
-            IMessagePublisher<IMessage> publisher2 = new MessagePublisher<IMessage>(
-                lazyConnection,
-                new ActiveMQTopic(topicName2),
-                new JsonMessageSerializer(),
-                getProperties,
-                _testScheduler);
+        //    IMessagePublisher<IMessage> publisher2 = new MessagePublisher<IMessage>(
+        //        lazyConnection,
+        //        new ActiveMQTopic(topicName2),
+        //        new JsonMessageSerializer(),
+        //        getProperties,
+        //        _testScheduler);
 
-            IMessageDeserializer<IMessage>[] deserializers =
-            {
-                new JsonMessageDeserializer<TestMessage>(),
-                new JsonMessageDeserializer<TestMessage2>()
-            };
+        //    IMessageDeserializer<IMessage>[] deserializers =
+        //    {
+        //        new JsonMessageDeserializer<TestMessage>(),
+        //        new JsonMessageDeserializer<TestMessage2>()
+        //    };
 
-            IMessageSource<IMessage> source = new MergedMessageSource<IMessage>(new[]
-            {
-                new MessageSource<IMessage>(
-                    lazyConnection,
-                    deserializers,
-                    new ActiveMQTopic(topicName1)),
+        //    IMessageSource<IMessage> source = new MergedMessageSource<IMessage>(new[]
+        //    {
+        //        new MessageSource<IMessage>(
+        //            lazyConnection,
+        //            deserializers,
+        //            new ActiveMQTopic(topicName1)),
 
-                new MessageSource<IMessage>(
-                    lazyConnection,
-                    deserializers,
-                    new ActiveMQTopic(topicName2))
-            });
+        //        new MessageSource<IMessage>(
+        //            lazyConnection,
+        //            deserializers,
+        //            new ActiveMQTopic(topicName2))
+        //    });
 
-            source.Messages.Subscribe(Console.WriteLine);
+        //    source.Messages.Subscribe(Console.WriteLine);
 
-            await publisher1.PublishAsync(new TestMessage { Id = 1234 });
-            await publisher1.PublishAsync(new TestMessage2 { Id = 4567 });
-            await publisher2.PublishAsync(new TestMessage { Id = 8910 });
-            await publisher2.PublishAsync(new TestMessage2 { Id = 1112 });
+        //    await publisher1.PublishAsync(new TestMessage { Id = 1234 });
+        //    await publisher1.PublishAsync(new TestMessage2 { Id = 4567 });
+        //    await publisher2.PublishAsync(new TestMessage { Id = 8910 });
+        //    await publisher2.PublishAsync(new TestMessage2 { Id = 1112 });
 
-            await Task.Delay(TimeSpan.FromSeconds(3));
-        }
+        //    await Task.Delay(TimeSpan.FromSeconds(3));
+        //}
     }
 }
