@@ -47,3 +47,4 @@ Temporary Items
 /*/obj/*
 *.ncrunchproject
 *.ncrunchsolution
+.vs/
