@@ -15,7 +15,7 @@ namespace Obvs.Serialization.Tests
         {
             IMessageSerializer serializer = new ProtoBufMessageSerializer();
 
-            var message = new TestMessage { Id = 123, Name = "SomeName" };
+            var message = new TestMessageProto { Id = 123, Name = "SomeName" };
             var serialize = serializer.Serialize(message);
 
             Assert.That(serialize, Is.Not.Null);
@@ -26,9 +26,9 @@ namespace Obvs.Serialization.Tests
         public void ShouldDeserializeFromProtoBuf()
         {
             IMessageSerializer serializer = new ProtoBufMessageSerializer();
-            IMessageDeserializer<TestMessage> deserializer = new ProtoBufMessageDeserializer<TestMessage>();
+            IMessageDeserializer<TestMessageProto> deserializer = new ProtoBufMessageDeserializer<TestMessageProto>();
 
-            var message = new TestMessage { Id = 123, Name = "SomeName" };
+            var message = new TestMessageProto { Id = 123, Name = "SomeName" };
             var serialize = serializer.Serialize(message);
             var deserialize = deserializer.Deserialize(serialize);
 

@@ -15,12 +15,12 @@ namespace Obvs.Serialization.Tests
         public void JsonDeserializerFactoryShouldWork()
         {
             var factory = new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>));
-            var deses = factory.Create<TestMessage, IMessage>();
+            var deses = factory.Create<TestMessageProto, IMessage>();
 
-            var des = deses.FirstOrDefault(d => d.GetTypeName() == typeof(TestMessage).Name);
+            var des = deses.FirstOrDefault(d => d.GetTypeName() == typeof(TestMessageProto).Name);
 
             IMessageSerializer serializer = new JsonMessageSerializer();
-            var messageBefore = new TestMessage { Id = 123, Name = "SomeName" };
+            var messageBefore = new TestMessageProto { Id = 123, Name = "SomeName" };
             var bytes = serializer.Serialize(messageBefore);
 
             var messageAfter = des.Deserialize(bytes);
@@ -33,7 +33,7 @@ namespace Obvs.Serialization.Tests
         {
             IMessageSerializer serializer = new JsonMessageSerializer();
 
-            var message = new TestMessage { Id = 123, Name = "SomeName" };
+            var message = new TestMessageProto { Id = 123, Name = "SomeName" };
             var serialize = JsonMessageDefaults.Encoding.GetString(serializer.Serialize(message));
 
             Assert.That(serialize, Is.Not.Null);
@@ -46,9 +46,9 @@ namespace Obvs.Serialization.Tests
         public void ShouldDeserializeFromJson()
         {
             IMessageSerializer serializer = new JsonMessageSerializer();
-            IMessageDeserializer<TestMessage> deserializer = new JsonMessageDeserializer<TestMessage>();
+            IMessageDeserializer<TestMessageProto> deserializer = new JsonMessageDeserializer<TestMessageProto>();
 
-            var message = new TestMessage { Id = 123, Name = "SomeName" };
+            var message = new TestMessageProto { Id = 123, Name = "SomeName" };
             var serialize = serializer.Serialize(message);
             var deserialize = deserializer.Deserialize(serialize);
 

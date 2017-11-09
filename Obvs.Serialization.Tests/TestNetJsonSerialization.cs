@@ -15,7 +15,7 @@ namespace Obvs.Serialization.Tests
         {
             IMessageSerializer serializer = new NetJsonMessageSerializer();
 
-            var message = new TestMessage { Id = 123, Name = "SomeName" };
+            var message = new TestMessageProto { Id = 123, Name = "SomeName" };
             var serialize = NetJsonDefaults.Encoding.GetString(serializer.Serialize(message));
 
             Assert.That(serialize, Is.Not.Null);
@@ -28,9 +28,9 @@ namespace Obvs.Serialization.Tests
         public void ShouldDeserializeFromNetJson()
         {
             IMessageSerializer serializer = new NetJsonMessageSerializer();
-            IMessageDeserializer<TestMessage> deserializer = new NetJsonMessageDeserializer<TestMessage>();
+            IMessageDeserializer<TestMessageProto> deserializer = new NetJsonMessageDeserializer<TestMessageProto>();
 
-            var message = new TestMessage { Id = 123, Name = "SomeName" };
+            var message = new TestMessageProto { Id = 123, Name = "SomeName" };
 
             var serialize = serializer.Serialize(message);
             var deserialize = deserializer.Deserialize(serialize);

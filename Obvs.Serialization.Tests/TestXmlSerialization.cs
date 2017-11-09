@@ -16,7 +16,7 @@ namespace Obvs.Serialization.Tests
         {
             IMessageSerializer serializer = new XmlMessageSerializer();
 
-            var message = new TestMessage { Id = 123, Name = "SomeName" };
+            var message = new TestMessageProto { Id = 123, Name = "SomeName" };
             var serialize = XmlSerializerDefaults.Encoding.GetString(serializer.Serialize(message));
 
             Assert.That(serialize, Is.Not.Null);
@@ -29,9 +29,9 @@ namespace Obvs.Serialization.Tests
         public void ShouldDeserializeFromXml()
         {
             IMessageSerializer serializer = new XmlMessageSerializer();
-            IMessageDeserializer<TestMessage> deserializer = new XmlMessageDeserializer<TestMessage>();
+            IMessageDeserializer<TestMessageProto> deserializer = new XmlMessageDeserializer<TestMessageProto>();
 
-            var message = new TestMessage {Id = 123, Name = "SomeName"};
+            var message = new TestMessageProto {Id = 123, Name = "SomeName"};
             var serialize = serializer.Serialize(message);
             var deserialize = deserializer.Deserialize(serialize);
 
@@ -42,9 +42,9 @@ namespace Obvs.Serialization.Tests
         public void ShouldDeserializeFromXmlAscii()
         {
             IMessageSerializer serializer = new XmlMessageSerializer();
-            IMessageDeserializer<TestMessage> deserializer = new XmlMessageDeserializer<TestMessage>();
+            IMessageDeserializer<TestMessageProto> deserializer = new XmlMessageDeserializer<TestMessageProto>();
 
-            var message = new TestMessage {Id = 123, Name = "SomeName"};
+            var message = new TestMessageProto {Id = 123, Name = "SomeName"};
             var serialize = serializer.Serialize(message);
             var ascii = Encoding.Convert(XmlSerializerDefaults.Encoding, Encoding.ASCII, serialize);
             var deserialize = deserializer.Deserialize(ascii);
