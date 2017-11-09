@@ -16,3 +16,4 @@
 *.ncrunchproject
 *.crunchsolution.cache
 *.ncrunchsolution.user
+.vs
