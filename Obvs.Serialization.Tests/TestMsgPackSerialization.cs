@@ -16,7 +16,7 @@ namespace Obvs.Serialization.Tests
         {
             IMessageSerializer serializer = new MsgPackMessageSerializer();
 
-            var message = new TestMessage { Id = 123, Name = "SomeName" };
+            var message = new TestMessageProto { Id = 123, Name = "SomeName" };
             var serialize = serializer.Serialize(message);
 
 
@@ -28,11 +28,11 @@ namespace Obvs.Serialization.Tests
         public void ShouldDeserializeFromMsgPack()
         {
             IMessageSerializer serializer = new MsgPackMessageSerializer();
-            IMessageDeserializer<TestMessage> deserializer = new MsgPackMessageDeserializer<TestMessage>();
+            IMessageDeserializer<TestMessageProto> deserializer = new MsgPackMessageDeserializer<TestMessageProto>();
 
             // see MsgPack spec limitation regarding UTC dates
             // https://github.com/msgpack/msgpack-cli/wiki#datetime
-            var message = new TestMessage { Id = 123, Name = "SomeName", Date = new DateTime(2010, 2, 10, 13, 22, 59, DateTimeKind.Utc) };
+            var message = new TestMessageProto { Id = 123, Name = "SomeName", Date = new DateTime(2010, 2, 10, 13, 22, 59, DateTimeKind.Utc) };
             var serialize = serializer.Serialize(message);
             var deserialize = deserializer.Deserialize(serialize);
 

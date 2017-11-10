@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.MessageP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.NetJson", "Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj", "{A7032830-495A-4B81-AE4E-A883125CF7A0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.MessagePack-CSharp", "Obvs.Serialization.MessagePack-CSharp\Obvs.Serialization.MessagePack-CSharp.csproj", "{1656F376-4065-49FF-AE18-9FF26183BA50}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{A7032830-495A-4B81-AE4E-A883125CF7A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7032830-495A-4B81-AE4E-A883125CF7A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7032830-495A-4B81-AE4E-A883125CF7A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1656F376-4065-49FF-AE18-9FF26183BA50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1656F376-4065-49FF-AE18-9FF26183BA50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1656F376-4065-49FF-AE18-9FF26183BA50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1656F376-4065-49FF-AE18-9FF26183BA50}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

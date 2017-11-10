@@ -1,27 +1,27 @@
 ﻿using System;
-using System.Runtime.Serialization;
 using Obvs.Types;
+using ProtoBuf;
 
 namespace Obvs.Serialization.Tests
 {
-    [DataContract]
-    public class TestMessage : IMessage, IEquatable<TestMessage>
+    [ProtoContract]
+    public class TestMessageProto : IMessage, IEquatable<TestMessageProto>
     {
-        [DataMember(Order = 1)]
+        [ProtoMember(1)]
         public int Id { get; set; }
 
-        [DataMember(Order = 2)]
+        [ProtoMember(2)]
         public string Name { get; set; }
 
-        [DataMember(Order = 3)]
+        [ProtoMember(3)]
         public DateTime Date { get; set; }
 
-        public TestMessage()
+        public TestMessageProto()
         {
             Date = DateTime.Now;
         }
 
-        public bool Equals(TestMessage other)
+        public bool Equals(TestMessageProto other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
@@ -33,7 +33,7 @@ namespace Obvs.Serialization.Tests
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((TestMessage)obj);
+            return Equals((TestMessageProto) obj);
         }
 
         public override int GetHashCode()
@@ -41,8 +41,8 @@ namespace Obvs.Serialization.Tests
             unchecked
             {
                 var hashCode = Id;
-                hashCode = (hashCode * 397) ^ (Name != null ? Name.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ Date.GetHashCode();
+                hashCode = (hashCode*397) ^ (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ Date.GetHashCode();
                 return hashCode;
             }
         }
