@@ -1,119 +1,23 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6FF57DDD-05DC-4FDC-9393-DB71C67D31A1}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Obvs.Serialization.Tests</RootNamespace>
-    <AssemblyName>Obvs.Serialization.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <TargetFramework>net452</TargetFramework>
+    <Company>Christopher Read</Company>
+    <Copyright>Copyright © Christopher Read 2014</Copyright>
+    <Authors />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FakeItEasy, Version=3.3.2.0, Culture=neutral, PublicKeyToken=eff28e2146d5fd2c, processorArchitecture=MSIL">
-      <HintPath>..\packages\FakeItEasy.3.3.2\lib\net40\FakeItEasy.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="nunit.framework, Version=3.6.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.6.1\lib\net45\nunit.framework.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Obvs, Version=3.0.1.58, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obvs.3.0.1.58\lib\net45\Obvs.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="protobuf-net, Version=2.3.2.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
-      <HintPath>..\packages\protobuf-net.2.3.2\lib\net40\protobuf-net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Reactive.Core">
-      <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Reactive.Interfaces">
-      <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Reactive.Linq">
-      <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="FakeItEasy" Version="4.1.1" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.4.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
+    <PackageReference Include="Microsoft.Reactive.Testing" Version="3.1.1" />
+    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TestMessage.cs" />
-    <Compile Include="TestMessagePackCSharpSerialization.cs" />
-    <Compile Include="TestNetJsonSerialization.cs" />
-    <Compile Include="TestJsonSerialization.cs" />
-    <Compile Include="TestMessageProto.cs" />
-    <Compile Include="TestMsgPackSerialization.cs" />
-    <Compile Include="TestProtoBufSerialization.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestXmlSerialization.cs" />
+    <ProjectReference Include="..\Obvs.Serialization.Json\Obvs.Serialization.Json.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.MessagePack\Obvs.Serialization.MessagePack.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.Xml\Obvs.Serialization.Xml.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Obvs.Serialization.Json\Obvs.Serialization.Json.csproj">
-      <Project>{21a3dedf-3cde-4c64-87a2-3405e1f1dd77}</Project>
-      <Name>Obvs.Serialization.Json</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Obvs.Serialization.MessagePack-CSharp\Obvs.Serialization.MessagePack-CSharp.csproj">
-      <Project>{1656F376-4065-49FF-AE18-9FF26183BA50}</Project>
-      <Name>Obvs.Serialization.MessagePack-CSharp</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Obvs.Serialization.MessagePack\Obvs.Serialization.MessagePack.csproj">
-      <Project>{4E1D1BEA-02E3-4BC5-96AD-799D27ACA32C}</Project>
-      <Name>Obvs.Serialization.MessagePack</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj">
-      <Project>{A7032830-495A-4B81-AE4E-A883125CF7A0}</Project>
-      <Name>Obvs.Serialization.NetJson</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj">
-      <Project>{204D0EC4-7029-4080-BA27-23AEDB6831D9}</Project>
-      <Name>Obvs.Serialization.ProtoBuf</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Obvs.Serialization.Xml\Obvs.Serialization.Xml.csproj">
-      <Project>{82bc1132-53e0-4846-8134-36b52a885cf4}</Project>
-      <Name>Obvs.Serialization.Xml</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
