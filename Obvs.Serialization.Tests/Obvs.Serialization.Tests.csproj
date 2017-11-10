@@ -10,11 +10,13 @@
     <PackageReference Include="Microsoft.CSharp" Version="4.4.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
     <PackageReference Include="Microsoft.Reactive.Testing" Version="3.1.1" />
+    <PackageReference Include="NUnit" Version="3.8.1" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Obvs.Serialization.Json\Obvs.Serialization.Json.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.MessagePack-CSharp\Obvs.Serialization.MessagePack-CSharp.csproj" />
     <ProjectReference Include="..\Obvs.Serialization.MessagePack\Obvs.Serialization.MessagePack.csproj" />
     <ProjectReference Include="..\Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj" />
     <ProjectReference Include="..\Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj" />

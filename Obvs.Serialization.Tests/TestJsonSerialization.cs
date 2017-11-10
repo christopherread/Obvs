@@ -17,10 +17,10 @@ namespace Obvs.Serialization.Tests
         {
             var factory = new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>));
             var deses = factory.Create<TestMessage, IMessage>(ShouldLoadAssembly);
-            var des = deses.FirstOrDefault(d => d.GetTypeName() == typeof(TestMessageProto).Name);
+            var des = deses.FirstOrDefault(d => d.GetTypeName() == typeof(TestMessage).Name);
 
             IMessageSerializer serializer = new JsonMessageSerializer();
-            var messageBefore = new TestMessageProto { Id = 123, Name = "SomeName" };
+            var messageBefore = new TestMessage { Id = 123, Name = "SomeName" };
             var bytes = serializer.Serialize(messageBefore);
 
             var messageAfter = des.Deserialize(bytes);
