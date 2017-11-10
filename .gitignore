@@ -232,3 +232,4 @@ $RECYCLE.BIN/
 /packages
 *.ncrunchproject
 *.ncrunchsolution
+.vs
