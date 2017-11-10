@@ -1,8 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net451</TargetFramework>
+    <Company></Company>
     <Authors>Christopher Read</Authors>
-    <Copyright>Copyright 2015</Copyright>
+    <Copyright>Copyright © Christopher Read 2017</Copyright>
+    <Version>1.0.0</Version>
     <Description>RabbitMQ transport extension for Obvs</Description>
     <PackageReleaseNotes>Upgraded to Obvs 4.0, now depending on RX 3.0</PackageReleaseNotes>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
