@@ -22,7 +22,7 @@ namespace Obvs.NATS.Tests
                     settings.ServiceName = "Obvs.NATS.TestService";
                     settings.Configure(connection =>
                     {
-                        connection.Url = "nats://localhost:4222";
+                        connection.Url = "nats://192.168.99.100:32774"; // change to local Docker address:port that maps onto 4222
                         connection.IsShared = true;
                     });
                     settings.Configure(messageProperty =>
