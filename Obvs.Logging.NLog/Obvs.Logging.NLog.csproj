@@ -6,7 +6,7 @@
     <Version>1.0.0</Version>
     <Authors>Christopher Read</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageProjectUrl>http://inter8ection.github.io/Obvs</PackageProjectUrl>
+    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
     <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
     <Description>NLog logging extension for Obvs</Description>
   </PropertyGroup>
