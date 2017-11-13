@@ -8,7 +8,7 @@
     <Description>RabbitMQ transport extension for Obvs</Description>
     <PackageReleaseNotes>Upgraded to Obvs 4.0, now depending on RX 3.0</PackageReleaseNotes>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageProjectUrl>http://inter8ection.github.io/Obvs</PackageProjectUrl>
+    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Obvs" Version="4.0.0.1" />
