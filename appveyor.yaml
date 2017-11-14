@@ -1,0 +1,40 @@
+version: 4.0.0.{build}
+skip_tags: true
+image: Visual Studio 2017
+configuration: Release
+assembly_info:
+  patch: true
+  file: '**\AssemblyInfo.*'
+  assembly_version: '{version}'
+  assembly_file_version: '{version}'
+  assembly_informational_version: '{version}'
+dotnet_csproj:
+  patch: true
+  file: '**\*.csproj'
+  version: '{version}'
+  package_version: '{version}'
+  assembly_version: '{version}'
+  file_version: '{version}'
+  informational_version: '{version}'
+before_build:
+- cmd: nuget restore
+build:
+  publish_nuget: true
+  publish_nuget_symbols: true
+  verbosity: minimal
+
+for:
+# only notify on master builds
+-
+  branches:
+    only:
+      - master
+
+  notifications:
+    - provider: Webhook
+      url:
+        # this is the gitter.im webhook address
+        secure: xuYg5tCCe3Rpd7EChAHnZspFk0z5DcpksM13lgHz1VQAAc/06ErW1JnEornJrFutLdvohOabNksioR+eta/+aw==
+      on_build_success: false
+      on_build_failure: false
+      on_build_status_changed: true

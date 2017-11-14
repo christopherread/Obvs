@@ -7,7 +7,7 @@ namespace Obvs.Extensions
 {
     public static class TypeExtensions
     {
-        public static string GetSimpleName(this Type t)
+        public static string GetSimpleName(this TypeInfo t)
         {
             if (t.IsGenericType)
             {
@@ -18,23 +18,23 @@ namespace Obvs.Extensions
             return t.Name;
         }
 
-        public static bool HasDefaultConstructor(this Type type)
+        public static bool HasDefaultConstructor(this TypeInfo type)
         {
             return (type.GetConstructor(Type.EmptyTypes) != null || !type.GetConstructors().Any());
         }
 
-        public static bool IsValidMessageType<TMessage, TServiceMessage>(this Type type)
+        public static bool IsValidMessageType<TMessage, TServiceMessage>(this TypeInfo type)
             where TMessage : class
             where TServiceMessage : class
         {
-            return typeof(TMessage).IsAssignableFrom(type) &&
-                   typeof(TServiceMessage).IsAssignableFrom(type) &&
+            return typeof(TMessage).GetTypeInfo().IsAssignableFrom(type) &&
+                   typeof(TServiceMessage).GetTypeInfo().IsAssignableFrom(type) &&
                    type.IsClass;
         }
 
-        internal static Tuple<MethodInfo, Type, Type>[] GetSubscriberMethods<TCommand, TEvent, TRequest, TResponse>(this Type subscriberType)
+        internal static Tuple<MethodInfo, TypeInfo, TypeInfo>[] GetSubscriberMethods<TCommand, TEvent, TRequest, TResponse>(this Type subscriberType)
         {
-            var publicMethods = subscriberType.GetMethods(BindingFlags.Instance | BindingFlags.Public);
+            var publicMethods = subscriberType.GetTypeInfo().GetMethods(BindingFlags.Instance | BindingFlags.Public);
 
             // get message handler methods
             var methods = publicMethods
@@ -44,13 +44,13 @@ namespace Obvs.Extensions
                     var parameters = m.GetParameters();
                     if (parameters.Length != 1) return false;
                     var parameterInfo = parameters[0];
-                    var parameterType = parameterInfo.ParameterType;
+                    var parameterType = parameterInfo.ParameterType.GetTypeInfo();
 
                     return (parameterType.IsInterface || parameterType.IsClass) && 
                            !parameterInfo.IsOptional &&
-                           (typeof (TCommand).IsAssignableFrom(parameterType) || typeof (TEvent).IsAssignableFrom(parameterType));
+                           (typeof (TCommand).GetTypeInfo().IsAssignableFrom(parameterType) || typeof (TEvent).GetTypeInfo().IsAssignableFrom(parameterType));
                 })
-                .Select(m => new Tuple<MethodInfo, Type, Type>(m, m.GetParameters()[0].ParameterType, typeof(void)))
+                .Select(m => new Tuple<MethodInfo, TypeInfo, TypeInfo>(m, m.GetParameters()[0].ParameterType.GetTypeInfo(), typeof(void).GetTypeInfo()))
                 .ToArray();
 
             // get request/response functions
@@ -61,13 +61,13 @@ namespace Obvs.Extensions
                     var parameters = m.GetParameters();
                     if (parameters.Length != 1) return false;
                     var parameterInfo = parameters[0];
-                    var parameterType = parameterInfo.ParameterType;
+                    var parameterType = parameterInfo.ParameterType.GetTypeInfo();
 
                     return (parameterType.IsInterface || parameterType.IsClass) && 
                            !parameterInfo.IsOptional && 
-                           typeof(TRequest).IsAssignableFrom(parameterType);
+                           typeof(TRequest).GetTypeInfo().IsAssignableFrom(parameterType);
                 })
-                .Select(m => new Tuple<MethodInfo, Type, Type>(m, m.GetParameters()[0].ParameterType, typeof(IObservable<TResponse>)))
+                .Select(m => new Tuple<MethodInfo, TypeInfo, TypeInfo>(m, m.GetParameters()[0].ParameterType.GetTypeInfo(), typeof(IObservable<TResponse>).GetTypeInfo()))
                 .ToArray();
 
             // filter out methods where message is a subtype of one that is already handled

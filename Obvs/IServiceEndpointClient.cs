@@ -1,5 +1,6 @@
 using System;
 using System.Reactive.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Obvs.Extensions;
 using Obvs.Types;
@@ -42,7 +43,7 @@ namespace Obvs
         private readonly IMessageSource<TResponse> _responseSource;
         private readonly IMessagePublisher<TRequest> _requestPublisher;
         private readonly IMessagePublisher<TCommand> _commandPublisher;
-        private readonly Type _serviceType;
+        private readonly TypeInfo _serviceType;
         private readonly string _name;
 
         public ServiceEndpointClient(IMessageSource<TEvent> eventSource,
@@ -55,8 +56,8 @@ namespace Obvs
             _responseSource = responseSource;
             _requestPublisher = requestPublisher;
             _commandPublisher = commandPublisher;
-            _serviceType = serviceType;
-            _name = string.Format("{0}[{1}]", GetType().GetSimpleName(), _serviceType.Name);
+            _serviceType = serviceType.GetTypeInfo();
+            _name = string.Format("{0}[{1}]", GetType().GetTypeInfo().GetSimpleName(), _serviceType.Name);
         }
 
         public IObservable<TEvent> Events
