@@ -22,7 +22,7 @@ namespace Obvs.Configuration
 
             private static string GetRootAssemblyName()
             {
-                return Assembly.GetEntryAssembly()?.GetName()?.Name ?? ObvsAssemblyName;
+                return ObvsAssemblyName;
             }
             
             /// <summary>
