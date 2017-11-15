@@ -1,10 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Net;
 
-#if NET45
-using System.Security.Principal;
-#endif
-
 namespace Obvs.Configuration
 {
     public static class RequesterId
@@ -12,7 +8,8 @@ namespace Obvs.Configuration
         public static string Create()
         {
     #if NET45
-            string identity = WindowsIdentity.GetCurrent()?.Name.Substring(identity.Name.IndexOf(@"\", System.StringComparison.Ordinal) + 1);
+            var windowsIdentity = System.Security.Principal.WindowsIdentity.GetCurrent();
+            string identity = windowsIdentity.Name.Substring(windowsIdentity.Name.IndexOf(@"\", System.StringComparison.Ordinal) + 1);
     #else
             string identity = "";
     #endif

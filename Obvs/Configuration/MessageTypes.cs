@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Microsoft.Extensions.DependencyModel;
 using Obvs.Extensions;
 
 namespace Obvs.Configuration
@@ -17,23 +16,25 @@ namespace Obvs.Configuration
         /// </summary>
         static class AppDomainReplacement
         {
-            // set assembly name to nameof Obvs namespace - likely to match.
-            private const string ObvsAssemblyName = nameof(Obvs);
-
-            private static string GetRootAssemblyName()
-            {
-                return ObvsAssemblyName;
-            }
-            
             /// <summary>
             /// Gets all assemblies from the AppDomain.
             /// </summary>
             /// <returns>IEnumerable&lt;Assembly&gt;.</returns>
             public static IEnumerable<Assembly> GetAllAssembliesFromAppDomain()
             {
-                var rootAssemblyName = GetRootAssemblyName();
+#if NET45
+                return AppDomain.CurrentDomain.GetAssemblies();
+#else
+                const string ObvsAssemblyName = nameof(Obvs);
+
+                bool IsCandidateCompilationLibrary(Microsoft.Extensions.DependencyModel.RuntimeLibrary compilationLibrary, string assemblyName)
+                {
+                    return compilationLibrary.Dependencies.Any(d => d.Name.StartsWith(assemblyName));
+                }
+
+                var rootAssemblyName = ObvsAssemblyName;
                 var assemblies = new List<Assembly>();
-                var dependencies = DependencyContext.Default.RuntimeLibraries;
+                var dependencies = Microsoft.Extensions.DependencyModel.DependencyContext.Default.RuntimeLibraries;
                 var assembly = Assembly.Load(new AssemblyName(rootAssemblyName));
                 assemblies.Add(assembly);
                 foreach (var library in dependencies)
@@ -45,11 +46,7 @@ namespace Obvs.Configuration
                     }
                 }
                 return assemblies;
-            }
-
-            private static bool IsCandidateCompilationLibrary(RuntimeLibrary compilationLibrary, string rootAssemblyName)
-            {
-                return compilationLibrary.Dependencies.Any(d => d.Name.StartsWith(rootAssemblyName));
+#endif
             }
         }
         
