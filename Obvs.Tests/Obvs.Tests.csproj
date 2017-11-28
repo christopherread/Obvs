@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net452</TargetFramework>
+  <PropertyGroup>    
+    <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
     <Company>Christopher Read</Company>
     <Copyright>Copyright © Christopher Read 2014</Copyright>
     <Authors />
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="FakeItEasy" Version="4.1.1" />

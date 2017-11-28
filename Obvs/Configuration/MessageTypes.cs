@@ -8,6 +8,48 @@ namespace Obvs.Configuration
 {
     public static class MessageTypes
     {
+        /// <summary>
+        /// This is inspired by http://www.michael-whelan.net/replacing-appdomain-in-dotnet-core/
+        /// 
+        /// More specifically:
+        /// https://github.com/mwhelan/Specify/blob/master/src/app/Specify/lib/AssemblyTypeResolver.cs
+        /// </summary>
+        static class AppDomainReplacement
+        {
+            /// <summary>
+            /// Gets all assemblies from the AppDomain.
+            /// </summary>
+            /// <returns>IEnumerable&lt;Assembly&gt;.</returns>
+            public static IEnumerable<Assembly> GetAllAssembliesFromAppDomain()
+            {
+#if NET45
+                return AppDomain.CurrentDomain.GetAssemblies();
+#else
+                const string ObvsAssemblyName = nameof(Obvs);
+
+                bool IsCandidateCompilationLibrary(Microsoft.Extensions.DependencyModel.RuntimeLibrary compilationLibrary, string assemblyName)
+                {
+                    return compilationLibrary.Dependencies.Any(d => d.Name.StartsWith(assemblyName));
+                }
+
+                var rootAssemblyName = ObvsAssemblyName;
+                var assemblies = new List<Assembly>();
+                var dependencies = Microsoft.Extensions.DependencyModel.DependencyContext.Default.RuntimeLibraries;
+                var assembly = Assembly.Load(new AssemblyName(rootAssemblyName));
+                assemblies.Add(assembly);
+                foreach (var library in dependencies)
+                {
+                    if (IsCandidateCompilationLibrary(library, rootAssemblyName))
+                    {
+                        assembly = Assembly.Load(new AssemblyName(library.Name));
+                        assemblies.Add(assembly);
+                    }
+                }
+                return assemblies;
+#endif
+            }
+        }
+        
         public static IEnumerable<Type> Get<TMessage, TServiceMessage>(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
             where TMessage : class
             where TServiceMessage : class
@@ -15,12 +57,12 @@ namespace Obvs.Configuration
             assemblyFilter = assemblyFilter ?? (assembly => true);
             typeFilter = typeFilter ?? (type => true);
 
-            var types = AppDomain.CurrentDomain
-                .GetAssemblies()
+            var types = AppDomainReplacement
+                .GetAllAssembliesFromAppDomain()
                 .Where(assemblyFilter)
                 .SelectMany(GetTypes)
                 .Where(typeFilter)
-                .Where(t => t.IsValidMessageType<TMessage, TServiceMessage>())
+                .Where(t => t.GetTypeInfo().IsValidMessageType<TMessage, TServiceMessage>())
                 .ToArray();
 
             EnsureTypesAreVisible(types);
@@ -30,7 +72,7 @@ namespace Obvs.Configuration
 
         private static void EnsureTypesAreVisible(IEnumerable<Type> types)
         {
-            var notVisible = types.Where(t => !t.IsVisible).ToArray();
+            var notVisible = types.Where(t => !t.GetTypeInfo().IsVisible).ToArray();
 
             if (notVisible.Any())
             {
@@ -44,7 +86,7 @@ namespace Obvs.Configuration
         {
             try
             {
-                return assembly.GetTypes();
+                return assembly.GetExportedTypes();
             }
             catch (Exception exception)
             {

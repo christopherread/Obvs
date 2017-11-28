@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -288,6 +289,8 @@ namespace Obvs
             var subscriberType = subscriber.GetType();
             var methodHandlers = subscriberType.GetSubscriberMethods<TCommand, TEvent, TRequest, TResponse>();
             
+            var voidTypeInfo = typeof(void).GetTypeInfo();
+
             var subscription = new CompositeDisposable();
             foreach (var methodHandler in methodHandlers)
             {
@@ -298,7 +301,7 @@ namespace Obvs
                 Action<object, TMessage> onMessage = null;
                 Func<object, TRequest, IObservable<TResponse>> onRequest = null;
 
-                if (returnType == typeof(void))
+                if (Equals(returnType, voidTypeInfo))
                 {
                     onMessage = CreateSubscriberAction<TMessage>(subscriberType, methodInfo);
                 }
@@ -345,6 +348,29 @@ namespace Obvs
 
             return subscription;
         }
+
+//        
+//        private static Action<object, TParamType> CreateSubscriberAction<TParamType>(Type subscriberType, MethodInfo methodInfo)
+//        {
+//            var targetObj = Expression.Parameter(typeof(object));
+//            var parameter = Expression.Parameter(typeof(TParamType));
+//            
+//            var castTarget = Expression.Convert(targetObj, subscriberType);
+//            var call = Expression.Call(castTarget, methodInfo, parameter);
+//
+//            return Expression.Lambda<Action<object, TParamType>>(call, targetObj, parameter).Compile();
+//        }
+//
+//        private static Func<object, TParamType, TReturnType> CreateSubscriberFunc<TParamType, TReturnType>(Type subscriberType, MethodInfo methodInfo)
+//        {
+//            var targetObj = Expression.Parameter(typeof(object));
+//            var parameter = Expression.Parameter(typeof(TParamType));
+//            
+//            var castTarget = Expression.Convert(targetObj, subscriberType);
+//            var call = Expression.Call(castTarget, methodInfo, parameter);
+//
+//            return Expression.Lambda<Func<object, TParamType, TReturnType>>(call, targetObj, parameter).Compile();
+//        }
 
         private static Action<object, TParamType> CreateSubscriberAction<TParamType>(Type subscriberType, MethodInfo methodInfo)
         {

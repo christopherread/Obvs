@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using Obvs.Extensions;
 using Obvs.Types;
@@ -55,7 +56,7 @@ namespace Obvs
             _eventPublisher = eventPublisher;
             _responsePublisher = responsePublisher;
             ServiceType = serviceType;
-            _name = string.Format("{0}[{1}]", GetType().GetSimpleName(), ServiceType.Name);
+            _name = string.Format("{0}[{1}]", GetType().GetTypeInfo().GetSimpleName(), ServiceType.Name);
         }
 
         public IObservable<TRequest> Requests
