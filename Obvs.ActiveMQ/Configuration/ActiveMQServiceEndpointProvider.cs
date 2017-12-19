@@ -42,7 +42,9 @@ namespace Obvs.ActiveMQ.Configuration
             Lazy<IConnection> sharedConnection = null, 
             string selector = null,
             Func<IDictionary, bool> propertyFilter = null, 
-            Func<TMessage, Dictionary<string, object>> propertyProvider = null)
+            Func<TMessage, Dictionary<string, object>> propertyProvider = null,
+            string userName = null,
+            string password = null)
             : base(serviceName)
         {
             _serializer = serializer;
@@ -63,8 +65,8 @@ namespace Obvs.ActiveMQ.Configuration
             {
                 IConnectionFactory endpointConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.Endpoint", serviceName)));
                 IConnectionFactory endpointClientConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.EndpointClient", serviceName)));
-                _endpointConnection = endpointConnectionFactory.GetLazyConnection();
-                _endpointClientConnection = endpointClientConnectionFactory.GetLazyConnection();
+                _endpointConnection = endpointConnectionFactory.CreateLazyConnection(userName, password);
+                _endpointClientConnection = endpointClientConnectionFactory.CreateLazyConnection(userName, password);
             }
             else
             {
