@@ -7,7 +7,7 @@
     <Authors>Christopher Read</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
-    <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
+    <PackageReleaseNotes>WithCredentials extension method added allowing username/password configuration</PackageReleaseNotes>
     <Description>ActiveMQ transport support for Obvs</Description>
   </PropertyGroup>
   <ItemGroup>
