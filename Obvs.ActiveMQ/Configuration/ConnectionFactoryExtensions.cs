@@ -6,11 +6,13 @@ namespace Obvs.ActiveMQ.Configuration
 {
     internal static class ConnectionFactoryExtensions
     {
-        public static Lazy<IConnection> GetLazyConnection(this IConnectionFactory connectionFactory)
+        public static Lazy<IConnection> CreateLazyConnection(this IConnectionFactory connectionFactory, string userName = null, string password = null)
         {
             return new Lazy<IConnection>(() =>
             {
-                IConnection connection = connectionFactory.CreateConnection();
+                var connection = !string.IsNullOrEmpty(userName)
+                    ? connectionFactory.CreateConnection(userName, password) 
+                    : connectionFactory.CreateConnection();
                 connection.Start();
                 return connection;
             }, LazyThreadSafetyMode.ExecutionAndPublication);

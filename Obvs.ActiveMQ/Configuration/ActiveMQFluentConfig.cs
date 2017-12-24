@@ -58,7 +58,18 @@ namespace Obvs.ActiveMQ.Configuration
         where TRequest : class, TMessage
         where TResponse : class, TMessage
     {
-        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri);
+        ICanSpecifyActiveMQBrokerCredentials<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri);
+    }
+
+    public interface ICanSpecifyActiveMQBrokerCredentials<TMessage, TCommand, TEvent, TRequest, TResponse> :
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> WithCredentials(string userName, string password);
     }
 
     public interface ICanSpecifyActiveMQMessageFiltering<TMessage, TCommand, TEvent, TRequest, TResponse>
@@ -77,7 +88,8 @@ namespace Obvs.ActiveMQ.Configuration
     internal class ActiveMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
         ICanSpecifyActiveMQServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>, 
         ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse>, 
-        ICanSpecifyActiveMQQueueAcknowledge<TMessage, TCommand, TEvent, TRequest, TResponse>
+        ICanSpecifyActiveMQQueueAcknowledge<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyActiveMQBrokerCredentials<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TServiceMessage : class 
         where TCommand : class, TMessage 
@@ -96,6 +108,8 @@ namespace Obvs.ActiveMQ.Configuration
         private Func<IDictionary, bool> _propertyFilter;
         private string _brokerSelector;
         private Func<TMessage, Dictionary<string, object>> _propertyProvider;
+        private string _userName;
+        private string _password;
 
         public ActiveMQFluentConfig(ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint)
         {
@@ -135,15 +149,22 @@ namespace Obvs.ActiveMQ.Configuration
             return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(
                 _serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, 
                 _typeFilter, ActiveMQFluentConfigContext.SharedConnection, _brokerSelector, _propertyFilter,
-                _propertyProvider);
+                _propertyProvider, _userName, _password);
         }
 
-        public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri)
+        public ICanSpecifyActiveMQBrokerCredentials<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri)
         {
             _brokerUri = brokerUri;
             return this;
         }
-        
+
+        public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> WithCredentials(string userName, string password)
+        {
+            _userName = userName;
+            _password = password;
+            return this;
+        }
+
         public ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
         {
             _serializer = serializer;
