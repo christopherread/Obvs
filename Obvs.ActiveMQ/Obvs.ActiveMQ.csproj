@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net45</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
     <Company></Company>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
@@ -11,7 +11,9 @@
     <Description>ActiveMQ transport support for Obvs</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.7.2" />
-    <PackageReference Include="Obvs" Version="4.0.0.1" />
+    <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.7.2">
+      <NoWarn>NU1701</NoWarn>
+    </PackageReference>
+    <PackageReference Include="Obvs" Version="4.1.0.9" />
   </ItemGroup>
 </Project>
