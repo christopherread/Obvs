@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net451</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net451</TargetFrameworks>
     <Company></Company>
     <Authors>Christopher Read</Authors>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
@@ -11,7 +11,7 @@
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Obvs" Version="4.0.0.1" />
+    <PackageReference Include="Obvs" Version="4.1.0.9" />
     <PackageReference Include="RabbitMQ.Client" Version="5.0.1" />
   </ItemGroup>
 </Project>
