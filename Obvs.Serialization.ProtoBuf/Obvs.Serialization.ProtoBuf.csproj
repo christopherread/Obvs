@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+<<<<<<< HEAD
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
+=======
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+>>>>>>> 57e3d6d... Updated to .NET Standard 2.0
     <Company>Christopher Read</Company>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
@@ -11,7 +15,12 @@
     <Description>ProtoBuf (https://github.com/mgravell/protobuf-net) serialization for Obvs</Description>
   </PropertyGroup>
   <ItemGroup>
+<<<<<<< HEAD
     <PackageReference Include="Obvs" Version="5.0.0.17" />
     <PackageReference Include="protobuf-net" Version="2.4.0" />
+=======
+    <PackageReference Include="Obvs" Version="4.1.0.9" />
+    <PackageReference Include="protobuf-net" Version="2.2.1" />
+>>>>>>> 57e3d6d... Updated to .NET Standard 2.0
   </ItemGroup>
 </Project>
