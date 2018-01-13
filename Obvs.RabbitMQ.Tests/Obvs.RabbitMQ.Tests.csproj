@@ -8,7 +8,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="NUnit" Version="3.8.1" />
-    <PackageReference Include="Obvs" Version="4.0.0.1" />
+    <PackageReference Include="Obvs" Version="4.1.0.9" />
     <PackageReference Include="Obvs.Serialization.Json" Version="4.0.0.3" />
     <PackageReference Include="Obvs.Serialization.ProtoBuf" Version="4.0.0.3" />
     <PackageReference Include="protobuf-net" Version="2.2.1" />
