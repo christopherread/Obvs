@@ -194,13 +194,18 @@ namespace Obvs
 
         public Task SendAsync(IEnumerable<TCommand> commands)
         {
+            var commandsResovled = commands.ToArray();
+
+            if (commandsResovled.Length == 0)
+                return Task.FromResult(true);
+
             var exceptions = new List<Exception>();
             
-            var tasks = commands.ToArray().Select(command => Catch(() => SendAsync(command), exceptions)).ToArray();
+            var tasks = commandsResovled.Select(command => Catch(() => SendAsync(command), exceptions)).ToArray();
 
             if (exceptions.Any())
             {
-                throw new AggregateException(CommandErrorMessage(), exceptions.Cast<AggregateException>().SelectMany(e => e.InnerExceptions));
+                throw new AggregateException(CommandErrorMessage(), exceptions.SelectMany(_ => _ is AggregateException ? (IList<Exception>)((AggregateException)_).InnerExceptions : new []{_}));
             }
 
             if (tasks.Length == 0)
