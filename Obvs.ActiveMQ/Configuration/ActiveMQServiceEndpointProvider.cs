@@ -15,10 +15,10 @@ namespace Obvs.ActiveMQ.Configuration
 {
     public class ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
-        where TServiceMessage : class  
-        where TCommand : class, TMessage 
-        where TEvent : class, TMessage 
-        where TRequest : class, TMessage 
+        where TServiceMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
         where TResponse : class, TMessage
     {
         private readonly IMessageSerializer _serializer;
@@ -29,22 +29,24 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly string _selector;
         private readonly Func<IDictionary, bool> _propertyFilter;
         private readonly Func<TMessage, Dictionary<string, object>> _propertyProvider;
+        private readonly Action<ConnectionFactory> _connectionFactoryConfiguration;
         private readonly Lazy<IConnection> _endpointConnection;
         private readonly Lazy<IConnection> _endpointClientConnection;
 
-        public ActiveMQServiceEndpointProvider(string serviceName, 
-            string brokerUri, 
-            IMessageSerializer serializer, 
-            IMessageDeserializerFactory deserializerFactory, 
-            List<Tuple<Type, AcknowledgementMode>> queueTypes, 
-            Func<Assembly, bool> assemblyFilter = null, 
-            Func<Type, bool> typeFilter = null, 
-            Lazy<IConnection> sharedConnection = null, 
+        public ActiveMQServiceEndpointProvider(string serviceName,
+            string brokerUri,
+            IMessageSerializer serializer,
+            IMessageDeserializerFactory deserializerFactory,
+            List<Tuple<Type, AcknowledgementMode>> queueTypes,
+            Func<Assembly, bool> assemblyFilter = null,
+            Func<Type, bool> typeFilter = null,
+            Lazy<IConnection> sharedConnection = null,
             string selector = null,
-            Func<IDictionary, bool> propertyFilter = null, 
+            Func<IDictionary, bool> propertyFilter = null,
             Func<TMessage, Dictionary<string, object>> propertyProvider = null,
             string userName = null,
-            string password = null)
+            string password = null,
+            Action<ConnectionFactory> connectionFactoryConfiguration = null)
             : base(serviceName)
         {
             _serializer = serializer;
@@ -55,6 +57,7 @@ namespace Obvs.ActiveMQ.Configuration
             _selector = selector;
             _propertyFilter = propertyFilter;
             _propertyProvider = propertyProvider;
+            _connectionFactoryConfiguration = connectionFactoryConfiguration;
 
             if (string.IsNullOrEmpty(brokerUri) && sharedConnection == null)
             {
@@ -63,8 +66,15 @@ namespace Obvs.ActiveMQ.Configuration
 
             if (sharedConnection == null)
             {
-                IConnectionFactory endpointConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.Endpoint", serviceName)));
-                IConnectionFactory endpointClientConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.EndpointClient", serviceName)));
+                ConnectionFactory endpointConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.Endpoint", serviceName)));
+                ConnectionFactory endpointClientConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.EndpointClient", serviceName)));
+
+                if (connectionFactoryConfiguration != null)
+                {
+                    connectionFactoryConfiguration(endpointConnectionFactory);
+                    connectionFactoryConfiguration(endpointClientConnectionFactory);
+                }
+
                 _endpointConnection = endpointConnectionFactory.CreateLazyConnection(userName, password);
                 _endpointClientConnection = endpointClientConnectionFactory.CreateLazyConnection(userName, password);
             }
@@ -83,7 +93,7 @@ namespace Obvs.ActiveMQ.Configuration
                     CreateSource<TCommand>(_endpointConnection, CommandsDestination),
                     CreatePublisher<TEvent>(_endpointConnection, EventsDestination),
                     CreatePublisher<TResponse>(_endpointConnection, ResponsesDestination),
-                    typeof(TServiceMessage)), 
+                    typeof(TServiceMessage)),
                 GetConnectionDisposable(_endpointConnection));
         }
 
@@ -101,11 +111,11 @@ namespace Obvs.ActiveMQ.Configuration
                         acknowledgementMode, _selector, _propertyFilter)
                 };
                 var queueSources = queueTypes.Select(qt =>
-                    new MessageSource<T>(connection, 
+                    new MessageSource<T>(connection,
                         deserializers,
-                        new ActiveMQQueue(GetTypedQueueName(destination, qt.Item1)), 
-                        qt.Item2, 
-                        _selector, 
+                        new ActiveMQQueue(GetTypedQueueName(destination, qt.Item1)),
+                        qt.Item2,
+                        _selector,
                         _propertyFilter));
 
                 return new MergedMessageSource<T>(topicSources.Concat(queueSources));
@@ -119,7 +129,7 @@ namespace Obvs.ActiveMQ.Configuration
         private IMessagePublisher<T> CreatePublisher<T>(Lazy<IConnection> connection, string destination) where T : class, TMessage
         {
             List<Tuple<Type, AcknowledgementMode>> queueTypes;
-            
+
             if (TryGetMultipleQueueTypes<T>(out queueTypes))
             {
                 var topicTypes = MessageTypes.Get<T, TServiceMessage>().Where(type => queueTypes.All(qt => qt.Item1 != type));
@@ -132,16 +142,16 @@ namespace Obvs.ActiveMQ.Configuration
                             connection,
                             new ActiveMQQueue(GetTypedQueueName(destination, qt.Item1)),
                             _serializer,
-                            _propertyProvider, 
+                            _propertyProvider,
                             Scheduler.Default)));
 
                 return new TypeRoutingMessagePublisher<T>(topicPublishers.Concat(queuePubishers));
             }
 
-            return DestinationFactory.CreatePublisher<T>(connection, 
-                destination, 
-                GetDestinationType<T>(), 
-                _serializer, 
+            return DestinationFactory.CreatePublisher<T>(connection,
+                destination,
+                GetDestinationType<T>(),
+                _serializer,
                 _propertyProvider);
         }
 
@@ -152,9 +162,9 @@ namespace Obvs.ActiveMQ.Configuration
 
         private bool TryGetMultipleQueueTypes<T>(out List<Tuple<Type, AcknowledgementMode>> queueTypes) where T : class, TMessage
         {
-            queueTypes = _queueTypes.Where(qt => typeof (T).IsAssignableFrom(qt.Item1)).ToList();
+            queueTypes = _queueTypes.Where(qt => typeof(T).IsAssignableFrom(qt.Item1)).ToList();
             var moreThanOneQueueType = queueTypes.Count > 1;
-            var containsSuperInterface = queueTypes.Any(qt => qt.Item1 == typeof (T));
+            var containsSuperInterface = queueTypes.Any(qt => qt.Item1 == typeof(T));
             var multipleQueues = moreThanOneQueueType && !containsSuperInterface;
             if (!multipleQueues)
             {
@@ -177,19 +187,19 @@ namespace Obvs.ActiveMQ.Configuration
 
         private DestinationType GetDestinationType<T>() where T : TMessage
         {
-            return _queueTypes.Any(q => q.Item1 == typeof (T)) ? DestinationType.Queue : DestinationType.Topic;
+            return _queueTypes.Any(q => q.Item1 == typeof(T)) ? DestinationType.Queue : DestinationType.Topic;
         }
 
         private AcknowledgementMode GetAcknowledgementMode<T>() where T : TMessage
         {
-            return _queueTypes.Where(q => q.Item1 == typeof (T)).Select(q => q.Item2).FirstOrDefault();
+            return _queueTypes.Where(q => q.Item1 == typeof(T)).Select(q => q.Item2).FirstOrDefault();
         }
 
         private static IDisposable GetConnectionDisposable(Lazy<IConnection> lazyConnection)
         {
             return Disposable.Create(() =>
             {
-                if (lazyConnection.IsValueCreated && 
+                if (lazyConnection.IsValueCreated &&
                     lazyConnection.Value.IsStarted)
                 {
                     lazyConnection.Value.Stop();

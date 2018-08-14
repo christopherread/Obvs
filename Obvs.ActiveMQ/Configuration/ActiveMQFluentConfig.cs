@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Apache.NMS.ActiveMQ;
 using Obvs.Configuration;
 using Obvs.Serialization;
 
@@ -110,6 +111,7 @@ namespace Obvs.ActiveMQ.Configuration
         private Func<TMessage, Dictionary<string, object>> _propertyProvider;
         private string _userName;
         private string _password;
+        private Action<ConnectionFactory> _connectionFactoryConfiguration;
 
         public ActiveMQFluentConfig(ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint)
         {
@@ -149,7 +151,7 @@ namespace Obvs.ActiveMQ.Configuration
             return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(
                 _serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, 
                 _typeFilter, ActiveMQFluentConfigContext.SharedConnection, _brokerSelector, _propertyFilter,
-                _propertyProvider, _userName, _password);
+                _propertyProvider, _userName, _password, _connectionFactoryConfiguration);
         }
 
         public ICanSpecifyActiveMQBrokerCredentials<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri)
@@ -216,6 +218,12 @@ namespace Obvs.ActiveMQ.Configuration
         public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AppendMessageProperties(Func<TMessage, Dictionary<string, object>> propertyProvider)
         {
             _propertyProvider = propertyProvider;
+            return this;
+        }
+
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> WithConnectionFactoryConfig(Action<ConnectionFactory> connectionFactoryConfiguration)
+        {
+            _connectionFactoryConfiguration = connectionFactoryConfiguration;
             return this;
         }
     }
