@@ -29,7 +29,6 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly string _selector;
         private readonly Func<IDictionary, bool> _propertyFilter;
         private readonly Func<TMessage, Dictionary<string, object>> _propertyProvider;
-        private readonly Action<ConnectionFactory> _connectionFactoryConfiguration;
         private readonly Lazy<IConnection> _endpointConnection;
         private readonly Lazy<IConnection> _endpointClientConnection;
 
@@ -57,7 +56,6 @@ namespace Obvs.ActiveMQ.Configuration
             _selector = selector;
             _propertyFilter = propertyFilter;
             _propertyProvider = propertyProvider;
-            _connectionFactoryConfiguration = connectionFactoryConfiguration;
 
             if (string.IsNullOrEmpty(brokerUri) && sharedConnection == null)
             {
@@ -66,8 +64,8 @@ namespace Obvs.ActiveMQ.Configuration
 
             if (sharedConnection == null)
             {
-                ConnectionFactory endpointConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.Endpoint", serviceName)));
-                ConnectionFactory endpointClientConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.EndpointClient", serviceName)));
+                ConnectionFactory endpointConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.Endpoint", serviceName))) { CopyMessageOnSend = false };
+                ConnectionFactory endpointClientConnectionFactory = new ConnectionFactory(brokerUri, ConnectionClientId.CreateWithSuffix(string.Format("{0}.EndpointClient", serviceName))) { CopyMessageOnSend = false };
 
                 if (connectionFactoryConfiguration != null)
                 {
