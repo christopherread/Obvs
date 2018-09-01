@@ -20,6 +20,11 @@
 * Use one of the many available serialization extensions, or even write your own.
 * Easily debug and monitor your application using logging and performance counter extensions.
 
+### Versions/Roadmap
+
+* V5 - Next version, `System.Reactive 4.1`, supports `netstandard2.0` and `net46`
+* V4 - Current version, `System.Reactive 3.1.1`, supports `netstandard1.6` and `net452` 
+
 ### More Details
 
 * Convention based messaging over topics/queues/streams per service.
