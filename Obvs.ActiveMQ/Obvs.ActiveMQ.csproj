@@ -9,6 +9,7 @@
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
     <PackageReleaseNotes>WithCredentials extension method added allowing username/password configuration</PackageReleaseNotes>
     <Description>ActiveMQ transport support for Obvs</Description>
+    <NoWarn>NU1701</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.7.2">
