@@ -1,11 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-<<<<<<< HEAD
     <TargetFramework>netstandard2.0</TargetFramework>
-=======
-    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
->>>>>>> 57e3d6d... Updated to .NET Standard 2.0
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>MessagePack-CSharp (https://github.com/neuecc/MessagePack-CSharp) serialization for Obvs</Description>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
@@ -14,13 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-<<<<<<< HEAD
-    <PackageReference Include="MessagePack" Version="1.7.3" />
+    <PackageReference Include="MessagePack" Version="1.7.3.4" />
     <PackageReference Include="Obvs" Version="5.0.0.17" />
-=======
-    <PackageReference Include="MessagePack" Version="1.7.3.2" />
-    <PackageReference Include="Obvs" Version="4.1.0.9" />
->>>>>>> 57e3d6d... Updated to .NET Standard 2.0
   </ItemGroup>
 
 </Project>
