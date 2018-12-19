@@ -1,17 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
-    <Company>Christopher Read</Company>
-    <Copyright>Copyright © Christopher Read 2017</Copyright>
-    <Version>1.0.0</Version>
-    <Authors />
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
-    <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
-    <Description>NetJSON serialization for Obvs</Description>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="NetJSON" Version="1.2.2" />
-    <PackageReference Include="Obvs" Version="4.1.0.9" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+        <Company>Christopher Read</Company>
+        <Copyright>Copyright © Christopher Read 2017</Copyright>
+        <Version>1.0.0</Version>
+        <Authors />
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
+        <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
+        <Description>NetJSON serialization for Obvs</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="NetJSON" Version="1.2.9" />
+        <PackageReference Include="Obvs" Version="5.0.0.17" />
+    </ItemGroup>
 </Project>

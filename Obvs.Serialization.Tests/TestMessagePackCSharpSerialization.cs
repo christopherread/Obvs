@@ -1,32 +1,31 @@
 using System;
+
 using FakeItEasy;
-using NUnit.Framework;
+
 using Obvs.Configuration;
 using Obvs.Serialization.MessagePack;
 using Obvs.Serialization.MessagePack.Configuration;
 using Obvs.Types;
 
-namespace Obvs.Serialization.Tests
-{
-    [TestFixture]
-    public class TestMessagePackCSharpSerialization
-    {
-        [Test]
-        public void ShouldSerializeToMessagePackCSharp()
-        {
+using Xunit;
+
+namespace Obvs.Serialization.Tests {
+    
+    public class TestMessagePackCSharpSerialization {
+        [Fact]
+        public void ShouldSerializeToMessagePackCSharp() {
             IMessageSerializer serializer = new MessagePackCSharpMessageSerializer();
 
             var message = new TestMessage { Id = 123, Name = "SomeName" };
             var serialize = serializer.Serialize(message);
 
-            Assert.That(serialize, Is.Not.Null);
-            Assert.That(serialize, Is.Not.Empty);
-            Assert.That(serialize, Has.Length.EqualTo(22));
+            Assert.NotNull(serialize);
+            Assert.NotEmpty(serialize);
+            Assert.Equal(22, serialize.Length);
         }
 
-        [Test]
-        public void ShouldDeserializeFromMessagePackCSharp()
-        {
+        [Fact]
+        public void ShouldDeserializeFromMessagePackCSharp() {
             IMessageSerializer serializer = new MessagePackCSharpMessageSerializer();
             IMessageDeserializer<TestMessage> deserializer = new MessagePackCSharpMessageDeserializer<TestMessage>();
 
@@ -34,21 +33,20 @@ namespace Obvs.Serialization.Tests
             var serialize = serializer.Serialize(message);
             var deserialize = deserializer.Deserialize(serialize);
 
-            Assert.That(message.Id, Is.EqualTo(deserialize.Id));
-            Assert.That(message.Name, Is.EqualTo(deserialize.Name));
-            Assert.That(message.Date, Is.EqualTo(deserialize.Date));
-            Assert.That(message.Date.Kind, Is.EqualTo(deserialize.Date.Kind));
+            Assert.Equal(message.Id, deserialize.Id);
+            Assert.Equal(message.Name, deserialize.Name);
+            Assert.Equal(message.Date, deserialize.Date);
+            Assert.Equal(message.Date.Kind, deserialize.Date.Kind);
         }
 
-        [Test]
-        public void ShouldPassInCorrectFluentConfig()
-        {
+        [Fact]
+        public void ShouldPassInCorrectFluentConfig() {
             var fakeConfigurator = A.Fake<ICanSpecifyEndpointSerializers<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             fakeConfigurator.SerializedAsMessagePackCSharp();
 
             A.CallTo(() => fakeConfigurator.SerializedWith(
-                A<IMessageSerializer>.That.IsInstanceOf(typeof(MessagePackCSharpMessageSerializer)),
-                A<IMessageDeserializerFactory>.That.IsInstanceOf(typeof(MessagePackCSharpMessageDeserializerFactory))))
+                    A<IMessageSerializer>.That.IsInstanceOf(typeof(MessagePackCSharpMessageSerializer)),
+                    A<IMessageDeserializerFactory>.That.IsInstanceOf(typeof(MessagePackCSharpMessageDeserializerFactory))))
                 .MustHaveHappened(Repeated.Exactly.Once);
         }
     }
