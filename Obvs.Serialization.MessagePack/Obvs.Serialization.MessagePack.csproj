@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net45</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <Company>Christopher Read</Company>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
@@ -11,7 +11,7 @@
     <Description>MessagePack serialization for Obvs</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="MsgPack.Cli" Version="0.9.2" />
-    <PackageReference Include="Obvs" Version="4.0.0.1" />
+    <PackageReference Include="MsgPack.Cli" Version="1.0.0" />
+    <PackageReference Include="Obvs" Version="5.0.0.17" />
   </ItemGroup>
 </Project>
