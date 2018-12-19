@@ -25,3 +25,4 @@
         <PackageReference Include="MsgPack.Cli" Version="1.0.0" />
     </ItemGroup>
 </Project>
+
