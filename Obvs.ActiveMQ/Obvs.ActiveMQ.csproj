@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
     <Company></Company>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
@@ -14,6 +14,6 @@
     <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.7.2">
       <NoWarn>NU1701</NoWarn>
     </PackageReference>
-    <PackageReference Include="Obvs" Version="4.1.0.9" />
+    <PackageReference Include="Obvs" Version="5.0.0.17" />
   </ItemGroup>
 </Project>
