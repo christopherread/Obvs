@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
         <Company>Christopher Read</Company>
         <Copyright>Copyright © Christopher Read 2017</Copyright>
         <Version>1.0.0</Version>
@@ -11,17 +11,8 @@
         <Description>MessagePack serialization for Obvs</Description>
     </PropertyGroup>
 
-    <!-- .NET 4.5 references, compilation flags and build options -->
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net45'">
-        <PackageReference Include="Obvs" Version="4.1.0.22" />
-    </ItemGroup>
-
-    <!-- .NET standard 2.0 references, compilation flags and build options -->
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
-        <PackageReference Include="Obvs" Version="5.0.0.17" />
-    </ItemGroup>
-
     <ItemGroup>
+        <PackageReference Include="Obvs" Version="5.0.0.17" />
         <PackageReference Include="MsgPack.Cli" Version="1.0.0" />
     </ItemGroup>
 </Project>
