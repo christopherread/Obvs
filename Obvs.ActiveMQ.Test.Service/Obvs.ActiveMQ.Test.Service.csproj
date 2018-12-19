@@ -4,8 +4,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.7.2" />
-    <PackageReference Include="Obvs" Version="4.1.0.9" />
-    <PackageReference Include="Obvs.Serialization.Json" Version="4.0.0.3" />
+    <PackageReference Include="Obvs" Version="4.1.0.22" />
+    <PackageReference Include="Obvs.Serialization.Json" Version="4.1.0.10" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Obvs.ActiveMQ\Obvs.ActiveMQ.csproj" />
