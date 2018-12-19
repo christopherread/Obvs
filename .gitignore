@@ -7,6 +7,10 @@
 *.userosscache
 *.sln.docstates
 
+# VS Code
+.vscode/
+*.code-workspace
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
