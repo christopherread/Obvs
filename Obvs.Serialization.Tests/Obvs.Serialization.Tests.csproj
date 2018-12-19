@@ -1,34 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-<<<<<<< HEAD
-    <TargetFramework>netcoreapp2.1</TargetFramework>
-=======
-    <TargetFramework>netcoreapp2.0</TargetFramework>
->>>>>>> 57e3d6d... Updated to .NET Standard 2.0
+    <TargetFrameworks>net45;netcoreapp2.0</TargetFrameworks>
     <Company>Christopher Read</Company>
     <Copyright>Copyright © Christopher Read 2014</Copyright>
     <Authors />
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-<<<<<<< HEAD
     <PackageReference Include="FakeItEasy" Version="4.9.2" />
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
-    <PackageReference Include="Microsoft.Reactive.Testing" Version="4.1.2" />
-    <PackageReference Include="NUnit" Version="3.11.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
-     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
-=======
-    <PackageReference Include="FakeItEasy" Version="4.3.0" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.4.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
-    <PackageReference Include="Microsoft.Reactive.Testing" Version="3.1.1" />
-    <PackageReference Include="NUnit" Version="3.9.0" />
-    <PackageReference Include="xunit" Version="2.3.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
->>>>>>> 57e3d6d... Updated to .NET Standard 2.0
+    <PackageReference Include="xunit.runner.console" Version="2.4.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Obvs.Serialization.Json\Obvs.Serialization.Json.csproj" />
     <ProjectReference Include="..\Obvs.Serialization.MessagePack-CSharp\Obvs.Serialization.MessagePack-CSharp.csproj" />

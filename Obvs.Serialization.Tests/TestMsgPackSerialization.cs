@@ -21,7 +21,7 @@ namespace Obvs.Serialization.Tests
 
 
             Assert.NotNull(serialize);
-            Assert.Equal(serialize.Length, 21);
+            Assert.Equal(21, serialize.Length);
         }
 
         [Fact]

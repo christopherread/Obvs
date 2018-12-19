@@ -1,26 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-<<<<<<< HEAD
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-=======
-    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
->>>>>>> 57e3d6d... Updated to .NET Standard 2.0
-    <Company>Christopher Read</Company>
-    <Copyright>Copyright © Christopher Read 2017</Copyright>
-    <Version>1.0.0</Version>
-    <Authors />
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
-    <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
-    <Description>MessagePack serialization for Obvs</Description>
-  </PropertyGroup>
-  <ItemGroup>
-<<<<<<< HEAD
-    <PackageReference Include="MsgPack.Cli" Version="1.0.0" />
-    <PackageReference Include="Obvs" Version="5.0.0.17" />
-=======
-    <PackageReference Include="MsgPack.Cli" Version="0.9.2" />
-    <PackageReference Include="Obvs" Version="4.1.0.9" />
->>>>>>> 57e3d6d... Updated to .NET Standard 2.0
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
+        <Company>Christopher Read</Company>
+        <Copyright>Copyright © Christopher Read 2017</Copyright>
+        <Version>1.0.0</Version>
+        <Authors />
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
+        <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
+        <Description>MessagePack serialization for Obvs</Description>
+    </PropertyGroup>
+
+    <!-- .NET 4.5 references, compilation flags and build options -->
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net45'">
+        <PackageReference Include="Obvs" Version="4.1.0.22" />
+    </ItemGroup>
+
+    <!-- .NET standard 2.0 references, compilation flags and build options -->
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+        <PackageReference Include="Obvs" Version="5.0.0.17" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MsgPack.Cli" Version="1.0.0" />
+    </ItemGroup>
 </Project>
