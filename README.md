@@ -4,7 +4,9 @@
 
 [![Join the chat at https://gitter.im/inter8ection/Obvs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/inter8ection/Obvs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-![build](https://ci.appveyor.com/api/projects/status/hcv02eeulvfdr9de?svg=true)
+[![build](https://ci.appveyor.com/api/projects/status/hcv02eeulvfdr9de?svg=true)](https://ci.appveyor.com/project/inter8ection/obvs)
+
+[![NuGet](https://img.shields.io/nuget/v/Obvs.svg)](https://www.nuget.org/packages/Obvs/)
 
 ### Features
 
@@ -19,6 +21,11 @@
 * Don't distribute if you don't need to, Obvs ServiceBus includes a local in-memory bus.
 * Use one of the many available serialization extensions, or even write your own.
 * Easily debug and monitor your application using logging and performance counter extensions.
+
+### Versions/Roadmap
+
+* V5 - Next version, `System.Reactive 4.1`, supports `netstandard2.0` and `net46`
+* V4 - Current version, `System.Reactive 3.1.1`, supports `netstandard1.6` and `net452` 
 
 ### More Details
 
