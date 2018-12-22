@@ -157,3 +157,7 @@ $RECYCLE.BIN/
 packages/
 .vs/config/applicationhost.config
 .vs/
+
+# VS Code
+.vscode
+*.code-workspace

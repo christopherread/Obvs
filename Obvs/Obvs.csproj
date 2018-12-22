@@ -10,13 +10,14 @@
     <PackageTags>obvs messaging microservice bus messagebus rx reactive servicebus</PackageTags>
     <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
     <Description>An observable microservice bus .NET library, based on Reactive Extensions. Search 'Obvs' for other transport, serialization, and logging extensions.</Description>
+    <GenerateFullPaths>true</GenerateFullPaths>
   </PropertyGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
-    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.1.0" />
     <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
     <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />   
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />

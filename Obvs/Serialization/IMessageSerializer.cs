@@ -2,7 +2,7 @@ using System.IO;
 
 namespace Obvs.Serialization
 {
-    public static class MessageSerializerExtentions
+    public static class MessageSerializerExtensions
     {
         public static byte[] Serialize(this IMessageSerializer serializer, object obj)
         {
