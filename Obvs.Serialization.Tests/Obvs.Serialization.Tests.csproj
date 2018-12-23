@@ -25,5 +25,6 @@
     <ProjectReference Include="..\Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj" />
     <ProjectReference Include="..\Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj" />
     <ProjectReference Include="..\Obvs.Serialization.Xml\Obvs.Serialization.Xml.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.Yaml\Obvs.Serialization.Yaml.csproj" />
   </ItemGroup>
 </Project>
