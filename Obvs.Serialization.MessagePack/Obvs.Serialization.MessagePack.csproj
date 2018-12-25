@@ -12,7 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Obvs" Version="5.0.0.17" />
+        <PackageReference Include="Obvs" Version="5.0.0.26" />
         <PackageReference Include="MsgPack.Cli" Version="1.0.0" />
     </ItemGroup>
 </Project>

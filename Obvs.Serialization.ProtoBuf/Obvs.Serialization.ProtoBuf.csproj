@@ -13,6 +13,6 @@
 
     <ItemGroup>
         <PackageReference Include="protobuf-net" Version="2.4.0" />
-        <PackageReference Include="Obvs" Version="5.0.0.17" />
+        <PackageReference Include="Obvs" Version="5.0.0.26" />
     </ItemGroup>
 </Project>

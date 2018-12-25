@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="MessagePack" Version="1.7.3.4" />    
-    <PackageReference Include="Obvs" Version="5.0.0.17" />
+    <PackageReference Include="Obvs" Version="5.0.0.26" />
   </ItemGroup>
 
 </Project>
