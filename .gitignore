@@ -157,3 +157,5 @@ $RECYCLE.BIN/
 packages/
 .vs/config/applicationhost.config
 .vs/
+
+.idea/
