@@ -4,7 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.7.2" />
-    <PackageReference Include="Obvs" Version="5.0.0.17" />
+    <PackageReference Include="Obvs" Version="5.0.0.26" />
     <PackageReference Include="Obvs.Serialization.Json" Version="5.0.0.19" />
   </ItemGroup>
   <ItemGroup>
