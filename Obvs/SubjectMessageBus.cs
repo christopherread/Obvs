@@ -12,6 +12,8 @@ namespace Obvs
     {
         private readonly ISubject<TMessage, TMessage> _subject;
 
+        private readonly IObservable<TMessage> _messages;
+
         public SubjectMessageBus()
             : this(null)
         {
@@ -20,10 +22,13 @@ namespace Obvs
         public SubjectMessageBus(IScheduler scheduler)
         {
             _subject = Subject.Synchronize(new Subject<TMessage>());
+            _messages = CreateMessagesObservable(_subject, scheduler);
+        }
 
-            Messages = scheduler == null ? 
-                _subject.AsObservable() : 
-                _subject.ObserveOn(scheduler)
+        private static IObservable<TMessage> CreateMessagesObservable(ISubject<TMessage, TMessage> subject, IScheduler scheduler) {
+            return scheduler == null ? 
+                subject.AsObservable() : 
+                subject.ObserveOn(scheduler)
                         .PublishRefCountRetriable()
                         .AsObservable();
         }
@@ -36,10 +41,16 @@ namespace Obvs
 
         public void Dispose()
         {
-            // synchronized subject is annonymous subject underneath,
-            // which doesn't implment IDisposable
+            // synchronized subject is anonymous subject underneath,
+            // which doesn't implement IDisposable
         }
 
-        public IObservable<TMessage> Messages { get; private set; }
+        public virtual IObservable<TMessage> Messages => _messages;
+    
+        public IObservable<TMessage> GetMessages(IScheduler scheduler)
+        {
+            var subject = Subject.Synchronize(new Subject<TMessage>());
+            return CreateMessagesObservable(subject, scheduler);
+        }
     }
 }

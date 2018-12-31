@@ -1,4 +1,5 @@
 using System;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 
 namespace Obvs
@@ -7,18 +8,36 @@ namespace Obvs
         where TMessage : class
     {
         IObservable<TMessage> Messages { get; }
+
+        /// <summary>
+        /// Observe messages from source with a specific scheduler
+        /// </summary>
+        /// <param name="scheduler">The scheduler implementation to use</param>
+        /// <returns>Observable of messages in the source</returns>
+        IObservable<TMessage> GetMessages(IScheduler scheduler);
     }
 
-    public class DefaultMessageSource<TMessage> : IMessageSource<TMessage>
-        where TMessage : class
+    public abstract class BaseMessageSource<TMessage> : IMessageSource<TMessage> where TMessage: class
     {
-        public void Dispose()
-        {
+        public virtual IObservable<TMessage> Messages {
+            get => GetMessages(DefaultScheduler.Instance);
         }
 
-        public IObservable<TMessage> Messages
+        public virtual void Dispose() {}
+
+        public abstract IObservable<TMessage> GetMessages(IScheduler scheduler);
+    }
+
+
+
+    public class DefaultMessageSource<TMessage> : BaseMessageSource<TMessage>
+        where TMessage : class
+    {
+
+        /// <inheritdoc />
+        public override IObservable<TMessage> GetMessages(IScheduler scheduler)
         {
-            get { return Observable.Empty<TMessage>(); }
+            return Observable.Empty<TMessage>(scheduler);
         }
     }  
 }
