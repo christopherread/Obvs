@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using System.IO;
 
-using Moq;
+using FakeItEasy;
 
 using Obvs.Types;
 using Obvs.Serialization;
@@ -140,15 +140,15 @@ namespace Obvs.Tests {
 
         [Fact]
         public void Test_SerializeGZipped_Success() {
-            var messageSerializerMock = new Mock<IMessageSerializer>();
-            var gzippedMessageSerializer = messageSerializerMock.Object.SerializeGZipped();
+            var messageSerializer = A.Fake<IMessageSerializer>();
+            var gzippedMessageSerializer = messageSerializer.SerializeGZipped();
             Assert.NotNull(gzippedMessageSerializer);
         }
 
         [Fact]
         public void Test_DeserializeGZipped_Success() {
-            var messageDeserializerMock = new Mock<IMessageDeserializer<TestMessage>>();
-            var gzippedMessageDeserializer = messageDeserializerMock.Object.DeserializeGZipped<TestMessage>();
+            var messageDeserializer = A.Fake<IMessageDeserializer<TestMessage>>();
+            var gzippedMessageDeserializer = messageDeserializer.DeserializeGZipped<TestMessage>();
             Assert.NotNull(gzippedMessageDeserializer);
         }
         #endregion

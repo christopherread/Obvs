@@ -63,9 +63,8 @@ namespace Obvs.Serialization
         public static GZippedMessageDeserializer<TMessage> DeserializeGZipped<TMessage>(
             this IMessageDeserializer<TMessage> messageDeserializer
         ) where TMessage : class {
-            var gzippedMessageSerializer = messageDeserializer as GZippedMessageDeserializer<TMessage>;
-            if (gzippedMessageSerializer != null) {
-                throw new ArgumentException("Message serializer implementation cannot be GzippedMessageSerializer");
+            if (messageDeserializer is GZippedMessageDeserializer<TMessage>) {
+                throw new ArgumentException("Message serializer implementation cannot be GzippedMessageDeserializer");
             }
             return new GZippedMessageDeserializer<TMessage>(messageDeserializer.Deserialize);
         }

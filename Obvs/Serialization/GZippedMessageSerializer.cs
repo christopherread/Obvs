@@ -55,7 +55,7 @@ namespace Obvs.Serialization
         /// <inheritdoc />
         public void Serialize(Stream stream, object message)
         {
-            using (var gzipStream = new GZipStream(stream, CompressionLevel.Fastest, true))
+            using (var gzipStream = new GZipStream(stream, _compressionLevel, true))
             {
                 _messageStreamSerializerFn(gzipStream, message);
             }
@@ -69,8 +69,7 @@ namespace Obvs.Serialization
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
         public static GZippedMessageSerializer SerializeGZipped(this IMessageSerializer messageSerializer) {
-            var gzippedMessageSerializer = messageSerializer as GZippedMessageSerializer;
-            if (gzippedMessageSerializer != null) {
+            if (messageSerializer is GZippedMessageSerializer) {
                 throw new ArgumentException("Message serializer implementation cannot be GzippedMessageSerializer");
             }
             return new GZippedMessageSerializer(messageSerializer.Serialize);
