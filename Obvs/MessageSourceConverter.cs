@@ -1,9 +1,10 @@
 using System;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 
 namespace Obvs
 {
-    public class MessageSourceConverter<TFrom, TTo> : IMessageSource<TTo>
+    public class MessageSourceConverter<TFrom, TTo> : BaseMessageSource<TTo>
         where TTo : class
         where TFrom : class
     {
@@ -16,14 +17,12 @@ namespace Obvs
             _converter = converter;
         }
 
-        public IObservable<TTo> Messages
-        {
-            get
-            {
-                return _source.Messages
-                              .Select(ConvertedMessage)
-                              .Where(MessageIsValid);
-            }
+
+        /// <inheritdoc />
+        public override IObservable<TTo> GetMessages(IScheduler scheduler) {
+            return _source.GetMessages(scheduler)
+                            .Select(ConvertedMessage)
+                            .Where(MessageIsValid);
         }
 
         private static bool MessageIsValid(TTo msg)
@@ -36,7 +35,7 @@ namespace Obvs
             return _converter.Convert(obj);
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             _source.Dispose();
             _converter.Dispose();
