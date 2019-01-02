@@ -47,10 +47,10 @@ namespace Obvs
 
         public virtual IObservable<TMessage> Messages => _messages;
     
+        /// <inheritdoc />
         public IObservable<TMessage> GetMessages(IScheduler scheduler)
         {
-            var subject = Subject.Synchronize(new Subject<TMessage>());
-            return CreateMessagesObservable(subject, scheduler);
+            return CreateMessagesObservable(_subject, scheduler);
         }
     }
 }
