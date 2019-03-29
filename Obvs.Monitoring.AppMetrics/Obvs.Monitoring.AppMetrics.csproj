@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net46;net472;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Obvs" Version="5.0.0.26" />
+    <PackageReference Include="App.Metrics.Abstractions" Version="2.1.0" />
+  </ItemGroup>
+
+</Project>
