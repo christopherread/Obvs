@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using FakeItEasy;
 using Microsoft.Reactive.Testing;
 using Nest;
+using Obvs.Monitoring.ElasticSearch;
 using Xunit;
 
-namespace Obvs.Monitoring.ElasticSearch.Tests
+namespace Obvs.Monitoring.Tests
 {
     public class TestElasticSearchMonitoring
     {
