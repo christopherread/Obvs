@@ -8,7 +8,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
     <PackageTags>obvs monitoring performancecounters perfcounter messaging microservice bus messagebus rx reactive servicebus</PackageTags>
-    <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
+    <PackageReleaseNotes>Obvs v5</PackageReleaseNotes>
     <Description>Monitoring extension for Obvs, using Windows Performance Counters.</Description>
   </PropertyGroup>
   <ItemGroup>

@@ -8,7 +8,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
     <PackageTags>elastic obvs monitoring elasticsearch messaging microservice bus messagebus rx reactive servicebus</PackageTags>
-    <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
+    <PackageReleaseNotes>Obvs v5</PackageReleaseNotes>
     <Description>Monitoring extension for Obvs, using Elastic.</Description>
   </PropertyGroup>
   <ItemGroup>
