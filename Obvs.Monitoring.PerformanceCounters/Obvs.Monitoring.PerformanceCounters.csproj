@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net45</TargetFrameworks>
+    <TargetFrameworks>net46</TargetFrameworks>
     <Company>Christopher Read</Company>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
@@ -12,6 +12,6 @@
     <Description>Monitoring extension for Obvs, using Windows Performance Counters.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Obvs" Version="4.0.0.1" />
+    <PackageReference Include="Obvs" Version="5.0.0.26" />
   </ItemGroup>
 </Project>
