@@ -8,9 +8,9 @@ namespace Obvs.Serialization.NetJson
         public static readonly Encoding Encoding = new UTF8Encoding(false);
         public static void Set()
         {
-            NetJSON.NetJSON.DateFormat = NetJSONDateFormat.ISO;
-            NetJSON.NetJSON.UseEnumString = true;
-            NetJSON.NetJSON.TimeZoneFormat = NetJSONTimeZoneFormat.Local;
+            NetJSONSettings.CurrentSettings.DateFormat = NetJSONDateFormat.ISO;
+            NetJSONSettings.CurrentSettings.UseEnumString = true;
+            NetJSONSettings.CurrentSettings.TimeZoneFormat = NetJSONTimeZoneFormat.Local;
         }
     }
 }

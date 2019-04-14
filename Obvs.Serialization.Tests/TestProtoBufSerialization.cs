@@ -19,7 +19,7 @@ namespace Obvs.Serialization.Tests
             var serialize = serializer.Serialize(message);
 
             Assert.NotNull(serialize);
-            Assert.Equal(serialize.Length, 25);
+            Assert.Equal(25, serialize.Length);
         }
 
         [Fact]
