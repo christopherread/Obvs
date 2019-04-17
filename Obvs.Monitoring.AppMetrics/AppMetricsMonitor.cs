@@ -1,6 +1,5 @@
 ﻿using System;
 using App.Metrics;
-using App.Metrics.Meter;
 using App.Metrics.Timer;
 
 namespace Obvs.Monitoring.AppMetrics
@@ -8,11 +7,9 @@ namespace Obvs.Monitoring.AppMetrics
     public class AppMetricsMonitor<TMessage> : IMonitor<TMessage>
     {
         private readonly IMetrics _metrics;
-        private static readonly MeterOptions CounterSent = new MeterOptions { Context = "Obvs", Name = "Messages Sent Count", MeasurementUnit = Unit.Custom("Messages") };
-        private static readonly MeterOptions CounterReceived = new MeterOptions { Context = "Obvs", Name = "Messages Received Count", MeasurementUnit = Unit.Custom("Messages") };
 
-        private static readonly TimerOptions CounterSentTime = new TimerOptions { Context = "Obvs", Name = "Messages Sent Elapsed", MeasurementUnit = Unit.Custom("Messages") };
-        private static readonly TimerOptions CounterReceivedTime = new TimerOptions { Context = "Obvs", Name = "Messages Received Elapsed", MeasurementUnit = Unit.Custom("Messages") };
+        private static readonly TimerOptions CounterSent = new TimerOptions { Context = "Obvs", Name = "Messages Sent", MeasurementUnit = Unit.Custom("Messages") };
+        private static readonly TimerOptions CounterReceived = new TimerOptions { Context = "Obvs", Name = "Messages Received", MeasurementUnit = Unit.Custom("Messages") };
 
         private readonly MetricTags _tags;
 
@@ -42,8 +39,7 @@ namespace Obvs.Monitoring.AppMetrics
             {
                 try
                 {
-                    _metrics.Measure.Meter.Mark(CounterSent, _tags);
-                    _metrics.Provider.Timer.Instance(CounterSentTime, _tags).Record((long) elapsed.TotalMilliseconds, TimeUnit.Milliseconds);
+                    _metrics.Provider.Timer.Instance(CounterSent, _tags).Record((long) elapsed.TotalMilliseconds, TimeUnit.Milliseconds);
                 }
                 catch (Exception exception)
                 {
@@ -59,8 +55,7 @@ namespace Obvs.Monitoring.AppMetrics
             {
                 try
                 {
-                    _metrics.Measure.Meter.Mark(CounterReceived, _tags);
-                    _metrics.Provider.Timer.Instance(CounterReceivedTime, _tags).Record((long) elapsed.TotalMilliseconds, TimeUnit.Milliseconds);
+                    _metrics.Provider.Timer.Instance(CounterReceived, _tags).Record((long) elapsed.TotalMilliseconds, TimeUnit.Milliseconds);
                 }
                 catch (Exception exception)
                 {
