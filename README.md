@@ -124,12 +124,12 @@ Define custom endpoints that can wrap API calls or integrations with other syste
 	...
 
 	IServiceBus serviceBus = ServiceBus.Configure()
-        .WithActiveMQEndpoints<IMyServiceMessage>()
+          .WithActiveMQEndpoints<IMyServiceMessage>()
             .Named("MyService")
             .UsingQueueFor<ICommand>()
             .ConnectToBroker("tcp://localhost:61616")
             .SerializedAsJson()
             .AsClientAndServer()
-		.WithEndpoints(new MyCustomEndpoint())
+	  .WithEndpoints(new MyCustomEndpoint())
         .Create();
 
