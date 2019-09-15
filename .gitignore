@@ -233,3 +233,4 @@ $RECYCLE.BIN/
 *.ncrunchproject
 *.ncrunchsolution
 .vs/
+.idea
