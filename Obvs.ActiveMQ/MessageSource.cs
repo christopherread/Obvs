@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace Obvs.ActiveMQ
         private readonly IDestination _destination;
         private readonly Apache.NMS.AcknowledgementMode _mode;
         private readonly Lazy<IConnection> _lazyConnection;
-        
+
         public MessageSource(Lazy<IConnection> lazyConnection,
             IEnumerable<IMessageDeserializer<TMessage>> deserializers,
             IDestination destination,
@@ -35,17 +36,13 @@ namespace Obvs.ActiveMQ
             _mode = mode == AcknowledgementMode.ClientAcknowledge ? Apache.NMS.AcknowledgementMode.ClientAcknowledge : Apache.NMS.AcknowledgementMode.AutoAcknowledge;
             _selector = selector;
             _propertyFilter = propertyFilter;
-        }
 
-        public IObservable<TMessage> Messages
-        {
-            get
-            {
-                return Observable.Create<TMessage>(observer =>
+            var messages = Observable.Create<TMessage>(observer =>
                 {
                     var session = _lazyConnection.Value.CreateSession(_mode);
 
-                    var subscription = session.ToObservable(_destination, _selector)
+                    var subscription = session
+                        .ToObservable(_destination, _selector)
                         .Where(PassesFilter)
                         .Select(message => new { message, deserializer = GetDeserializer(message) })
                         .Where(msg => msg.deserializer != null)
@@ -59,8 +56,18 @@ namespace Obvs.ActiveMQ
                         session.Dispose();
                     });
                 });
+
+            // Can only do this optimization if we're on a topic
+            if (_destination.DestinationType == DestinationType.Topic)
+            {
+                messages = messages
+                      .PublishRefCountRetriable();
             }
+
+            Messages = messages;
         }
+
+        public IObservable<TMessage> Messages { get; }
 
         private bool PassesFilter(IMessage message)
         {
