@@ -17,6 +17,7 @@ namespace Obvs.ActiveMQ
         where TMessage : class
     {
         private readonly string _selector;
+        private readonly bool _noLocal;
         private readonly Func<IDictionary, bool> _propertyFilter;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly IDestination _destination;
@@ -28,6 +29,7 @@ namespace Obvs.ActiveMQ
             IDestination destination,
             AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge,
             string selector = null,
+            bool noLocal = false,
             Func<IDictionary, bool> propertyFilter = null)
         {
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
@@ -35,6 +37,7 @@ namespace Obvs.ActiveMQ
             _destination = destination;
             _mode = mode == AcknowledgementMode.ClientAcknowledge ? Apache.NMS.AcknowledgementMode.ClientAcknowledge : Apache.NMS.AcknowledgementMode.AutoAcknowledge;
             _selector = selector;
+            _noLocal = noLocal;
             _propertyFilter = propertyFilter;
 
             var messages = Observable.Create<TMessage>(observer =>
@@ -42,7 +45,7 @@ namespace Obvs.ActiveMQ
                     var session = _lazyConnection.Value.CreateSession(_mode);
 
                     var subscription = session
-                        .ToObservable(_destination, _selector)
+                        .ToObservable(_destination, _selector, _noLocal)
                         .Where(PassesFilter)
                         .Select(message => new { message, deserializer = GetDeserializer(message) })
                         .Where(msg => msg.deserializer != null)

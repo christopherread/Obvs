@@ -109,6 +109,7 @@ namespace Obvs.ActiveMQ.Configuration
         private Func<IDictionary, bool> _propertyFilter;
         private string _brokerSelector;
         private Func<TMessage, Dictionary<string, object>> _propertyProvider;
+        private bool _noLocal;
         private string _userName;
         private string _password;
         private Action<ConnectionFactory> _connectionFactoryConfiguration;
@@ -131,6 +132,12 @@ namespace Obvs.ActiveMQ.Configuration
             return this;
         }
 
+        public ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> NoLocal()
+        {
+            _noLocal = true;
+            return this;
+        }
+
         public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsClient()
         {
             return _canAddEndpoint.WithClientEndpoints(CreateProvider());
@@ -150,7 +157,7 @@ namespace Obvs.ActiveMQ.Configuration
         {
             return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(
                 _serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, 
-                _typeFilter, ActiveMQFluentConfigContext.SharedConnection, _brokerSelector, _propertyFilter,
+                _typeFilter, ActiveMQFluentConfigContext.SharedConnection, _brokerSelector, _noLocal, _propertyFilter,
                 _propertyProvider, _userName, _password, _connectionFactoryConfiguration);
         }
 

@@ -52,7 +52,7 @@ namespace Obvs.ActiveMQ.Tests
             _acknowledgementMode = AcknowledgementMode.AutoAcknowledge;
 
             A.CallTo(() => _connection.CreateSession(A<Apache.NMS.AcknowledgementMode>.Ignored)).Returns(_session);
-            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(_consumer);
+            A.CallTo(() => _session.CreateConsumer(_destination, null, false)).Returns(_consumer);
 
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
                 _acknowledgementMode);
@@ -72,7 +72,7 @@ namespace Obvs.ActiveMQ.Tests
             _source.Messages.Subscribe(_observer);
 
             A.CallTo(() => _connection.CreateSession(_acknowledgementMode == AcknowledgementMode.ClientAcknowledge ? Apache.NMS.AcknowledgementMode.ClientAcknowledge : Apache.NMS.AcknowledgementMode.AutoAcknowledge)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _session.CreateConsumer(_destination)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _session.CreateConsumer(_destination, null, false)).MustHaveHappened(Repeated.Exactly.Once);
 
             A.CallTo(_consumer).Where(x => x.Method.Name.Equals("add_Listener")).MustHaveHappened();
         }
@@ -97,7 +97,7 @@ namespace Obvs.ActiveMQ.Tests
                 AcknowledgementMode.ClientAcknowledge);
 
             var consumer = A.Fake<IMessageConsumer>();
-            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+            A.CallTo(() => _session.CreateConsumer(_destination, null, false)).Returns(consumer);
 
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             A.CallTo(() => _deserializer.Deserialize(A<Stream>.Ignored)).Throws<Exception>();
@@ -115,8 +115,8 @@ namespace Obvs.ActiveMQ.Tests
                 AcknowledgementMode.ClientAcknowledge);
 
             var consumer = A.Fake<IMessageConsumer>();
-            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
-
+            A.CallTo(() => _session.CreateConsumer(_destination, null, false)).Returns(consumer);
+            
             ITextMessage textMessage = A.Fake<ITextMessage>();
 
             _source.Messages.Subscribe(_observer);
@@ -129,7 +129,7 @@ namespace Obvs.ActiveMQ.Tests
         public void ShouldDeserializeAndPublishMessageWhenReceived()
         {
             var consumer = A.Fake<IMessageConsumer>();
-            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+            A.CallTo(() => _session.CreateConsumer(_destination, null, false)).Returns(consumer);
 
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
@@ -150,7 +150,7 @@ namespace Obvs.ActiveMQ.Tests
         public void ShouldDeserializeByteMessagesAndPublishMessageWhenReceived()
         {
             var consumer = A.Fake<IMessageConsumer>();
-            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+            A.CallTo(() => _session.CreateConsumer(_destination, null, false)).Returns(consumer);
 
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
@@ -168,7 +168,7 @@ namespace Obvs.ActiveMQ.Tests
         public void ShouldDeserializeAndPublishMessageOfRightTypeName()
         {
             var consumer = A.Fake<IMessageConsumer>();
-            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+            A.CallTo(() => _session.CreateConsumer(_destination, null, false)).Returns(consumer);
 
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
@@ -195,7 +195,7 @@ namespace Obvs.ActiveMQ.Tests
         public void ShouldProcessMessagesWithoutTypeNameIfOnlyOneDeserializerSupplied()
         {
             var consumer = A.Fake<IMessageConsumer>();
-            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+            A.CallTo(() => _session.CreateConsumer(_destination, null, false)).Returns(consumer);
 
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
@@ -223,7 +223,7 @@ namespace Obvs.ActiveMQ.Tests
             const string typeName = "SomeTypeName";
 
             var consumer = A.Fake<IMessageConsumer>();
-            A.CallTo(() => _session.CreateConsumer(_destination)).Returns(consumer);
+            A.CallTo(() => _session.CreateConsumer(_destination, null, false)).Returns(consumer);
 
             IBytesMessage bytesMessage = A.Fake<IBytesMessage>();
             ITestMessage message = A.Fake<ITestMessage>();
@@ -242,7 +242,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _deserializer.GetTypeName()).Returns(typeName);
 
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
-                _acknowledgementMode, null, filter);
+                _acknowledgementMode, null, false, filter);
 
             _source.Messages.Subscribe(_observer);
             consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);

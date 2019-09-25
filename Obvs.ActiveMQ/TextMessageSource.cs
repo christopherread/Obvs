@@ -17,9 +17,9 @@ namespace Obvs.ActiveMQ
         private readonly Encoding _encoding;
 
         public TextMessageSource(Lazy<IConnection> lazyConnection, IEnumerable<IMessageDeserializer<TMessage>> deserializers,
-            IDestination destination, AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge, string selector = null, 
+            IDestination destination, AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge, string selector = null, bool noLocal = false,
             Encoding encoding = null, Func<IDictionary, bool> propertyFilter = null)
-            : base(lazyConnection, deserializers, destination, mode, selector, propertyFilter)
+            : base(lazyConnection, deserializers, destination, mode, selector, noLocal, propertyFilter)
         {
             _encoding = encoding ?? Encoding.UTF8;
         }

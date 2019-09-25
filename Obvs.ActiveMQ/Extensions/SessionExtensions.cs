@@ -7,12 +7,13 @@ namespace Obvs.ActiveMQ.Extensions
 {
     internal static class SessionExtensions
     {
-        public static IObservable<IMessage> ToObservable(this ISession session, IDestination destination, string selector = null)
+        public static IObservable<IMessage> ToObservable(this ISession session, IDestination destination, string selector = null, bool noLocal = false)
         {
             return Observable.Create<IMessage>(
                 observer =>
                 {
-                    var consumer = string.IsNullOrEmpty(selector) ? session.CreateConsumer(destination) : session.CreateConsumer(destination, selector);
+                    var consumer = session.CreateConsumer(destination, selector, noLocal);
+                    
                     consumer.Listener += observer.OnNext;
 
                     return Disposable.Create(
