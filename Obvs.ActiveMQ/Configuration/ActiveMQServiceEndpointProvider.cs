@@ -27,6 +27,7 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly Func<Assembly, bool> _assemblyFilter;
         private readonly Func<Type, bool> _typeFilter;
         private readonly string _selector;
+        private readonly bool _noLocal;
         private readonly Func<IDictionary, bool> _propertyFilter;
         private readonly Func<TMessage, Dictionary<string, object>> _propertyProvider;
         private readonly Lazy<IConnection> _endpointConnection;
@@ -41,6 +42,7 @@ namespace Obvs.ActiveMQ.Configuration
             Func<Type, bool> typeFilter = null,
             Lazy<IConnection> sharedConnection = null,
             string selector = null,
+            bool noLocal = false,
             Func<IDictionary, bool> propertyFilter = null,
             Func<TMessage, Dictionary<string, object>> propertyProvider = null,
             string userName = null,
@@ -54,6 +56,7 @@ namespace Obvs.ActiveMQ.Configuration
             _assemblyFilter = assemblyFilter;
             _typeFilter = typeFilter;
             _selector = selector;
+            _noLocal = noLocal;
             _propertyFilter = propertyFilter;
             _propertyProvider = propertyProvider;
 
@@ -106,7 +109,7 @@ namespace Obvs.ActiveMQ.Configuration
                 var topicSources = new[]
                 {
                     new MessageSource<T>(connection, deserializers, new ActiveMQTopic(destination),
-                        acknowledgementMode, _selector, _propertyFilter)
+                        acknowledgementMode, _selector, _noLocal, _propertyFilter)
                 };
                 var queueSources = queueTypes.Select(qt =>
                     new MessageSource<T>(connection,
@@ -114,13 +117,14 @@ namespace Obvs.ActiveMQ.Configuration
                         new ActiveMQQueue(GetTypedQueueName(destination, qt.Item1)),
                         qt.Item2,
                         _selector,
+                        _noLocal,
                         _propertyFilter));
 
                 return new MergedMessageSource<T>(topicSources.Concat(queueSources));
             }
 
             return DestinationFactory.CreateSource<T, TServiceMessage>(connection, destination, GetDestinationType<T>(),
-                _deserializerFactory, _propertyFilter, _assemblyFilter, _typeFilter, _selector,
+                _deserializerFactory, _propertyFilter, _assemblyFilter, _typeFilter, _selector, _noLocal,
                 acknowledgementMode);
         }
 
