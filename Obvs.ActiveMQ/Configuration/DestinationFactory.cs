@@ -46,8 +46,8 @@ namespace Obvs.ActiveMQ.Configuration
             Func<Assembly, bool> assemblyFilter = null,
             Func<Type, bool> typeFilter = null,
             string selector = null,
-            bool noLocal = false,
-            AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge)
+            AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge,
+            bool noLocal = false)
             where TMessage : class
             where TServiceMessage : class
         {
@@ -55,7 +55,7 @@ namespace Obvs.ActiveMQ.Configuration
                 lazyConnection,
                 deserializerFactory.Create<TMessage, TServiceMessage>(assemblyFilter, typeFilter),
                 CreateDestination(destination, destinationType),
-                mode, selector, noLocal, propertyFilter);
+                mode, selector, propertyFilter, noLocal);
         }
 
         private static IDestination CreateDestination(string name, DestinationType type)

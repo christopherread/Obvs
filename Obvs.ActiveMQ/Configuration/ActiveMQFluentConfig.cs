@@ -51,8 +51,9 @@ namespace Obvs.ActiveMQ.Configuration
 
     public interface ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> : 
         ICanSpecifyActiveMQQueue<TMessage, TCommand, TEvent, TRequest, TResponse>,
-        ICanSpecifyActiveMQMessageFiltering<TMessage, TCommand, TEvent, TRequest, TResponse>, 
-        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
+        ICanSpecifyActiveMQMessageFiltering<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyActiveMQNoLocalFlag<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage
@@ -86,11 +87,22 @@ namespace Obvs.ActiveMQ.Configuration
         ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> AppendMessageProperties(Func<TMessage, Dictionary<string, object>> propertyProvider);
     }
 
+    public interface ICanSpecifyActiveMQNoLocalFlag<TMessage, TCommand, TEvent, TRequest, TResponse>
+        where TMessage : class
+        where TCommand : class, TMessage
+        where TEvent : class, TMessage
+        where TRequest : class, TMessage
+        where TResponse : class, TMessage
+    {
+        ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> WithNoLocalFlag();
+    }
+
     internal class ActiveMQFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
         ICanSpecifyActiveMQServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>, 
         ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse>, 
         ICanSpecifyActiveMQQueueAcknowledge<TMessage, TCommand, TEvent, TRequest, TResponse>,
-        ICanSpecifyActiveMQBrokerCredentials<TMessage, TCommand, TEvent, TRequest, TResponse>
+        ICanSpecifyActiveMQBrokerCredentials<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanSpecifyActiveMQNoLocalFlag<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TServiceMessage : class 
         where TCommand : class, TMessage 
@@ -132,12 +144,6 @@ namespace Obvs.ActiveMQ.Configuration
             return this;
         }
 
-        public ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> NoLocal()
-        {
-            _noLocal = true;
-            return this;
-        }
-
         public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AsClient()
         {
             return _canAddEndpoint.WithClientEndpoints(CreateProvider());
@@ -157,8 +163,8 @@ namespace Obvs.ActiveMQ.Configuration
         {
             return new ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(
                 _serviceName, _brokerUri, _serializer, _deserializerFactory, _queueTypes, _assemblyFilter, 
-                _typeFilter, ActiveMQFluentConfigContext.SharedConnection, _brokerSelector, _noLocal, _propertyFilter,
-                _propertyProvider, _userName, _password, _connectionFactoryConfiguration);
+                _typeFilter, ActiveMQFluentConfigContext.SharedConnection, _brokerSelector, _propertyFilter,
+                _propertyProvider, _userName, _password, _connectionFactoryConfiguration, _noLocal);
         }
 
         public ICanSpecifyActiveMQBrokerCredentials<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToBroker(string brokerUri)
@@ -231,6 +237,12 @@ namespace Obvs.ActiveMQ.Configuration
         public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> WithConnectionFactoryConfig(Action<ConnectionFactory> connectionFactoryConfiguration)
         {
             _connectionFactoryConfiguration = connectionFactoryConfiguration;
+            return this;
+        }
+
+        public ICanSpecifyActiveMQBroker<TMessage, TCommand, TEvent, TRequest, TResponse> WithNoLocalFlag()
+        {
+            _noLocal = true;
             return this;
         }
     }
