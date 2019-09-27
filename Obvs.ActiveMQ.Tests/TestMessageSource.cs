@@ -242,7 +242,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _deserializer.GetTypeName()).Returns(typeName);
 
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
-                _acknowledgementMode, null, false, filter);
+                _acknowledgementMode, null, filter, false);
 
             _source.Messages.Subscribe(_observer);
             consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);

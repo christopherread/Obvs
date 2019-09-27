@@ -17,28 +17,28 @@ namespace Obvs.ActiveMQ
         where TMessage : class
     {
         private readonly string _selector;
-        private readonly bool _noLocal;
         private readonly Func<IDictionary, bool> _propertyFilter;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly IDestination _destination;
         private readonly Apache.NMS.AcknowledgementMode _mode;
         private readonly Lazy<IConnection> _lazyConnection;
+        private readonly bool _noLocal;
 
         public MessageSource(Lazy<IConnection> lazyConnection,
             IEnumerable<IMessageDeserializer<TMessage>> deserializers,
             IDestination destination,
             AcknowledgementMode mode = AcknowledgementMode.AutoAcknowledge,
             string selector = null,
-            bool noLocal = false,
-            Func<IDictionary, bool> propertyFilter = null)
+            Func<IDictionary, bool> propertyFilter = null,
+            bool noLocal = false)
         {
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
             _lazyConnection = lazyConnection;
             _destination = destination;
             _mode = mode == AcknowledgementMode.ClientAcknowledge ? Apache.NMS.AcknowledgementMode.ClientAcknowledge : Apache.NMS.AcknowledgementMode.AutoAcknowledge;
             _selector = selector;
-            _noLocal = noLocal;
             _propertyFilter = propertyFilter;
+            _noLocal = noLocal;
 
             var messages = Observable.Create<TMessage>(observer =>
                 {

@@ -27,11 +27,11 @@ namespace Obvs.ActiveMQ.Configuration
         private readonly Func<Assembly, bool> _assemblyFilter;
         private readonly Func<Type, bool> _typeFilter;
         private readonly string _selector;
-        private readonly bool _noLocal;
         private readonly Func<IDictionary, bool> _propertyFilter;
         private readonly Func<TMessage, Dictionary<string, object>> _propertyProvider;
         private readonly Lazy<IConnection> _endpointConnection;
         private readonly Lazy<IConnection> _endpointClientConnection;
+        private readonly bool _noLocal;
 
         public ActiveMQServiceEndpointProvider(string serviceName,
             string brokerUri,
@@ -42,12 +42,12 @@ namespace Obvs.ActiveMQ.Configuration
             Func<Type, bool> typeFilter = null,
             Lazy<IConnection> sharedConnection = null,
             string selector = null,
-            bool noLocal = false,
             Func<IDictionary, bool> propertyFilter = null,
             Func<TMessage, Dictionary<string, object>> propertyProvider = null,
             string userName = null,
             string password = null,
-            Action<ConnectionFactory> connectionFactoryConfiguration = null)
+            Action<ConnectionFactory> connectionFactoryConfiguration = null,
+            bool noLocal = false)
             : base(serviceName)
         {
             _serializer = serializer;
@@ -56,9 +56,9 @@ namespace Obvs.ActiveMQ.Configuration
             _assemblyFilter = assemblyFilter;
             _typeFilter = typeFilter;
             _selector = selector;
-            _noLocal = noLocal;
             _propertyFilter = propertyFilter;
             _propertyProvider = propertyProvider;
+            _noLocal = noLocal;
 
             if (string.IsNullOrEmpty(brokerUri) && sharedConnection == null)
             {
@@ -109,7 +109,7 @@ namespace Obvs.ActiveMQ.Configuration
                 var topicSources = new[]
                 {
                     new MessageSource<T>(connection, deserializers, new ActiveMQTopic(destination),
-                        acknowledgementMode, _selector, _noLocal, _propertyFilter)
+                        acknowledgementMode, _selector, _propertyFilter, _noLocal)
                 };
                 var queueSources = queueTypes.Select(qt =>
                     new MessageSource<T>(connection,
@@ -117,15 +117,15 @@ namespace Obvs.ActiveMQ.Configuration
                         new ActiveMQQueue(GetTypedQueueName(destination, qt.Item1)),
                         qt.Item2,
                         _selector,
-                        _noLocal,
-                        _propertyFilter));
+                        _propertyFilter,
+                        _noLocal));
 
                 return new MergedMessageSource<T>(topicSources.Concat(queueSources));
             }
 
             return DestinationFactory.CreateSource<T, TServiceMessage>(connection, destination, GetDestinationType<T>(),
-                _deserializerFactory, _propertyFilter, _assemblyFilter, _typeFilter, _selector, _noLocal,
-                acknowledgementMode);
+                _deserializerFactory, _propertyFilter, _assemblyFilter, _typeFilter, _selector,
+                acknowledgementMode, _noLocal);
         }
 
         private IMessagePublisher<T> CreatePublisher<T>(Lazy<IConnection> connection, string destination) where T : class, TMessage
