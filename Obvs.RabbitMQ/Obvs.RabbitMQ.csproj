@@ -1,17 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net451</TargetFrameworks>
+	<TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
     <Company></Company>
     <Authors>Christopher Read</Authors>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
     <Description>RabbitMQ transport extension for Obvs</Description>
-    <PackageReleaseNotes>Upgraded to Obvs 4.1, now supporting .NET Standard 2.0</PackageReleaseNotes>
+    <PackageReleaseNotes>Upgraded to Obvs 5.0</PackageReleaseNotes>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Obvs" Version="4.1.0.9" />
-    <PackageReference Include="RabbitMQ.Client" Version="5.0.1" />
+	<PackageReference Include="Obvs" Version="5.0.0.26" />
+    <PackageReference Include="RabbitMQ.Client" Version="5.1.2" />
   </ItemGroup>
 </Project>
