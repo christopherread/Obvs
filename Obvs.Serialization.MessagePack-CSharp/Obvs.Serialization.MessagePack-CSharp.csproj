@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MessagePack" Version="1.7.3.4" />    
+    <PackageReference Include="MessagePack" Version="1.8.74" />    
     <PackageReference Include="Obvs" Version="5.0.0.26" />
   </ItemGroup>
 
