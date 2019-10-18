@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2005
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29411.108
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.Json", "Obvs.Serialization.Json\Obvs.Serialization.Json.csproj", "{21A3DEDF-3CDE-4C64-87A2-3405E1F1DD77}"
 EndProject
@@ -17,9 +17,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.MessageP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.NetJson", "Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj", "{A7032830-495A-4B81-AE4E-A883125CF7A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.MessagePack-CSharp", "Obvs.Serialization.MessagePack-CSharp\Obvs.Serialization.MessagePack-CSharp.csproj", "{1656F376-4065-49FF-AE18-9FF26183BA50}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.MessagePack-CSharp", "Obvs.Serialization.MessagePack-CSharp\Obvs.Serialization.MessagePack-CSharp.csproj", "{1656F376-4065-49FF-AE18-9FF26183BA50}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.Serialization.Yaml", "Obvs.Serialization.Yaml\Obvs.Serialization.Yaml.csproj", "{D7754476-0F76-4CC0-B795-601AE48BE28A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Serialization.Yaml", "Obvs.Serialization.Yaml\Obvs.Serialization.Yaml.csproj", "{D7754476-0F76-4CC0-B795-601AE48BE28A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{51DEBD7D-9459-4719-B4CE-A2DFF040203B}"
+	ProjectSection(SolutionItems) = preProject
+		appveyor.yml = appveyor.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

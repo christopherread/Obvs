@@ -1,4 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	
     <PropertyGroup>
         <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
         <Company>Christopher Read</Company>
@@ -7,7 +8,7 @@
         <Authors />
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
-        <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
+        <PackageReleaseNotes>Minor dependency update</PackageReleaseNotes>
         <Description>MessagePack serialization for Obvs</Description>
     </PropertyGroup>
 
@@ -15,5 +16,6 @@
         <PackageReference Include="Obvs" Version="5.0.0.26" />
         <PackageReference Include="MsgPack.Cli" Version="1.0.1" />
     </ItemGroup>
+	
 </Project>
 

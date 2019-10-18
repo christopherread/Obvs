@@ -7,7 +7,7 @@
         <Authors />
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
-        <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
+        <PackageReleaseNotes>Minor dependency update</PackageReleaseNotes>
         <Description>ProtoBuf (https://github.com/mgravell/protobuf-net) serialization for Obvs</Description>
     </PropertyGroup>
 
