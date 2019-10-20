@@ -152,6 +152,12 @@ namespace Obvs.Configuration
             return this;
         }
 
+        public ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AllMessages()
+        {
+            _localBusOption = LocalBusOptions.AllMessages;
+            return this;
+        }
+
         public ICanSpecifyLoggingOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> UsingMonitor(IMonitorFactory<TMessage> monitorFactory)
         {
             _monitorFactory = monitorFactory;
@@ -168,6 +174,7 @@ namespace Obvs.Configuration
     public enum LocalBusOptions
     {
         MessagesWithNoEndpointClients = 0,
-        MessagesWithNoEndpoints = 1
+        MessagesWithNoEndpoints = 1,
+        AllMessages = 3
     }
 }

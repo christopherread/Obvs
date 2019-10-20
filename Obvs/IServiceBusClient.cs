@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -48,10 +47,7 @@ namespace Obvs
             _serviceBusClient = serviceBusClient;
         }
 
-        public IObservable<IEvent> Events
-        {
-            get { return _serviceBusClient.Events; }
-        }
+        public IObservable<IEvent> Events => _serviceBusClient.Events;
 
         public Task SendAsync(ICommand command)
         {
@@ -78,10 +74,7 @@ namespace Obvs
             return _serviceBusClient.GetResponse<T>(request);
         }
 
-        public IObservable<Exception> Exceptions
-        {
-            get { return _serviceBusClient.Exceptions; }
-        }
+        public IObservable<Exception> Exceptions => _serviceBusClient.Exceptions;
 
         public IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
         {
@@ -131,10 +124,7 @@ namespace Obvs
             _subscribers = new List<KeyValuePair<object, IObservable<TMessage>>>();
         }
 
-        public IObservable<TEvent> Events
-        {
-            get { return _events; }
-        }
+        public IObservable<TEvent> Events => _events;
 
         public Task SendAsync(TCommand command)
         {
@@ -152,7 +142,8 @@ namespace Obvs
 
             if (tasks.Length == 0)
             {
-                throw new Exception(string.Format("No endpoint or local bus configured for {0}, please check your ServiceBus configuration.", command));
+                throw new Exception(
+                    $"No endpoint or local bus configured for {command}, please check your ServiceBus configuration.");
             }
 
             return Task.WhenAll(tasks);
@@ -176,6 +167,11 @@ namespace Obvs
                 return false;
             }
 
+            if  (_localBusOption == LocalBusOptions.AllMessages)
+            {
+                return true;
+            }
+
             if (_localBusOption == LocalBusOptions.MessagesWithNoEndpointClients &&
                 !_endpointClients.Any(e => e.CanHandle(message)))
             {
@@ -194,14 +190,14 @@ namespace Obvs
 
         public Task SendAsync(IEnumerable<TCommand> commands)
         {
-            var commandsResovled = commands.ToArray();
+            var commandsResolved = commands.ToArray();
 
-            if (commandsResovled.Length == 0)
+            if (commandsResolved.Length == 0)
                 return Task.FromResult(true);
 
             var exceptions = new List<Exception>();
             
-            var tasks = commandsResovled.Select(command => Catch(() => SendAsync(command), exceptions)).ToArray();
+            var tasks = commandsResolved.Select(command => Catch(() => SendAsync(command), exceptions)).ToArray();
 
             if (exceptions.Any())
             {
@@ -413,7 +409,7 @@ namespace Obvs
         public override void Dispose()
         {
             base.Dispose();
-            foreach (IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> endpointClient in _endpointClients)
+            foreach (var endpointClient in _endpointClients)
             {
                 endpointClient.Dispose();
             }
