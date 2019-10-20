@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Obvs.Configuration;
@@ -32,6 +31,7 @@ namespace Obvs
     {
         private readonly IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse> _serviceBus;
 
+        // ReSharper disable once UnusedMember.Global
         public ServiceBus(IEnumerable<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>> endpointClients, 
             IEnumerable<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>> endpoints, 
             IRequestCorrelationProvider<IRequest, IResponse> requestCorrelationProvider = null) :
@@ -44,6 +44,7 @@ namespace Obvs
             _serviceBus = serviceBus;
         }
 
+        // ReSharper disable once UnusedMember.Global
         public static ICanAddEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse> Configure()
         {
             return new ServiceBusFluentCreator<IMessage, ICommand, IEvent, IRequest, IResponse>(new DefaultRequestCorrelationProvider());
@@ -78,11 +79,6 @@ namespace Obvs
 
         public IObservable<Exception> Exceptions => _serviceBus.Exceptions;
 
-        public IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
-        {
-            return _serviceBus.Subscribe(subscriber, scheduler);
-        }
-
         public IObservable<IRequest> Requests => _serviceBus.Requests;
 
         public IObservable<ICommand> Commands => _serviceBus.Commands;
@@ -112,9 +108,7 @@ namespace Obvs
         where TResponse : class, TMessage
     {
         private readonly IRequestCorrelationProvider<TRequest, TResponse> _requestCorrelationProvider;
-        private readonly IObservable<TRequest> _requests;
-        private readonly IObservable<TCommand> _commands;
-        
+
         public ServiceBus(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, 
                           IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> endpoints, 
                           IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider, 
@@ -123,22 +117,22 @@ namespace Obvs
         {
             _requestCorrelationProvider = requestCorrelationProvider;
 
-            _requests = Endpoints
+            Requests = Endpoints
                 .Select(endpoint => endpoint.RequestsWithErrorHandling(_exceptions))
                 .Merge()
                 .Merge(GetLocalRequests())
                 .PublishRefCountRetriable();
 
-            _commands = Endpoints
+            Commands = Endpoints
                 .Select(endpoint => endpoint.CommandsWithErrorHandling(_exceptions))
                 .Merge()
                 .Merge(GetLocalCommands())
                 .PublishRefCountRetriable();
         }
 
-        public IObservable<TRequest> Requests => _requests;
+        public IObservable<TRequest> Requests { get; }
 
-        public IObservable<TCommand> Commands => _commands;
+        public IObservable<TCommand> Commands { get; }
 
         public Task PublishAsync(TEvent ev)
         {
@@ -187,6 +181,7 @@ namespace Obvs
             return Task.WhenAll(tasks);
         }
 
+        // ReSharper disable once UnusedMember.Global
         public static ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> Configure()
         {
             return new ServiceBusFluentCreator<TMessage, TCommand, TEvent, TRequest, TResponse>();
@@ -204,14 +199,6 @@ namespace Obvs
             {
                 endpoint.Dispose();
             }
-        }
-
-        public override IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
-        {
-            IObservable<TMessage> messages = (Commands as IObservable<TMessage>).Merge(Events);
-            Action<TRequest, TResponse> onReply = (request, response) => ReplyAsync(request, response);
-
-            return Subscribe(subscriber, messages, scheduler, Requests, onReply);
         }
     }
 }

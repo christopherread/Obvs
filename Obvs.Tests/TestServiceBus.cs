@@ -1130,238 +1130,11 @@ namespace Obvs.Tests
             TestServiceEvent2 message2 = new TestServiceEvent2();
             serviceBus.PublishAsync(message2);
 
-            Assert.Equal(exceptions.Count(), 2);
+            Assert.Equal(exceptions.Count, 2);
             Assert.True(messages.Contains(message1), "message1 not received");
             Assert.True(messages.Contains(message2), "message2 not received");
         }
 
-        [Fact]
-        public void ShouldSendAllMessagesToSubscribers()
-        {
-            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
-            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
-
-            IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
-                .UsingConsoleLogging()
-                .Create();
-
-            ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
-            serviceBus.Exceptions.Subscribe(exceptions.Add);
-
-            FakeSubscriber subscriber = new FakeSubscriber();
-            FakeSubscriber2 subscriber2 = new FakeSubscriber2();
-
-            var testScheduler = new TestScheduler();
-            var subscription = serviceBus.Subscribe(subscriber, testScheduler);
-            var subscription2 = serviceBus.Subscribe(subscriber2, testScheduler);
-
-            serviceBus.PublishAsync(new TestServiceEvent1());
-            testScheduler.AdvanceBy(1);
-
-            serviceBus.PublishAsync(new TestServiceEvent2());
-            testScheduler.AdvanceBy(1);
-
-            serviceBus.SendAsync(new TestServiceCommand1());
-            testScheduler.AdvanceBy(1);
-
-            serviceBus.SendAsync(new TestServiceCommand2());
-            testScheduler.AdvanceBy(1);
-
-            serviceEndpoint1.Messages.OnNext(new TestServiceRequest1());
-            testScheduler.AdvanceBy(1);
-
-            subscription.Dispose();
-            subscription2.Dispose();
-
-            Assert.Equal(exceptions.Count(), 0);
-            Assert.Equal(subscriber.Received.Count(), 5);
-            Assert.Equal(subscriber.Received[0].GetType(), typeof(TestServiceEvent1));
-            Assert.Equal(subscriber.Received[1].GetType(), typeof(TestServiceEvent2));
-            Assert.Equal(subscriber.Received[2].GetType(), typeof(TestServiceCommand1));
-            Assert.Equal(subscriber.Received[3].GetType(), typeof(TestServiceCommand2));
-            Assert.Equal(subscriber.Received[4].GetType(), typeof(TestServiceRequest1));
-            
-            Assert.Equal(subscriber2.Received.Count(), 5);
-            Assert.Equal(subscriber2.Received[0].GetType(), typeof(TestServiceEvent1));
-            Assert.Equal(subscriber2.Received[1].GetType(), typeof(TestServiceEvent2));
-            Assert.Equal(subscriber2.Received[2].GetType(), typeof(TestServiceCommand1));
-            Assert.Equal(subscriber2.Received[3].GetType(), typeof(TestServiceCommand2));
-            Assert.Equal(subscriber2.Received[4].GetType(), typeof(TestServiceRequest1));
-        }
-        
-        [Fact]
-        public void ShouldEmitSubscriberExceptionsOnExceptionObservable()
-        {
-            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
-            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
-
-            IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
-                .UsingConsoleLogging().Create();
-
-            ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
-            serviceBus.Exceptions.Subscribe(exceptions.Add);
-
-            FakeSubscriber subscriber = new FakeSubscriber();
-
-            var testScheduler = new TestScheduler();
-            var subscription = serviceBus.Subscribe(subscriber, testScheduler);
-
-            subscriber.ThrowExceptions = true;
-            serviceBus.PublishAsync(new TestServiceEvent1());
-            testScheduler.AdvanceBy(1);
-
-            serviceBus.PublishAsync(new TestServiceEvent2());
-            testScheduler.AdvanceBy(1);
-
-            serviceBus.SendAsync(new TestServiceCommand1());
-            testScheduler.AdvanceBy(1);
-
-            serviceBus.SendAsync(new TestServiceCommand2());
-            testScheduler.AdvanceBy(1);
-
-            subscription.Dispose();
-
-            Assert.Equal(exceptions.Count(), 4);
-            Assert.Equal(subscriber.Received.Count(), 0);
-        }
-
-        [Fact]
-        public void ShouldThrowExceptionIfAlreadySubscribed()
-        {
-            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
-            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
-
-            IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
-                .UsingConsoleLogging().Create();
-
-            FakeSubscriber subscriber = new FakeSubscriber();
-
-            serviceBus.Subscribe(subscriber);
-
-            Assert.Throws<ArgumentException>(() => serviceBus.Subscribe(subscriber));
-        }
-        
-        [Fact]
-        public void ShouldNotDeliverMessagesToSubscriberAfterSubscriptionDisposed()
-        {
-            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
-            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
-
-            IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
-                .UsingConsoleLogging().Create();
-
-            var subscriber = new FakeSubscriber();
-            var testScheduler = new TestScheduler();
-            var subscription = serviceBus.Subscribe(subscriber, testScheduler);
-
-            serviceEndpoint1.Messages.OnNext(new TestServiceEvent1());
-            testScheduler.AdvanceBy(1);
-
-            subscription.Dispose();
-
-            serviceEndpoint1.Messages.OnNext(new TestServiceEvent2());
-            testScheduler.AdvanceBy(1);
-
-            Assert.Equal(subscriber.Received.Count(), 1);
-            Assert.Equal(subscriber.Received[0].GetType(), typeof(TestServiceEvent1));
-        }
-        
-        [Fact]
-        public void ShouldThrowExceptionIfSubscriberIsNull()
-        {
-            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
-            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
-
-            IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
-                .UsingConsoleLogging().Create();
-
-            Assert.Throws<ArgumentNullException>(() => serviceBus.Subscribe(null));
-        }
-        
-        [Fact]
-        public void ShouldThrowExceptionIfSubscriberHasNoValidMessageHandlers()
-        {
-            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
-            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
-
-            IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint1)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint2)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
-                .UsingConsoleLogging().Create();
-
-            Assert.Throws<ArgumentException>(() => serviceBus.Subscribe(new object()));
-        }
-        
-        [Fact]
-        public void ShouldSendAllMessagesToClientSubscribers()
-        {
-            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
-            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
-
-            IServiceBusClient serviceBusClient = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpointClient)serviceEndpoint1)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
-                .WithEndpoint((IServiceEndpointClient)serviceEndpoint2)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
-                .UsingConsoleLogging().CreateClient();
-
-            ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
-            serviceBusClient.Exceptions.Subscribe(exceptions.Add);
-
-            FakeSubscriber subscriber = new FakeSubscriber();
-            FakeSubscriber2 subscriber2 = new FakeSubscriber2();
-
-            var testScheduler = new TestScheduler();
-            var subscription = serviceBusClient.Subscribe(subscriber, testScheduler);
-            var subscription2 = serviceBusClient.Subscribe(subscriber2, testScheduler);
-
-            serviceEndpoint1.Messages.OnNext(new TestServiceEvent1());
-            testScheduler.AdvanceBy(1);
-
-            serviceEndpoint1.Messages.OnNext(new TestServiceEvent2());
-            testScheduler.AdvanceBy(1);
-
-            serviceEndpoint1.Messages.OnNext(new TestServiceEventBase());
-            testScheduler.AdvanceBy(1);
-
-            subscription.Dispose();
-            subscription2.Dispose();
-
-            Assert.Equal(exceptions.Count(), 0);
-
-            Assert.Equal(subscriber.Received.Count(), 3);
-            Assert.Equal(subscriber.Received[0].GetType(), typeof(TestServiceEvent1));
-            Assert.Equal(subscriber.Received[1].GetType(), typeof(TestServiceEvent2));
-            Assert.Equal(subscriber.Received[2].GetType(), typeof(TestServiceEventBase));
-            
-            Assert.Equal(subscriber2.Received.Count(), 3);
-            Assert.Equal(subscriber2.Received[0].GetType(), typeof(TestServiceEvent1));
-            Assert.Equal(subscriber2.Received[1].GetType(), typeof(TestServiceEvent2));
-            Assert.Equal(subscriber2.Received[2].GetType(), typeof(TestServiceEventBase));
-        }
-        
         [Fact]
         public void ShouldDeliverAllMessagesFromEndpointsWithoutLoggingEnabled()
         {
@@ -1385,8 +1158,8 @@ namespace Obvs.Tests
             serviceEndpoint1.Messages.OnNext(new TestServiceEvent1());
             serviceEndpoint1.Messages.OnNext(new TestServiceCommand1());
 
-            Assert.Equal(exceptions.Count(), 0);
-            Assert.Equal(messages.Count(), 2);
+            Assert.Equal(exceptions.Count, 0);
+            Assert.Equal(messages.Count, 2);
             Assert.Equal(messages[0].GetType(), typeof(TestServiceEvent1));
             Assert.Equal(messages[1].GetType(), typeof(TestServiceCommand1));
             
@@ -1440,7 +1213,7 @@ namespace Obvs.Tests
             Assert.Equal(localBusMessages[2].GetType(), typeof(TestServiceCommand1));
             Assert.Equal(localBusMessages[3].GetType(), typeof(TestEventBelongingToNoService));
 
-            Assert.Equal(serviceBusMessages.Count(), 7);
+            Assert.Equal(7, serviceBusMessages.Count);
             Assert.Equal(serviceBusMessages[0].GetType(), typeof(TestServiceRequest1)); // locally published
             Assert.Equal(serviceBusMessages[1].GetType(), typeof(TestServiceResponse1)); // locally published
             Assert.Equal(serviceBusMessages[2].GetType(), typeof(TestServiceResponse2));
@@ -1493,12 +1266,12 @@ namespace Obvs.Tests
             serviceBus.PublishAsync(new TestServiceEvent1());
             serviceBus.PublishAsync(new TestEventBelongingToNoService());
 
-            Assert.Equal(exceptions.Count(), 0);
+            Assert.Equal(exceptions.Count, 0);
 
-            Assert.Equal(localBusMessages.Count(), 1);
+            Assert.Equal(localBusMessages.Count, 1);
             Assert.Equal(localBusMessages[0].GetType(), typeof(TestEventBelongingToNoService));
 
-            Assert.Equal(serviceBusMessages.Count(), 3);
+            Assert.Equal(serviceBusMessages.Count, 3);
             Assert.Equal(serviceBusMessages[0].GetType(), typeof(TestServiceResponse2));
             Assert.Equal(serviceBusMessages[1].GetType(), typeof(TestServiceEvent2));
             Assert.Equal(serviceBusMessages[2].GetType(), typeof(TestEventBelongingToNoService)); // locally published
@@ -1581,116 +1354,16 @@ namespace Obvs.Tests
         public string RequestId { get; set; }
         public string RequesterId { get; set; }
     }
+
     public class TestServiceResponse1 : ITestServiceMessage1, IResponse 
     {
         public string RequestId { get; set; }
         public string RequesterId { get; set; }
     }
+
     public class TestServiceResponse2 : ITestServiceMessage2, IResponse 
     {
         public string RequestId { get; set; }
         public string RequesterId { get; set; }
-    }
-
-    public class FakeSubscriber
-    {
-        public readonly List<IMessage> Received = new List<IMessage>();
-        public bool ThrowExceptions { get; set; }
-
-        public void OnEvent(TestServiceEvent1 message)
-        {
-            Handle(message);
-        }
-
-        public void OnEvent(TestServiceEvent2 message)
-        {
-            Handle(message);
-        }
-
-        public void OnEvent(TestServiceEventBase message)
-        {
-            Handle(message);
-        }
-
-        public void OnCommand(TestServiceCommand1 message)
-        {
-            Handle(message);
-        }
-
-        public void OnCommand(TestServiceCommand2 message)
-        {
-            Handle(message);
-        }
-
-        public void OnCommand(TestServiceCommandBase message)
-        {
-            Handle(message);
-        }
-
-        public IObservable<IResponse> OnRequest(TestServiceRequest1 request)
-        {
-            Handle(request);
-            return Observable.Empty<IResponse>();
-        }
-
-        private void Handle(IMessage message)
-        {
-            if (ThrowExceptions)
-            {
-                throw new Exception("ThrowExceptions set to Equal");
-            }
-            Received.Add(message);
-        }
-    } 
-    
-    public class FakeSubscriber2
-    {
-        public readonly List<IMessage> Received = new List<IMessage>();
-        public bool ThrowExceptions { get; set; }
-
-        public void OnEvent(TestServiceEvent1 message)
-        {
-            Handle(message);
-        }
-
-        public void OnEvent(TestServiceEvent2 message)
-        {
-            Handle(message);
-        }
-
-        public void OnEvent(TestServiceEventBase message)
-        {
-            Handle(message);
-        }
-
-        public void OnCommand(TestServiceCommand1 message)
-        {
-            Handle(message);
-        }
-
-        public void OnCommand(TestServiceCommand2 message)
-        {
-            Handle(message);
-        }
-
-        public void OnCommand(TestServiceCommandBase message)
-        {
-            Handle(message);
-        }
-
-        public IObservable<IResponse> OnRequest(TestServiceRequest1 request)
-        {
-            Handle(request);
-            return Observable.Empty<IResponse>();
-        }
-
-        private void Handle(IMessage message)
-        {
-            if (ThrowExceptions)
-            {
-                throw new Exception("ThrowExceptions set to Equal");
-            }
-            Received.Add(message);
-        }
     }
 }

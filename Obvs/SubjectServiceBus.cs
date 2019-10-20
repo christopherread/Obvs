@@ -138,10 +138,5 @@ namespace Obvs
 
             return Task.CompletedTask;
         }
-
-        public IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
-        {
-            throw new NotImplementedException();
-        }
     }
 }
