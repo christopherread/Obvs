@@ -147,7 +147,7 @@ namespace Obvs.Configuration
         /// </summary>
         /// <param name="localBus">Optionally allows your own local bus instance to be used</param>
         /// <returns></returns>
-        ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> PublishLocally(IMessageBus<TMessage> localBus = null);
+        ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> PublishLocally(IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> localBus = null);
     }
 
     public interface ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse>

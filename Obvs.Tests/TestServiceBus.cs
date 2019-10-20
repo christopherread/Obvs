@@ -12,12 +12,20 @@ using Obvs.Configuration;
 using Obvs.Monitoring;
 using Obvs.Types;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Obvs.Tests
 {
     
     public class TestServiceBus
     {
+        private readonly ITestOutputHelper _testOutputHelper;
+
+        public TestServiceBus(ITestOutputHelper testOutputHelper)
+        {
+            _testOutputHelper = testOutputHelper;
+        }
+
         [Fact]
         public void ShouldOnlySubscribeToUnderlyingEndpointRequestsOnce()
         {
@@ -977,7 +985,7 @@ namespace Obvs.Tests
             catch (AggregateException ex)
             {
                 aggregateException = ex;
-                Console.WriteLine(ex);
+                _testOutputHelper.WriteLine(ex.ToString());
             }
 
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
@@ -1018,7 +1026,7 @@ namespace Obvs.Tests
             catch (AggregateException ex)
             {
                 aggregateException = ex;
-                Console.WriteLine(ex);
+                _testOutputHelper.WriteLine(ex.ToString());
             }
 
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
@@ -1059,7 +1067,7 @@ namespace Obvs.Tests
             catch (AggregateException ex)
             {
                 aggregateException = ex;
-                Console.WriteLine(ex);
+                _testOutputHelper.WriteLine(ex.ToString());
             }
 
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
@@ -1390,7 +1398,7 @@ namespace Obvs.Tests
             FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
             FakeServiceEndpoint fakeServer = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
 
-            var localBus = new SubjectMessageBus<IMessage>();
+            var localBus = new SubjectServiceBus();
 
             IServiceBus serviceBus = ServiceBus.Configure()
                 .WithEndpoint((IServiceEndpoint)fakeServiceEndpoint)
@@ -1405,7 +1413,10 @@ namespace Obvs.Tests
             serviceBus.Events.Subscribe(serviceBusMessages.Add);
             serviceBus.Commands.Subscribe(serviceBusMessages.Add);
             serviceBus.Requests.Subscribe(serviceBusMessages.Add);
-            localBus.Messages.Subscribe(localBusMessages.Add);
+            serviceBus.Exceptions.Subscribe(exceptions.Add);
+            localBus.Events.Subscribe(localBusMessages.Add);
+            localBus.Commands.Subscribe(localBusMessages.Add);
+            localBus.Requests.Subscribe(localBusMessages.Add);
 
             fakeServer.Commands.Subscribe(command => fakeServer.PublishAsync(new TestServiceEvent2()));
             fakeServer.Requests.Subscribe(request => fakeServer.ReplyAsync(request, new TestServiceResponse2()));
@@ -1421,14 +1432,13 @@ namespace Obvs.Tests
             serviceBus.SendAsync(new TestServiceCommand1());
             serviceBus.PublishAsync(new TestEventBelongingToNoService());
 
-            Assert.Equal(exceptions.Count(), 0);
+            Assert.Equal(exceptions.Count, 0);
 
-            Assert.Equal(localBusMessages.Count(), 5);
-            Assert.Equal(localBusMessages[0].GetType(), typeof(TestServiceResponse1));
-            Assert.Equal(localBusMessages[1].GetType(), typeof(TestServiceRequest1));
-            Assert.Equal(localBusMessages[2].GetType(), typeof(TestServiceEvent1));
-            Assert.Equal(localBusMessages[3].GetType(), typeof(TestServiceCommand1));
-            Assert.Equal(localBusMessages[4].GetType(), typeof(TestEventBelongingToNoService));
+            Assert.Equal(4, localBusMessages.Count);
+            Assert.Equal(localBusMessages[0].GetType(), typeof(TestServiceRequest1));
+            Assert.Equal(localBusMessages[1].GetType(), typeof(TestServiceEvent1));
+            Assert.Equal(localBusMessages[2].GetType(), typeof(TestServiceCommand1));
+            Assert.Equal(localBusMessages[3].GetType(), typeof(TestEventBelongingToNoService));
 
             Assert.Equal(serviceBusMessages.Count(), 7);
             Assert.Equal(serviceBusMessages[0].GetType(), typeof(TestServiceRequest1)); // locally published
@@ -1447,7 +1457,7 @@ namespace Obvs.Tests
             FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
             FakeServiceEndpoint fakeServer = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
 
-            var localBus = new SubjectMessageBus<IMessage>();
+            var localBus = new SubjectServiceBus();
 
             var testScheduler = new TestScheduler();
 
@@ -1466,7 +1476,9 @@ namespace Obvs.Tests
             serviceBus.Events.Subscribe(serviceBusMessages.Add);
             serviceBus.Commands.Subscribe(serviceBusMessages.Add);
             serviceBus.Requests.Subscribe(serviceBusMessages.Add);
-            localBus.Messages.Subscribe(localBusMessages.Add);
+            localBus.Events.Subscribe(localBusMessages.Add);
+            localBus.Commands.Subscribe(localBusMessages.Add);
+            localBus.Requests.Subscribe(localBusMessages.Add);
 
             fakeServer.Commands.Subscribe(command => fakeServer.PublishAsync(new TestServiceEvent2()));
             fakeServer.Requests.Subscribe(request => fakeServer.ReplyAsync(request, new TestServiceResponse2()));
@@ -1509,13 +1521,13 @@ namespace Obvs.Tests
             A.CallTo(() => monitor.MessageReceived(A<IMessage>._, A<TimeSpan>._)).Invokes(call =>
             {
                 var message = call.GetArgument<IMessage>(0);
-                Console.WriteLine("Received {0}", message);
+                _testOutputHelper.WriteLine("Received {0}", message);
                 monitorReceived.Add(message);
             });
             A.CallTo(() => monitor.MessageSent(A<IMessage>._, A<TimeSpan>._)).Invokes(call =>
             {
                 var message = call.GetArgument<IMessage>(0);
-                Console.WriteLine("Sent {0}", message);
+                _testOutputHelper.WriteLine("Sent {0}", message);
                 monitorSent.Add(message);
             });
             A.CallTo(() => monitorFactory.Create(A<string>._)).Returns(monitor);

@@ -12,8 +12,8 @@ namespace Obvs
 {
     public class SubjectServiceBus : SubjectServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse>, IServiceBus
     {
-        public SubjectServiceBus(IRequestCorrelationProvider requestCorrelationProvider) 
-            : base(requestCorrelationProvider)
+        public SubjectServiceBus(IRequestCorrelationProvider requestCorrelationProvider = null) 
+            : base(requestCorrelationProvider ?? new DefaultRequestCorrelationProvider())
         {
         }
 

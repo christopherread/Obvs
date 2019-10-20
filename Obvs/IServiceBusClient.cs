@@ -99,13 +99,13 @@ namespace Obvs
         private readonly IObservable<TEvent> _events;
         private readonly IRequestCorrelationProvider<TRequest, TResponse> _requestCorrelationProvider;
         private readonly List<KeyValuePair<object, IObservable<TMessage>>> _subscribers;
-        private readonly IMessageBus<TMessage> _localBus;
+        private readonly IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> _localBus;
         private readonly LocalBusOptions _localBusOption;
 
         public ServiceBusClient(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, 
                                 IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> endpoints, 
-                                IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider, 
-                                IMessageBus<TMessage> localBus = null, LocalBusOptions localBusOption = LocalBusOptions.MessagesWithNoEndpointClients)
+                                IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider,
+                                IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> localBus = null, LocalBusOptions localBusOption = LocalBusOptions.MessagesWithNoEndpointClients)
         {
             _localBus = localBus;
             _localBusOption = localBusOption;
@@ -117,7 +117,7 @@ namespace Obvs
             _events = _endpointClients
                 .Select(endpointClient => endpointClient.EventsWithErrorHandling(_exceptions))
                 .Merge()
-                .Merge(GetLocalMessages<TEvent>())
+                .Merge(GetLocalEvents())
                 .PublishRefCountRetriable();
 
             _requestCorrelationProvider = requestCorrelationProvider;
@@ -128,11 +128,11 @@ namespace Obvs
 
         public Task SendAsync(TCommand command)
         {
-            List<Exception> exceptions = new List<Exception>();
+            var exceptions = new List<Exception>();
 
             var tasks = EndpointClientsThatCanHandle(command)
                 .Select(endpoint => Catch(() => endpoint.SendAsync(command), exceptions, CommandErrorMessage(endpoint)))
-                .Union(PublishLocal(command, exceptions))
+                .Union(SendLocal(command, exceptions))
                 .ToArray();
 
             if (exceptions.Any())
@@ -149,15 +149,40 @@ namespace Obvs
             return Task.WhenAll(tasks);
         }
 
-        protected IObservable<T> GetLocalMessages<T>()
+        protected IObservable<TEvent> GetLocalEvents()
         {
-            return _localBus == null ? Observable.Empty<T>() : _localBus.Messages.OfType<T>();
+            return _localBus == null ? Observable.Empty<TEvent>() : _localBus.Events;
         }
 
-        protected IEnumerable<Task> PublishLocal(TMessage message, List<Exception> exceptions)
+        protected IObservable<TCommand> GetLocalCommands()
         {
-            return ShouldPublishLocally(message) ? new[] {Catch(() => _localBus.PublishAsync(message), exceptions)} : 
-                                                   Enumerable.Empty<Task>();
+            return _localBus == null ? Observable.Empty<TCommand>() : _localBus.Commands;
+        }
+
+        protected IObservable<TRequest> GetLocalRequests()
+        {
+            return _localBus == null ? Observable.Empty<TRequest>() : _localBus.Requests;
+        }
+
+        protected IEnumerable<Task> PublishLocal(TEvent ev, List<Exception> exceptions)
+        {
+            return ShouldPublishLocally(ev)
+                ? new[] {Catch(() => _localBus.PublishAsync(ev), exceptions)} 
+                : Enumerable.Empty<Task>();
+        }
+
+        protected IEnumerable<Task> SendLocal(TCommand command, List<Exception> exceptions)
+        {
+            return ShouldPublishLocally(command) 
+                ? new[] { Catch(() => _localBus.SendAsync(command), exceptions) } 
+                : Enumerable.Empty<Task>();
+        }
+
+        protected IEnumerable<Task> ReplyLocal(TRequest request, TResponse response, List<Exception> exceptions)
+        {
+            return ShouldPublishLocally(response)
+                ? new[] { Catch(() => _localBus.ReplyAsync(request, response), exceptions) }
+                : Enumerable.Empty<Task>();
         }
 
         private bool ShouldPublishLocally(TMessage message)
@@ -231,20 +256,9 @@ namespace Obvs
 
         private IObservable<TResponse> GetLocalResponses(TRequest request)
         {
-            if (ShouldPublishLocally(request))
-            {
-                return Observable.Create<TResponse>(observer =>
-                {
-                    IDisposable disposable = _localBus.Messages.OfType<TResponse>()
-                        .Where(response => _requestCorrelationProvider.AreCorrelated(request, response))
-                        .Subscribe(observer);
-
-                    _localBus.PublishAsync(request);
-
-                    return disposable;
-                });
-            }
-            return Observable.Empty<TResponse>();
+            return ShouldPublishLocally(request)
+                ? _localBus.GetResponses(request)
+                : Observable.Empty<TResponse>();
         }
 
         public IObservable<T> GetResponses<T>(TRequest request) where T : TResponse

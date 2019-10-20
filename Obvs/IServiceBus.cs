@@ -49,10 +49,7 @@ namespace Obvs
             return new ServiceBusFluentCreator<IMessage, ICommand, IEvent, IRequest, IResponse>(new DefaultRequestCorrelationProvider());
         }
 
-        public IObservable<IEvent> Events
-        {
-            get { return _serviceBus.Events; }
-        }
+        public IObservable<IEvent> Events => _serviceBus.Events;
 
         public Task SendAsync(ICommand command)
         {
@@ -79,25 +76,16 @@ namespace Obvs
             return _serviceBus.GetResponse<T>(request);
         }
 
-        public IObservable<Exception> Exceptions
-        {
-            get { return _serviceBus.Exceptions; }
-        }
+        public IObservable<Exception> Exceptions => _serviceBus.Exceptions;
 
         public IDisposable Subscribe(object subscriber, IScheduler scheduler = null)
         {
             return _serviceBus.Subscribe(subscriber, scheduler);
         }
 
-        public IObservable<IRequest> Requests
-        {
-            get { return _serviceBus.Requests; }
-        }
+        public IObservable<IRequest> Requests => _serviceBus.Requests;
 
-        public IObservable<ICommand> Commands
-        {
-            get { return _serviceBus.Commands; }
-        }
+        public IObservable<ICommand> Commands => _serviceBus.Commands;
 
         public Task PublishAsync(IEvent ev)
         {
@@ -130,7 +118,7 @@ namespace Obvs
         public ServiceBus(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, 
                           IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> endpoints, 
                           IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider, 
-                          IMessageBus<TMessage> localBus = null, LocalBusOptions localBusOption = LocalBusOptions.MessagesWithNoEndpointClients)
+                          IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> localBus = null, LocalBusOptions localBusOption = LocalBusOptions.MessagesWithNoEndpointClients)
             : base(endpointClients, endpoints, requestCorrelationProvider, localBus, localBusOption)
         {
             _requestCorrelationProvider = requestCorrelationProvider;
@@ -138,29 +126,23 @@ namespace Obvs
             _requests = Endpoints
                 .Select(endpoint => endpoint.RequestsWithErrorHandling(_exceptions))
                 .Merge()
-                .Merge(GetLocalMessages<TRequest>())
+                .Merge(GetLocalRequests())
                 .PublishRefCountRetriable();
 
             _commands = Endpoints
                 .Select(endpoint => endpoint.CommandsWithErrorHandling(_exceptions))
                 .Merge()
-                .Merge(GetLocalMessages<TCommand>())
+                .Merge(GetLocalCommands())
                 .PublishRefCountRetriable();
         }
 
-        public IObservable<TRequest> Requests
-        {
-            get { return _requests; }
-        }
+        public IObservable<TRequest> Requests => _requests;
 
-        public IObservable<TCommand> Commands
-        {
-            get { return _commands; }
-        }
+        public IObservable<TCommand> Commands => _commands;
 
         public Task PublishAsync(TEvent ev)
         {
-            List<Exception> exceptions = new List<Exception>();
+            var exceptions = new List<Exception>();
 
             var tasks = EndpointsThatCanHandle(ev)
                 .Select(endpoint => Catch(() => endpoint.PublishAsync(ev), exceptions, EventErrorMessage(endpoint)))
@@ -174,7 +156,8 @@ namespace Obvs
 
             if (tasks.Length == 0)
             {
-                throw new Exception(string.Format("No endpoint or local bus configured for {0}, please check your ServiceBus configuration.", ev));
+                throw new Exception(
+                    $"No endpoint or local bus configured for {ev}, please check your ServiceBus configuration.");
             }
 
             return Task.WhenAll(tasks);
@@ -189,11 +172,11 @@ namespace Obvs
 
             _requestCorrelationProvider.SetCorrelationIds(request, response);
 
-            List<Exception> exceptions = new List<Exception>();
+            var exceptions = new List<Exception>();
 
             var tasks = EndpointsThatCanHandle(response)
                     .Select(endpoint => Catch(() => endpoint.ReplyAsync(request, response), exceptions, ReplyErrorMessage(endpoint)))
-                    .Union(PublishLocal(response, exceptions))
+                    .Union(ReplyLocal(request, response, exceptions))
                     .ToArray();
 
             if (exceptions.Any())
@@ -217,7 +200,7 @@ namespace Obvs
         public override void Dispose()
         {
             base.Dispose();
-            foreach (IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint in Endpoints)
+            foreach (var endpoint in Endpoints)
             {
                 endpoint.Dispose();
             }
