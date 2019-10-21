@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.421
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29411.108
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Monitoring.PerformanceCounters", "Obvs.Monitoring.PerformanceCounters\Obvs.Monitoring.PerformanceCounters.csproj", "{C3A7F4B8-AEA7-4E13-A4F3-A01E4E08ECA5}"
 EndProject
@@ -12,6 +12,11 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Monitoring.AppMetrics", "Obvs.Monitoring.AppMetrics\Obvs.Monitoring.AppMetrics.csproj", "{5D955B50-D845-4409-AE36-3BC4CEBCB043}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Monitoring.Tests", "Obvs.Monitoring.Tests\Obvs.Monitoring.Tests.csproj", "{BAF713C2-393B-4568-A25C-1148AF59017E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{978311B2-517C-47E3-8FA6-9C71785C53E8}"
+	ProjectSection(SolutionItems) = preProject
+		appveyor.yml = appveyor.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
