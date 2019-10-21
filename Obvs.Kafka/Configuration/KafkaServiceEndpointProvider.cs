@@ -43,7 +43,7 @@ namespace Obvs.Kafka.Configuration
             _propertyFiter = propertyFilter;
             _propertyProvider = propertyProvider;
 
-            if (string.IsNullOrEmpty(_kafkaConfiguration?.SeedAddresses))
+            if (string.IsNullOrEmpty(_kafkaConfiguration?.BootstrapServers))
             {
                 throw new InvalidOperationException(string.Format("For service endpoint '{0}', please specify a kafkaUri to connect to. To do this you can use ConnectToKafka() per endpoint", serviceName));
             }

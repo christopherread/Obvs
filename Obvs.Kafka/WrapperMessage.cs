@@ -9,7 +9,7 @@ namespace Obvs.Kafka
     /// to message before sending to Kafka
     /// </summary>
     [ProtoContract]
-    public class KafkaHeaderedMessage
+    public class WrapperMessage
     {
         [ProtoMember(1)]
         public byte[] Payload { get; set; }
@@ -18,11 +18,6 @@ namespace Obvs.Kafka
         public string PayloadType { get; set; }
 
         [ProtoMember(3)]
-        public Dictionary<string, string> Properties { get; set; } 
-
-        public static Stream ToStream(byte[] data)
-        {
-            return new MemoryStream(data);
-        }
+        public Dictionary<string, string> Properties { get; set; }
     }
 }

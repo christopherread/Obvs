@@ -5,16 +5,16 @@ namespace Obvs.Kafka.Configuration
 {
     public class KafkaConfiguration
     {
-        public KafkaConfiguration(params IPEndPoint[] seedAddresses)
-            : this(string.Join(",", seedAddresses.Select(ip => ip.ToString())))
+        public KafkaConfiguration(params IPEndPoint[] bootstrapServers)
+            : this(string.Join(",", bootstrapServers.Select(ip => ip.ToString())))
         {
         }
 
-        public KafkaConfiguration(string connectionString)
+        public KafkaConfiguration(string bootstrapServers)
         {
-            SeedAddresses = connectionString;
+            BootstrapServers = bootstrapServers;
         }
 
-        public string SeedAddresses { get; }
+        public string BootstrapServers { get; }
     }
 }

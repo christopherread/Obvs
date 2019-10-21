@@ -4,7 +4,7 @@ using System.IO;
 using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
-using kafka4net;
+using Confluent.Kafka;
 using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
 
@@ -13,24 +13,25 @@ namespace Obvs.Kafka
     public class MessagePublisher<TMessage> : IMessagePublisher<TMessage>
         where TMessage : class
     {
-        private readonly KafkaConfiguration _kafkaConfiguration;
         private readonly string _topic;
-        private readonly KafkaProducerConfiguration _producerConfig;
+        private readonly ProducerConfig _producerConfig;
         private readonly IMessageSerializer _serializer;
         private readonly Func<TMessage, Dictionary<string, string>> _propertyProvider;
 
         private IDisposable _disposable;
         private bool _disposed;
-        private long _connected;
-        private Producer _producer;
+        private long _created;
+        private IProducer<Null, WrapperMessage> _producer;
 
         public MessagePublisher(KafkaConfiguration kafkaConfiguration, KafkaProducerConfiguration producerConfig, string topic, IMessageSerializer serializer, Func<TMessage, Dictionary<string, string>> propertyProvider)
         {
-            _kafkaConfiguration = kafkaConfiguration;
             _topic = topic;
             _serializer = serializer;
             _propertyProvider = propertyProvider;
-            _producerConfig = producerConfig;
+            _producerConfig = new ProducerConfig { 
+                BootstrapServers = kafkaConfiguration.BootstrapServers,
+                BatchNumMessages = producerConfig.BatchFlushSize
+            };
         }
 
         public Task PublishAsync(TMessage message)
@@ -45,7 +46,7 @@ namespace Obvs.Kafka
 
         private Task Publish(TMessage message)
         {
-            var properties = _propertyProvider != null ? _propertyProvider(message) : null;
+            var properties = _propertyProvider?.Invoke(message);
 
             return Publish(message, properties);
         }
@@ -57,66 +58,62 @@ namespace Obvs.Kafka
                 return;
             }
 
-            await Connect();
+            CreateProducer();
 
-            var kafkaHeaderedMessage = CreateKafkaHeaderedMessage(message, properties);
+            var wrapperMessage = ToWrapperMessage(message, properties);
+            var msg = new Message<Null, WrapperMessage> {Value = wrapperMessage};
 
-            using (var stream = new MemoryStream())
-            {
-                ProtoBuf.Serializer.Serialize(stream, kafkaHeaderedMessage);
-
-                _producer.Send(new Message { Value = stream.ToArray() });
-            }
+            await _producer.ProduceAsync(_topic, msg);
         }
 
-        private KafkaHeaderedMessage CreateKafkaHeaderedMessage(TMessage message, Dictionary<string, string> properties)
+        private WrapperMessage ToWrapperMessage(TMessage message, Dictionary<string, string> properties)
         {
-            byte[] payload;
             using (var stream = new MemoryStream())
             {
                 _serializer.Serialize(stream, message);
-                payload = stream.ToArray();
+                return new WrapperMessage
+                {
+                    PayloadType = message.GetType().Name,
+                    Properties = properties,
+                    Payload = stream.ToArray()
+                };
             }
-
-            return new KafkaHeaderedMessage
-            {
-                PayloadType = message.GetType().Name,
-                Properties = properties,
-                Payload = payload
-            };
         }
 
-        private async Task Connect()
+        private void CreateProducer()
         {
-            if (Interlocked.CompareExchange(ref _connected, 1, 0) == 0)
+            if (Interlocked.CompareExchange(ref _created, 1, 0) == 0)
             {
-                var producerConfiguration = new ProducerConfiguration(_topic,
-                    batchFlushTime: TimeSpan.FromMilliseconds(50),
-                    batchFlushSize: _producerConfig.BatchFlushSize,
-                    requiredAcks: 1,
-                    autoGrowSendBuffers: true,
-                    sendBuffersInitialSize: 200,
-                    maxMessageSetSizeInBytes: 1073741824,
-                    producerRequestTimeout: null,
-                    partitioner: null);
-
-                _producer = new Producer(_kafkaConfiguration.SeedAddresses, producerConfiguration);
-
-                await _producer.ConnectAsync();
+                _producer = new ProducerBuilder<Null, WrapperMessage>(_producerConfig)
+                    .SetValueSerializer(new ProducerValueSerializer<WrapperMessage>())
+                    .Build();
 
                 _disposable = Disposable.Create(() =>
                 {
                     _disposed = true;
-                    _producer.CloseAsync(TimeSpan.FromSeconds(2)).Wait();
+                    _producer.Flush();
+                    _producer.Dispose();
                 });
             }
         }
 
         public void Dispose()
         {
-            if (_disposable != null)
+            if (_disposable != null && !_disposed)
             {
                 _disposable.Dispose();
+            }
+        }
+    }
+
+    public class ProducerValueSerializer<T> : ISerializer<T>
+    {
+        public byte[] Serialize(T data, SerializationContext context)
+        {
+            using (var stream = new MemoryStream())
+            {
+                ProtoBuf.Serializer.Serialize(stream, data);
+                return stream.ToArray();
             }
         }
     }
