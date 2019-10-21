@@ -20,7 +20,7 @@ namespace Obvs.Logging.NLog
             }
             else
             {
-                _logger.DebugException(message, exception);
+                _logger.Debug(exception, message);
             }
         }
 
@@ -32,7 +32,7 @@ namespace Obvs.Logging.NLog
             }
             else
             {
-                _logger.InfoException(message, exception);
+                _logger.Info(exception, message);
             }
         }
 
@@ -44,7 +44,7 @@ namespace Obvs.Logging.NLog
             }
             else
             {
-                _logger.WarnException(message, exception);
+                _logger.Warn(exception, message);
             }
         }
 
@@ -56,7 +56,7 @@ namespace Obvs.Logging.NLog
             }
             else
             {
-                _logger.ErrorException(message, exception);
+                _logger.Error(exception, message);
             }
         }
 
@@ -77,7 +77,7 @@ namespace Obvs.Logging.NLog
                     Error(message, exception);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException("level", level, null);
+                    throw new ArgumentOutOfRangeException(nameof(level), level, null);
             }
         }
     }
