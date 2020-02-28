@@ -19,6 +19,7 @@ dotnet_csproj:
 before_build:
 - cmd: nuget restore
 build:
+  project: Obvs.sln
   publish_nuget: true
   publish_nuget_symbols: true
   verbosity: minimal
