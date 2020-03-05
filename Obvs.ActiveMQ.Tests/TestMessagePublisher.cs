@@ -83,14 +83,14 @@ namespace Obvs.ActiveMQ.Tests
 
             await _publisher.PublishAsync(new TestMessage());
 
-            A.CallTo(() => _session.CreateProducer(_destination)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _connection.Start()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _session.CreateProducer(_destination)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _connection.Start()).MustHaveHappened(1, Times.Exactly);
 
             await _publisher.PublishAsync(new TestMessage());
             await _publisher.PublishAsync(new TestMessage());
 
-            A.CallTo(() => _session.CreateProducer(_destination)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _connection.Start()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _session.CreateProducer(_destination)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _connection.Start()).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -112,12 +112,12 @@ namespace Obvs.ActiveMQ.Tests
 
             await _publisher.PublishAsync(testMessage);
 
-            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _message.Properties.SetInt("key1", 1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _message.Properties.SetString("key2", "2")).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _message.Properties.SetDouble("key3", 3.0)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _message.Properties.SetLong("key4", 4L)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _message.Properties.SetBool("key5", true)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _message.Properties.SetInt("key1", 1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _message.Properties.SetString("key2", "2")).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _message.Properties.SetDouble("key3", 3.0)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _message.Properties.SetLong("key4", 4L)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _message.Properties.SetBool("key5", true)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -134,7 +134,7 @@ namespace Obvs.ActiveMQ.Tests
 
             await _publisher.PublishAsync(testMessage);
 
-            A.CallTo(() => _producer.Send(bytesMessage, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _producer.Send(bytesMessage, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -146,8 +146,8 @@ namespace Obvs.ActiveMQ.Tests
 
             await _publisher.PublishAsync(testMessage);
 
-            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _message.Properties.SetString(MessagePropertyNames.TypeName, typeof(TestMessage).Name)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _message.Properties.SetString(MessagePropertyNames.TypeName, typeof(TestMessage).Name)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -158,8 +158,8 @@ namespace Obvs.ActiveMQ.Tests
             await _publisher.PublishAsync(new TestMessage());
             _publisher.Dispose();
 
-            A.CallTo(() => _session.Close()).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _producer.Close()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _session.Close()).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _producer.Close()).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -203,13 +203,13 @@ namespace Obvs.ActiveMQ.Tests
 
             await _publisher.PublishAsync(message1);
 
-            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
 
             await _publisher.PublishAsync(message2);
 
             _publisher.Dispose();
 
-            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -221,7 +221,7 @@ namespace Obvs.ActiveMQ.Tests
             var message = new TestMessage();
             await _publisher.PublishAsync(message);
 
-            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
         }
 
         //[Test, Explicit]
