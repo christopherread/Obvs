@@ -18,7 +18,7 @@ namespace Obvs.Tests
 
             bridge.Start();
 
-            A.CallTo(() => source.Messages.Subscribe(A<IObserver<TestMessage>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => source.Messages.Subscribe(A<IObserver<TestMessage>>.Ignored)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -33,7 +33,7 @@ namespace Obvs.Tests
             bridge.Start();
             bridge.Stop();
 
-            A.CallTo(() => subscription.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => subscription.Dispose()).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Obvs.Tests
             bridge.Start();
             observer.OnNext(objFrom);
 
-            A.CallTo(() => publisher.PublishAsync(objTo)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => publisher.PublishAsync(objTo)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -71,8 +71,8 @@ namespace Obvs.Tests
             bridge.Start();
             bridge.Dispose();
 
-            A.CallTo(() => subscription.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => publisher.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => subscription.Dispose()).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => publisher.Dispose()).MustHaveHappened(1, Times.Exactly);
         }
 
     }

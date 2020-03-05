@@ -40,11 +40,11 @@ namespace Obvs.Tests
             IDisposable sub1 = serviceBus.Requests.Subscribe(observer1);
             IDisposable sub2 = serviceBus.Requests.Subscribe(observer2);
             
-            A.CallTo(() => serviceEndpoint1.Requests).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint2.Requests).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint1.Requests).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpoint2.Requests).MustHaveHappened(1, Times.Exactly);
 
-            A.CallTo(() => observable1.Subscribe(A<IObserver<IRequest>>._)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observable2.Subscribe(A<IObserver<IRequest>>._)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observable1.Subscribe(A<IObserver<IRequest>>._)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observable2.Subscribe(A<IObserver<IRequest>>._)).MustHaveHappened(1, Times.Exactly);
 
             sub1.Dispose();
             sub2.Dispose();
@@ -72,11 +72,11 @@ namespace Obvs.Tests
             IDisposable sub1 = serviceBus.Commands.Subscribe(observer1);
             IDisposable sub2 = serviceBus.Commands.Subscribe(observer2);
             
-            A.CallTo(() => serviceEndpoint1.Commands).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint2.Commands).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint1.Commands).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpoint2.Commands).MustHaveHappened(1, Times.Exactly);
 
-            A.CallTo(() => observable1.Subscribe(A<IObserver<ICommand>>._)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observable2.Subscribe(A<IObserver<ICommand>>._)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observable1.Subscribe(A<IObserver<ICommand>>._)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observable2.Subscribe(A<IObserver<ICommand>>._)).MustHaveHappened(1, Times.Exactly);
 
             sub1.Dispose();
             sub2.Dispose();
@@ -107,8 +107,8 @@ namespace Obvs.Tests
             IDisposable sub3 = serviceBus.Events.Subscribe(observer1);
             IDisposable sub4 = serviceBus.Events.Subscribe(observer2);
             
-            A.CallTo(() => observable1.Subscribe(A<IObserver<IEvent>>._)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observable2.Subscribe(A<IObserver<IEvent>>._)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observable1.Subscribe(A<IObserver<IEvent>>._)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observable2.Subscribe(A<IObserver<IEvent>>._)).MustHaveHappened(1, Times.Exactly);
 
             sub2.Dispose();
             sub3.Dispose();
@@ -210,11 +210,11 @@ namespace Obvs.Tests
             IDisposable sub1 = responses.Subscribe(observer1);
             IDisposable sub2 = responses.Subscribe(observer2);
 
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpointClient2.GetResponses(request)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpointClient2.GetResponses(request)).MustHaveHappened(1, Times.Exactly);
 
-            A.CallTo(() => observable1.Subscribe(A<IObserver<IResponse>>._)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observable2.Subscribe(A<IObserver<IResponse>>._)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observable1.Subscribe(A<IObserver<IResponse>>._)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observable2.Subscribe(A<IObserver<IResponse>>._)).MustHaveHappened(1, Times.Exactly);
 
             sub1.Dispose();
             sub2.Dispose();
@@ -256,10 +256,10 @@ namespace Obvs.Tests
             internalObserver1.OnNext(request1);
             internalObserver2.OnNext(request2);
 
-            A.CallTo(() => observer1.OnNext(request1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(request1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer1.OnNext(request2)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(request2)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(request1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(request1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer1.OnNext(request2)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(request2)).MustHaveHappened(1, Times.Exactly);
 
             sub1.Dispose();
             sub2.Dispose();
@@ -301,10 +301,10 @@ namespace Obvs.Tests
             internalObserver1.OnNext(command1);
             internalObserver2.OnNext(command2);
 
-            A.CallTo(() => observer1.OnNext(command1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(command1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer1.OnNext(command2)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(command2)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(command1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(command1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer1.OnNext(command2)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(command2)).MustHaveHappened(1, Times.Exactly);
 
             sub1.Dispose();
             sub2.Dispose();
@@ -346,10 +346,10 @@ namespace Obvs.Tests
             internalObserver1.OnNext(event1);
             internalObserver2.OnNext(event2);
 
-            A.CallTo(() => observer1.OnNext(event1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(event1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer1.OnNext(event2)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(event2)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(event1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(event1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer1.OnNext(event2)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(event2)).MustHaveHappened(1, Times.Exactly);
 
             sub1.Dispose();
             sub2.Dispose();
@@ -403,10 +403,10 @@ namespace Obvs.Tests
             internalObserver1.OnNext(response1);
             internalObserver2.OnNext(response2);
 
-            A.CallTo(() => observer1.OnNext(response1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(response1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer1.OnNext(response1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(response2)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(response1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(response1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer1.OnNext(response1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(response2)).MustHaveHappened(1, Times.Exactly);
 
             sub1.Dispose();
             sub2.Dispose();
@@ -446,24 +446,24 @@ namespace Obvs.Tests
             IRequest request = A.Fake<IRequest>();
 
             requestSource1.OnNext(request);
-            A.CallTo(() => observer1.OnNext(request)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(request)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(request)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(request)).MustHaveHappened(1, Times.Exactly);
 
             // dispose of first subscriptions
             requestSub1.Dispose();
 
             // second subscription should still be active
             requestSource1.OnNext(request);
-            A.CallTo(() => observer1.OnNext(request)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(request)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => observer1.OnNext(request)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(request)).MustHaveHappened(2, Times.Exactly);
 
             // dispose of second subscriptions
             requestSub2.Dispose();
             
             // no subscriptions should be active
             requestSource1.OnNext(request);
-            A.CallTo(() => observer1.OnNext(request)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(request)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => observer1.OnNext(request)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(request)).MustHaveHappened(2, Times.Exactly);
         }
 
         [Fact]
@@ -500,24 +500,24 @@ namespace Obvs.Tests
             ICommand command = A.Fake<ICommand>();
 
             commandSource1.OnNext(command);
-            A.CallTo(() => observer1.OnNext(command)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(command)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(command)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(command)).MustHaveHappened(1, Times.Exactly);
 
             // dispose of first subscriptions
             commandSub1.Dispose();
 
             // second subscription should still be active
             commandSource1.OnNext(command);
-            A.CallTo(() => observer1.OnNext(command)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(command)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => observer1.OnNext(command)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(command)).MustHaveHappened(2, Times.Exactly);
 
             // dispose of second subscriptions
             commandSub2.Dispose();
             
             // no subscriptions should be active
             commandSource1.OnNext(command);
-            A.CallTo(() => observer1.OnNext(command)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(command)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => observer1.OnNext(command)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(command)).MustHaveHappened(2, Times.Exactly);
         }
 
         [Fact]
@@ -554,24 +554,24 @@ namespace Obvs.Tests
             IEvent ev = A.Fake<IEvent>();
 
             eventSource1.OnNext(ev);
-            A.CallTo(() => observer1.OnNext(ev)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(ev)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(ev)).MustHaveHappened(1, Times.Exactly);
 
             // dispose of first subscriptions
             eventSub1.Dispose();
 
             // second subscription should still be active
             eventSource1.OnNext(ev);
-            A.CallTo(() => observer1.OnNext(ev)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(ev)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => observer1.OnNext(ev)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(ev)).MustHaveHappened(2, Times.Exactly);
 
             // dispose of second subscriptions
             eventSub2.Dispose();
             
             // no subscriptions should be active
             eventSource1.OnNext(ev);
-            A.CallTo(() => observer1.OnNext(ev)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(ev)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => observer1.OnNext(ev)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(ev)).MustHaveHappened(2, Times.Exactly);
         }
 
         [Fact]
@@ -611,8 +611,8 @@ namespace Obvs.Tests
             IEvent event2 = A.Fake<IEvent>();
 
             eventSource1.OnNext(event1);
-            A.CallTo(() => observer1.OnNext(event1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(event1)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(event1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(event1)).MustHaveHappened(1, Times.Exactly);
 
             Exception exception = new Exception();
             eventSource1.OnError(exception);
@@ -623,10 +623,10 @@ namespace Obvs.Tests
             A.CallTo(() => observer2.OnError(exception)).MustNotHaveHappened();
 
             eventSource2.OnNext(event2);
-            A.CallTo(() => observer1.OnNext(event2)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(event2)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(event2)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(event2)).MustHaveHappened(1, Times.Exactly);
 
-            A.CallTo(() => observer3.OnNext(A<Exception>._)).WhenArgumentsMatch(call => call.Get<Exception>(0).InnerException == exception).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer3.OnNext(A<Exception>._)).WhenArgumentsMatch(call => call.Get<Exception>(0).InnerException == exception).MustHaveHappened(1, Times.Exactly);
 
             eventSub1.Dispose();
             eventSub2.Dispose();
@@ -670,8 +670,8 @@ namespace Obvs.Tests
             ICommand command2 = A.Fake<ICommand>();
 
             commandSource1.OnNext(command1);
-            A.CallTo(() => observer1.OnNext(command1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(command1)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(command1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(command1)).MustHaveHappened(1, Times.Exactly);
 
             Exception exception = new Exception();
             commandSource1.OnError(exception);
@@ -682,10 +682,10 @@ namespace Obvs.Tests
             A.CallTo(() => observer2.OnError(exception)).MustNotHaveHappened();
 
             commandSource2.OnNext(command2);
-            A.CallTo(() => observer1.OnNext(command2)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(command2)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(command2)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(command2)).MustHaveHappened(1, Times.Exactly);
 
-            A.CallTo(() => observer3.OnNext(A<Exception>._)).WhenArgumentsMatch(call => call.Get<Exception>(0).InnerException == exception).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer3.OnNext(A<Exception>._)).WhenArgumentsMatch(call => call.Get<Exception>(0).InnerException == exception).MustHaveHappened(1, Times.Exactly);
 
             eventSub1.Dispose();
             eventSub2.Dispose();
@@ -729,8 +729,8 @@ namespace Obvs.Tests
             IRequest request2 = A.Fake<IRequest>();
 
             requestSource1.OnNext(request1);
-            A.CallTo(() => observer1.OnNext(request1)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(request1)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(request1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(request1)).MustHaveHappened(1, Times.Exactly);
 
             Exception exception = new Exception();
             requestSource1.OnError(exception);
@@ -741,10 +741,10 @@ namespace Obvs.Tests
             A.CallTo(() => observer2.OnError(exception)).MustNotHaveHappened();
 
             requestSource2.OnNext(request2);
-            A.CallTo(() => observer1.OnNext(request2)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer2.OnNext(request2)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer1.OnNext(request2)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer2.OnNext(request2)).MustHaveHappened(1, Times.Exactly);
 
-            A.CallTo(() => observer3.OnNext(A<Exception>._)).WhenArgumentsMatch(call => call.Get<Exception>(0).InnerException == exception).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer3.OnNext(A<Exception>._)).WhenArgumentsMatch(call => call.Get<Exception>(0).InnerException == exception).MustHaveHappened(1, Times.Exactly);
 
             eventSub1.Dispose();
             eventSub2.Dispose();
@@ -772,19 +772,19 @@ namespace Obvs.Tests
             
             serviceBus.SendAsync(command1);
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command1)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command1)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => serviceEndpointClient2.SendAsync(command1)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command1)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command1)).MustHaveHappened(1, Times.Exactly);
             
             serviceBus.SendAsync(new[]{command2, command3});
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command2)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command2)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => serviceEndpointClient2.SendAsync(command2)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command2)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command2)).MustHaveHappened(1, Times.Exactly);
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command3)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command3)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => serviceEndpointClient2.SendAsync(command3)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command3)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command3)).MustHaveHappened(1, Times.Exactly);
         } 
         
         [Fact]
@@ -806,15 +806,15 @@ namespace Obvs.Tests
             
             IDisposable sub1 = serviceBus.GetResponses(request).Subscribe(A.Fake<IObserver<IResponse>>());
 
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => serviceEndpointClient2.GetResponses(request)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.GetResponses(request)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient3.GetResponses(request)).MustHaveHappened(1, Times.Exactly);
 
             IDisposable sub2 = serviceBus.GetResponses<IResponse>(request).Subscribe(A.Fake<IObserver<IResponse>>());
 
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappened(2, Times.Exactly);
             A.CallTo(() => serviceEndpointClient2.GetResponses(request)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.GetResponses(request)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => serviceEndpointClient3.GetResponses(request)).MustHaveHappened(2, Times.Exactly);
 
             sub1.Dispose();
             sub2.Dispose();
@@ -840,12 +840,12 @@ namespace Obvs.Tests
             var observer = A.Fake<IObserver<IResponse>>();
             IDisposable sub1 = serviceBus.GetResponse<IResponse>(request).Subscribe(observer);
 
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappened(1, Times.Exactly);
 
             subject.OnNext(response);
 
-            A.CallTo(() => observer.OnNext(response)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => observer.OnCompleted()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observer.OnNext(response)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer.OnCompleted()).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => observer.OnError(A<Exception>._)).MustNotHaveHappened();
             
             sub1.Dispose();
@@ -870,9 +870,9 @@ namespace Obvs.Tests
             
             serviceBus.PublishAsync(ev);
 
-            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -895,9 +895,9 @@ namespace Obvs.Tests
 
             serviceBus.ReplyAsync(request, response);
 
-            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -983,9 +983,9 @@ namespace Obvs.Tests
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
             Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpointClient2.SendAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -1024,9 +1024,9 @@ namespace Obvs.Tests
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
             Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappened(1, Times.Exactly);
         }
         
         [Fact]
@@ -1065,9 +1065,9 @@ namespace Obvs.Tests
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
             Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -1082,10 +1082,10 @@ namespace Obvs.Tests
 
             ((IDisposable)serviceBus).Dispose();
 
-            A.CallTo(() => serviceEndpoint1.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpoint2.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpointClient1.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => serviceEndpointClient2.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => serviceEndpoint1.Dispose()).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpoint2.Dispose()).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpointClient1.Dispose()).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => serviceEndpointClient2.Dispose()).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
