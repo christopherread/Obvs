@@ -47,7 +47,7 @@ namespace Obvs.Serialization.Tests {
             A.CallTo(() => fakeConfigurator.SerializedWith(
                     A<IMessageSerializer>.That.IsInstanceOf(typeof(MessagePackCSharpMessageSerializer)),
                     A<IMessageDeserializerFactory>.That.IsInstanceOf(typeof(MessagePackCSharpMessageDeserializerFactory))))
-                .MustHaveHappened(Repeated.Exactly.Once);
+                .MustHaveHappened(1, Times.Exactly);
         }
     }
 }

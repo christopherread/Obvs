@@ -71,7 +71,7 @@ namespace Obvs.Serialization.Tests
             A.CallTo(() => fakeConfigurator.SerializedWith(
                 A<IMessageSerializer>.That.IsInstanceOf(typeof(JsonMessageSerializer)),
                 A<IMessageDeserializerFactory>.That.IsInstanceOf(typeof(JsonMessageDeserializerFactory))))
-                .MustHaveHappened(Repeated.Exactly.Once);
+                .MustHaveHappened(1, Times.Exactly);
         }
     }
 }
