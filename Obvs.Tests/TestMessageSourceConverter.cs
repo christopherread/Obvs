@@ -19,7 +19,7 @@ namespace Obvs.Tests
 
             sourceConverter.Messages.Subscribe(consumer);
 
-            A.CallTo(() => source.Messages.Subscribe(A<IObserver<TestMessage>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => source.Messages.Subscribe(A<IObserver<TestMessage>>.Ignored)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -40,8 +40,8 @@ namespace Obvs.Tests
 
             internalObserver.OnNext(message);
 
-            A.CallTo(() => converter.Convert(message)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => consumer.OnNext(convertedMessage)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => converter.Convert(message)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => consumer.OnNext(convertedMessage)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -61,7 +61,7 @@ namespace Obvs.Tests
 
             internalObserver.OnNext(message);
 
-            A.CallTo(() => converter.Convert(message)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => converter.Convert(message)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => consumer.OnNext(A<TestMessage>.Ignored)).MustNotHaveHappened();
         }
     }

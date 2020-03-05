@@ -1,4 +1,4 @@
-version: 5.0.0.{build}
+version: 5.0.1.{build}
 skip_tags: true
 image: Visual Studio 2017
 configuration: Release
@@ -19,6 +19,7 @@ dotnet_csproj:
 before_build:
 - cmd: nuget restore
 build:
+  project: Obvs.sln
   publish_nuget: true
   publish_nuget_symbols: true
   verbosity: minimal
