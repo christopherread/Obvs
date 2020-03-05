@@ -63,7 +63,7 @@ namespace Obvs.ActiveMQ.Tests
         {
             _source.Messages.Subscribe(_observer);
 
-            A.CallTo(() => _connection.Start()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _connection.Start()).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -71,8 +71,8 @@ namespace Obvs.ActiveMQ.Tests
         {
             _source.Messages.Subscribe(_observer);
 
-            A.CallTo(() => _connection.CreateSession(_acknowledgementMode == AcknowledgementMode.ClientAcknowledge ? Apache.NMS.AcknowledgementMode.ClientAcknowledge : Apache.NMS.AcknowledgementMode.AutoAcknowledge)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _session.CreateConsumer(_destination, null, false)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _connection.CreateSession(_acknowledgementMode == AcknowledgementMode.ClientAcknowledge ? Apache.NMS.AcknowledgementMode.ClientAcknowledge : Apache.NMS.AcknowledgementMode.AutoAcknowledge)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _session.CreateConsumer(_destination, null, false)).MustHaveHappened(1, Times.Exactly);
 
             A.CallTo(_consumer).Where(x => x.Method.Name.Equals("add_Listener")).MustHaveHappened();
         }
@@ -83,11 +83,11 @@ namespace Obvs.ActiveMQ.Tests
             IDisposable subscription = _source.Messages.Subscribe(_observer);
             subscription.Dispose();
 
-            A.CallTo(() => _consumer.Close()).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _consumer.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _consumer.Close()).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _consumer.Dispose()).MustHaveHappened(1, Times.Exactly);
 
-            A.CallTo(() => _session.Close()).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => _session.Dispose()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _session.Close()).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _session.Dispose()).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -122,7 +122,7 @@ namespace Obvs.ActiveMQ.Tests
             _source.Messages.Subscribe(_observer);
             consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) textMessage);
 
-            A.CallTo(() => textMessage.Acknowledge()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => textMessage.Acknowledge()).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
