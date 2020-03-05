@@ -11,7 +11,7 @@
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
   </PropertyGroup>
   <ItemGroup>
-	<PackageReference Include="Obvs" Version="5.0.0.26" />
+	<PackageReference Include="Obvs" Version="5.0.1.42" />
     <PackageReference Include="RabbitMQ.Client" Version="5.1.2" />
   </ItemGroup>
 </Project>
