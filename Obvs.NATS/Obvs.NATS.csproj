@@ -11,8 +11,8 @@
     <Description>NATS transport support for Obvs</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NATS.Client" Version="0.9.0" />
-    <PackageReference Include="Obvs" Version="5.0.0.26" />
-    <PackageReference Include="protobuf-net" Version="2.4.1" />
+    <PackageReference Include="NATS.Client" Version="0.10.0" />
+    <PackageReference Include="Obvs" Version="5.0.1.42" />
+    <PackageReference Include="protobuf-net" Version="2.4.4" />
   </ItemGroup>
 </Project>

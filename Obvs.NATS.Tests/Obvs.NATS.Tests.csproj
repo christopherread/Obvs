@@ -3,10 +3,10 @@
     <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NATS.Client" Version="0.9.0" />
-    <PackageReference Include="Obvs" Version="5.0.0.26" />
-	<PackageReference Include="Obvs.Serialization.Json" Version="5.0.1.25" />
-	<PackageReference Include="Obvs.Serialization.ProtoBuf" Version="5.0.1.25" />
+    <PackageReference Include="NATS.Client" Version="0.10.0" />
+    <PackageReference Include="Obvs" Version="5.0.1.42" />
+	<PackageReference Include="Obvs.Serialization.Json" Version="5.0.1.32" />
+	<PackageReference Include="Obvs.Serialization.ProtoBuf" Version="5.0.1.32" />
     <PackageReference Include="nunit" Version="3.12.0" />
   </ItemGroup>
   <ItemGroup>
