@@ -209,7 +209,7 @@ namespace Obvs.ActiveMQ.Tests
 
             _publisher.Dispose();
 
-            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(2, Times.Exactly);
         }
 
         [Fact]
