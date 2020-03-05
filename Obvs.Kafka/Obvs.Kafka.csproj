@@ -11,8 +11,8 @@
     <Description>Kafka transport support for Obvs</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Confluent.Kafka" Version="1.2.1" />
-    <PackageReference Include="Obvs" Version="5.0.0.26" />
-    <PackageReference Include="protobuf-net" Version="2.4.1" />
+    <PackageReference Include="Confluent.Kafka" Version="1.3.0" />
+    <PackageReference Include="Obvs" Version="5.0.1.42" />
+    <PackageReference Include="protobuf-net" Version="2.4.4" />
   </ItemGroup>
 </Project>
