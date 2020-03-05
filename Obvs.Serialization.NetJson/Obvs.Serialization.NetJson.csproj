@@ -13,7 +13,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="NetJSON" Version="1.3.2" />
+        <PackageReference Include="NetJSON" Version="1.3.3" />
         <PackageReference Include="Obvs" Version="5.0.0.26" />
     </ItemGroup>
 </Project>
