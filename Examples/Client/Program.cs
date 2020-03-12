@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
 using Obvs.Types;
 using Obvs.ActiveMQ.Configuration;
 using Obvs.Configuration;
@@ -12,7 +14,7 @@ namespace Obvs.Example.Client
         private static void Main(string[] args)
         {
             var brokerUri = Environment.GetEnvironmentVariable("ACTIVEMQ_BROKER_URI") ?? "tcp://localhost:61616";
-            var serviceName = Environment.GetEnvironmentVariable("OBVS_SERVICE_NAME") ?? "Service1";
+            var serviceName = Environment.GetEnvironmentVariable("OBVS_SERVICE_NAME") ?? "Obvs.Service1";
 
             Console.WriteLine($"Starting {serviceName}, connecting to broker {brokerUri}");
 
@@ -21,14 +23,14 @@ namespace Obvs.Example.Client
                     .Named(serviceName)
                     .UsingQueueFor<ICommand>()
                     .ConnectToBroker(brokerUri) 
-                    .WithCredentials("TESTUSER", "testpassword1")
+                    .WithCredentials("admin", "admin")
                     .SerializedAsJson()
                     .AsClient()
                 .CreateClient();
 
-            serviceBus.Events.Subscribe(c => Console.WriteLine("Received an event!"));
+            serviceBus.Events.Subscribe(ev => Console.WriteLine("Received event: " + ev));
             
-            Console.WriteLine("Hit <Enter> to send a command.");
+            Console.WriteLine("Type some text and hit <Enter> to send as command.");
             while (true)
             {
                 string data = Console.ReadLine();
