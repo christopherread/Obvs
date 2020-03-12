@@ -133,3 +133,10 @@ Define custom endpoints that can wrap API calls or integrations with other syste
 	  .WithEndpoints(new MyCustomEndpoint())
         .Create();
 
+## Run Examples in Docker
+
+	cd examples
+	docker-compose up
+
+	cd client
+	dotnet run -f netcoreapp3.1 
