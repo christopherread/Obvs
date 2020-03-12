@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Reactive.Concurrency;
-using System.Reactive.Linq;
 using Obvs.Types;
 using Obvs.ActiveMQ.Configuration;
 using Obvs.Configuration;
