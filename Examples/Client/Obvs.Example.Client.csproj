@@ -3,7 +3,7 @@
     <TargetFrameworks>net461;netstandard2.1</TargetFrameworks>
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
-    <StartupObject>Obvs.ActiveMQ.Example.Client.Program</StartupObject>
+    <StartupObject>Obvs.Example.Client.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.7.2" />
