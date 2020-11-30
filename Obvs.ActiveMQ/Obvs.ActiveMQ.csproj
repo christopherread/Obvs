@@ -15,6 +15,6 @@
     <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.7.2">
       <NoWarn>NU1701</NoWarn>
     </PackageReference>
-    <PackageReference Include="Obvs" Version="5.0.1.42" />
+    <PackageReference Include="Obvs" Version="5.0.2.52" />
   </ItemGroup>
 </Project>

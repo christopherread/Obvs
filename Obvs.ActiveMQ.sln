@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2006
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.ActiveMQ", "Obvs.ActiveMQ\Obvs.ActiveMQ.csproj", "{0E8640AA-16CD-4691-A59F-BE5EB3039304}"
 EndProject
@@ -9,9 +9,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.ActiveMQ.Tests", "Obvs
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{16482FF8-88C5-4886-8001-147A3FBDA42F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.ActiveMQ.Test.Client", "Obvs.ActiveMQ.Test.Client\Obvs.ActiveMQ.Test.Client.csproj", "{E926A2F8-4B3D-4323-A257-948988F80F3C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.ActiveMQ.Test.Client", "Obvs.ActiveMQ.Test.Client\Obvs.ActiveMQ.Test.Client.csproj", "{E926A2F8-4B3D-4323-A257-948988F80F3C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.ActiveMQ.Test.Service", "Obvs.ActiveMQ.Test.Service\Obvs.ActiveMQ.Test.Service.csproj", "{262C5DBF-6C6E-4370-8724-F98A8B11BF7D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.ActiveMQ.Test.Service", "Obvs.ActiveMQ.Test.Service\Obvs.ActiveMQ.Test.Service.csproj", "{262C5DBF-6C6E-4370-8724-F98A8B11BF7D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{FB1476D1-8117-4CF2-8C68-E4BA321D0ABC}"
+	ProjectSection(SolutionItems) = preProject
+		appveyor.yml = appveyor.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
