@@ -1,0 +1,26 @@
+version: 5.0.2.{build}
+skip_tags: true
+image: Visual Studio 2019
+configuration: Release
+dotnet_csproj:
+  patch: true
+  file: '**\*.csproj'
+  version: '{version}'
+  package_version: '{version}'
+  assembly_version: '{version}'
+  file_version: '{version}'
+  informational_version: '{version}'
+nuget:
+  project_feed: true
+before_build:
+- cmd: nuget restore
+build:
+  publish_nuget: true
+  publish_nuget_symbols: true
+  verbosity: minimal
+deploy:
+  provider: NuGet
+  api_key:
+    secure: /JaqWVLPjPNAxdRPnQPxqePn+MwzY/Yd2ftPlza0l9GNC16H30puAH/sNZ1De8x3
+  skip_symbols: false
+  artifact: /.*(?<!symbols)(\.|\.s)nupkg/

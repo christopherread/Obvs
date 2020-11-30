@@ -1,15 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.NetMQ", "Obvs.NetMQ\Obvs.NetMQ.csproj", "{B8256983-F54A-477C-BACA-BF9685135983}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.NetMQ", "Obvs.NetMQ\Obvs.NetMQ.csproj", "{B8256983-F54A-477C-BACA-BF9685135983}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.NetMQ.Tests", "Obvs.NetMQ.Tests\Obvs.NetMQ.Tests.csproj", "{A24FCCF0-448F-4A82-ADAC-17456F6A3A1C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.NetMQ.Tests", "Obvs.NetMQ.Tests\Obvs.NetMQ.Tests.csproj", "{A24FCCF0-448F-4A82-ADAC-17456F6A3A1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.NetMQ.Tests.Console.Publisher", "Obvs.NetMQ.Tests.Console.Publisher\Obvs.NetMQ.Tests.Console.Publisher.csproj", "{74835659-2171-44FD-9AF7-14CF8C52A9CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.NetMQ.Tests.Console.Publisher", "Obvs.NetMQ.Tests.Console.Publisher\Obvs.NetMQ.Tests.Console.Publisher.csproj", "{74835659-2171-44FD-9AF7-14CF8C52A9CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obvs.NetMQ.Tests.Console.Subscriber", "Obvs.NetMQ.Tests.Console.Subscriber\Obvs.NetMQ.Tests.Console.Subscriber.csproj", "{0E91B58C-B139-44DB-AD5E-42D7257D0144}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.NetMQ.Tests.Console.Subscriber", "Obvs.NetMQ.Tests.Console.Subscriber\Obvs.NetMQ.Tests.Console.Subscriber.csproj", "{0E91B58C-B139-44DB-AD5E-42D7257D0144}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{644BFCBC-A703-44DD-B2A1-7C0B600C3F53}"
+	ProjectSection(SolutionItems) = preProject
+		appveyor.yml = appveyor.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,5 +41,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5501570C-007D-488A-BE56-ACD93293094A}
 	EndGlobalSection
 EndGlobal
