@@ -1,4 +1,4 @@
-version: 5.0.0.{build}
+version: 5.0.2.{build}
 skip_tags: true
 image: Visual Studio 2019
 configuration: Release
@@ -24,3 +24,9 @@ build:
   publish_nuget: true
   publish_nuget_symbols: true
   verbosity: minimal
+deploy:
+  provider: NuGet
+  api_key:
+    secure: /JaqWVLPjPNAxdRPnQPxqePn+MwzY/Yd2ftPlza0l9GNC16H30puAH/sNZ1De8x3
+  skip_symbols: false
+  artifact: /.*(?<!symbols)(\.|\.s)nupkg/

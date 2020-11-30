@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Kafka", "Obvs.Kafka\Ob
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Kafka.Tests", "Obvs.Kafka.Tests\Obvs.Kafka.Tests.csproj", "{448C0387-1D3B-44DE-A27C-32BC3BD93C70}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{4C889491-65F4-48D7-AE2E-0F1C47C4EE3E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{4C889491-65F4-48D7-AE2E-0F1C47C4EE3E}"
 	ProjectSection(SolutionItems) = preProject
 		appveyor.yml = appveyor.yml
 	EndProjectSection
