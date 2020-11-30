@@ -8,11 +8,11 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
     <PackageTags>elastic obvs monitoring elasticsearch messaging microservice bus messagebus rx reactive servicebus</PackageTags>
-    <PackageReleaseNotes>Obvs v5</PackageReleaseNotes>
+    <PackageReleaseNotes>Updated to NEST 7.10.0</PackageReleaseNotes>
     <Description>Monitoring extension for Obvs, using Elastic.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NEST" Version="7.3.1" />
-    <PackageReference Include="Obvs" Version="5.0.0.26" />
+    <PackageReference Include="NEST" Version="7.10.0" />
+    <PackageReference Include="Obvs" Version="5.0.2.52" />
   </ItemGroup>
 </Project>

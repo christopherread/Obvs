@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Monitoring.AppMetrics"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Monitoring.Tests", "Obvs.Monitoring.Tests\Obvs.Monitoring.Tests.csproj", "{BAF713C2-393B-4568-A25C-1148AF59017E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{978311B2-517C-47E3-8FA6-9C71785C53E8}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{978311B2-517C-47E3-8FA6-9C71785C53E8}"
 	ProjectSection(SolutionItems) = preProject
 		appveyor.yml = appveyor.yml
 	EndProjectSection

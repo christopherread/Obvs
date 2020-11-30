@@ -54,7 +54,7 @@ namespace Obvs.Monitoring.Tests
 
             testScheduler.AdvanceBy(TimeSpan.FromMinutes(1).Ticks);
 
-            A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>._)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>._)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -71,7 +71,7 @@ namespace Obvs.Monitoring.Tests
 
             testScheduler.AdvanceBy(TimeSpan.FromMinutes(1).Ticks);
 
-            A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>._)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>._)).MustHaveHappened(1, Times.Exactly);
         }
 
 
@@ -90,7 +90,7 @@ namespace Obvs.Monitoring.Tests
 
             testScheduler.AdvanceBy(TimeSpan.FromMinutes(1).Ticks);
 
-            A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>.That.Matches(request => request.Operations.Count == 1 + types.Count))).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>.That.Matches(request => request.Operations.Count == 1 + types.Count))).MustHaveHappened(1, Times.Exactly);
         }
         
         [Fact]
@@ -108,7 +108,7 @@ namespace Obvs.Monitoring.Tests
 
             testScheduler.AdvanceBy(TimeSpan.FromMinutes(1).Ticks);
 
-            A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>.That.Matches(request => request.Operations.Count == 1 + types.Count))).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => elasticClient.Bulk(A<IBulkRequest>.That.Matches(request => request.Operations.Count == 1 + types.Count))).MustHaveHappened(1, Times.Exactly);
         }
     
         [Fact]

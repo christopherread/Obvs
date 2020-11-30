@@ -12,6 +12,6 @@
     <Description>Monitoring extension for Obvs, using Windows Performance Counters.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Obvs" Version="5.0.0.26" />
+    <PackageReference Include="Obvs" Version="5.0.2.52" />
   </ItemGroup>
 </Project>
