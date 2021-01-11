@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+    <Company></Company>
+    <Copyright>Copyright © Christopher Read 2017</Copyright>
+    <Version>1.0.0</Version>
+    <Authors>Christopher Read</Authors>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
+    <PackageReleaseNotes>Updated to NATS 0.11.0</PackageReleaseNotes>
+    <Description>NATS transport support for Obvs</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NATS.Client" Version="0.11.0" />
+    <PackageReference Include="Obvs" Version="5.0.2.52" />
+    <PackageReference Include="protobuf-net" Version="2.4.6" />
+  </ItemGroup>
+</Project>
