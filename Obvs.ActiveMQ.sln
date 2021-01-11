@@ -1,0 +1,54 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.ActiveMQ", "Obvs.ActiveMQ\Obvs.ActiveMQ.csproj", "{0E8640AA-16CD-4691-A59F-BE5EB3039304}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.ActiveMQ.Tests", "Obvs.ActiveMQ.Tests\Obvs.ActiveMQ.Tests.csproj", "{448C0387-1D3B-44DE-A27C-32BC3BD93C70}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{16482FF8-88C5-4886-8001-147A3FBDA42F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.ActiveMQ.Test.Client", "Obvs.ActiveMQ.Test.Client\Obvs.ActiveMQ.Test.Client.csproj", "{E926A2F8-4B3D-4323-A257-948988F80F3C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.ActiveMQ.Test.Service", "Obvs.ActiveMQ.Test.Service\Obvs.ActiveMQ.Test.Service.csproj", "{262C5DBF-6C6E-4370-8724-F98A8B11BF7D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{FB1476D1-8117-4CF2-8C68-E4BA321D0ABC}"
+	ProjectSection(SolutionItems) = preProject
+		appveyor.yml = appveyor.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0E8640AA-16CD-4691-A59F-BE5EB3039304}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E8640AA-16CD-4691-A59F-BE5EB3039304}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E8640AA-16CD-4691-A59F-BE5EB3039304}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E8640AA-16CD-4691-A59F-BE5EB3039304}.Release|Any CPU.Build.0 = Release|Any CPU
+		{448C0387-1D3B-44DE-A27C-32BC3BD93C70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{448C0387-1D3B-44DE-A27C-32BC3BD93C70}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{448C0387-1D3B-44DE-A27C-32BC3BD93C70}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{448C0387-1D3B-44DE-A27C-32BC3BD93C70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E926A2F8-4B3D-4323-A257-948988F80F3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E926A2F8-4B3D-4323-A257-948988F80F3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E926A2F8-4B3D-4323-A257-948988F80F3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E926A2F8-4B3D-4323-A257-948988F80F3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{262C5DBF-6C6E-4370-8724-F98A8B11BF7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{262C5DBF-6C6E-4370-8724-F98A8B11BF7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{262C5DBF-6C6E-4370-8724-F98A8B11BF7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{262C5DBF-6C6E-4370-8724-F98A8B11BF7D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E926A2F8-4B3D-4323-A257-948988F80F3C} = {16482FF8-88C5-4886-8001-147A3FBDA42F}
+		{262C5DBF-6C6E-4370-8724-F98A8B11BF7D} = {16482FF8-88C5-4886-8001-147A3FBDA42F}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6FC5C514-6650-4C45-93F4-9716F42D14F9}
+	EndGlobalSection
+EndGlobal
