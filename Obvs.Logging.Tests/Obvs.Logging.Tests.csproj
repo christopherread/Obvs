@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net46</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Obvs" Version="5.0.2.52" />
+    <PackageReference Include="nunit" Version="3.12.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs.Logging.NLog\Obvs.Logging.NLog.csproj" />
+  </ItemGroup>
+</Project>
