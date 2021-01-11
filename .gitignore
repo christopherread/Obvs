@@ -7,6 +7,10 @@
 *.sln.docstates
 *.userosscache
 
+# VS Code
+.vscode/
+*.code-workspace
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -57,9 +61,6 @@ dlldata.c
 *.vssscc
 .builds
 *.pidb
-*.log
-*.scc
-
 *.svclog
 *.scc
 
@@ -101,8 +102,6 @@ _TeamCity*
 
 # NCrunch
 *.ncrunch*
-.*crunch*.local.xml
-
 _NCrunch_*
 .*crunch*.local.xml
 
@@ -173,8 +172,6 @@ ClientBin/
 *.pfx
 *.publishsettings
 *.dbproj.schemaview
-*.pfx
-*.publishsettings
 node_modules/
 
 # RIA/Silverlight projects
@@ -250,11 +247,10 @@ $RECYCLE.BIN/
 
 # Mac desktop service store files
 .DS_Store
-packages/
 .vs/config/applicationhost.config
 .vs/
-
 .idea/
+
 # Windows Installer files
 *.cab
 *.msi
@@ -263,8 +259,3 @@ packages/
 
 # Windows shortcuts
 *.lnk
-/packages
-*.ncrunchproject
-*.ncrunchsolution
-.vs/
-.idea

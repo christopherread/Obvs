@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Company>Christopher Read</Company>
+    <Copyright>Copyright © Christopher Read 2014</Copyright>
+    <Authors />
+    <IsPackable>false</IsPackable>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="FakeItEasy" Version="6.2.1" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.console" Version="2.4.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs.Serialization.Json\Obvs.Serialization.Json.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.MessagePack-CSharp\Obvs.Serialization.MessagePack-CSharp.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.MessagePack\Obvs.Serialization.MessagePack.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.NetJson\Obvs.Serialization.NetJson.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.Xml\Obvs.Serialization.Xml.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.Yaml\Obvs.Serialization.Yaml.csproj" />
+  </ItemGroup>
+</Project>
