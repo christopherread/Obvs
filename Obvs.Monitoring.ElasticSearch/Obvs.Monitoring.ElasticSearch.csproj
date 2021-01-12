@@ -5,7 +5,6 @@
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
     <Authors />
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
     <PackageTags>elastic obvs monitoring elasticsearch messaging microservice bus messagebus rx reactive servicebus</PackageTags>
     <PackageReleaseNotes>Updated to NEST 7.10.0</PackageReleaseNotes>

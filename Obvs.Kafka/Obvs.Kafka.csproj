@@ -5,7 +5,6 @@
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
     <Authors>Christopher Read</Authors>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
     <PackageReleaseNotes>Updated Confluent.Kafka to 1.5.2</PackageReleaseNotes>
     <Description>Kafka transport support for Obvs</Description>

@@ -5,7 +5,6 @@
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
     <Authors />
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
     <PackageTags>obvs messaging microservice bus messagebus rx reactive servicebus</PackageTags>
     <PackageReleaseNotes>New csproj format</PackageReleaseNotes>

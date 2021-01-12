@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net472;netstandard2.0;net5.0</TargetFrameworks>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>MessagePack-CSharp (https://github.com/neuecc/MessagePack-CSharp) serialization for Obvs</Description>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
