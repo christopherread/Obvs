@@ -39,7 +39,7 @@ jobs:
       run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.gitversion.outputs.nuGetVersion }}
     - name: Test
       run: dotnet test --no-build --configuration Release --verbosity normal --filter Category!=Explicit 
-    - name: Publish
+    - name: Pack
       run: |
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs 
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.ActiveMQ
@@ -57,4 +57,7 @@ jobs:
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Serialization.NetJson
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Serialization.Xml
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Serialization.Yaml
-        
+    - name: Publish
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }} 
+      run: dotnet nuget push "nupkgs/*.snupkg" -k "$NUGET_API_KEY" -s https://api.nuget.org/v3/index.json
