@@ -11,7 +11,6 @@
     <Description>YAML serialization for Obvs</Description>
     <GenerateFullPaths>true</GenerateFullPaths>
     <IsPackable>true</IsPackable>
-    <License>https://opensource.org/licenses/MIT</License>
     <PackageTags>Obvs;Serialization;YAML</PackageTags>
     <IsTool>false</IsTool>
   </PropertyGroup>
