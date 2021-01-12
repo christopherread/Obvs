@@ -2,5 +2,7 @@
  <PropertyGroup>
     <RepositoryUrl>http://christopherread.github.io/Obvs</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
  </PropertyGroup>
 </Project>
