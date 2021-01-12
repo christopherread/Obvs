@@ -16,7 +16,7 @@ namespace Obvs.RabbitMQ.Tests
     [TestFixture]
     public class TestSendingAndReceiving
     {
-        [Test, Explicit]
+        [Fact, Trait("Category", "Explicit")]
         [TestCase("Json")]
         [TestCase("ProtoBuf")]
         public async Task TestSendReceiveAs(string format)
@@ -67,16 +67,16 @@ namespace Obvs.RabbitMQ.Tests
 
             await Task.Delay(TimeSpan.FromSeconds(2));
 
-            Assert.That(receivedMessages1.Count, Is.EqualTo(7), "Incorrect number of messages received for first subscription");
-            Assert.That(receivedMessages2.Count, Is.EqualTo(7), "Incorrect number of messages received for second subscription");
+            Assert.True(receivedMessages1.Count, Is.EqualTo(7), "Incorrect number of messages received for first subscription");
+            Assert.True(receivedMessages2.Count, Is.EqualTo(7), "Incorrect number of messages received for second subscription");
 
             for (int index = 0; index < messages.Count; index++)
             {
                 var message = messages[index];
                 var received1 = receivedMessages1[index];
                 var received2 = receivedMessages2[index];
-                Assert.That(received1.Data == message.Data && received1.Timestamp == message.Timestamp, string.Format("Incorrect message1: {0}", received1));
-                Assert.That(received2.Data == message.Data && received2.Timestamp == message.Timestamp, string.Format("Incorrect message2: {0}", received2));
+                Assert.True(received1.Data == message.Data && received1.Timestamp == message.Timestamp, string.Format("Incorrect message1: {0}", received1));
+                Assert.True(received2.Data == message.Data && received2.Timestamp == message.Timestamp, string.Format("Incorrect message2: {0}", received2));
             }
 
             sub1.Dispose();

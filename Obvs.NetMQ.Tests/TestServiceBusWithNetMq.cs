@@ -4,24 +4,23 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Obvs.Configuration;
 using Obvs.NetMQ.Configuration;
 using Obvs.Serialization.Json.Configuration;
 using Obvs.Serialization.ProtoBuf.Configuration;
 using Obvs.Types;
 using ProtoBuf;
+using Xunit;
 
 namespace Obvs.NetMQ.Tests
 {
-    [TestFixture]
     public class TestServiceBusWithNetMq
     {
         /// <summary>
         /// This test illustrates an example of creating a system with two services in one process
         /// and two client each in their own process, but there are many other possibilties!
         /// </summary>
-        [Test, Explicit]
+        [Fact, Trait("Category", "Explicit")]
         public async Task TestServiceEndpointsOverLocalHostSockets()
         {
             // create a server that hosts endpoints for two services
@@ -143,17 +142,17 @@ namespace Obvs.NetMQ.Tests
             await Task.Delay(TimeSpan.FromSeconds(3));
 
             // test we got everything we expected
-            Assert.That(messages.OfType<TestCommand1>().Count(), Is.EqualTo(2), "TestCommand1");
-            Assert.That(messages.OfType<TestEvent1>().Count(), Is.EqualTo(4), "TestEvent1");
+            Assert.True(messages.OfType<TestCommand1>().Count() == 2, "TestCommand1");
+            Assert.True(messages.OfType<TestEvent1>().Count() == 4, "TestEvent1");
 
-            Assert.That(messages.OfType<TestCommand2>().Count(), Is.EqualTo(1), "TestCommand2");
-            Assert.That(messages.OfType<TestEvent2>().Count(), Is.EqualTo(1), "TestEvent2");
+            Assert.True(messages.OfType<TestCommand2>().Count() == 1, "TestCommand2");
+            Assert.True(messages.OfType<TestEvent2>().Count() == 1, "TestEvent2");
 
-            Assert.That(messages.OfType<TestRequest1>().Count(), Is.EqualTo(2), "TestRequest1");
-            Assert.That(messages.OfType<TestResponse1>().Count(), Is.EqualTo(2), "TestResponse1");
+            Assert.True(messages.OfType<TestRequest1>().Count() == 2, "TestRequest1");
+            Assert.True(messages.OfType<TestResponse1>().Count() == 2, "TestResponse1");
 
-            Assert.That(messages.OfType<TestRequest2>().Count(), Is.EqualTo(1), "TestRequest2");
-            Assert.That(messages.OfType<TestResponse2>().Count(), Is.EqualTo(1), "TestResponse2");
+            Assert.True(messages.OfType<TestRequest2>().Count() == 1, "TestRequest2");
+            Assert.True(messages.OfType<TestResponse2>().Count() == 1, "TestResponse2");
 
             // win!
         }

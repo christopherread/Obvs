@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net472;netstandard2.0;net5.0</TargetFrameworks>
     <Company></Company>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
@@ -12,7 +12,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NATS.Client" Version="0.11.0" />
-    <PackageReference Include="Obvs" Version="5.0.2.52" />
     <PackageReference Include="protobuf-net" Version="2.4.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs\Obvs.csproj" />
   </ItemGroup>
 </Project>

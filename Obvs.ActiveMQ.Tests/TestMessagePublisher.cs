@@ -224,7 +224,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
         }
 
-        //[Test, Explicit]
+        //[Fact, Trait("Category", "Explicit")]
         //public async Task ShouldCorrectlyPublishAndSubscribeToMulipleMultiplexedTopics()
         //{
         //    const string brokerUri = "tcp://localhost:61616";

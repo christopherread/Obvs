@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;net472;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net472;netstandard2.0;net5.0</TargetFrameworks>
     <Company>Christopher Read</Company>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
@@ -14,8 +14,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Obvs" Version="5.0.2.52" />
     <PackageReference Include="App.Metrics.Abstractions" Version="4.1.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs\Obvs.csproj" />
   </ItemGroup>
 
 </Project>

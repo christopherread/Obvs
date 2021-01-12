@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
-using NUnit.Framework;
 using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
 using Obvs.Serialization.Json;
+using Xunit;
 using IMessage = Obvs.Types.IMessage;
 
 namespace Obvs.Kafka.Tests
 {
-    [TestFixture]
     public class TestMessageSendAndReceive
     {
         private IMessageDeserializer<ITestMessage> _deserializer;
@@ -43,8 +42,7 @@ namespace Obvs.Kafka.Tests
             }
         }
 
-        [SetUp]
-        public void SetUp()
+        public TestMessageSendAndReceive()
         {
             // Steps to run local kafka broker:
             // - Install: Docker for Windows / Docker Desktop
@@ -68,8 +66,8 @@ namespace Obvs.Kafka.Tests
             _publisher = new MessagePublisher<ITestMessage>(cfg, producerConfig, topicName, _serializer, PropertyProvider);
         }
 
-        [Test]
-        [Explicit]
+        [Fact]
+        [Trait("Category", "Explicit")]
         public async Task TestSendAndReceiveMessage()
         {
             var messages = new List<TestMessage>();
@@ -94,11 +92,11 @@ namespace Obvs.Kafka.Tests
             Console.WriteLine($"Waiting {delay2}...");
             await Task.Delay(delay2);
 
-            Assert.IsNotEmpty(messages, "no messages received");
-            Assert.AreEqual(3, messages.Count, "messages received");
-            Assert.That(messages[0].Data.StartsWith("hello world"), "incorrect message received");
-            Assert.That(messages[1].Data.StartsWith("hello world"), "incorrect message received");
-            Assert.That(messages[2].Data.StartsWith("hello world"), "incorrect message received");
+            Assert.NotEmpty(messages);
+            Assert.Equal(3, messages.Count);
+            Assert.True(messages[0].Data.StartsWith("hello world"), "incorrect message received");
+            Assert.True(messages[1].Data.StartsWith("hello world"), "incorrect message received");
+            Assert.True(messages[2].Data.StartsWith("hello world"), "incorrect message received");
 
             sub.Dispose();
         }

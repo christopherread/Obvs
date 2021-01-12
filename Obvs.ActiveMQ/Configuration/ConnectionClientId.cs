@@ -9,7 +9,7 @@ namespace Obvs.ActiveMQ.Configuration
     {
         public static string CreateWithSuffix(string uniqueSuffix)
         {
-#if !NETSTANDARD2_0
+#if NETFRAMEWORK
             WindowsIdentity identity = WindowsIdentity.GetCurrent();
             string userName = identity == null ? "" : identity.Name.Substring(identity.Name.IndexOf(@"\", System.StringComparison.Ordinal) + 1);
 #else

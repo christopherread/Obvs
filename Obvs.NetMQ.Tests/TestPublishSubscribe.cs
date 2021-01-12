@@ -4,19 +4,18 @@ using System.Linq;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Obvs.Serialization;
 using Obvs.Serialization.Json;
 using Obvs.Serialization.ProtoBuf;
 using Obvs.Types;
 using ProtoBuf;
+using Xunit;
 
 namespace Obvs.NetMQ.Tests
 {
-    [TestFixture]
     public class TestPublishSubscribe
     {
-        [Test, Explicit]
+        [Fact, Trait("Category", "Explicit")]
         public async Task TestSendingAndReceivingStringsOverLocalHost()
         {
             const string topic = "TestTopic";
@@ -51,19 +50,19 @@ namespace Obvs.NetMQ.Tests
             await publisher.PublishAsync(new TestMessage2 { Id = 3 });
             await Task.Delay(TimeSpan.FromSeconds(2));
 
-            Assert.That(messages.OfType<TestMessage1>().Any(msg => msg.Id == 1), "TestMessage1 1 not received");
-            Assert.That(messages.OfType<TestMessage1>().Any(msg => msg.Id == 2), "TestMessage1 2 not received");
-            Assert.That(messages.OfType<TestMessage1>().Any(msg => msg.Id == 3), "TestMessage1 3 not received");
+            Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 1), "TestMessage1 1 not received");
+            Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 2), "TestMessage1 2 not received");
+            Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 3), "TestMessage1 3 not received");
 
-            Assert.That(messages.OfType<TestMessage2>().Any(msg => msg.Id == 1), "TestMessage2 1 not received");
-            Assert.That(messages.OfType<TestMessage2>().Any(msg => msg.Id == 2), "TestMessage2 2 not received");
-            Assert.That(messages.OfType<TestMessage2>().Any(msg => msg.Id == 3), "TestMessage2 3 not received");
+            Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 1), "TestMessage2 1 not received");
+            Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 2), "TestMessage2 2 not received");
+            Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 3), "TestMessage2 3 not received");
 
             sub.Dispose();
             source.Dispose();
         }
 
-        [Test, Explicit]
+        [Fact, Trait("Category", "Explicit")]
         public async Task TestSendingAndReceivingBytesOverLocalHost()
         {
             const string topic = "TestTopic";
@@ -98,19 +97,19 @@ namespace Obvs.NetMQ.Tests
             await publisher.PublishAsync(new TestMessage2 { Id = 3 });
             await Task.Delay(TimeSpan.FromSeconds(2));
 
-            Assert.That(messages.OfType<TestMessage1>().Any(msg => msg.Id == 1), "TestMessage1 1 not received");
-            Assert.That(messages.OfType<TestMessage1>().Any(msg => msg.Id == 2), "TestMessage1 2 not received");
-            Assert.That(messages.OfType<TestMessage1>().Any(msg => msg.Id == 3), "TestMessage1 3 not received");
+            Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 1), "TestMessage1 1 not received");
+            Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 2), "TestMessage1 2 not received");
+            Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 3), "TestMessage1 3 not received");
 
-            Assert.That(messages.OfType<TestMessage2>().Any(msg => msg.Id == 1), "TestMessage2 1 not received");
-            Assert.That(messages.OfType<TestMessage2>().Any(msg => msg.Id == 2), "TestMessage2 2 not received");
-            Assert.That(messages.OfType<TestMessage2>().Any(msg => msg.Id == 3), "TestMessage2 3 not received");
+            Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 1), "TestMessage2 1 not received");
+            Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 2), "TestMessage2 2 not received");
+            Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 3), "TestMessage2 3 not received");
 
             sub.Dispose();
             source.Dispose();
         }
 
-		[Test, Explicit]
+		[Fact, Trait("Category", "Explicit")]
 	    public async Task TestMessagesLongerThan32Characters()
 		{
 			int max = 5;

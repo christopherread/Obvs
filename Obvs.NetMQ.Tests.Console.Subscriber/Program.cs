@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using NetMQ;
 using Obvs.Serialization;
 using Obvs.Serialization.ProtoBuf;
 using Obvs.Types;
@@ -11,7 +6,7 @@ using ProtoBuf;
 
 namespace Obvs.NetMQ.Tests.Console.Subscriber
 {
-	class Program
+    class Program
 	{
 		static void Main(string[] args)
 		{

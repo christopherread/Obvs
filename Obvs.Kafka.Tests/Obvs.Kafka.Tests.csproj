@@ -1,15 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Confluent.Kafka" Version="1.5.2" />
     <PackageReference Include="FakeItEasy" Version="6.2.1" />
-    <PackageReference Include="NLog" Version="4.7.5" />
-    <PackageReference Include="NUnit" Version="3.12.0" />
-    <PackageReference Include="Obvs.Serialization.Json" Version="5.0.2.33" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.3" />
+    <PackageReference Include="Microsoft.Reactive.Testing" Version="5.0.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Obvs.Serialization.Json\Obvs.Serialization.Json.csproj" />
     <ProjectReference Include="..\Obvs.Kafka\Obvs.Kafka.csproj" />
   </ItemGroup>
 </Project>

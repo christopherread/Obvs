@@ -7,7 +7,7 @@ namespace Obvs.Configuration
     {
         public static string Create()
         {
-    #if NET45
+    #if NETFRAMEWORK
             var windowsIdentity = System.Security.Principal.WindowsIdentity.GetCurrent();
             string identity = windowsIdentity.Name.Substring(windowsIdentity.Name.IndexOf(@"\", System.StringComparison.Ordinal) + 1);
     #else

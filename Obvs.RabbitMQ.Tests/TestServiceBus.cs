@@ -17,7 +17,7 @@ namespace Obvs.RabbitMQ.Tests
     [TestFixture]
     public class TestServiceBus
     {
-        [Test, Explicit]
+        [Fact, Trait("Category", "Explicit")]
         public async Task ShouldSendAndReceiveMessagesOverServiceBus()
         {
             IServiceBus serviceBus = ServiceBus.Configure()
@@ -53,10 +53,10 @@ namespace Obvs.RabbitMQ.Tests
             await Task.Delay(TimeSpan.FromSeconds(1));
 
             // test we got everything we expected
-            Assert.That(messages.OfType<TestCommand>().Count() == 1, "TestCommand not received");
-            Assert.That(messages.OfType<TestEvent>().Count() == 1, "TestEvent not received");
-            Assert.That(messages.OfType<TestRequest>().Count() == 1, "TestRequest not received");
-            Assert.That(messages.OfType<TestResponse>().Count() == 1, "TestResponse not received");
+            Assert.True(messages.OfType<TestCommand>().Count() == 1, "TestCommand not received");
+            Assert.True(messages.OfType<TestEvent>().Count() == 1, "TestEvent not received");
+            Assert.True(messages.OfType<TestRequest>().Count() == 1, "TestRequest not received");
+            Assert.True(messages.OfType<TestResponse>().Count() == 1, "TestResponse not received");
 
             // dispose subscriptions
             sub1.Dispose();

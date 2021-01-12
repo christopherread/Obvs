@@ -1,12 +1,11 @@
-﻿using NUnit.Framework;
-using Obvs.Logging.NLog;
+﻿using Obvs.Logging.NLog;
+using Xunit;
 
 namespace Obvs.Logging.Tests
 {
-    [TestFixture]
     public class TestLoggerWrapper
     {
-        [Test]
+        [Fact]
         public void ShouldUsesCorrectNameForNLog()
         {
             MyClass myClass = new MyClass(new NLogLoggerFactory());

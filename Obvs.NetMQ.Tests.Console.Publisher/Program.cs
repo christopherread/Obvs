@@ -1,20 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using NetMQ;
-using NUnit.Framework;
-using Obvs.Serialization;
 using Obvs.Serialization.ProtoBuf;
 using Obvs.Types;
 using ProtoBuf;
 
 namespace Obvs.NetMQ.Tests.Console.Publisher
 {
-	class Program
+    class Program
 	{
 		static void Main(string[] args)
 		{

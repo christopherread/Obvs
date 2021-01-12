@@ -2,18 +2,17 @@
 using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Obvs.Configuration;
 using Obvs.NATS.Configuration;
 using Obvs.Serialization.Json.Configuration;
 using Obvs.Types;
+using Xunit;
 
 namespace Obvs.NATS.Tests
 {
-    [TestFixture]
     public class TestServiceBus
     {
-        [Test, Explicit]
+        [Fact, Trait("Category", "Explicit")]
         public async Task TestBasicSendReceiveOfAllMessageTypes()
         {
             var bus = ServiceBus.Configure()

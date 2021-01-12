@@ -5,16 +5,15 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NATS.Client;
-using NUnit.Framework;
 using Obvs.Serialization;
 using Obvs.Serialization.Json;
+using Xunit;
 
 namespace Obvs.NATS.Tests
 {
-    [TestFixture]
     public class TestSourceAndPublisher
     {
-        [Test, Explicit]
+        [Fact, Trait("Category", "Explicit")]
         public async Task TestSendAndReceiveMessage()
         {
             var lazyConnection = new Lazy<IConnection>(() =>
