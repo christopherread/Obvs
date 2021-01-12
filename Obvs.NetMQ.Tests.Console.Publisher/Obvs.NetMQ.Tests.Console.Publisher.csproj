@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj" />
+    <ProjectReference Include="..\Obvs.NetMQ\Obvs.NetMQ.csproj" />
+  </ItemGroup>
+</Project>

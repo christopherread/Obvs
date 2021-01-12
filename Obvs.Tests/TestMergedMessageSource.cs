@@ -25,11 +25,11 @@ namespace Obvs.Tests
             IDisposable sub1 = mergedMessageSource.Messages.OfType<IEvent>().Subscribe(observer);
             IDisposable sub2 = mergedMessageSource.Messages.OfType<IMessage>().Subscribe(observer);
 
-            A.CallTo(() => source1.Messages).MustHaveHappened(1, Times.Exactly);
-            A.CallTo(() => observable1.Subscribe(A<IObserver<IMessage>>._)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => source1.Messages).MustHaveHappenedOnceExactly();
+            A.CallTo(() => observable1.Subscribe(A<IObserver<IMessage>>._)).MustHaveHappenedOnceExactly();
 
-            A.CallTo(() => source2.Messages).MustHaveHappened(1, Times.Exactly);
-            A.CallTo(() => observable2.Subscribe(A<IObserver<IMessage>>._)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => source2.Messages).MustHaveHappenedOnceExactly();
+            A.CallTo(() => observable2.Subscribe(A<IObserver<IMessage>>._)).MustHaveHappenedOnceExactly();
 
             sub1.Dispose();
             sub2.Dispose();
@@ -64,8 +64,8 @@ namespace Obvs.Tests
             internalObserver1.OnNext(ev1);
             internalObserver2.OnNext(msg2);
 
-            A.CallTo(() => observer.OnNext(ev1)).MustHaveHappened(2, Times.Exactly);
-            A.CallTo(() => observer.OnNext(msg2)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer.OnNext(ev1)).MustHaveHappenedTwiceExactly();
+            A.CallTo(() => observer.OnNext(msg2)).MustHaveHappenedOnceExactly();
 
             sub1.Dispose();
             sub2.Dispose();
@@ -100,14 +100,14 @@ namespace Obvs.Tests
             IMessage msg2 = A.Fake<IMessage>();
 
             internalObserver1.OnNext(ev1);
-            A.CallTo(() => observer.OnNext(ev1)).MustHaveHappened(2, Times.Exactly);
+            A.CallTo(() => observer.OnNext(ev1)).MustHaveHappenedTwiceExactly();
 
             // dispose of first subscription
             sub1.Dispose();
 
             // second subscription should still be active
             internalObserver2.OnNext(msg1);
-            A.CallTo(() => observer.OnNext(msg1)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => observer.OnNext(msg1)).MustHaveHappenedOnceExactly();
 
             // dispose of second subscription
             sub2.Dispose();

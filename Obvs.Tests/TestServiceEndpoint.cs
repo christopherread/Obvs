@@ -19,10 +19,10 @@ namespace Obvs.Tests
 
             endpoint.Dispose();
 
-            A.CallTo(() => requestSource.Dispose()).MustHaveHappened(1, Times.Exactly);
-            A.CallTo(() => commandSource.Dispose()).MustHaveHappened(1, Times.Exactly);
-            A.CallTo(() => eventPublisher.Dispose()).MustHaveHappened(1, Times.Exactly);
-            A.CallTo(() => responsePublisher.Dispose()).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => requestSource.Dispose()).MustHaveHappenedOnceExactly();
+            A.CallTo(() => commandSource.Dispose()).MustHaveHappenedOnceExactly();
+            A.CallTo(() => eventPublisher.Dispose()).MustHaveHappenedOnceExactly();
+            A.CallTo(() => responsePublisher.Dispose()).MustHaveHappenedOnceExactly();
         }
 
 
@@ -34,7 +34,7 @@ namespace Obvs.Tests
 
             loggingProxy.Dispose();
 
-            A.CallTo(() => endpoint.Dispose()).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => endpoint.Dispose()).MustHaveHappenedOnceExactly();
         }
     }
 }

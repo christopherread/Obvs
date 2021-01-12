@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net472</TargetFrameworks>
+    <Company>Christopher Read</Company>
+    <Copyright>Copyright © Christopher Read 2017</Copyright>
+    <Version>1.0.0</Version>
+    <Authors />
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
+    <PackageTags>obvs monitoring performancecounters perfcounter messaging microservice bus messagebus rx reactive servicebus</PackageTags>
+    <PackageReleaseNotes>Obvs v5</PackageReleaseNotes>
+    <Description>Monitoring extension for Obvs, using Windows Performance Counters.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs\Obvs.csproj" />
+  </ItemGroup>
+</Project>

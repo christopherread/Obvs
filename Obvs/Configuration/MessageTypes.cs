@@ -22,7 +22,7 @@ namespace Obvs.Configuration
             /// <returns>IEnumerable&lt;Assembly&gt;.</returns>
             public static IEnumerable<Assembly> GetAllAssembliesFromAppDomain()
             {
-#if NET46
+#if NETFRAMEWORK
                 return AppDomain.CurrentDomain.GetAssemblies();
 #else
                 const string ObvsAssemblyName = nameof(Obvs);

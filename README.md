@@ -24,8 +24,9 @@
 
 ### Versions/Roadmap
 
-* V5 - Next version, `System.Reactive 4.1`, supports `netstandard2.0` and `net46`
-* V4 - Current version, `System.Reactive 3.1.1`, supports `netstandard1.6` and `net452` 
+* V6 - `System.Reactive 5.0`, supports `netstandard2.0`, `net472` and `net5.0`.  Mono-repo
+* V5 - `System.Reactive 4.1`, supports `netstandard2.0` and `net472`
+* V4 - `System.Reactive 3.1.1`, supports `netstandard1.6` and `net452` 
 
 ### More Details
 

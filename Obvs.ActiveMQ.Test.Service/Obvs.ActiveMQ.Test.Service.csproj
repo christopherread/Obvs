@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.8.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs\Obvs.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.Json\Obvs.Serialization.Json.csproj" />
+    <ProjectReference Include="..\Obvs.ActiveMQ\Obvs.ActiveMQ.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+</Project>

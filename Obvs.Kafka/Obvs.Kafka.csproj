@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net472;netstandard2.0;net5.0</TargetFrameworks>
+    <Company></Company>
+    <Copyright>Copyright © Christopher Read 2017</Copyright>
+    <Version>1.0.0</Version>
+    <Authors>Christopher Read</Authors>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
+    <PackageReleaseNotes>Updated Confluent.Kafka to 1.5.2</PackageReleaseNotes>
+    <Description>Kafka transport support for Obvs</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Confluent.Kafka" Version="1.5.2" />
+    <PackageReference Include="protobuf-net" Version="2.4.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs\Obvs.csproj" />
+  </ItemGroup>
+</Project>
