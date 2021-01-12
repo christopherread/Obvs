@@ -1,7 +1,7 @@
 <Project>
     <!-- SourceLink and Symbols -->
     <PropertyGroup>
-        <RepositoryUrl>http://christopherread.github.io/Obvs</RepositoryUrl>
+        <RepositoryUrl>https://github.com/christopherread/Obvs</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <DebugType>portable</DebugType>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
