@@ -12,14 +12,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Setup GitVersion
+      uses: gittools/actions/gitversion/setup@v0.9.7
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
+    - name: Determine Version
+      id:   gitversion
+      uses: gittools/actions/gitversion/execute@v0.9.7
+      with:
+        useConfigFile: true        
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore --configuration Release
     - name: Test
       run: dotnet test --no-build --configuration Release --verbosity normal --filter Category!=Explicit 
+    - name: Publish
+      run: |
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs 
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.ActiveMQ
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.Kafka
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.Logging.NLog
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.Monitoring.AppMetrics
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.Monitoring.ElasticSearch
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.Monitoring.PerformanceCounters
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.NATS
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.NetMQ
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.RabbitMQ
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.Serialization.Json
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.Serialization.MessagePack
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.Serialization.MessagePack-CSharp
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.Serialization.NetJson
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.Serialization.Xml
+        dotnet pack --no-build --configuration Release --output nupkgs Obvs.Serialization.Yaml
+        
