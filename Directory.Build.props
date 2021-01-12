@@ -1,0 +1,6 @@
+<Project>
+ <PropertyGroup>
+    <RepositoryUrl>http://christopherread.github.io/Obvs</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+ </PropertyGroup>
+</Project>

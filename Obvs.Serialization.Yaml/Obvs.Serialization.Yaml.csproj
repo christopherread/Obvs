@@ -14,8 +14,6 @@
     <License>https://opensource.org/licenses/MIT</License>
     <PackageTags>Obvs;Serialization;YAML</PackageTags>
     <IsTool>false</IsTool>
-    <RepositoryUrl>http://christopherread.github.io/Obvs</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
