@@ -3,6 +3,17 @@
     <RepositoryUrl>http://christopherread.github.io/Obvs</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
 
+    <DebugType>portable</DebugType>
+
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+     
+     <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+ 
+    <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
  </PropertyGroup>
+ <ItemGroup>
+  <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+</ItemGroup>
 </Project>
