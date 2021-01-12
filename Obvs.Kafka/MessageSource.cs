@@ -118,7 +118,8 @@ namespace Obvs.Kafka
         {
             try
             {
-                var msg = consumer.Consume(token).Value;
+                // TODO: deal with nulls here?
+                var msg = consumer.Consume(token).Message?.Value;
 
                 if (_propertyFilter == null || _propertyFilter(msg.Properties))
                 {
