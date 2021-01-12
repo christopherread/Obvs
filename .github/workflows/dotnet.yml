@@ -17,7 +17,9 @@ jobs:
       with:
         fetch-depth: 0
     - name: Setup GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.7
+      uses: gittools/actions/gitversion/setup@v0.9.7    
+      with:
+        versionSpec: '5.x'
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
