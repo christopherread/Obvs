@@ -3,18 +3,16 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Obvs.Configuration;
 using Obvs.RabbitMQ.Configuration;
 using Obvs.RabbitMQ.Tests.Messages;
 using Obvs.Serialization.Json.Configuration;
 using Obvs.Types;
+using Xunit;
 
 namespace Obvs.RabbitMQ.Tests
 {
-    [TestFixture]
     public class TestServiceBus
     {
         [Fact, Trait("Category", "Explicit")]

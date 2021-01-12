@@ -3,22 +3,21 @@ using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Obvs.RabbitMQ.Tests.Messages;
 using Obvs.Serialization;
 using Obvs.Serialization.Json;
 using Obvs.Serialization.ProtoBuf;
 using Obvs.Types;
 using RabbitMQ.Client;
+using Xunit;
 
 namespace Obvs.RabbitMQ.Tests
 {
-    [TestFixture]
     public class TestSendingAndReceiving
     {
-        [Fact, Trait("Category", "Explicit")]
-        [TestCase("Json")]
-        [TestCase("ProtoBuf")]
+        [Theory, Trait("Category", "Explicit")]
+        [InlineData("Json")]
+        [InlineData("ProtoBuf")]
         public async Task TestSendReceiveAs(string format)
         {
             var exchange = GetType().Name;
@@ -67,8 +66,8 @@ namespace Obvs.RabbitMQ.Tests
 
             await Task.Delay(TimeSpan.FromSeconds(2));
 
-            Assert.True(receivedMessages1.Count, Is.EqualTo(7), "Incorrect number of messages received for first subscription");
-            Assert.True(receivedMessages2.Count, Is.EqualTo(7), "Incorrect number of messages received for second subscription");
+            Assert.True(receivedMessages1.Count == 7, "Incorrect number of messages received for first subscription");
+            Assert.True(receivedMessages2.Count == 7, "Incorrect number of messages received for second subscription");
 
             for (int index = 0; index < messages.Count; index++)
             {

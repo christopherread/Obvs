@@ -65,6 +65,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Kafka", "Obvs.Kafka\Ob
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.Kafka.Tests", "Obvs.Kafka.Tests\Obvs.Kafka.Tests.csproj", "{A6D818B6-C085-472B-8FCC-50FD46614E54}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.RabbitMQ", "Obvs.RabbitMQ\Obvs.RabbitMQ.csproj", "{260EB45A-FE18-4FB3-9F1B-04A094275443}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obvs.RabbitMQ.Tests", "Obvs.RabbitMQ.Tests\Obvs.RabbitMQ.Tests.csproj", "{3D3152EF-C549-4B32-A4BB-6C2ED8ADDC38}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -183,6 +187,14 @@ Global
 		{A6D818B6-C085-472B-8FCC-50FD46614E54}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6D818B6-C085-472B-8FCC-50FD46614E54}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A6D818B6-C085-472B-8FCC-50FD46614E54}.Release|Any CPU.Build.0 = Release|Any CPU
+		{260EB45A-FE18-4FB3-9F1B-04A094275443}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{260EB45A-FE18-4FB3-9F1B-04A094275443}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{260EB45A-FE18-4FB3-9F1B-04A094275443}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{260EB45A-FE18-4FB3-9F1B-04A094275443}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D3152EF-C549-4B32-A4BB-6C2ED8ADDC38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D3152EF-C549-4B32-A4BB-6C2ED8ADDC38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D3152EF-C549-4B32-A4BB-6C2ED8ADDC38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D3152EF-C549-4B32-A4BB-6C2ED8ADDC38}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
