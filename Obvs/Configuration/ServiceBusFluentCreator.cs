@@ -7,7 +7,10 @@ using Obvs.Monitoring;
 
 namespace Obvs.Configuration
 {
-    public class ServiceBusFluentCreator<TMessage, TCommand, TEvent, TRequest, TResponse> : ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>, ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> where TMessage : class
+    public class ServiceBusFluentCreator<TMessage, TCommand, TEvent, TRequest, TResponse> : 
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+        ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> 
+        where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage
         where TRequest : class, TMessage
@@ -20,7 +23,8 @@ namespace Obvs.Configuration
         private IRequestCorrelationProvider<TRequest, TResponse> _requestCorrelationProvider;
         private Func<Type, LogLevel> _logLevelSend;
         private Func<Type, LogLevel> _logLevelReceive;
-        private IMessageBus<TMessage> _localBus;
+        private IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> _localBus;
+        private bool _useLocalBus = false;
         private LocalBusOptions _localBusOption = LocalBusOptions.MessagesWithNoEndpointClients;
         private IMonitorFactory<TMessage> _monitorFactory;
 
@@ -54,12 +58,20 @@ namespace Obvs.Configuration
 
         public IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> CreateServiceBus()
         {
-            return new ServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse>(GetEndpointClients(), GetEndpoints(), _requestCorrelationProvider, _localBus, _localBusOption);
+            return new ServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse>(
+                GetEndpointClients(), 
+                GetEndpoints(), 
+                _requestCorrelationProvider, 
+                _useLocalBus ? (_localBus ?? new SubjectServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse>(_requestCorrelationProvider)) : null, 
+                _localBusOption);
         }
 
         public IServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse> CreateServiceBusClient()
         {
-            return new ServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse>(GetEndpointClients(), GetEndpoints(), _requestCorrelationProvider);
+            return new ServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
+                GetEndpointClients(), 
+                GetEndpoints(), 
+                _requestCorrelationProvider);
         }
 
         public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> WithEndpoint(IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> endpointClient)
@@ -97,7 +109,7 @@ namespace Obvs.Configuration
         {
             if (requestCorrelationProvider == null)
             {
-                throw new ArgumentNullException("requestCorrelationProvider");
+                throw new ArgumentNullException(nameof(requestCorrelationProvider));
             }
             
             _requestCorrelationProvider = requestCorrelationProvider;
@@ -134,9 +146,10 @@ namespace Obvs.Configuration
             return endpointsWithMonitoring;
         }
 
-        ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> ICanSpecifyLocalBus<TMessage, TCommand, TEvent, TRequest, TResponse>.PublishLocally(IMessageBus<TMessage> localBus)
+        ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> ICanSpecifyLocalBus<TMessage, TCommand, TEvent, TRequest, TResponse>.PublishLocally(IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> localBus)
         {
-            _localBus = localBus ?? new SubjectMessageBus<TMessage>(); // use default implementation if not supplied
+            _localBus = localBus;
+            _useLocalBus = true;
             return this;
         }
 
@@ -149,6 +162,12 @@ namespace Obvs.Configuration
         public ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> OnlyMessagesWithNoEndpoints()
         {
             _localBusOption = LocalBusOptions.MessagesWithNoEndpoints;
+            return this;
+        }
+
+        public ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AllMessages()
+        {
+            _localBusOption = LocalBusOptions.AllMessages;
             return this;
         }
 
@@ -168,6 +187,7 @@ namespace Obvs.Configuration
     public enum LocalBusOptions
     {
         MessagesWithNoEndpointClients = 0,
-        MessagesWithNoEndpoints = 1
+        MessagesWithNoEndpoints = 1,
+        AllMessages = 3
     }
 }

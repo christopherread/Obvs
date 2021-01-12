@@ -147,7 +147,7 @@ namespace Obvs.Configuration
         /// </summary>
         /// <param name="localBus">Optionally allows your own local bus instance to be used</param>
         /// <returns></returns>
-        ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> PublishLocally(IMessageBus<TMessage> localBus = null);
+        ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> PublishLocally(IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> localBus = null);
     }
 
     public interface ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse>
@@ -158,14 +158,20 @@ namespace Obvs.Configuration
         where TResponse : class, TMessage
     {
         /// <summary>
-        /// Configures message types for which this process is configured as a server to also be sent and received by local subscribers
+        /// Configures only messages for which this bus is configured as a server to also be received by local subscribers.
         /// </summary>
         ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AnyMessagesWithNoEndpointClients();
 
         /// <summary>
-        /// Configures message types which have no endpoints configured to be sent and received by local subscribers
+        /// Configures only messages for which this bus has no endpoints to be received by local subscribers.
         /// </summary>
         ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> OnlyMessagesWithNoEndpoints();
+
+        /// <summary>
+        /// Configures all messages to be received by local subscribers. Warning: external transport must be configured
+        /// independently to filter out local messages, otherwise this setting may result in duplicate messages being received.
+        /// </summary>
+        ICanSpecifyLoggingOrMonitoringOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> AllMessages();
     }
 
     public interface ICanSpecifyMonitoring<TMessage, TCommand, TEvent, TRequest, TResponse> 
