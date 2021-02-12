@@ -1,25 +1,26 @@
 ﻿using System.IO;
 using MessagePack;
+using MessagePack.Resolvers;
 
 namespace Obvs.Serialization.MessagePack
 {
     public class MessagePackCSharpMessageSerializer : IMessageSerializer
     {
-        private readonly IFormatterResolver _resolver;
+        private readonly MessagePackSerializerOptions _options;
 
         public MessagePackCSharpMessageSerializer()
             : this(null)
         {
         }
 
-        public MessagePackCSharpMessageSerializer(IFormatterResolver resolver)
+        public MessagePackCSharpMessageSerializer(MessagePackSerializerOptions options)
         {
-            _resolver = resolver ?? MessagePackSerializer.DefaultResolver;
+            _options = options ?? MessagePackSerializerOptions.Standard;
         }
 
         public void Serialize(Stream destination, object message)
         {
-            MessagePackSerializer.NonGeneric.Serialize(message.GetType(), destination, message, _resolver);
+            MessagePackSerializer.Typeless.Serialize(destination, message, _options);
         }
     }
 }

@@ -24,19 +24,19 @@ namespace Obvs.Serialization.MessagePack.Configuration
             where TResponse : class, TMessage
         {
             // ReSharper disable once IntroduceOptionalParameters.Global
-            return SerializedAsMessagePackCSharp(config, MessagePackSerializer.DefaultResolver);
+            return SerializedAsMessagePackCSharp(config, MessagePackSerializerOptions.Standard);
         }
 
         public static ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> SerializedAsMessagePackCSharp<TMessage, TCommand, TEvent, TRequest, TResponse>(
             this ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> config,
-            IFormatterResolver resolver)
+            MessagePackSerializerOptions options)
             where TMessage : class
             where TCommand : class, TMessage
             where TEvent : class, TMessage
             where TRequest : class, TMessage
             where TResponse : class, TMessage
         {
-            return config.SerializedWith(new MessagePackCSharpMessageSerializer(resolver), new MessagePackCSharpMessageDeserializerFactory(resolver));
+            return config.SerializedWith(new MessagePackCSharpMessageSerializer(options), new MessagePackCSharpMessageDeserializerFactory(options));
         }
     }
 }

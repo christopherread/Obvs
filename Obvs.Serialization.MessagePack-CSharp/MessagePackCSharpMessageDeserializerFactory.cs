@@ -10,16 +10,16 @@ namespace Obvs.Serialization.MessagePack
 {
     public class MessagePackCSharpMessageDeserializerFactory : IMessageDeserializerFactory
     {
-        private readonly IFormatterResolver _resolver;
+        private readonly MessagePackSerializerOptions _options;
 
         public MessagePackCSharpMessageDeserializerFactory()
             : this(null)
         {
         }
 
-        public MessagePackCSharpMessageDeserializerFactory(IFormatterResolver resolver)
+        public MessagePackCSharpMessageDeserializerFactory(MessagePackSerializerOptions options)
         {
-            _resolver = resolver ?? MessagePackSerializer.DefaultResolver;
+            _options = options ?? MessagePackSerializerOptions.Standard;
         }
 
         public IEnumerable<IMessageDeserializer<TMessage>> Create<TMessage, TServiceMessage>(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
@@ -28,7 +28,7 @@ namespace Obvs.Serialization.MessagePack
         {
             return MessageTypes.Get<TMessage, TServiceMessage>(assemblyFilter, typeFilter)
                 .Select(type => typeof(MessagePackCSharpMessageDeserializer<>).MakeGenericType(type))
-                .Select(deserializerGeneric => Activator.CreateInstance(deserializerGeneric, _resolver) as IMessageDeserializer<TMessage>)
+                .Select(deserializerGeneric => Activator.CreateInstance(deserializerGeneric, _options) as IMessageDeserializer<TMessage>)
                 .ToArray();
         }
     }

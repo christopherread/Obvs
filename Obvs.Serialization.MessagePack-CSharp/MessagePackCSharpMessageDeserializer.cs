@@ -4,24 +4,24 @@ using MessagePack.Resolvers;
 
 namespace Obvs.Serialization.MessagePack
 {
-    public class MessagePackCSharpMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage> 
+    public class MessagePackCSharpMessageDeserializer<TMessage> : MessageDeserializerBase<TMessage>
         where TMessage : class
     {
-        private readonly IFormatterResolver _resolver;
+        private readonly MessagePackSerializerOptions _options;
 
         public MessagePackCSharpMessageDeserializer()
             : this(null)
         {
         }
 
-        public MessagePackCSharpMessageDeserializer(IFormatterResolver resolver)
+        public MessagePackCSharpMessageDeserializer(MessagePackSerializerOptions options)
         {
-            _resolver = resolver ?? MessagePackSerializer.DefaultResolver;
+            _options = options ?? MessagePackSerializerOptions.Standard;
         }
 
         public override TMessage Deserialize(Stream source)
         {
-            return MessagePackSerializer.Deserialize<TMessage>(source, _resolver);
+            return MessagePackSerializer.Deserialize<TMessage>(source, _options);
         }
     }
 }
