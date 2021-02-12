@@ -24,6 +24,7 @@ namespace Obvs.NetMQ.Configuration
         where TResponse : class, TMessage
     {
         ICanAddNetMqPort<TMessage, TCommand, TEvent, TRequest, TResponse> BindToAddress(string address);
+        ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> BindToNonTcpAddress(string address);
     }
 
     public interface ICanAddNetMqPort<TMessage, TCommand, TEvent, TRequest, TResponse>
@@ -36,11 +37,11 @@ namespace Obvs.NetMQ.Configuration
         ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> OnPort(int port);
     }
 
-    internal class NetMqFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : 
-        ICanAddNetMqAddress<TMessage, TCommand, TEvent, TRequest, TResponse>, 
-        ICanAddNetMqPort<TMessage, TCommand, TEvent, TRequest, TResponse>, 
-        ICanAddNetMqServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>, 
-        ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse>, 
+    internal class NetMqFluentConfig<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
+        ICanAddNetMqAddress<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanAddNetMqPort<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanAddNetMqServiceName<TMessage, TCommand, TEvent, TRequest, TResponse>,
+        ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse>,
         ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TServiceMessage : class, TMessage
         where TMessage : class
@@ -75,21 +76,27 @@ namespace Obvs.NetMQ.Configuration
             return this;
         }
 
+        public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> BindToNonTcpAddress(string address)
+        {
+            _address = new Uri(address);
+            return this;
+        }
+
         public ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> OnPort(int port)
         {
             _port = port;
             return this;
         }
-        
+
         private NetMqServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> CreateProvider()
         {
             return new NetMqServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(
-                _serviceName, 
+                _serviceName,
                 _address.OriginalString,
-                _port, 
-                _serializer, 
+                _port,
+                _serializer,
                 _deserializerFactory,
-                _assemblyFilter, 
+                _assemblyFilter,
                 _typeFilter);
         }
 

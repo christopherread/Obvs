@@ -14,27 +14,25 @@ using Xunit;
 
 namespace Obvs.NetMQ.Tests
 {
-    public class TestServiceBusWithNetMq
+    public class TestServiceBusWithNetMqIpcTransport
     {
         /// <summary>
         /// This test illustrates an example of creating a system with two services in one process
         /// and two client each in their own process, but there are many other possibilties!
         /// </summary>
         [Fact, Trait("Category", "Explicit")]
-        public async Task TestServiceEndpointsOverLocalHostSockets()
+        public async Task TestServiceEndpointsOverIpc()
         {
             // create a server that hosts endpoints for two services
             var serviceBus = ServiceBus.Configure()
                 .WithNetMqEndpoints<ITestService1>()
                     .Named("Obvs.TestNetMqService1")
-                    .BindToAddress("tcp://localhost")
-                    .OnPort(5555)
+                    .BindToNonTcpAddress($"ipc://testservice1")
                     .SerializedAsJson() // messages will be serialized as strings
                     .AsServer()
                 .WithNetMqEndpoints<ITestService2>()
                     .Named("Obvs.TestNetMqService2")
-                    .BindToAddress("tcp://localhost")
-                    .OnPort(6555)
+                    .BindToNonTcpAddress($"ipc://testservice2")
                     .SerializedAsProtoBuf() // messages will be serialized as binary
                     .AsServer()
                 .UsingConsoleLogging() // useful for debugging, but check out other proper logging extensions
@@ -44,14 +42,12 @@ namespace Obvs.NetMQ.Tests
             var serviceBusClient1 = ServiceBus.Configure()
                 .WithNetMqEndpoints<ITestService1>()
                     .Named("Obvs.TestNetMqService1")
-                    .BindToAddress("tcp://localhost")
-                    .OnPort(5555)
+                    .BindToNonTcpAddress($"ipc://testservice1")
                     .SerializedAsJson()
                     .AsClient()
                 .WithNetMqEndpoints<ITestService2>()
                     .Named("Obvs.TestNetMqService2")
-                    .BindToAddress("tcp://localhost")
-                    .OnPort(6555)
+                    .BindToNonTcpAddress($"ipc://testservice2")
                     .SerializedAsProtoBuf()
                     .AsClient()
                 .UsingConsoleLogging()
@@ -61,8 +57,7 @@ namespace Obvs.NetMQ.Tests
             var serviceBusClient2 = ServiceBus.Configure()
                 .WithNetMqEndpoints<ITestService1>()
                     .Named("Obvs.TestNetMqService1")
-                    .BindToAddress("tcp://localhost")
-                    .OnPort(5555)
+                    .BindToNonTcpAddress($"ipc://testservice1")
                     .SerializedAsJson()
                     .AsClient()
                 .UsingConsoleLogging()
@@ -71,7 +66,7 @@ namespace Obvs.NetMQ.Tests
             // create action to record all observed messages so we can assert later
             var messages = new ConcurrentBag<IMessage>();
             Action<IMessage> messageRecorder = msg => messages.Add(msg);
-            
+
             // create some actions that will act as a fake services acting on incoming commands and requests
             Action<ITestService1> fakeService1 = msg =>
             {
@@ -116,7 +111,7 @@ namespace Obvs.NetMQ.Tests
                 messageRecorder(msg);
                 Console.WriteLine("Client2 received: {0}", msg);
             };
-            
+
             // subscribe to events on clients
             serviceBusClient1.Events.Subscribe(fakeClient1);
             serviceBusClient2.Events.Subscribe(fakeClient2);
@@ -204,7 +199,7 @@ namespace Obvs.NetMQ.Tests
             public string RequestId { get; set; }
             public string RequesterId { get; set; }
         }
-    
+
         public interface ITestService2 : IMessage { }
 
         [ProtoContract]

@@ -19,6 +19,8 @@ namespace Obvs.NetMQ
         private readonly string _topic;
         private readonly SocketType _socketType;
         private readonly TimeSpan _receiveTimeout = TimeSpan.FromSeconds(1);
+        private readonly SubscriberSocket _socket;
+        private bool _started;
 
         public MessageSource(string address, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string topic, SocketType socketType = SocketType.Client)
         {
@@ -26,8 +28,17 @@ namespace Obvs.NetMQ
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName(), d => d);
             _topic = topic;
             _socketType = socketType;
+            _socket = new SubscriberSocket();
+            if (ShouldStartImmediately(address, socketType))
+            {
+                _started = true;
+                _socket.Start(_address, _socketType);
+            }
         }
-        
+
+        private static bool ShouldStartImmediately(string address, SocketType socketType) =>
+            socketType == SocketType.Server && address.StartsWith("inproc");
+
         public IObservable<TMessage> Messages
         {
             get
@@ -46,6 +57,7 @@ namespace Obvs.NetMQ
                     {
                         tokenSource.Cancel();
                         task.Wait();
+                        _socket.Dispose();
                     });
                 });
             }
@@ -55,20 +67,20 @@ namespace Obvs.NetMQ
         {
             try
             {
-                using (var socket = new SubscriberSocket())
+                if (!_started)
                 {
-                    socket.Start(_address, _socketType);
-                    socket.Subscribe(_topic);
-                    subscribedEvent.Set();
-                 
-                    while (!token.IsCancellationRequested)
-                    {
-                        ReceiveMessage(observer, socket);
-                    }
-
-                    socket.Unsubscribe(_topic);
-                    socket.Stop(_address, _socketType);
+                    _socket.Start(_address, _socketType);
                 }
+                _socket.Subscribe(_topic);
+                subscribedEvent.Set();
+
+                while (!token.IsCancellationRequested)
+                {
+                    ReceiveMessage(observer, _socket);
+                }
+
+                _socket.Unsubscribe(_topic);
+                _socket.Stop(_address, _socketType);
             }
             finally
             {

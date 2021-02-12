@@ -5,7 +5,7 @@ namespace Obvs.NetMQ.Configuration
 {
     public static class NetMqConfigExtensions
     {
-        public static ICanAddNetMqServiceName<TMessage, TCommand, TEvent, TRequest, TResponse> WithNetMqEndpoints<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(this ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint) 
+        public static ICanAddNetMqServiceName<TMessage, TCommand, TEvent, TRequest, TResponse> WithNetMqEndpoints<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>(this ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> canAddEndpoint)
             where TMessage : class
             where TServiceMessage : class, TMessage
             where TEvent : class, TMessage

@@ -5,7 +5,7 @@ using Obvs.Serialization;
 
 namespace Obvs.NetMQ.Configuration
 {
-    public class NetMqServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : 
+    public class NetMqServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> :
         ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TServiceMessage : class
         where TMessage : class
@@ -22,9 +22,9 @@ namespace Obvs.NetMQ.Configuration
         private readonly string _responseAddress;
         private readonly string _commandAddress;
         private readonly string _eventAddress;
-        
-        public NetMqServiceEndpointProvider(string serviceName, string address, int port, 
-            IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, 
+
+        public NetMqServiceEndpointProvider(string serviceName, string address, int port,
+            IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory,
             Func<Assembly, bool> assemblyFilter, Func<Type, bool> typeFilter)
             : base(serviceName)
         {
@@ -32,10 +32,33 @@ namespace Obvs.NetMQ.Configuration
             _deserializerFactory = deserializerFactory;
             _assemblyFilter = assemblyFilter;
             _typeFilter = typeFilter;
-            _requestAddress = string.Format("{0}:{1}", address, port + 0);
-            _responseAddress = string.Format("{0}:{1}", address, port + 1);
-            _commandAddress = string.Format("{0}:{1}", address, port + 2);
-            _eventAddress = string.Format("{0}:{1}", address, port + 3);
+
+            var uri = new Uri(address);
+            if (uri.Scheme.Equals("tcp"))
+            {
+                _requestAddress = $"{address}:{port + 0}";
+                _responseAddress = $"{address}:{port + 1}";
+                _commandAddress = $"{address}:{port + 2}";
+                _eventAddress = $"{address}:{port + 3}";
+            }
+            else if (uri.Scheme.Equals("ipc"))
+            {
+                _requestAddress = $"{address}-requests";
+                _responseAddress = $"{address}-responses";
+                _commandAddress = $"{address}-commands";
+                _eventAddress = $"{address}-events";
+            }
+            else if (uri.Scheme.Equals("inproc"))
+            {
+                _requestAddress = $"{address}-requests";
+                _responseAddress = $"{address}-responses";
+                _commandAddress = $"{address}-commands";
+                _eventAddress = $"{address}-events";
+            }
+            else
+            {
+                throw new ArgumentException($"scheme {uri.Scheme} is not supported");
+            }
         }
 
         public override IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpoint()
@@ -45,7 +68,7 @@ namespace Obvs.NetMQ.Configuration
                new MessageSource<TRequest>(_requestAddress, _deserializerFactory.Create<TRequest, TServiceMessage>(_assemblyFilter, _typeFilter), RequestsDestination, socketType),
                new MessageSource<TCommand>(_commandAddress, _deserializerFactory.Create<TCommand, TServiceMessage>(_assemblyFilter, _typeFilter), CommandsDestination, socketType),
                new MessagePublisher<TEvent>(_eventAddress, _serializer, EventsDestination, socketType),
-               new MessagePublisher<TResponse>(_responseAddress, _serializer, ResponsesDestination, socketType), 
+               new MessagePublisher<TResponse>(_responseAddress, _serializer, ResponsesDestination, socketType),
                typeof(TServiceMessage));
         }
 
@@ -56,7 +79,7 @@ namespace Obvs.NetMQ.Configuration
                new MessageSource<TEvent>(_eventAddress, _deserializerFactory.Create<TEvent, TServiceMessage>(_assemblyFilter, _typeFilter), EventsDestination, socketType),
                new MessageSource<TResponse>(_responseAddress, _deserializerFactory.Create<TResponse, TServiceMessage>(_assemblyFilter, _typeFilter), ResponsesDestination, socketType),
                new MessagePublisher<TRequest>(_requestAddress, _serializer, RequestsDestination, socketType),
-               new MessagePublisher<TCommand>(_commandAddress, _serializer, CommandsDestination, socketType), 
+               new MessagePublisher<TCommand>(_commandAddress, _serializer, CommandsDestination, socketType),
                typeof(TServiceMessage));
         }
     }

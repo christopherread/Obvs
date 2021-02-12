@@ -13,10 +13,10 @@ using Xunit;
 
 namespace Obvs.NetMQ.Tests
 {
-    public class TestPublishSubscribe
+    public class TestPublishSubscribeInProc
     {
         [Fact, Trait("Category", "Explicit")]
-        public async Task TestSendingAndReceivingStringsOverLocalHost()
+        public async Task TestSendingAndReceivingStrings()
         {
             const string topic = "TestTopic";
 
@@ -29,18 +29,19 @@ namespace Obvs.NetMQ.Tests
 
             }, err => Console.WriteLine("Error: " + err));
 
-            IMessageSource<IMessage> source = new MessageSource<IMessage>("tcp://localhost:5556",
+
+            IMessageSource<IMessage> source = new MessageSource<IMessage>("inproc://inproc-pubsub-a",
                 new IMessageDeserializer<IMessage>[]
                 {
-                    new JsonMessageDeserializer<TestMessage1>(), 
+                    new JsonMessageDeserializer<TestMessage1>(),
                     new JsonMessageDeserializer<TestMessage2>()
                 },
                 topic);
 
-            var sub = source.Messages.Subscribe(observer);
-
-            IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5556",
+            IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("inproc://inproc-pubsub-a",
                 new JsonMessageSerializer(), topic);
+
+            var sub = source.Messages.Subscribe(observer);
 
             await publisher.PublishAsync(new TestMessage1 { Id = 1 });
             await publisher.PublishAsync(new TestMessage1 { Id = 2 });
@@ -63,7 +64,7 @@ namespace Obvs.NetMQ.Tests
         }
 
         [Fact, Trait("Category", "Explicit")]
-        public async Task TestSendingAndReceivingBytesOverLocalHost()
+        public async Task TestSendingAndReceivingBytes()
         {
             const string topic = "TestTopic";
 
@@ -76,18 +77,18 @@ namespace Obvs.NetMQ.Tests
 
             }, err => Console.WriteLine("Error: " + err));
 
-            IMessageSource<IMessage> source = new MessageSource<IMessage>("tcp://localhost:5556",
+            IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("inproc://inproc-pubsub-b",
+                new ProtoBufMessageSerializer(), topic);
+
+            IMessageSource<IMessage> source = new MessageSource<IMessage>("inproc://inproc-pubsub-b",
                 new IMessageDeserializer<IMessage>[]
                 {
-                    new ProtoBufMessageDeserializer<TestMessage1>(), 
+                    new ProtoBufMessageDeserializer<TestMessage1>(),
                     new ProtoBufMessageDeserializer<TestMessage2>()
                 },
                 topic);
-            
-            var sub = source.Messages.Subscribe(observer);
 
-            IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5556",
-                new ProtoBufMessageSerializer(), topic);
+            var sub = source.Messages.Subscribe(observer);
 
             await publisher.PublishAsync(new TestMessage1 { Id = 1 });
             await publisher.PublishAsync(new TestMessage1 { Id = 2 });
@@ -95,7 +96,7 @@ namespace Obvs.NetMQ.Tests
             await publisher.PublishAsync(new TestMessage2 { Id = 2 });
             await publisher.PublishAsync(new TestMessage1 { Id = 3 });
             await publisher.PublishAsync(new TestMessage2 { Id = 3 });
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(3));
 
             Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 1), "TestMessage1 1 not received");
             Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 2), "TestMessage1 2 not received");
@@ -109,48 +110,50 @@ namespace Obvs.NetMQ.Tests
             source.Dispose();
         }
 
-		[Fact, Trait("Category", "Explicit")]
-	    public async Task TestMessagesLongerThan32Characters()
-		{
-			int max = 5;
-			CountdownEvent cd = new CountdownEvent(max);
+        [Fact, Trait("Category", "Explicit")]
+        public async Task TestMessagesLongerThan32Characters()
+        {
+            int max = 5;
+            CountdownEvent cd = new CountdownEvent(max);
 
-			const string topic = "TestTopicxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-			IDisposable sub;
-			{
-			    var source = new MessageSource<IMessage>("tcp://localhost:5557",
-				    new IMessageDeserializer<IMessage>[]
-				    {
-						new ProtoBufMessageDeserializer<TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters>(), 
-					},
-				    topic);
+            const string topic = "TestTopicxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
-			     sub = source.Messages.Subscribe(msg =>
-					{
-						Console.WriteLine("Received: " + msg);
-						cd.Signal();
-					},
-					err => Console.WriteLine("Error: " + err));
-		    }
+            {
+                var publisher = new MessagePublisher<IMessage>("inproc://inproc-pubsub-c",
+                    new ProtoBufMessageSerializer(),
+                    topic);
 
-		    {
-			    var publisher = new MessagePublisher<IMessage>("tcp://localhost:5557",
-				    new ProtoBufMessageSerializer(), 
-				    topic);
+                for (int i = 0; i < max; i++)
+                {
+                    await publisher.PublishAsync(new TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
+                    {
+                        Id = i
+                    });
+                }
+            }
 
-			    for (int i = 0; i < max; i++)
-			    {
-				    await publisher.PublishAsync(new TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
-				    {
-					    Id = i
-				    });
-			    }
-		    }
+            IDisposable sub;
+            {
+                var source = new MessageSource<IMessage>("inproc://inproc-pubsub-c",
+                    new IMessageDeserializer<IMessage>[]
+                    {
+                        new ProtoBufMessageDeserializer<TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters>(),
+                    },
+                    topic);
+
+                sub = source.Messages.Subscribe(msg =>
+                   {
+                       Console.WriteLine("Received: " + msg);
+                       cd.Signal();
+                   },
+                   err => Console.WriteLine("Error: " + err));
+            }
+
 
             await Task.Delay(TimeSpan.FromSeconds(2));
 
             sub.Dispose();
-	    }
+        }
 
         [ProtoContract]
         public class TestMessage1 : IMessage
@@ -176,16 +179,16 @@ namespace Obvs.NetMQ.Tests
             }
         }
 
-		[ProtoContract]
-		public class TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters : IMessage
-		{
-		    [ProtoMember(1)]
-			public int Id { get; set; }
+        [ProtoContract]
+        public class TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters : IMessage
+        {
+            [ProtoMember(1)]
+            public int Id { get; set; }
 
-			public override string ToString()
-			{
-				return "TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters-" + Id;
-			}
-		}
-	}
+            public override string ToString()
+            {
+                return "TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters-" + Id;
+            }
+        }
+    }
 }
