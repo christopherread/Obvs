@@ -1,21 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1">
-  <Class Name="Obvs.ServiceEndpoint" Collapsed="true">
-    <Position X="7.75" Y="4.75" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
-      <FileName>IServiceEndpoint.cs</FileName>
-    </TypeIdentifier>
-    <Lollipop Orientation="Bottom" Position="0.217" />
-  </Class>
-  <Class Name="Obvs.ServiceEndpoint&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
-    <Position X="7.5" Y="3" Width="2" />
-    <TypeIdentifier>
-      <HashCode>AAQIIgAIACAAAAAAAAAAAAQCEEAAAAEAAAAAABBAAAA=</HashCode>
-      <FileName>IServiceEndpoint.cs</FileName>
-    </TypeIdentifier>
-    <Lollipop Position="0.2" />
-  </Class>
   <Class Name="Obvs.ServiceEndpointClient" Collapsed="true">
     <Position X="0.75" Y="4.75" Width="1.75" />
     <TypeIdentifier>

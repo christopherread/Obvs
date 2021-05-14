@@ -10,6 +10,7 @@ namespace Obvs
     {
     }
 
+    /// <summary> Groups as service’s sources and publishers together; aggregated into a <see cref="ServiceBus"/> </summary>
     public interface IServiceEndpoint<in TMessage, out TCommand, in TEvent, TRequest, in TResponse> : IEndpoint<TMessage>
         where TMessage : class
         where TCommand : TMessage
@@ -17,10 +18,16 @@ namespace Obvs
         where TRequest : TMessage
         where TResponse : TMessage
     {
+        /// <summary> Requests awaiting a <see cref="ReplyAsync(TRequest, TResponse)"/> </summary>
         IObservable<TRequest> Requests { get; }
+
+        /// <summary> Fire-and-Forget Commands from <see cref="PublishAsync(TEvent)"/> </summary>
         IObservable<TCommand> Commands { get; }
 
-        Task PublishAsync(TEvent ev);
+        /// <summary> Publishing <paramref name="tEvent"/>s yields corresponding <see cref="Commands"/> </summary>
+        Task PublishAsync(TEvent tEvent);
+
+        /// <summary> Used for <paramref name="response"/>s to <paramref name="request"/>s from <see cref="Requests"/> </summary>
         Task ReplyAsync(TRequest request, TResponse response);
     }
 

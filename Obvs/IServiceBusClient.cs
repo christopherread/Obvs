@@ -76,7 +76,9 @@ namespace Obvs
         }
     }
 
-    public class ServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceBusErrorHandlingBase<TMessage, TCommand, TEvent, TRequest, TResponse>, IServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse>
+    /// <summary> merges multiple configured <see cref="IServiceEndpoint"/>s and <see cref="IServiceEndpointClient"/>s into an Observable stream per message type </summary>
+    public class ServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceBusErrorHandlingBase<TMessage, TCommand, TEvent, TRequest, TResponse>
+        , IServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
         where TEvent : class, TMessage
