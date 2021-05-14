@@ -1,6 +1,6 @@
 # Obvs.NATS
 
-NATS transport support for [Obvs](https://github.com/christopherread/Obvs).
+[NATS](https://github.com/nats-io) transport support for [Obvs](https://github.com/christopherread/Obvs).
 
 ## NuGet Package
 

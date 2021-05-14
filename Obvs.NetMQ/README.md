@@ -2,7 +2,7 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Obvs.NetMQ.svg)](https://www.nuget.org/packages/Obvs.NetMQ/)
 
-NetMQ transport support for [Obvs](https://github.com/christopherread/Obvs).
+[NetMQ/ZeroMQ](https://github.com/zeromq/netmq) transport support for [Obvs](https://github.com/christopherread/Obvs).
 
 Obvs is a [Reactive Extensions (RX)](https://rx.codeplex.com/) wrapper over many common transport protocols including ZeroMQ, RabbitMQ and ActiveMQ.
 
