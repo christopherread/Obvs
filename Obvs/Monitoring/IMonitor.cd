@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Obvs.Monitoring.ConsoleTimerMonitor&lt;TMessage&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="2.5" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>BAAAIAAAQCEgAAQAAAABEAQAAAAAQAEAAAAAAgAAAQA=</HashCode>
+      <FileName>Monitoring\ConsoleTimerMonitor.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.Monitoring.ConsoleTimerMonitorFactory&lt;TMessage&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="3.25" Y="2.5" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAEAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>Monitoring\ConsoleTimerMonitorFactory.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.Monitoring.MultiMonitor&lt;TMessage&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="1.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAQCAAAAQAAAAAAAAAAABAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Monitoring\MultiMonitor.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.Monitoring.MultiMonitorFactory&lt;TMessage&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="3.25" Y="1.5" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAABAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>Monitoring\MultiMonitorFactory.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.Monitoring.ServiceEndpointClientMonitoringProxy&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="3.75" Y="4.5" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAACAAAAAAAAAAAAQCAgBEAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Monitoring\ServiceEndpointClientMonitoringProxy.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Orientation="Bottom" Position="0.106" />
+  </Class>
+  <Class Name="Obvs.Monitoring.ServiceEndpointMonitoringExtensions" Collapsed="true">
+    <Position X="2" Y="3.5" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAA=</HashCode>
+      <FileName>Monitoring\ServiceEndpointMonitoringExtensions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Obvs.Monitoring.ServiceEndpointMonitoringProxy&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="4.5" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AAQAAgAIACAAAAAAAAAAAAQCAABAAAAAAAAAABAACAA=</HashCode>
+      <FileName>Monitoring\ServiceEndpointMonitoringProxy.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Interface Name="Obvs.Monitoring.IMonitor&lt;TMessage&gt;" Collapsed="true">
+    <Position X="0.5" Y="0.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAQAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Monitoring\IMonitor.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Monitoring.IMonitorFactory&lt;TMessage&gt;" Collapsed="true">
+    <Position X="3.25" Y="0.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>Monitoring\IMonitorFactory.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

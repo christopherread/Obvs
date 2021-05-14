@@ -7,6 +7,13 @@ using Obvs.Monitoring;
 
 namespace Obvs.Configuration
 {
+    public enum LocalBusOptions
+    {
+        MessagesWithNoEndpointClients = 0,
+        MessagesWithNoEndpoints = 1,
+        AllMessages = 3
+    }
+
     public class ServiceBusFluentCreator<TMessage, TCommand, TEvent, TRequest, TResponse> : 
         ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse>, 
         ICanSpecifyLocalBusOptions<TMessage, TCommand, TEvent, TRequest, TResponse> 
@@ -184,10 +191,4 @@ namespace Obvs.Configuration
         }
     }
 
-    public enum LocalBusOptions
-    {
-        MessagesWithNoEndpointClients = 0,
-        MessagesWithNoEndpoints = 1,
-        AllMessages = 3
-    }
 }
