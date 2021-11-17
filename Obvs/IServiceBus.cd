@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Obvs.ServiceBus" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="4.75" Y="4.75" Width="1.25" />
+    <TypeIdentifier>
+      <HashCode>AARQAgAIACAAAAAAAABAAAAAAgAEAIAAAAAAABAAAAA=</HashCode>
+      <FileName>IServiceBus.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.ServiceBus&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="1.25" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAgAIACAAAAAAAABAAAAAAAAAYAAAAAAAABAAAAA=</HashCode>
+      <FileName>IServiceBus.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.11" />
+  </Class>
+  <Class Name="Obvs.ServiceBusClient" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="3" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAACAAAAAAAAAIAAAAAgAEAIAAAAAAAAAAAAA=</HashCode>
+      <FileName>IServiceBusClient.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.ServiceBusClient&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="1" Y="1.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>QABAAAIAACAAAAQAAEgEACAAAgIEIAQAAABAAAIEEAA=</HashCode>
+      <FileName>IServiceBusClient.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.ServiceBusErrorHandlingBase&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="0.75" Y="0.5" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAACAFAAAAAAAAgAAAAAAAAIAAAAAAgAAAAAA=</HashCode>
+      <FileName>ServiceBusErrorHandlingBase.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.SubjectServiceBus" Collapsed="true">
+    <Position X="6.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>SubjectServiceBus.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.SubjectServiceBus&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="6.5" Y="3.25" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AERAAgAIACEAAAAAQAAAAAAAAgAEIIAAAAAAABAAAAA=</HashCode>
+      <FileName>SubjectServiceBus.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Orientation="Bottom" Position="0.137" />
+  </Class>
+  <Interface Name="Obvs.IServiceBus" Collapsed="true">
+    <Position X="4.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IServiceBus.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IServiceBus&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="5" Y="2" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAQAAgAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAA=</HashCode>
+      <FileName>IServiceBus.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IServiceBusClient" Collapsed="true">
+    <Position X="3.25" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IServiceBusClient.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IServiceBusClient&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="3.5" Y="0.75" Width="5" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAAAAAAAAAAAAAAAAAgAEAIAAAAAAAAAAAAA=</HashCode>
+      <FileName>IServiceBusClient.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

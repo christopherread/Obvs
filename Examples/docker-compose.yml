@@ -1,0 +1,23 @@
+version: '3.5'
+services:
+  amq:
+    image: rmohr/activemq:latest
+    ports:
+      - "61616:61616"
+      - "8161:8161"
+    networks:
+      - obvs
+  obvssvc1:
+    build: ./
+    image: obvs.example.service.activemq:latest
+    environment:
+      - ACTIVEMQ_BROKER_URI=tcp://amq:61616?connectionTimeout=0
+      - OBVS_SERVICE_NAME=Obvs.Service1
+    depends_on:
+      - amq
+    networks:
+      - obvs
+
+networks:
+  obvs:
+    name: obvs

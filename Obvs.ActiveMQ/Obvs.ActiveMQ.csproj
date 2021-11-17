@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net472;netstandard2.0;net5.0</TargetFrameworks>
+    <Company></Company>
+    <Copyright>Copyright © Christopher Read 2017</Copyright>
+    <Version>1.0.0</Version>
+    <Authors>Christopher Read</Authors>
+    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
+    <PackageReleaseNotes>WithCredentials extension method added allowing username/password configuration</PackageReleaseNotes>
+    <Description>ActiveMQ transport support for Obvs</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.8.0" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs\Obvs.csproj" />
+  </ItemGroup>
+</Project>

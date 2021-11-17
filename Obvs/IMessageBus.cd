@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Obvs.DefaultMessagePublisher&lt;TMessage&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="1" Y="2" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IMessagePublisher.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.DefaultMessageSource&lt;TMessage&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="6.75" Y="1.5" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAA=</HashCode>
+      <FileName>IMessageSource.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.DefaultRequestCorrelationProvider" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="12.5" Y="1.5" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAIAAAAAAAAABQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IRequestCorrelationProvider.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.MergedMessageSource&lt;TMessage&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="6.75" Y="2.5" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAEAAAAQAAAAA=</HashCode>
+      <FileName>MergedMessageSource.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.MessageBridge&lt;TFrom, TTo&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="10.25" Y="3.75" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAEAAAAAGAAAIAAJAAAAAAAAAAAgAAAIAAAAQAAAAA=</HashCode>
+      <FileName>MessageBridge.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.MessageSourceConverter&lt;TFrom, TTo&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="6.75" Y="3.5" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAGAAAAAAJAAAAAAAAAAAAAAAAAAAAQAAAAA=</HashCode>
+      <FileName>MessageSourceConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.SubjectMessageBus&lt;TMessage&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="4" Y="3.25" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAACAAAAAAAAAAAAAAACAAAAAAAAAAAQAAAAA=</HashCode>
+      <FileName>SubjectMessageBus.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.TypeRoutingMessagePublisher&lt;TMessage&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="3" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAACAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAA=</HashCode>
+      <FileName>TypeRoutingMessagePublisher.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Interface Name="Obvs.IMessageBus&lt;TMessage&gt;" Collapsed="true">
+    <Position X="4.25" Y="2" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IMessageBus.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IMessageConverter&lt;TFrom, TTo&gt;" Collapsed="true">
+    <Position X="12.75" Y="2.75" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IMessageConverter.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IMessagePublisher&lt;TMessage&gt;" Collapsed="true">
+    <Position X="2.25" Y="0.5" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IMessagePublisher.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IMessageSource&lt;TMessage&gt;" Collapsed="true">
+    <Position X="5.25" Y="0.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAA=</HashCode>
+      <FileName>IMessageSource.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IRequestCorrelationProvider" Collapsed="true">
+    <Position X="10" Y="1.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IRequestCorrelationProvider.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IRequestCorrelationProvider&lt;TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="9.25" Y="0.5" Width="3.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAIAAAAAAAAABQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IRequestCorrelationProvider.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IMessageBridge" Collapsed="true">
+    <Position X="10.75" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAA=</HashCode>
+      <FileName>MessageBridge.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

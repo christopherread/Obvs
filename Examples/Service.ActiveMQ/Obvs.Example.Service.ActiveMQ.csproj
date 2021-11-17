@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <StartupObject>Obvs.Example.Service.ActiveMQ.Program</StartupObject>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.7.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />
+    <PackageReference Include="Obvs" Version="5.0.0.26" />
+    <PackageReference Include="Obvs.ActiveMQ" Version="5.0.0.28" />
+    <PackageReference Include="Obvs.Serialization.Json" Version="5.0.0.19" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Messages\Obvs.Example.Messages.csproj" />
+  </ItemGroup>
+</Project>

@@ -4,7 +4,7 @@
 
 [![Join the chat at https://gitter.im/inter8ection/Obvs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/inter8ection/Obvs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![build](https://ci.appveyor.com/api/projects/status/hcv02eeulvfdr9de?svg=true)](https://ci.appveyor.com/project/inter8ection/obvs)
+[![.NET](https://github.com/christopherread/Obvs/workflows/.NET/badge.svg)](https://github.com/christopherread/Obvs/actions)
 
 [![NuGet](https://img.shields.io/nuget/v/Obvs.svg)](https://www.nuget.org/packages/Obvs/)
 
@@ -24,8 +24,9 @@
 
 ### Versions/Roadmap
 
-* V5 - Next version, `System.Reactive 4.1`, supports `netstandard2.0` and `net46`
-* V4 - Current version, `System.Reactive 3.1.1`, supports `netstandard1.6` and `net452` 
+* V6 - `System.Reactive 5.0`, supports `netstandard2.0`, `net472` and `net5.0`.  Mono-repo
+* V5 - `System.Reactive 4.1`, supports `netstandard2.0` and `net472`
+* V4 - `System.Reactive 3.1.1`, supports `netstandard1.6` and `net452` 
 
 ### More Details
 
@@ -124,12 +125,19 @@ Define custom endpoints that can wrap API calls or integrations with other syste
 	...
 
 	IServiceBus serviceBus = ServiceBus.Configure()
-        .WithActiveMQEndpoints<IMyServiceMessage>()
+          .WithActiveMQEndpoints<IMyServiceMessage>()
             .Named("MyService")
             .UsingQueueFor<ICommand>()
             .ConnectToBroker("tcp://localhost:61616")
             .SerializedAsJson()
             .AsClientAndServer()
-		.WithEndpoints(new MyCustomEndpoint())
+	  .WithEndpoints(new MyCustomEndpoint())
         .Create();
 
+## Run Examples in Docker
+
+	cd examples
+	docker-compose up
+
+	cd client
+	dotnet run -f netcoreapp3.1 

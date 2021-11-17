@@ -17,7 +17,7 @@ namespace Obvs
         bool AreCorrelated(TRequest request, TResponse response);
     }
 
-    public class DefaultRequestCorrelationProvider : IRequestCorrelationProvider<IRequest, IResponse>
+    public class DefaultRequestCorrelationProvider : IRequestCorrelationProvider
     {
         public void SetRequestCorrelationIds(IRequest request)
         {

@@ -32,17 +32,17 @@ namespace Obvs.Tests
             typeRoutingMessagePublisher.PublishAsync(command);
             typeRoutingMessagePublisher.PublishAsync(message);
 
-            A.CallTo(() => eventPublisher.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => eventPublisher.PublishAsync(ev)).MustHaveHappenedOnceExactly();
             A.CallTo(() => eventPublisher.PublishAsync(message)).MustNotHaveHappened();
             A.CallTo(() => eventPublisher.PublishAsync(command)).MustNotHaveHappened();
 
             A.CallTo(() => commandPublisher.PublishAsync(ev)).MustNotHaveHappened();
             A.CallTo(() => commandPublisher.PublishAsync(message)).MustNotHaveHappened();
-            A.CallTo(() => commandPublisher.PublishAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => commandPublisher.PublishAsync(command)).MustHaveHappenedOnceExactly();
 
-            A.CallTo(() => messagePublisher.PublishAsync(ev)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => messagePublisher.PublishAsync(command)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => messagePublisher.PublishAsync(message)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => messagePublisher.PublishAsync(ev)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => messagePublisher.PublishAsync(command)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => messagePublisher.PublishAsync(message)).MustHaveHappenedOnceExactly();
         }
     }
 }

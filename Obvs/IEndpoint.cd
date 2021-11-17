@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Obvs.ServiceEndpointClient" Collapsed="true">
+    <Position X="0.75" Y="4.75" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IServiceEndpointClient.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Orientation="Bottom" Position="0.1" />
+  </Class>
+  <Class Name="Obvs.ServiceEndpointClient&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="0.5" Y="3" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AABAIAAAACAAAAAAAAQACAQCAgAEAQAAAAAAEAQAAAA=</HashCode>
+      <FileName>IServiceEndpointClient.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Interface Name="Obvs.IEndpoint&lt;TMessage&gt;" Collapsed="true">
+    <Position X="4.25" Y="0.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAQCAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IEndpoint.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IEndpoint" Collapsed="true">
+    <Position X="4.5" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IEndpoint.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IServiceEndpoint" Collapsed="true">
+    <Position X="6.5" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IServiceEndpoint.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IServiceEndpoint&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="6.25" Y="2" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAQAAgAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAA=</HashCode>
+      <FileName>IServiceEndpoint.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IServiceEndpointClient" Collapsed="true">
+    <Position X="2" Y="3.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IServiceEndpointClient.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.IServiceEndpointClient&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="1.75" Y="2" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAAAAAAAAAAAAAAAAAgAEAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IServiceEndpointClient.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
