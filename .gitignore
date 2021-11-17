@@ -249,6 +249,10 @@ $RECYCLE.BIN/
 .DS_Store
 .vs/config/applicationhost.config
 .vs/
+
+# VS Code
+.vscode
+*.code-workspace
 .idea/
 
 # Windows Installer files

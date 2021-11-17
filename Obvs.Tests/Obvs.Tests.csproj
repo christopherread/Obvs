@@ -3,8 +3,9 @@
     <TargetFramework>net5.0</TargetFramework>
     <Company>Christopher Read</Company>
     <Copyright>Copyright © Christopher Read 2014</Copyright>
-    <Authors />
+    <Authors/>
     <IsPackable>false</IsPackable>
+    <GenerateFullPaths>true</GenerateFullPaths>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="FakeItEasy" Version="6.2.1" />
@@ -17,6 +18,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Obvs\Obvs.csproj" />
+    <ProjectReference Include="..\Obvs\Obvs.csproj"/>
   </ItemGroup>
 </Project>
