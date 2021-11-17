@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Obvs.Serialization.MessageDeserializerExtentions" Collapsed="true">
+    <Position X="3.5" Y="2.25" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Serialization\IMessageDeserializer.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Obvs.Serialization.MessageDeserializerBase&lt;TMessage&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="2.25" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Serialization\IMessageDeserializer.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.Serialization.MessageSerializerExtentions" Collapsed="true">
+    <Position X="6.25" Y="2.25" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Serialization\IMessageSerializer.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="Obvs.Serialization.IMessageDeserializer&lt;TMessage&gt;">
+    <Position X="0.5" Y="0.5" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Serialization\IMessageDeserializer.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Serialization.IMessageDeserializerFactory">
+    <Position X="3.5" Y="0.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>Serialization\IMessageDeserializerFactory.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Serialization.IMessageSerializer" Collapsed="true">
+    <Position X="6.25" Y="0.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Serialization\IMessageSerializer.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

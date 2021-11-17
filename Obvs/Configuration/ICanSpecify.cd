@@ -1,0 +1,124 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Obvs.Configuration.ServiceBusFluentCreator&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="5" Y="8.25" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>BABhQAAIBQAAAAQEAggAAIACAAoBIAAECCCgAAAIEGA=</HashCode>
+      <FileName>Configuration\ServiceBusFluentCreator.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Obvs.Configuration.ServiceBusFluentCreatorExtensions">
+    <Position X="7.75" Y="8.25" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAABAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>Configuration\ServiceBusFluentCreatorExtensions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="Obvs.Configuration.ICanAddEndpointOrLoggingOrCorrelationOrCreate&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="5.75" Y="6.5" Width="4.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanCreate&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="2.75" Y="1.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAgAAAAAAAABAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanAddEndpoint&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="8.5" Y="4" Width="2" />
+    <TypeIdentifier>
+      <HashCode>BABAAAAABAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanSpecifyRequestCorrelationProvider&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="3.75" Y="4" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanSpecifyLogging&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="1.25" Y="0.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAABAAAAAQAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanSpecifyLoggingOrCreate&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="6.5" Y="1.5" Width="2.75" />
+    <InheritanceLine Type="Obvs.Configuration.ICanSpecifyLogging&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="3.25" Y="0.812" />
+        <Point X="8" Y="0.812" />
+        <Point X="8" Y="1.5" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanSpecifyLoggingOrMonitoringOrCreate&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="1.25" Y="2.75" Width="3.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanSpecifyEndpointSerializers&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="9.75" Y="1.75" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanFilterEndpointMessageTypeAssemblies&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="0.5" Y="6.5" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanCreateEndpointAsClientOrServer&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="0.5" Y="7.75" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AEAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAIAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanSpecifyPropertyProviders&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="9.75" Y="2.75" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanSpecifyLocalBus&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="0.5" Y="4" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanSpecifyLocalBusOptions&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="9.75" Y="0.5" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAACAgAAAAAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Obvs.Configuration.ICanSpecifyMonitoring&lt;TMessage, TCommand, TEvent, TRequest, TResponse&gt;" Collapsed="true">
+    <Position X="5.5" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAA=</HashCode>
+      <FileName>Configuration\ICanAddEndpointOrLoggingOrCreate.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
