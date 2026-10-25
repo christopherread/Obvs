@@ -38,7 +38,10 @@ namespace Obvs.NetMQ
                     var token = tokenSource.Token;
                     var subscribedEvent = new ManualResetEventSlim(false);
 
-                    var task = Task.Run(() => Subscriber(token, observer, subscribedEvent));
+                    // The receive loop blocks for as long as the subscription lasts, so it gets a thread of its
+                    // own: on the thread pool, a busy pool delays it and publishers drop messages meanwhile
+                    var task = Task.Factory.StartNew(() => Subscriber(token, observer, subscribedEvent),
+                        CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
                     subscribedEvent.Wait();
 
