@@ -39,9 +39,10 @@ namespace Obvs.Hosting
             return activity;
         }
 
-        public static Activity StartProcess(string serviceName, Type messageType)
+        // A child of the sender's span when the message carries trace context, so the trace continues
+        public static Activity StartProcess(string serviceName, Type messageType, ActivityContext parent)
         {
-            var activity = Source.StartActivity($"process {serviceName}", ActivityKind.Consumer);
+            var activity = Source.StartActivity($"process {serviceName}", ActivityKind.Consumer, parent);
             if (activity != null)
             {
                 activity.SetTag("messaging.system", System);
@@ -51,6 +52,41 @@ namespace Obvs.Hosting
                 activity.SetTag("obvs.message.type", messageType.Name);
             }
             return activity;
+        }
+
+        // Adds the span's trace context to the message's headers, keeping any the app set. Falls back to the
+        // ambient span (an incoming web request, say) when nobody listens to Obvs's own spans.
+        public static void InjectTraceContext(Activity activity, object message)
+        {
+            activity = activity ?? Activity.Current;
+            if (activity == null)
+            {
+                return;
+            }
+
+            var headers = new Dictionary<string, string>();
+            foreach (var header in ObvsMessageHeaders.Get(message))
+            {
+                headers[header.Key] = header.Value;
+            }
+            DistributedContextPropagator.Current.Inject(activity, headers,
+                (carrier, name, value) => ((Dictionary<string, string>)carrier)[name] = value);
+            ObvsMessageHeaders.Set(message, headers);
+        }
+
+        // The sender's span from the message's headers, if it has trace context
+        public static ActivityContext ExtractParent(object message)
+        {
+            var headers = ObvsMessageHeaders.Get(message);
+            DistributedContextPropagator.Current.ExtractTraceIdAndState(headers,
+                (object carrier, string name, out string value, out IEnumerable<string> values) =>
+                {
+                    values = null;
+                    ((IReadOnlyDictionary<string, string>)carrier).TryGetValue(name, out value);
+                },
+                out var traceParent, out var traceState);
+
+            return ActivityContext.TryParse(traceParent, traceState, out var parent) ? parent : default(ActivityContext);
         }
 
         public static void RecordFailure(Activity activity, Exception exception)

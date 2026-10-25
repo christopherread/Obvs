@@ -67,7 +67,7 @@ namespace Obvs.Hosting
                 var started = Stopwatch.GetTimestamp();
                 Exception failure = null;
                 // The span is current while the handler runs, so anything it sends becomes a child span
-                using (var activity = ObvsDiagnostics.StartProcess(serviceName, message.GetType()))
+                using (var activity = ObvsDiagnostics.StartProcess(serviceName, message.GetType(), ObvsDiagnostics.ExtractParent(message)))
                 {
                     var scope = scopes.CreateAsyncScope();
                     try
