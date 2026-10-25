@@ -13,6 +13,9 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # NuGet Trusted Publishing
 
     steps:
     - name: Checkout
@@ -58,9 +61,15 @@ jobs:
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.NetJson
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Xml
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Yaml
+    - name: NuGet Login
+      if: github.event_name == 'push'
+      id: nuget
+      uses: NuGet/login@v1
+      with:
+        user: inter8ection
     - name: Publish
       if: github.event_name == 'push'
       env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }} 
+        NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
       run: |
-        dotnet nuget push "nupkgs/*.*" -k "$NUGET_API_KEY" -s https://api.nuget.org/v3/index.json
+        dotnet nuget push "nupkgs/*.*" -k "$NUGET_API_KEY" -s https://api.nuget.org/v3/index.json --skip-duplicate
