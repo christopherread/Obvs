@@ -8,7 +8,7 @@ services:
     volumes:
       - ./Config.json:/ServiceBus_Emulator/ConfigFiles/Config.json
     ports:
-      - "5672:5672"
+      - "5673:5672" # 5672 is RabbitMQ's, which CI also runs
       - "5300:5300"
     environment:
       SQL_SERVER: sqledge

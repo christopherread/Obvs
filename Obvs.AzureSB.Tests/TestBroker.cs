@@ -5,7 +5,7 @@ namespace Obvs.AzureSB.Tests
 {
     internal static class TestBroker
     {
-        private const string Emulator = "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;";
+        private const string Emulator = "Endpoint=sb://localhost:5673;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;";
 
         // The Service Bus emulator from Emulator/docker-compose.yml. Set AZURE_SERVICE_BUS_CONNECTION_STRING to use another namespace.
         public static string ConnectionString => Environment.GetEnvironmentVariable("AZURE_SERVICE_BUS_CONNECTION_STRING") ?? Emulator;
@@ -13,7 +13,7 @@ namespace Obvs.AzureSB.Tests
         // The emulator serves management operations on port 5300
         public static ServiceBusAdministrationClient CreateAdministrationClient()
         {
-            return new ServiceBusAdministrationClient(ConnectionString.Replace("Endpoint=sb://localhost;", "Endpoint=sb://localhost:5300;"));
+            return new ServiceBusAdministrationClient(ConnectionString.Replace("Endpoint=sb://localhost:5673;", "Endpoint=sb://localhost:5300;"));
         }
     }
 }

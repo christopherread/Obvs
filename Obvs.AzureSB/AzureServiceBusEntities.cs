@@ -105,7 +105,7 @@ namespace Obvs.AzureSB
             }
         }
 
-        // The emulator serves management operations on another port, 5300 unless its connection string names one
+        // The emulator serves management operations on port 5300, whichever port its connection string gives for messaging
         private static ServiceBusAdministrationClient CreateAdministrationClient(AzureServiceBusOptions options)
         {
             if (!string.IsNullOrWhiteSpace(options.FullyQualifiedNamespace))
@@ -116,7 +116,7 @@ namespace Obvs.AzureSB
             var connectionString = options.ConnectionString;
             if (connectionString.IndexOf("UseDevelopmentEmulator=true", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                connectionString = Regex.Replace(connectionString, @"Endpoint=sb://([^;:/]+)/?;", "Endpoint=sb://$1:5300;", RegexOptions.IgnoreCase);
+                connectionString = Regex.Replace(connectionString, @"Endpoint=sb://([^;:/]+)(:\d+)?/?;", "Endpoint=sb://$1:5300;", RegexOptions.IgnoreCase);
             }
             return new ServiceBusAdministrationClient(connectionString);
         }
