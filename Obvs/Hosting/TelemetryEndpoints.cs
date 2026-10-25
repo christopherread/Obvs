@@ -69,6 +69,7 @@ namespace Obvs.Hosting
             {
                 using (var activity = ObvsDiagnostics.StartProducer("request", _serviceName, request.GetType()))
                 {
+                    ObvsDiagnostics.InjectTraceContext(activity, request);
                     Telemetry.LogAndCount("request", _serviceName, request, _logger);
                     try
                     {
@@ -96,6 +97,7 @@ namespace Obvs.Hosting
         {
             using (var activity = ObvsDiagnostics.StartProducer(operation, serviceName, message.GetType()))
             {
+                ObvsDiagnostics.InjectTraceContext(activity, message);
                 LogAndCount(operation, serviceName, message, logger);
                 try
                 {

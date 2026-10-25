@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Serialization;
@@ -31,10 +33,17 @@ namespace Obvs.RabbitMQ
         public async Task PublishAsync(TMessage message)
         {
             var body = _serializer.Serialize(message);
-            var properties = new BasicProperties {ContentType = "bytes"};
+            var properties = new BasicProperties {ContentType = "bytes", Headers = GetHeaders(message)};
             var routingKey = GetRoutingKey(message);
             var channel = await _channel.Value.ConfigureAwait(false);
             await channel.BasicPublishAsync(_exchange, routingKey, false, properties, body).ConfigureAwait(false);
+        }
+
+        // The message's Obvs headers (such as trace context) as AMQP headers
+        private static IDictionary<string, object> GetHeaders(TMessage message)
+        {
+            var headers = ObvsMessageHeaders.Get(message);
+            return headers.Count == 0 ? null : headers.ToDictionary(header => header.Key, header => (object)header.Value);
         }
 
         private string GetRoutingKey(TMessage message)

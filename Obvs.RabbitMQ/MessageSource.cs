@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -122,7 +123,29 @@ namespace Obvs.RabbitMQ
         {
             var deserializer = GetDeserializer(deliverEventArgs);
             // The body's buffer is only valid until the delivery handler returns, so copy it
-            return deserializer.Deserialize(deliverEventArgs.Body.ToArray());
+            var message = deserializer.Deserialize(deliverEventArgs.Body.ToArray());
+            SetHeaders(message, deliverEventArgs.BasicProperties.Headers);
+            return message;
+        }
+
+        // AMQP string headers arrive as UTF-8 bytes
+        private static void SetHeaders(TMessage message, IDictionary<string, object> amqpHeaders)
+        {
+            if (amqpHeaders == null || amqpHeaders.Count == 0)
+            {
+                return;
+            }
+
+            var headers = new Dictionary<string, string>();
+            foreach (var header in amqpHeaders)
+            {
+                var value = header.Value is byte[] bytes ? Encoding.UTF8.GetString(bytes) : header.Value?.ToString();
+                if (value != null)
+                {
+                    headers[header.Key] = value;
+                }
+            }
+            ObvsMessageHeaders.Set(message, headers);
         }
 
         private IMessageDeserializer<TMessage> GetDeserializer(BasicDeliverEventArgs deliverEventArgs)

@@ -59,7 +59,9 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 10.0.x
+        # Pinned while Microsoft's download origin returns 409 for SDK 10.0.403 / runtime 10.0.14 (October 2026).
+        # Go back to 10.0.x once that release downloads.
+        dotnet-version: 10.0.402
     - name: Setup GitVersion
       uses: gittools/actions/gitversion/setup@v4
       with:
