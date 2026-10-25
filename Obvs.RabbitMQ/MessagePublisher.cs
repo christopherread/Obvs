@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Serialization;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Framing;
 
 namespace Obvs.RabbitMQ
 {
@@ -12,7 +11,7 @@ namespace Obvs.RabbitMQ
         private readonly IMessageSerializer _serializer;
         private readonly string _exchange;
         private readonly string _routingKeyPrefix;
-        private Lazy<IModel> _channel;
+        private Lazy<Task<IChannel>> _channel;
 
         public MessagePublisher(Lazy<IConnection> connection, IMessageSerializer serializer, string exchange,
             string routingKeyPrefix)
@@ -21,26 +20,21 @@ namespace Obvs.RabbitMQ
             _exchange = exchange;
             _routingKeyPrefix = routingKeyPrefix;
 
-            _channel = new Lazy<IModel>(() =>
+            _channel = new Lazy<Task<IChannel>>(async () =>
             {
-                var channel = connection.Value.CreateModel();
-                channel.ExchangeDeclare(exchange, ExchangeType.Topic);
+                var channel = await connection.Value.CreateChannelAsync().ConfigureAwait(false);
+                await channel.ExchangeDeclareAsync(exchange, ExchangeType.Topic).ConfigureAwait(false);
                 return channel;
             }, LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
-        public Task PublishAsync(TMessage message)
-        {
-            Publish(message);
-            return Task.FromResult(true);
-        }
-
-        private void Publish(TMessage message)
+        public async Task PublishAsync(TMessage message)
         {
             var body = _serializer.Serialize(message);
             var properties = new BasicProperties {ContentType = "bytes"};
             var routingKey = GetRoutingKey(message);
-            _channel.Value.BasicPublish(_exchange, routingKey, properties, body);
+            var channel = await _channel.Value.ConfigureAwait(false);
+            await channel.BasicPublishAsync(_exchange, routingKey, false, properties, body).ConfigureAwait(false);
         }
 
         private string GetRoutingKey(TMessage message)
@@ -50,10 +44,11 @@ namespace Obvs.RabbitMQ
 
         public void Dispose()
         {
-            if (_channel.IsValueCreated)
+            if (_channel.IsValueCreated && _channel.Value.Status == TaskStatus.RanToCompletion)
             {
-                _channel.Value.Close();
-                _channel.Value.Dispose();
+                var channel = _channel.Value.Result;
+                channel.CloseAsync().GetAwaiter().GetResult();
+                channel.Dispose();
                 _channel = null;
             }
         }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Obvs.RabbitMQ.Extensions;
 using Obvs.Serialization;
 using RabbitMQ.Client;
@@ -49,40 +50,45 @@ namespace Obvs.RabbitMQ
         {
             get
             {
-                return Observable.Create<TMessage>(observer =>
-                {
-                    var channel = _connection.Value.CreateModel();
-                    channel.ExchangeDeclare(_exchange, ExchangeType.Topic);
-
-                    var queueName = GetQueueName();
-                    var queue = channel.QueueDeclare(queueName);
-                    channel.QueueBind(queue, _exchange, _routingKey);
-
-                    var consumer = new EventingBasicConsumer(channel);
-                    
-                    var subscription = consumer.ToObservable()
-                                               .Select(Deserialize)
-                                               .Subscribe(observer);
-
-                    channel.BasicConsume(queue, true, consumer);
-
-                    return Disposable.Create(() =>
-                    {
-                        subscription.Dispose();
-                        if (channel.IsOpen)
-                        {
-                            if (consumer.IsRunning)
-                            {
-                                channel.BasicCancel(consumer.ConsumerTag);
-                            }
-                            channel.QueueUnbind(queue, _exchange, _routingKey);
-                            channel.QueueDelete(queue);
-                            channel.Close();
-                        }
-                        channel.Dispose();
-                    });
-                });
+                // Setup blocks so that the queue is bound by the time Subscribe returns, as callers
+                // commonly publish straight after subscribing. RabbitMQ.Client doesn't capture the
+                // synchronization context, so blocking here can't deadlock.
+                return Observable.Create<TMessage>(observer => SubscribeAsync(observer).GetAwaiter().GetResult());
             }
+        }
+
+        private async Task<IDisposable> SubscribeAsync(IObserver<TMessage> observer)
+        {
+            var channel = await _connection.Value.CreateChannelAsync().ConfigureAwait(false);
+            await channel.ExchangeDeclareAsync(_exchange, ExchangeType.Topic).ConfigureAwait(false);
+
+            var queueName = GetQueueName();
+            var queue = await channel.QueueDeclareAsync(queueName).ConfigureAwait(false);
+            await channel.QueueBindAsync(queue.QueueName, _exchange, _routingKey).ConfigureAwait(false);
+
+            var consumer = new AsyncEventingBasicConsumer(channel);
+
+            var subscription = consumer.ToObservable()
+                                       .Select(Deserialize)
+                                       .Subscribe(observer);
+
+            var consumerTag = await channel.BasicConsumeAsync(queue.QueueName, true, consumer).ConfigureAwait(false);
+
+            return Disposable.Create(() =>
+            {
+                subscription.Dispose();
+                if (channel.IsOpen)
+                {
+                    if (consumer.IsRunning)
+                    {
+                        channel.BasicCancelAsync(consumerTag).GetAwaiter().GetResult();
+                    }
+                    channel.QueueUnbindAsync(queue.QueueName, _exchange, _routingKey).GetAwaiter().GetResult();
+                    channel.QueueDeleteAsync(queue.QueueName).GetAwaiter().GetResult();
+                    channel.CloseAsync().GetAwaiter().GetResult();
+                }
+                channel.Dispose();
+            });
         }
 
         private string GetQueueName()
@@ -110,7 +116,8 @@ namespace Obvs.RabbitMQ
         private TMessage Deserialize(BasicDeliverEventArgs deliverEventArgs)
         {
             var deserializer = GetDeserializer(deliverEventArgs);
-            return deserializer.Deserialize(deliverEventArgs.Body); 
+            // The body's buffer is only valid until the delivery handler returns, so copy it
+            return deserializer.Deserialize(deliverEventArgs.Body.ToArray());
         }
 
         private IMessageDeserializer<TMessage> GetDeserializer(BasicDeliverEventArgs deliverEventArgs)
