@@ -68,7 +68,9 @@ namespace Obvs.NATS
                         var wrapper = Unwrap(msg.Data);
                         if (MatchesFilter(wrapper))
                         {
-                            observer.OnNext(Deserialize(msg.Subject, wrapper));
+                            var message = Deserialize(msg.Subject, wrapper);
+                            SetHeaders(message, msg.Headers);
+                            observer.OnNext(message);
                         }
                     }
                 }
@@ -80,6 +82,21 @@ namespace Obvs.NATS
             {
                 observer.OnError(exception);
             }
+        }
+
+        private static void SetHeaders(TMessage message, NatsHeaders natsHeaders)
+        {
+            if (natsHeaders == null || natsHeaders.Count == 0)
+            {
+                return;
+            }
+
+            var headers = new Dictionary<string, string>();
+            foreach (var header in natsHeaders)
+            {
+                headers[header.Key] = header.Value.ToString();
+            }
+            ObvsMessageHeaders.Set(message, headers);
         }
 
         private bool MatchesFilter(MessageWrapper wrapper)
