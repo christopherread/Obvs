@@ -1,33 +1,31 @@
-using System;
 using System.Collections.Generic;
-using System.Threading;
-using NATS.Client;
+using NATS.Client.Core;
 
 namespace Obvs.NATS.Configuration
 {
     internal static class SharedConnectionFactory
     {
-        private static readonly Dictionary<string, Lazy<IConnection>> SharedConnections = new Dictionary<string, Lazy<IConnection>>();
+        private static readonly Dictionary<string, INatsConnection> SharedConnections = new Dictionary<string, INatsConnection>();
 
-        public static Lazy<IConnection> Get(string url, bool isShared)
+        public static INatsConnection Get(string url, bool isShared)
         {
             if (!isShared)
             {
-                return CreateLazyConnection(url);
+                return CreateConnection(url);
             }
-            Lazy<IConnection> connection;
+            INatsConnection connection;
             if (!SharedConnections.TryGetValue(url, out connection))
             {
-                connection = CreateLazyConnection(url);
+                connection = CreateConnection(url);
                 SharedConnections.Add(url, connection);
             }
             return connection;
         }
 
-        private static Lazy<IConnection> CreateLazyConnection(string url)
+        // A NatsConnection only connects when it's first used
+        private static INatsConnection CreateConnection(string url)
         {
-            var factory = new ConnectionFactory();
-            return new Lazy<IConnection>(() => factory.CreateConnection(url), LazyThreadSafetyMode.ExecutionAndPublication);
+            return new NatsConnection(new NatsOpts { Url = url });
         }
     }
 }

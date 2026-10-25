@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reactive.Disposables;
 using System.Reflection;
-using NATS.Client;
+using NATS.Client.Core;
 using Obvs.Configuration;
 using Obvs.Serialization;
 
@@ -24,7 +24,7 @@ namespace Obvs.NATS.Configuration
         
         private readonly Func<IDictionary<string, string>, bool> _propertyFilter;
         private readonly Func<TMessage, Dictionary<string, string>> _propertyProvider;
-        private readonly Lazy<IConnection> _connection;
+        private readonly INatsConnection _connection;
 
         public NatsServiceEndpointProvider(NatsEndpointSettings<TMessage> settings, IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null, Func<IDictionary<string, string>, bool> propertyFilter = null, Func<TMessage, Dictionary<string, string>> propertyProvider = null)
             : base(settings.ServiceName)
@@ -56,14 +56,14 @@ namespace Obvs.NATS.Configuration
                 GetConnectionDisposable(_connection));
         }
 
-        private IMessageSource<T> CreateSource<T>(Lazy<IConnection> connection, string subject) where T : class, TMessage
+        private IMessageSource<T> CreateSource<T>(INatsConnection connection, string subject) where T : class, TMessage
         {
             return new MessageSource<T>(connection, subject,
                 _deserializerFactory.Create<T, TServiceMessage>(_assemblyFilter, _typeFilter), 
                 _propertyFilter);
         }
 
-        private IMessagePublisher<T> CreatePublisher<T>(Lazy<IConnection> connection, string destination) where T : class, TMessage
+        private IMessagePublisher<T> CreatePublisher<T>(INatsConnection connection, string destination) where T : class, TMessage
         {
            return new MessagePublisher<T>(connection, destination, _serializer, _propertyProvider);
         }
@@ -80,19 +80,11 @@ namespace Obvs.NATS.Configuration
                 GetConnectionDisposable(_connection));
         }
         
-        private static IDisposable GetConnectionDisposable(Lazy<IConnection> lazyConnection)
+        private static IDisposable GetConnectionDisposable(INatsConnection connection)
         {
-            return Disposable.Create(() =>
-            {
-                if (lazyConnection.IsValueCreated)
-                {
-                    if (!lazyConnection.Value.IsClosed())
-                    {
-                        lazyConnection.Value.Close();
-                    }
-                    lazyConnection.Value.Dispose();
-                }
-            });
+#pragma warning disable VSTHRD002 // IDisposable.Dispose is synchronous
+            return Disposable.Create(() => connection.DisposeAsync().AsTask().GetAwaiter().GetResult());
+#pragma warning restore VSTHRD002
         }
     }
 }

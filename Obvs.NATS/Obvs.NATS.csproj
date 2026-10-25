@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net472;netstandard2.0;net10.0</TargetFrameworks>
+    <!-- C# 9 to set NATS.Net's init-only options (net472 and netstandard2.0 default to C# 7.3) -->
+    <LangVersion>9.0</LangVersion>
     <Company></Company>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
@@ -10,7 +12,7 @@
     <Description>NATS transport support for Obvs</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NATS.Client" />
+    <PackageReference Include="NATS.Client.Core" />
     <PackageReference Include="protobuf-net" />
   </ItemGroup>
   <ItemGroup>
