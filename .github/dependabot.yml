@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # Library and test packages, versioned centrally in Directory.Packages.props
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  # The examples pin published Obvs packages, so keep them on the latest release
+  - package-ecosystem: nuget
+    directory: /Examples
+    schedule:
+      interval: weekly
+    groups:
+      examples:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

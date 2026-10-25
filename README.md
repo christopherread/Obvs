@@ -41,7 +41,6 @@
 * Serialization: XML / JSON.Net / NetJson / ProtoBuf / MsgPack
 * Logging: NLog / log4net
 * Monitoring: Performance Counters / ElasticSearch
-* Integrations: Slack
 
 ## Example
 
