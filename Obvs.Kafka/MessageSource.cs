@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Obvs.Hosting;
 using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
 using ProtoBuf;
@@ -28,11 +31,13 @@ namespace Obvs.Kafka
         private static readonly TimeSpan PartitionAssignmentTimeout = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan OffsetQueryTimeout = TimeSpan.FromSeconds(10);
 
+        /// <param name="uniqueGroupSuffix">Only required if you intend to create two or more message sources in the same process</param>
         public MessageSource(KafkaConfiguration kafkaConfig,
             KafkaSourceConfiguration sourceConfig, 
             string topicName,
             IEnumerable<IMessageDeserializer<TMessage>> deserializers,
-            Func<Dictionary<string, string>, bool> propertyFilter)
+            Func<Dictionary<string, string>, bool> propertyFilter,
+            string uniqueGroupSuffix = null)
         {
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
             _topicName = topicName;
@@ -41,7 +46,8 @@ namespace Obvs.Kafka
             _consumerConfig = new ConsumerConfig
             {
                 ClientId = clientId,
-                GroupId = clientId,
+                // A group of its own, so it receives every message and other sources' subscriptions don't rebalance it
+                GroupId = string.IsNullOrEmpty(uniqueGroupSuffix) ? clientId : $"{clientId}-{topicName}-{uniqueGroupSuffix}",
                 BootstrapServers = kafkaConfig.BootstrapServers,
                 FetchMinBytes = sourceConfig.FetchMinBytes,
                 FetchMaxBytes = sourceConfig.FetchMaxBytes,
@@ -72,7 +78,10 @@ namespace Obvs.Kafka
                         tokenSource.Cancel();
                         task.Wait();
                     });
-                });
+                })
+                // Hand messages to subscribers on the task pool, in order. Subscriber code running on the consume
+                // thread could otherwise deadlock it, for example by disposing the bus, which waits for that thread.
+                .ObserveOn(TaskPoolScheduler.Default);
             }
         }
 
@@ -140,11 +149,14 @@ namespace Obvs.Kafka
             try
             {
                 // TODO: deal with nulls here?
-                var msg = consumer.Consume(token).Message?.Value;
+                var kafkaMessage = consumer.Consume(token).Message;
+                var msg = kafkaMessage?.Value;
 
                 if (_propertyFilter == null || _propertyFilter(msg.Properties))
                 {
-                    observer.OnNext(DeserializePayload(msg));
+                    var message = DeserializePayload(msg);
+                    SetHeaders(message, kafkaMessage.Headers);
+                    observer.OnNext(message);
                 }
             }
             catch (Exception exception)
@@ -159,6 +171,21 @@ namespace Obvs.Kafka
             {
                 return _deserializers[msg.PayloadType].Deserialize(s);
             }
+        }
+
+        private static void SetHeaders(TMessage message, Headers kafkaHeaders)
+        {
+            if (kafkaHeaders == null || kafkaHeaders.Count == 0)
+            {
+                return;
+            }
+
+            var headers = new Dictionary<string, string>();
+            foreach (var header in kafkaHeaders)
+            {
+                headers[header.Key] = Encoding.UTF8.GetString(header.GetValueBytes());
+            }
+            ObvsMessageHeaders.Set(message, headers);
         }
 
         public void Dispose()

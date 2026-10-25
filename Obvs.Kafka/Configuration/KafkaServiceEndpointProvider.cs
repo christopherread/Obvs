@@ -23,6 +23,9 @@ namespace Obvs.Kafka.Configuration
         private readonly Func<Type, bool> _typeFilter;
         private readonly Func<Dictionary<string, string>, bool> _propertyFiter;
         private readonly Func<TMessage, Dictionary<string, string>> _propertyProvider;
+        private readonly string _uniqueGroupSuffix;
+
+        /// <param name="uniqueGroupSuffix">Gives each source its own consumer group, so several buses in one process each receive every message</param>
 
         public KafkaServiceEndpointProvider(string serviceName, 
             KafkaConfiguration kafkaConfiguration, KafkaSourceConfiguration sourceConfiguration, 
@@ -30,7 +33,7 @@ namespace Obvs.Kafka.Configuration
             IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory,
             Func<Dictionary<string, string>, bool> propertyFilter, 
             Func<TMessage, Dictionary<string, string>> propertyProvider, 
-            Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
+            Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null, string uniqueGroupSuffix = null)
             : base(serviceName)
         {
             _kafkaConfiguration = kafkaConfiguration;
@@ -42,6 +45,7 @@ namespace Obvs.Kafka.Configuration
             _typeFilter = typeFilter;
             _propertyFiter = propertyFilter;
             _propertyProvider = propertyProvider;
+            _uniqueGroupSuffix = uniqueGroupSuffix;
 
             if (string.IsNullOrEmpty(_kafkaConfiguration?.BootstrapServers))
             {
@@ -62,7 +66,7 @@ namespace Obvs.Kafka.Configuration
         private IMessageSource<T> CreateSource<T>(KafkaConfiguration kafkaConfiguration, KafkaSourceConfiguration sourceConfiguration, string topic) where T : class, TMessage
         {
             return SourceFactory.Create<T, TServiceMessage>(kafkaConfiguration, sourceConfiguration, 
-                topic, _deserializerFactory, _propertyFiter, _assemblyFilter, _typeFilter);
+                topic, _deserializerFactory, _propertyFiter, _assemblyFilter, _typeFilter, _uniqueGroupSuffix);
         }
 
         private IMessagePublisher<T> Create<T>(KafkaConfiguration kafkaConfiguration, KafkaProducerConfiguration producerConfiguration, string topic) where T : class, TMessage

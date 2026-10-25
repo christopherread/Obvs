@@ -14,7 +14,8 @@ namespace Obvs.Kafka.Configuration
             IMessageDeserializerFactory deserializerFactory,
             Func<Dictionary<string, string>, bool> propertyFilter, 
             Func<Assembly, bool> assemblyFilter = null, 
-            Func<Type, bool> typeFilter = null)
+            Func<Type, bool> typeFilter = null,
+            string uniqueGroupSuffix = null)
             where TMessage : class
             where TServiceMessage : class
         {
@@ -23,7 +24,8 @@ namespace Obvs.Kafka.Configuration
                 sourceConfiguration,
                 topic,
                 deserializerFactory.Create<TMessage, TServiceMessage>(assemblyFilter, typeFilter),
-                propertyFilter);
+                propertyFilter,
+                uniqueGroupSuffix);
         }
     }
 }
