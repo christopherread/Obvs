@@ -12,7 +12,6 @@ using Obvs.Configuration;
 using Obvs.Monitoring;
 using Obvs.Types;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Obvs.Tests
 {
