@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Reactive.Concurrency;
-using Elasticsearch.Net;
-using Nest;
+using Elastic.Clients.Elasticsearch;
+using Elastic.Transport;
 using Obvs.Configuration;
 
 namespace Obvs.Monitoring.ElasticSearch.Configuration
@@ -57,7 +57,7 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
     {
         ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToServer(string uri);
 
-        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToServer(IConnectionPool elasticConnectionPool);
+        ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToServer(NodePool elasticConnectionPool);
     }
 
     internal class ElasticSearchMonitoringConfig<TMessage, TCommand, TEvent, TRequest, TResponse> :
@@ -94,18 +94,18 @@ namespace Obvs.Monitoring.ElasticSearch.Configuration
             var monitorFactory = new ElasticSearchMonitorFactory<TMessage>(
                 _indexPrefix, _types, _instanceName,
                 _samplePeriod, Scheduler.Default, 
-                new ElasticClient(new ConnectionSettings(new Uri(uri))));
+                new ElasticsearchClient(new ElasticsearchClientSettings(new Uri(uri))));
 
             _config.UsingMonitor(monitorFactory);
             return _config;
         }
 
-        public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToServer(IConnectionPool elasticConnectionPool)
+        public ICanAddEndpointOrLoggingOrCorrelationOrCreate<TMessage, TCommand, TEvent, TRequest, TResponse> ConnectToServer(NodePool elasticConnectionPool)
         {
             var monitorFactory = new ElasticSearchMonitorFactory<TMessage>(
                 _indexPrefix, _types, _instanceName,
                 _samplePeriod, Scheduler.Default,
-                new ElasticClient(new ConnectionSettings(elasticConnectionPool)));
+                new ElasticsearchClient(new ElasticsearchClientSettings(elasticConnectionPool)));
 
             _config.UsingMonitor(monitorFactory);
             return _config;

@@ -2,30 +2,30 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using NATS.Client;
+using NATS.Client.Core;
 using Obvs.Serialization;
 
 namespace Obvs.NATS
 {
     public class MessagePublisher<TMessage> : IMessagePublisher<TMessage> where TMessage : class
     {
-        private readonly Lazy<IConnection> _lazyConnection;
+        private readonly INatsConnection _connection;
         private readonly string _subjectPrefix;
         private readonly IMessageSerializer _serializer;
         private readonly Func<TMessage, Dictionary<string, string>> _properties;
 
-        public MessagePublisher(Lazy<IConnection> lazyConnection,
+        public MessagePublisher(INatsConnection connection,
             string subjectPrefix,
             IMessageSerializer serializer,
             Func<TMessage, Dictionary<string, string>> properties = null)
         {
-            _lazyConnection = lazyConnection;
+            _connection = connection;
             _subjectPrefix = subjectPrefix;
             _serializer = serializer;
             _properties = properties ?? (message => null);
         }
 
-        public Task PublishAsync(TMessage message)
+        public async Task PublishAsync(TMessage message)
         {
             byte[] body;
             using (var stream = new MemoryStream())
@@ -40,9 +40,8 @@ namespace Obvs.NATS
             using (var stream = new MemoryStream())
             {
                 ProtoBuf.Serializer.Serialize(stream, wrapper);
-                _lazyConnection.Value.Publish(subject, stream.ToArray());
+                await _connection.PublishAsync(subject, stream.ToArray()).ConfigureAwait(false);
             }
-            return Task.FromResult(true);
         }
 
         public void Dispose()

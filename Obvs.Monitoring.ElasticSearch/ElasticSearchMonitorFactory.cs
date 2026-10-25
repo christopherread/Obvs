@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reactive.Concurrency;
-using Nest;
+using Elastic.Clients.Elasticsearch;
 
 namespace Obvs.Monitoring.ElasticSearch
 {
@@ -12,9 +12,9 @@ namespace Obvs.Monitoring.ElasticSearch
         private readonly string _instanceName;
         private readonly TimeSpan _samplePeriod;
         private readonly IScheduler _scheduler;
-        private readonly IElasticClient _client;
+        private readonly ElasticsearchClient _client;
 
-        public ElasticSearchMonitorFactory(string indexPrefx, IList<Type> types, string instanceName, TimeSpan samplePeriod, IScheduler scheduler, IElasticClient client)
+        public ElasticSearchMonitorFactory(string indexPrefx, IList<Type> types, string instanceName, TimeSpan samplePeriod, IScheduler scheduler, ElasticsearchClient client)
         {
             _indexPrefx = indexPrefx;
             _types = types;

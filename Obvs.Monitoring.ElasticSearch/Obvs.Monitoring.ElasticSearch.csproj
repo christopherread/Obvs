@@ -11,7 +11,7 @@
     <Description>Monitoring extension for Obvs, using Elastic.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NEST" />
+    <PackageReference Include="Elastic.Clients.Elasticsearch" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Obvs\Obvs.csproj" />

@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -44,13 +46,8 @@ namespace Obvs.Kafka.Tests
 
         public TestMessageSendAndReceive()
         {
-            // Steps to run local kafka broker:
-            // - Install: Docker for Windows / Docker Desktop
-            // - Clone: https://github.com/wurstmeister/kafka-docker
-            // - Edit: docker-compose-single-broker.yml
-            // - Change: KAFKA_ADVERTISED_HOST_NAME: localhost
-            // - Run: docker-compose -f "docker-compose-single-broker.yml" up -d --build
-            var cfg = new KafkaConfiguration("localhost:9092");
+            // Run a local broker with: docker run -p 9092:9092 apache/kafka
+            var cfg = new KafkaConfiguration(TestBroker.BootstrapServers);
             var sourceConfig = new KafkaSourceConfiguration();
             var producerConfig = new KafkaProducerConfiguration();
             const string topicName = "test-topic-3";
@@ -99,6 +96,28 @@ namespace Obvs.Kafka.Tests
             Assert.True(messages[2].Data.StartsWith("hello world"), "incorrect message received");
 
             sub.Dispose();
+        }
+
+        [Fact]
+        [Trait("Category", "Explicit")]
+        public async Task TestMessagePublishedStraightAfterSubscribingIsReceived()
+        {
+            var data = $"straight after subscribing {Guid.NewGuid()}";
+            var messages = new ConcurrentQueue<TestMessage>();
+
+            using (_source.Messages.OfType<TestMessage>().Subscribe(messages.Enqueue))
+            {
+                // No delay: once Subscribe returns, a published message must not be missed
+                await _publisher.PublishAsync(new TestMessage(data));
+
+                var deadline = DateTime.UtcNow.AddSeconds(10);
+                while (!messages.Any(message => message.Data == data) && DateTime.UtcNow < deadline)
+                {
+                    await Task.Delay(100, TestContext.Current.CancellationToken);
+                }
+            }
+
+            Assert.Contains(messages, message => message.Data == data);
         }
     }
 }

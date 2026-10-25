@@ -6,6 +6,7 @@ using Obvs.Configuration;
 
 namespace Obvs.Serialization.MessagePack
 {
+    [Obsolete("MsgPack.Cli is no longer maintained; use Obvs.Serialization.MessagePack-CSharp instead")]
     public class MsgPackMessageDeserializerFactory : IMessageDeserializerFactory
     {
         public IEnumerable<IMessageDeserializer<TMessage>> Create<TMessage, TServiceMessage>(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
