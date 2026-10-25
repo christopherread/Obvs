@@ -20,7 +20,7 @@
         <PackageVersion Include="RabbitMQ.Client" Version="5.0.1"/>
         <PackageVersion Include="System.Reactive" Version="7.0.0"/>
         <PackageVersion Include="System.Reflection.Emit.Lightweight" Version="4.7.0"/>
-        <PackageVersion Include="YamlDotNet.Signed" Version="6.0.0"/>
+        <PackageVersion Include="YamlDotNet" Version="18.1.0"/>
     </ItemGroup>
     <!-- Tests -->
     <ItemGroup>

@@ -16,7 +16,7 @@ namespace Obvs.Serialization.Yaml {
             private readonly IDeserializer _deserializer;
 
             private static readonly IDeserializer DEFAULT_DESERIALIZER = new DeserializerBuilder()
-                                                                            .WithNamingConvention(new CamelCaseNamingConvention())
+                                                                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
                                                                             .Build();
 
             /// <summary>
