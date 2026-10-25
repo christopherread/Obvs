@@ -1,9 +1,11 @@
-﻿using Obvs.Configuration;
+﻿using System;
+using Obvs.Configuration;
 
 namespace Obvs.Serialization.MessagePack.Configuration
 {
     public static class FluentConfigExtensions
     {
+        [Obsolete("MsgPack.Cli is no longer maintained; use SerializedAsMessagePackCSharp() from Obvs.Serialization.MessagePack-CSharp instead")]
         public static ICanCreateEndpointAsClientOrServer<TMessage, TCommand, TEvent, TRequest, TResponse> SerializedAsMsgPack<TMessage, TCommand, TEvent, TRequest, TResponse>(this ICanSpecifyEndpointSerializers<TMessage, TCommand, TEvent, TRequest, TResponse> config)
             where TMessage : class
             where TCommand : class, TMessage
