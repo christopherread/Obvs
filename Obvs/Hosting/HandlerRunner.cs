@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
@@ -63,22 +64,31 @@ namespace Obvs.Hosting
 
             async Task Handle(IMessage message, CancellationToken cancellationToken)
             {
-                var scope = scopes.CreateAsyncScope();
-                try
+                var started = Stopwatch.GetTimestamp();
+                Exception failure = null;
+                // The span is current while the handler runs, so anything it sends becomes a child span
+                using (var activity = ObvsDiagnostics.StartProcess(serviceName, message.GetType()))
                 {
-                    await handler((TMessage)message, new MessageContext(serviceName, scope.ServiceProvider, bus), cancellationToken).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                {
-                    // Shutdown ran out of time and cancelled the handler
-                }
-                catch (Exception exception)
-                {
-                    logger.LogError(exception, "Handling {MessageType} on service '{ServiceName}' failed.", message.GetType().Name, serviceName);
-                }
-                finally
-                {
-                    await scope.DisposeAsync().ConfigureAwait(false);
+                    var scope = scopes.CreateAsyncScope();
+                    try
+                    {
+                        await handler((TMessage)message, new MessageContext(serviceName, scope.ServiceProvider, bus), cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        // Shutdown ran out of time and cancelled the handler
+                    }
+                    catch (Exception exception)
+                    {
+                        failure = exception;
+                        ObvsDiagnostics.RecordFailure(activity, exception);
+                        logger.LogError(exception, "Handling {MessageType} on service '{ServiceName}' failed.", message.GetType().Name, serviceName);
+                    }
+                    finally
+                    {
+                        await scope.DisposeAsync().ConfigureAwait(false);
+                        ObvsDiagnostics.RecordProcessed(serviceName, message.GetType(), started, failure);
+                    }
                 }
             }
 
