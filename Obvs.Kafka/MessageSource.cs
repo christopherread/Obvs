@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
@@ -56,6 +57,8 @@ namespace Obvs.Kafka
         {
             get
             {
+                // Hand messages to subscribers on the task pool, in order. Subscriber code running on the consume
+                // thread could otherwise deadlock it, for example by disposing the bus, which waits for that thread.
                 return Observable.Create<TMessage>(observer =>
                 {
                     var tokenSource = new CancellationTokenSource();
@@ -72,7 +75,7 @@ namespace Obvs.Kafka
                         tokenSource.Cancel();
                         task.Wait();
                     });
-                });
+                }).ObserveOn(TaskPoolScheduler.Default);
             }
         }
 
