@@ -1,0 +1,6 @@
+<Project>
+    <!-- The examples consume the published Obvs packages and pin their own versions -->
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+</Project>
