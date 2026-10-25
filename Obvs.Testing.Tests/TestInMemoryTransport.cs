@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Reactive.Testing;
 using Obvs.Hosting;
+using Obvs.Types;
 using Xunit;
 
 namespace Obvs.Testing.Tests
@@ -57,17 +59,21 @@ namespace Obvs.Testing.Tests
         [Fact]
         public async Task ShouldOnlyDeliverMessagesToTheirOwnService()
         {
+            // The bus merges every service's commands, so a command delivered to both services would arrive twice.
+            // The test scheduler makes delivery deterministic, so "exactly once" needs no waiting.
+            var scheduler = new TestScheduler();
+            var broker = new InMemoryBroker(scheduler);
             using var host = await StartHostAsync(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseInMemory())
-                .AddService<IShippingMessage>("shipping", service => service.UseInMemory()));
+                .AddService<IOrderMessage>("orders", service => service.UseInMemory(broker))
+                .AddService<IShippingMessage>("shipping", service => service.UseInMemory(broker)));
             var bus = host.Services.GetRequiredService<IServiceBus>();
 
-            var receivedByShipping = bus.Commands.OfType<ShipOrder>().FirstAsync().ToTask();
-            var receivedByOrders = bus.Commands.OfType<IOrderMessage>().FirstAsync().ToTask();
+            var received = new List<ICommand>();
+            using var subscription = bus.Commands.Subscribe(received.Add);
             await bus.SendAsync(new ShipOrder("o-1"));
+            scheduler.Start();
 
-            await receivedByShipping.WaitAsync(Timeout, TestContext.Current.CancellationToken);
-            Assert.False(receivedByOrders.IsCompleted);
+            Assert.Equal(new ICommand[] { new ShipOrder("o-1") }, received);
         }
 
         [Fact]
