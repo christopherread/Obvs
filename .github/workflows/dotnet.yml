@@ -108,6 +108,7 @@ jobs:
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.ProtoBuf
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Xml
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Yaml
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Testing
     - name: NuGet Login
       if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
       id: nuget
