@@ -39,7 +39,7 @@ namespace Obvs.RabbitMQ.Configuration
                     Uri =  new Uri(brokerUri),
                     AutomaticRecoveryEnabled = true,
                 };
-                var conn = connectionFactory.CreateConnection();
+                var conn = connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
                 return conn;
             }, LazyThreadSafetyMode.ExecutionAndPublication);
         }
@@ -73,7 +73,7 @@ namespace Obvs.RabbitMQ.Configuration
             {
                 if (connection.IsValueCreated)
                 {
-                    connection.Value.Close();
+                    connection.Value.CloseAsync().GetAwaiter().GetResult();
                     connection.Value.Dispose();
                 }
             });

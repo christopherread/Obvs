@@ -23,15 +23,13 @@ namespace Obvs.RabbitMQ.Tests
             var exchange = GetType().Name;
             const string routingKeyPrefix = "Messages";
 
-            // edit to correspond with 5672 port on local RabbitMQ from DockerHub
             var connectionFactory = new ConnectionFactory
             {
-                HostName = "192.168.99.100", 
-                Port = 32769
+                Uri = new Uri(TestBroker.Uri)
             };
             var connection = new Lazy<IConnection>(() =>
             {
-                var conn = connectionFactory.CreateConnection();
+                var conn = connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
                 return conn;
             }, LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -82,7 +80,7 @@ namespace Obvs.RabbitMQ.Tests
             sub2.Dispose();
             messagePublisher.Dispose();
             messageSource.Dispose();
-            connection.Value.Close();
+            await connection.Value.CloseAsync();
         }
 
         private static IMessagePublisher<IMessage> CreateMessagePublisher(string format, Lazy<IConnection> connection,
