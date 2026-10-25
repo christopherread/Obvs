@@ -13,7 +13,7 @@ namespace Obvs.Serialization.Yaml {
         private readonly ISerializer _serializer;
 
         private static readonly ISerializer DEFAULT_SERIALIZER = new SerializerBuilder()
-                                                                    .WithNamingConvention(new CamelCaseNamingConvention())
+                                                                    .WithNamingConvention(CamelCaseNamingConvention.Instance)
                                                                     .Build();
 
         /// <summary>

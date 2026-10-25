@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Reflection;
 using FakeItEasy;
+using YamlDotNet.Serialization;
 using Xunit;
 using Obvs.Configuration;
 using Obvs.Serialization.Yaml;
@@ -60,6 +62,51 @@ namespace Obvs.Serialization.Tests
             var deserialize = deserializer.Deserialize(serialize);
 
             Assert.Equal(message, deserialize);
+        }
+
+        // Text written by YamlDotNet 6.0.0, so services on either version can talk to each other
+        private const string Version6Yaml = "id: 123\nname: SomeName\ndate: 2010-02-10T13:22:59.0000000Z\n";
+
+        private static TestMessage CreateFixedMessage()
+        {
+            return new TestMessage { Id = 123, Name = "SomeName", Date = new DateTime(2010, 2, 10, 13, 22, 59, DateTimeKind.Utc) };
+        }
+
+        [Fact]
+        public void ShouldSerializeToSameYamlAsVersion6()
+        {
+            IMessageSerializer serializer = new YamlMessageSerializer();
+
+            var serialize = YamlMessageDefaults.Encoding.GetString(serializer.Serialize(CreateFixedMessage()));
+
+            Assert.Equal(Version6Yaml, serialize.Replace("\r\n", "\n"));
+        }
+
+        [Fact]
+        public void ShouldDeserializeYamlWrittenByVersion6()
+        {
+            IMessageDeserializer<TestMessage> deserializer = new YamlMessageDeserializer<TestMessage>();
+
+            var deserialize = deserializer.Deserialize(YamlMessageDefaults.Encoding.GetBytes(Version6Yaml));
+
+            Assert.Equal(CreateFixedMessage(), deserialize);
+            Assert.Equal(DateTimeKind.Utc, deserialize.Date.Kind);
+        }
+
+        [Fact]
+        public void ShouldUseSerializerAndDeserializerPassedToConstructor()
+        {
+            IMessageSerializer serializer = new YamlMessageSerializer(new SerializerBuilder().Build());
+            IMessageDeserializer<TestMessage> deserializer = new YamlMessageDeserializer<TestMessage>(new DeserializerBuilder().Build());
+
+            var message = CreateFixedMessage();
+            var serialize = serializer.Serialize(message);
+
+            var deserialize = deserializer.Deserialize(serialize);
+
+            Assert.Contains("Name: SomeName", YamlMessageDefaults.Encoding.GetString(serialize));
+            Assert.Equal(message.Id, deserialize.Id);
+            Assert.Equal(message.Name, deserialize.Name);
         }
 
         [Fact]
