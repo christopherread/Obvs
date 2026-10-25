@@ -4,11 +4,14 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Apache.NMS;
 using Obvs.ActiveMQ.Extensions;
 using Obvs.ActiveMQ.Utils;
+using Obvs.Hosting;
+using Obvs.MessageProperties;
 using Obvs.Serialization;
 
 namespace Obvs.ActiveMQ
@@ -50,6 +53,10 @@ namespace Obvs.ActiveMQ
                         .Select(message => new { message, deserializer = GetDeserializer(message) })
                         .Where(msg => msg.deserializer != null)
                         .Select(msg => DeserializeAndAcknowledge(msg.message, msg.deserializer))
+                        // Hand messages to subscribers on the task pool, in order. Subscriber code running on the
+                        // session's dispatch thread could otherwise deadlock it, for example by disposing the bus,
+                        // which stops the connection and waits for that thread.
+                        .ObserveOn(TaskPoolScheduler.Default)
                         .Subscribe(observer);
 
                     return Disposable.Create(() =>
@@ -81,8 +88,31 @@ namespace Obvs.ActiveMQ
         private TMessage DeserializeAndAcknowledge(IMessage message, IMessageDeserializer<TMessage> deserializer)
         {
             var deserializedMessage = DeserializeMessage(message, deserializer);
+            SetHeaders(deserializedMessage, message);
             Acknowledge(message);
             return deserializedMessage;
+        }
+
+        // Text properties become the message's Obvs headers, apart from the type name Obvs sets itself
+        private static void SetHeaders(TMessage deserializedMessage, IMessage message)
+        {
+            if (deserializedMessage == null)
+            {
+                return;
+            }
+
+            var headers = new Dictionary<string, string>();
+            foreach (string key in message.Properties.Keys)
+            {
+                if (key != MessagePropertyNames.TypeName && message.Properties[key] is string value)
+                {
+                    headers[key] = value;
+                }
+            }
+            if (headers.Count > 0)
+            {
+                ObvsMessageHeaders.Set(deserializedMessage, headers);
+            }
         }
 
         private IMessageDeserializer<TMessage> GetDeserializer(IMessage message)

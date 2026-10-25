@@ -49,6 +49,9 @@ jobs:
         options: >-
           --health-cmd "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"
           --health-interval 5s --health-timeout 10s --health-retries 20
+      activemq:
+        image: apache/activemq-classic:6.2.0
+        ports: ['61616:61616']
 
     steps:
     - name: Checkout
@@ -82,11 +85,13 @@ jobs:
         RABBITMQ_URI: amqp://localhost:5672
         NATS_URL: nats://localhost:4222
         KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+        ACTIVEMQ_URI: activemq:tcp://localhost:61616
       run: |
         dotnet test --project Obvs.RabbitMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
         dotnet test --project Obvs.NATS.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
         dotnet test --project Obvs.Kafka.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
         dotnet test --project Obvs.NetMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.ActiveMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
     - name: Test
       # xUnit v3 runs on Microsoft.Testing.Platform (global.json). Exit code 8 means a project ran no tests,
       # as the transport test projects only contain Explicit tests.
