@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Obvs.Configuration;
 using Obvs.Types;
 
@@ -68,6 +70,7 @@ namespace Obvs.Hosting
         {
             Validate(serviceProvider);
 
+            var logger = serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.Hosting.Messages") ?? NullLogger.Instance;
             var endpoints = new List<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             var endpointClients = new List<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             foreach (var service in _services)
@@ -75,11 +78,11 @@ namespace Obvs.Hosting
                 var provider = service.EndpointProviderFactory(serviceProvider);
                 if (service.IsServer)
                 {
-                    endpoints.Add(provider.CreateEndpoint());
+                    endpoints.Add(new TelemetryServiceEndpoint(provider.CreateEndpoint(), service.Name, logger));
                 }
                 if (service.IsClient)
                 {
-                    endpointClients.Add(provider.CreateEndpointClient());
+                    endpointClients.Add(new TelemetryServiceEndpointClient(provider.CreateEndpointClient(), service.Name, logger));
                 }
             }
 

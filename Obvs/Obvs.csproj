@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'net10.0' ">
     <PackageReference Include="Microsoft.Bcl.TimeProvider" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" />
     <PackageReference Include="System.Threading.Channels" />
   </ItemGroup>
   <ItemGroup>
