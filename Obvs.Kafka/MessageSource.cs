@@ -24,6 +24,10 @@ namespace Obvs.Kafka
 
         private readonly ConsumerConfig _consumerConfig;
 
+        // How long Subscribe waits for Kafka to assign partitions, and for each offset query while it does
+        private static readonly TimeSpan PartitionAssignmentTimeout = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan OffsetQueryTimeout = TimeSpan.FromSeconds(10);
+
         public MessageSource(KafkaConfiguration kafkaConfig,
             KafkaSourceConfiguration sourceConfig, 
             string topicName,
@@ -60,7 +64,8 @@ namespace Obvs.Kafka
 
                     var task = Task.Run(() => Subscriber(token, observer, subscribedEvent));
 
-                    subscribedEvent.Wait();
+                    // Wait until partitions are assigned, so messages published once Subscribe returns are received
+                    subscribedEvent.Wait(PartitionAssignmentTimeout);
 
                     return Disposable.Create(() =>
                     {
@@ -78,10 +83,15 @@ namespace Obvs.Kafka
                 using (var consumer = new ConsumerBuilder<Ignore, WrapperMessage>(_consumerConfig)
                     .SetValueDeserializer(new ConsumerValueDeserializer<WrapperMessage>())
                     .SetErrorHandler((_, e) => observer.OnError(new Exception($"Consumer ErrorHandler: {e.Reason}")))
+                    .SetPartitionsAssignedHandler((c, partitions) =>
+                    {
+                        var offsets = StartOffsets(c, partitions);
+                        subscribedEvent.Set();
+                        return offsets;
+                    })
                     .Build())
                 {
                     consumer.Subscribe(_topicName);
-                    subscribedEvent.Set();
 
                     try
                     {
@@ -112,6 +122,17 @@ namespace Obvs.Kafka
                     subscribedEvent.Set();
                 }
             }
+        }
+
+        // Fix each partition's start position at assignment: the group's committed offset, or else the current
+        // end of the log. Leaving "latest" to be resolved later would skip messages published in the meantime.
+        private static IEnumerable<TopicPartitionOffset> StartOffsets(IConsumer<Ignore, WrapperMessage> consumer, List<TopicPartition> partitions)
+        {
+            return consumer.Committed(partitions, OffsetQueryTimeout)
+                .Select(committed => committed.Offset != Offset.Unset
+                    ? committed
+                    : new TopicPartitionOffset(committed.TopicPartition, consumer.QueryWatermarkOffsets(committed.TopicPartition, OffsetQueryTimeout).High))
+                .ToList();
         }
 
         private void ConsumeMessage(CancellationToken token, IObserver<TMessage> observer, IConsumer<Ignore, WrapperMessage> consumer)
