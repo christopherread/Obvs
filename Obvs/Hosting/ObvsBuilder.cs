@@ -62,6 +62,8 @@ namespace Obvs.Hosting
             return this;
         }
 
+        internal IEnumerable<ObvsServiceBuilder> ServiceBuilders => _services;
+
         internal ServiceBus Build(IServiceProvider serviceProvider)
         {
             Validate(serviceProvider);

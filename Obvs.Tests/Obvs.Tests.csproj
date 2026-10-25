@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="FakeItEasy" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.Reactive.Testing" />
     <PackageReference Include="xunit.v3" />
@@ -20,5 +21,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Obvs\Obvs.csproj" />
+    <ProjectReference Include="..\Obvs.Testing\Obvs.Testing.csproj" />
   </ItemGroup>
 </Project>

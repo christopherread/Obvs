@@ -59,7 +59,7 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             // Not AddHostedService, which would de-duplicate the hosted services of keyed buses
-            services.AddSingleton<IHostedService>(serviceProvider => new ObvsHostedService(serviceProvider, key));
+            services.AddSingleton<IHostedService>(serviceProvider => new ObvsHostedService(serviceProvider, key, builder));
         }
 
         private static readonly object DefaultBusKey = new object();
