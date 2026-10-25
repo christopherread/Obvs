@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
 COPY Service.ActiveMQ/*.csproj ./Service.ActiveMQ/
@@ -10,9 +10,9 @@ WORKDIR /app/
 COPY Service.ActiveMQ/. ./Service.ActiveMQ/
 COPY Messages/. ./Messages/
 WORKDIR /app/Service.ActiveMQ/
-RUN dotnet publish -f netstandard2.1 -c Release -o out
+RUN dotnet publish -f net10.0 -c Release -o out
 
-FROM mcr.microsoft.com/dotnet/core/runtime:3.1 as runtime
+FROM mcr.microsoft.com/dotnet/runtime:10.0 as runtime
 WORKDIR /app
 COPY --from=build /app/Service.ActiveMQ/out/. .
 ENTRYPOINT ["dotnet", "Obvs.Example.Service.ActiveMQ.dll"]
