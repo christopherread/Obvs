@@ -2,10 +2,12 @@ using System;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
+using FakeItEasy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Obvs.Configuration;
 using Obvs.Hosting;
+using Obvs.Serialization;
 using Obvs.Types;
 using Xunit;
 
@@ -215,6 +217,101 @@ namespace Obvs.Tests.Hosting
             Assert.Equal(2, exception.Errors.Count);
             Assert.Contains(exception.Errors, error => error.Contains("'orders'"));
             Assert.Contains(exception.Errors, error => error.Contains("'shipping'"));
+        }
+
+        [Fact]
+        public async Task ShouldGiveEachBusItsOwnInstanceId()
+        {
+            string instanceIdA = null;
+            string instanceIdB = null;
+            using var hostA = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ =>
+                {
+                    instanceIdA = service.InstanceId;
+                    return new FakeEndpointProvider(typeof(IOrderMessage));
+                }))));
+            using var hostB = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ =>
+                {
+                    instanceIdB = service.InstanceId;
+                    return new FakeEndpointProvider(typeof(IOrderMessage));
+                }))));
+
+            await hostA.StartAsync(TestContext.Current.CancellationToken);
+            await hostB.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.False(string.IsNullOrWhiteSpace(instanceIdA));
+            Assert.NotEqual(instanceIdA, instanceIdB);
+        }
+
+        [Fact]
+        public async Task ShouldUseTheConfiguredInstanceId()
+        {
+            string instanceId = null;
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .UseInstanceId("orders-worker-1")
+                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ =>
+                {
+                    instanceId = service.InstanceId;
+                    return new FakeEndpointProvider(typeof(IOrderMessage));
+                }))));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal("orders-worker-1", instanceId);
+        }
+
+        [Fact]
+        public void ShouldRejectABlankInstanceId()
+        {
+            var services = new ServiceCollection();
+
+            Assert.Throws<ArgumentException>(() => services.AddObvs(obvs => obvs.UseInstanceId(" ")));
+        }
+
+        [Fact]
+        public async Task ShouldGiveTheTransportTheServicesSerializer()
+        {
+            var serializer = A.Fake<IMessageSerializer>();
+            var deserializerFactory = A.Fake<IMessageDeserializerFactory>();
+            IMessageSerializer transportSerializer = null;
+            IMessageDeserializerFactory transportDeserializerFactory = null;
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .SerializedWith(serializer, deserializerFactory)
+                    .UseEndpointProvider(_ =>
+                    {
+                        transportSerializer = service.Serializer;
+                        transportDeserializerFactory = service.DeserializerFactory;
+                        return new FakeEndpointProvider(typeof(IOrderMessage));
+                    }))));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.Same(serializer, transportSerializer);
+            Assert.Same(deserializerFactory, transportDeserializerFactory);
+        }
+
+        [Fact]
+        public async Task ShouldReportTransportValidationErrorsWithTheRest()
+        {
+            IServiceProvider validatedWith = null;
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => { })
+                .AddService<IShippingMessage>("shipping", service => service
+                    .UseEndpointProvider(_ => new FakeEndpointProvider(typeof(IShippingMessage)))
+                    .ValidateWith(serviceProvider =>
+                    {
+                        validatedWith = serviceProvider;
+                        return new[] { "Service 'shipping' needs a broker address." };
+                    }))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(
+                () => host.StartAsync(TestContext.Current.CancellationToken));
+
+            Assert.Equal(2, exception.Errors.Count);
+            Assert.Contains("Service 'shipping' needs a broker address.", exception.Errors);
+            Assert.NotNull(validatedWith);
         }
 
         private static IHost BuildHost(Action<IServiceCollection> configure)

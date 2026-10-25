@@ -17,7 +17,7 @@ namespace Obvs.RabbitMQ.Configuration
                 routingKeyPrefix);
         }
 
-        public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(string brokerUri, string routingKeyPrefix, string serviceName, IMessageDeserializerFactory deserializerFactory, Lazy<IConnection> connection, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null, string selector = null)
+        public static MessageSource<TMessage> CreateSource<TMessage, TServiceMessage>(string brokerUri, string routingKeyPrefix, string serviceName, IMessageDeserializerFactory deserializerFactory, Lazy<IConnection> connection, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null, string uniqueQueueSuffix = null)
             where TServiceMessage : class
             where TMessage : class
         {
@@ -25,7 +25,8 @@ namespace Obvs.RabbitMQ.Configuration
                 connection,
                 deserializerFactory.Create<TMessage, TServiceMessage>(assemblyFilter, typeFilter), 
                 serviceName,
-                routingKeyPrefix);
+                routingKeyPrefix,
+                uniqueQueueSuffix ?? "");
         }
     }
 }

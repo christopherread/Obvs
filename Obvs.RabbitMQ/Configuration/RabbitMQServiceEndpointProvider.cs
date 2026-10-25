@@ -22,10 +22,14 @@ namespace Obvs.RabbitMQ.Configuration
         private readonly Func<Assembly, bool> _assemblyFilter;
         private readonly Func<Type, bool> _typeFilter;
         private readonly Lazy<IConnection> _connection;
+        private readonly string _uniqueQueueSuffix;
 
-        public RabbitMQServiceEndpointProvider(string serviceName, string brokerUri, IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
+        /// <param name="uniqueQueueSuffix">Appended to queue names, so several buses in one process don't share them</param>
+        public RabbitMQServiceEndpointProvider(string serviceName, string brokerUri, IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null,
+            bool automaticRecoveryEnabled = true, string uniqueQueueSuffix = null)
             : base(serviceName)
         {
+            _uniqueQueueSuffix = uniqueQueueSuffix;
             _brokerUri = brokerUri;
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
@@ -37,7 +41,7 @@ namespace Obvs.RabbitMQ.Configuration
                 var connectionFactory = new ConnectionFactory
                 {
                     Uri =  new Uri(brokerUri),
-                    AutomaticRecoveryEnabled = true,
+                    AutomaticRecoveryEnabled = automaticRecoveryEnabled,
                 };
                 var conn = connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
                 return conn;
@@ -47,8 +51,8 @@ namespace Obvs.RabbitMQ.Configuration
         public override IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpoint()
         {
             return new ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                SourcePublisherFactory.CreateSource<TRequest, TServiceMessage>(_brokerUri, RequestsDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter),
-                SourcePublisherFactory.CreateSource<TCommand, TServiceMessage>(_brokerUri, CommandsDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter),
+                SourcePublisherFactory.CreateSource<TRequest, TServiceMessage>(_brokerUri, RequestsDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter, _uniqueQueueSuffix),
+                SourcePublisherFactory.CreateSource<TCommand, TServiceMessage>(_brokerUri, CommandsDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter, _uniqueQueueSuffix),
                 SourcePublisherFactory.CreatePublisher<TEvent>(_brokerUri, EventsDestination, ServiceName, _serializer, _connection),
                 SourcePublisherFactory.CreatePublisher<TResponse>(_brokerUri, ResponsesDestination, ServiceName, _serializer, _connection),
                 typeof(TServiceMessage));
@@ -59,8 +63,8 @@ namespace Obvs.RabbitMQ.Configuration
 
             return new DisposingServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
                 new ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                SourcePublisherFactory.CreateSource<TEvent, TServiceMessage>(_brokerUri, EventsDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter),
-                SourcePublisherFactory.CreateSource<TResponse, TServiceMessage>(_brokerUri, ResponsesDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter),
+                SourcePublisherFactory.CreateSource<TEvent, TServiceMessage>(_brokerUri, EventsDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter, _uniqueQueueSuffix),
+                SourcePublisherFactory.CreateSource<TResponse, TServiceMessage>(_brokerUri, ResponsesDestination, ServiceName, _deserializerFactory, _connection, _assemblyFilter, _typeFilter, _uniqueQueueSuffix),
                 SourcePublisherFactory.CreatePublisher<TRequest>(_brokerUri, RequestsDestination, ServiceName, _serializer, _connection),
                 SourcePublisherFactory.CreatePublisher<TCommand>(_brokerUri, CommandsDestination, ServiceName, _serializer, _connection),
                 typeof(TServiceMessage)),

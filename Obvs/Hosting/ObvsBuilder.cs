@@ -13,6 +13,7 @@ namespace Obvs.Hosting
     public sealed class ObvsBuilder
     {
         private readonly List<ObvsServiceBuilder> _services = new List<ObvsServiceBuilder>();
+        private string _instanceId = Guid.NewGuid().ToString("N");
 
         internal ObvsBuilder(IServiceCollection services)
         {
@@ -21,6 +22,27 @@ namespace Obvs.Hosting
 
         /// <summary>The container's services, for extensions that need to register their own.</summary>
         public IServiceCollection Services { get; }
+
+        /// <summary>
+        /// Identifies this bus to transports, which use it to keep broker-side names (such as queues) unique to the bus.
+        /// A new GUID unless set with <see cref="UseInstanceId"/>.
+        /// </summary>
+        public string InstanceId => _instanceId;
+
+        /// <summary>
+        /// Sets the bus's instance ID, for example to keep queue names stable across restarts.
+        /// It must be unique among buses connected to the same broker.
+        /// </summary>
+        public ObvsBuilder UseInstanceId(string instanceId)
+        {
+            if (string.IsNullOrWhiteSpace(instanceId))
+            {
+                throw new ArgumentException("An instance ID can't be blank: transports use it in broker-side names.", nameof(instanceId));
+            }
+
+            _instanceId = instanceId;
+            return this;
+        }
 
         /// <summary>
         /// Adds a service whose messages all implement <typeparamref name="TServiceMessage"/>.
@@ -34,7 +56,7 @@ namespace Obvs.Hosting
                 throw new ArgumentException("A service needs a name, which is used to name its destinations on the broker.", nameof(name));
             }
 
-            var service = new ObvsServiceBuilder(name, typeof(TServiceMessage), Services);
+            var service = new ObvsServiceBuilder(name, typeof(TServiceMessage), Services, this);
             configure?.Invoke(service);
             _services.Add(service);
             return this;
@@ -42,7 +64,7 @@ namespace Obvs.Hosting
 
         internal ServiceBus Build(IServiceProvider serviceProvider)
         {
-            Validate();
+            Validate(serviceProvider);
 
             var endpoints = new List<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             var endpointClients = new List<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
@@ -62,7 +84,7 @@ namespace Obvs.Hosting
             return new ServiceBus(endpointClients, endpoints);
         }
 
-        private void Validate()
+        private void Validate(IServiceProvider serviceProvider)
         {
             var errors = new List<string>();
 
@@ -74,6 +96,8 @@ namespace Obvs.Hosting
             errors.AddRange(_services
                 .Where(service => service.EndpointProviderFactory == null)
                 .Select(service => $"Service '{service.Name}' has no transport. Call UseEndpointProvider(...) on it inside AddService(\"{service.Name}\", ...)."));
+
+            errors.AddRange(_services.SelectMany(service => service.Validate(serviceProvider)));
 
             if (errors.Count > 0)
             {
