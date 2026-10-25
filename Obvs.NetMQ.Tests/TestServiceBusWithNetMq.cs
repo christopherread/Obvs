@@ -141,6 +141,11 @@ namespace Obvs.NetMQ.Tests
             // wait some time until we think all messages have been sent and received
             await Task.Delay(TimeSpan.FromSeconds(3));
 
+            // dispose before asserting, so a failed assertion doesn't leave sockets bound for other tests
+            ((IDisposable)serviceBus).Dispose();
+            ((IDisposable)serviceBusClient1).Dispose();
+            ((IDisposable)serviceBusClient2).Dispose();
+
             // test we got everything we expected
             Assert.True(messages.OfType<TestCommand1>().Count() == 2, "TestCommand1");
             Assert.True(messages.OfType<TestEvent1>().Count() == 4, "TestEvent1");
