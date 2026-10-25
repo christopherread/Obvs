@@ -1,0 +1,93 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
+using Obvs.Hosting;
+using Obvs.MessageProperties;
+using Obvs.Serialization;
+
+namespace Obvs.AzureSB
+{
+    internal sealed class MessageSource<TMessage> : IMessageSource<TMessage>
+        where TMessage : class
+    {
+        private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
+
+        /// <param name="createProcessor">Creates a processor for the queue or subscription, once per subscription to <see cref="Messages"/></param>
+        public MessageSource(Func<ServiceBusProcessorOptions, ServiceBusProcessor> createProcessor, IEnumerable<IMessageDeserializer<TMessage>> deserializers)
+        {
+            _deserializers = deserializers.ToDictionary(deserializer => deserializer.GetTypeName());
+
+            Messages = Observable.Create<TMessage>(observer =>
+                {
+                    // One message at a time keeps them in order; handlers can run concurrently above this
+                    var processor = createProcessor(new ServiceBusProcessorOptions { AutoCompleteMessages = true, MaxConcurrentCalls = 1 });
+                    var stopped = false;
+                    processor.ProcessMessageAsync += args =>
+                    {
+                        var message = Deserialize(args.Message);
+                        if (message != null)
+                        {
+                            observer.OnNext(message);
+                        }
+                        return Task.CompletedTask;
+                    };
+                    processor.ProcessErrorAsync += args =>
+                    {
+                        // The processor retries transient errors itself. A message that fails to deserialize is
+                        // abandoned, so Service Bus redelivers it and dead-letters it after the entity's MaxDeliveryCount.
+                        if (!stopped && args.ErrorSource != ServiceBusErrorSource.ProcessMessageCallback &&
+                            !(args.Exception is ServiceBusException serviceBusException && serviceBusException.IsTransient))
+                        {
+                            observer.OnError(args.Exception);
+                        }
+                        return Task.CompletedTask;
+                    };
+                    processor.StartProcessingAsync().GetAwaiter().GetResult();
+
+                    return Disposable.Create(() =>
+                    {
+                        stopped = true;
+                        processor.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                    });
+                })
+                // Hand messages to subscribers on the task pool, in order. Subscriber code running in the processor's
+                // callback could otherwise deadlock it, for example by disposing the bus, which waits for that callback.
+                .ObserveOn(TaskPoolScheduler.Default);
+        }
+
+        public IObservable<TMessage> Messages { get; }
+
+        // Messages of a type this service doesn't know are skipped
+        private TMessage Deserialize(ServiceBusReceivedMessage received)
+        {
+            if (!(received.ApplicationProperties.TryGetValue(MessagePropertyNames.TypeName, out var typeName) && typeName is string name) ||
+                !_deserializers.TryGetValue(name, out var deserializer))
+            {
+                return null;
+            }
+
+            var message = deserializer.Deserialize(received.Body.ToStream());
+            var headers = received.ApplicationProperties
+                .Where(property => property.Key != MessagePropertyNames.TypeName && property.Value is string)
+                .ToDictionary(property => property.Key, property => (string)property.Value);
+            if (headers.Count > 0)
+            {
+                ObvsMessageHeaders.Set(message, headers);
+            }
+            if (!string.IsNullOrEmpty(received.ReplyTo))
+            {
+                ReplyAddresses.Set(message, received.ReplyTo);
+            }
+            return message;
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+}
