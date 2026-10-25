@@ -6,7 +6,7 @@ using System.Net;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using Nest;
+using Elastic.Clients.Elasticsearch;
 
 namespace Obvs.Monitoring.ElasticSearch
 {
@@ -22,7 +22,7 @@ namespace Obvs.Monitoring.ElasticSearch
         private readonly string _counterName;
         private readonly string _indexPrefix;
         private readonly IList<Type> _types;
-        private readonly IElasticClient _client;
+        private readonly ElasticsearchClient _client;
         private readonly Subject<Tuple<TMessage, TimeSpan>> _queueSent = new Subject<Tuple<TMessage, TimeSpan>>(); 
         private readonly Subject<Tuple<TMessage, TimeSpan>> _queueReceived = new Subject<Tuple<TMessage, TimeSpan>>();
         private readonly TimeSpan _samplePeriod;
@@ -34,7 +34,7 @@ namespace Obvs.Monitoring.ElasticSearch
         private readonly string _processName;
         private readonly IList<ObvsCounter> _emptyList = new List<ObvsCounter>();
 
-        public ElasticSearchMonitor(string instanceName, string counterName, string indexPrefix, IList<Type> types, TimeSpan samplePeriod, IScheduler scheduler, IElasticClient client)
+        public ElasticSearchMonitor(string instanceName, string counterName, string indexPrefix, IList<Type> types, TimeSpan samplePeriod, IScheduler scheduler, ElasticsearchClient client)
         {
             _messageTypeName = typeof(TMessage).Name;
             _instanceName = instanceName;
@@ -69,9 +69,9 @@ namespace Obvs.Monitoring.ElasticSearch
                 {
                     string indexName = string.Format("{0}-{1}", _indexPrefix, DateTime.Today.ToString("yyyy.MM.dd"));
                     var response = _client.IndexMany(items, indexName);
-                    if (!response.IsValid && response.ServerError != null)
+                    if (!response.IsValidResponse && response.ElasticsearchServerError != null)
                     {
-                        Console.WriteLine(response.ServerError.Error);
+                        Console.WriteLine(response.ElasticsearchServerError.Error);
                     }
                 }
             }

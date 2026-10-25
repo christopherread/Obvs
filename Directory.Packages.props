@@ -11,7 +11,7 @@
         <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="10.0.13"/>
         <PackageVersion Include="MsgPack.Cli" Version="1.0.1"/>
         <PackageVersion Include="NATS.Client" Version="1.1.8"/>
-        <PackageVersion Include="NEST" Version="7.17.5"/>
+        <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="9.5.3"/>
         <PackageVersion Include="NetJSON" Version="1.4.7"/>
         <PackageVersion Include="NetMQ" Version="4.0.4.5"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
