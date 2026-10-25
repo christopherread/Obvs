@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Obvs.Tests
@@ -15,7 +16,7 @@ namespace Obvs.Tests
         }
 
         [Fact]
-        public void PublishBlocksUntilMessageHasBeenConsumed()
+        public async Task PublishBlocksUntilMessageHasBeenConsumed()
         {
             int subscriberThreadId = -1;
             _testObj.Messages.Subscribe(_ => subscriberThreadId = Thread.CurrentThread.ManagedThreadId);
@@ -27,14 +28,14 @@ namespace Obvs.Tests
             Assert.NotEqual(-1, subscriberThreadId);
             Assert.Equal(threadId, subscriberThreadId);
 
-            task.Wait();
+            await task;
         }
 
 
         [Fact]
         public void PublishReturnsWithNoObservers()
         {
-            Assert.True(_testObj.PublishAsync("Bleb").Wait(1));
+            Assert.True(_testObj.PublishAsync("Bleb").IsCompleted);
         }
     }
 }
