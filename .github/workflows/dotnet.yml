@@ -75,8 +75,6 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.gitversion.outputs.semVer }} -p:ContinuousIntegrationBuild=true -p:Deterministic=true
-    - name: Test
-      run: dotnet test --no-build --configuration Release --verbosity normal --filter Category!=Explicit 
     - name: Prepare Kafka
       # The test consumer starts at the latest offset and doesn't wait for partition assignment, so create its
       # topic and warm up the group coordinator (which creates __consumer_offsets) before the tests run
@@ -89,9 +87,12 @@ jobs:
         NATS_URL: nats://localhost:4222
         KAFKA_BOOTSTRAP_SERVERS: localhost:9092
       run: |
-        dotnet test Obvs.RabbitMQ.Tests --no-build --configuration Release --verbosity normal --filter Category=Explicit
-        dotnet test Obvs.NATS.Tests --no-build --configuration Release --verbosity normal --filter Category=Explicit
-        dotnet test Obvs.Kafka.Tests --no-build --configuration Release --verbosity normal --filter Category=Explicit
+        dotnet test --project Obvs.RabbitMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.NATS.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.Kafka.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.NetMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+    - name: Test
+      run: dotnet test --no-build --configuration Release --verbosity normal --filter Category!=Explicit 
     - name: Pack
       if: github.event_name == 'push'
       run: |
