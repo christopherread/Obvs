@@ -58,6 +58,9 @@ jobs:
       uses: actions/checkout@v7
       with:
         fetch-depth: 0
+    - name: Start Service Bus emulator
+      # Its compose file mounts a config from the repo, so it can't be a service container. It starts while the build runs.
+      run: docker compose -f Obvs.AzureSB.Tests/Emulator/docker-compose.yml up -d
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
@@ -80,6 +83,11 @@ jobs:
       run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.gitversion.outputs.semVer }} -p:ContinuousIntegrationBuild=true -p:Deterministic=true
     - name: Create Kafka test topic
       run: docker exec ${{ job.services.kafka.id }} /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic test-topic-3
+    - name: Wait for Service Bus emulator
+      run: |
+        for i in $(seq 1 60); do curl -sf http://localhost:5300/health && exit 0; sleep 2; done
+        docker compose -f Obvs.AzureSB.Tests/Emulator/docker-compose.yml logs
+        exit 1
     - name: Test transports against brokers
       env:
         RABBITMQ_URI: amqp://localhost:5672
@@ -92,6 +100,7 @@ jobs:
         dotnet test --project Obvs.Kafka.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
         dotnet test --project Obvs.NetMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
         dotnet test --project Obvs.ActiveMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.AzureSB.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
     - name: Test
       # xUnit v3 runs on Microsoft.Testing.Platform (global.json). Exit code 8 means a project ran no tests,
       # as the transport test projects only contain Explicit tests.
@@ -101,6 +110,7 @@ jobs:
       run: |
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs 
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.ActiveMQ
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.AzureSB
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Kafka
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Logging.NLog
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Monitoring.AppMetrics

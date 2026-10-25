@@ -329,7 +329,7 @@ Tracking: #93
 |---|---|
 | `Obvs` (core, including System.Text.Json serialization, the analyzers and the generator) | Core |
 | `Obvs.RabbitMQ`, `Obvs.Kafka`, `Obvs.NATS`, `Obvs.ActiveMQ` | Transports, all configured the same way |
-| `Obvs.AzureServiceBus`, `Obvs.AmazonSqs` | New transports (see 13) |
+| `Obvs.AzureSB`, `Obvs.AmazonSqs` | New transports (see 13) |
 | `Obvs.NetMQ` | Proposed to stay on v6 (see open question 4) |
 | `Obvs.Serialization.MessagePack` (MessagePack-CSharp), `Obvs.Serialization.ProtoBuf` | Optional serializers |
 | `Obvs.Testing`, `Obvs.Mcp` | New |
@@ -365,7 +365,7 @@ Most teams starting with a messaging library now use a managed cloud service rat
 | Product | Managed offerings | v6 | v7 |
 |---|---|---|---|
 | Kafka protocol | Confluent Cloud, Amazon MSK, Azure Event Hubs (Kafka endpoint), Redpanda | `Obvs.Kafka` | Verify and document the managed platforms |
-| Azure Service Bus | Azure | None (the README lists it, but there's no package) | New `Obvs.AzureServiceBus` |
+| Azure Service Bus | Azure | None (the README lists it, but there's no package) | New `Obvs.AzureSB` (`Obvs.AzureServiceBus` on NuGet belongs to an unreleased 2016 prototype) |
 | Amazon SQS and SNS | AWS | None | New `Obvs.AmazonSqs` |
 | Google Cloud Pub/Sub | Google Cloud | None | Deferred |
 | RabbitMQ | CloudAMQP, Amazon MQ | `Obvs.RabbitMQ` | No change |
