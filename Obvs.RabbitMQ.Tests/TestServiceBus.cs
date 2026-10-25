@@ -16,6 +16,31 @@ namespace Obvs.RabbitMQ.Tests
     public class TestServiceBus
     {
         [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldNotDeadlockWhenASubscriberDisposesTheBus()
+        {
+            // Code that runs on receiving a message (including code after awaiting one) may shut the app down.
+            // If messages arrived on RabbitMQ's consumer-dispatch thread, closing the connection there would
+            // wait for that same thread, forever.
+            IServiceBus serviceBus = ServiceBus.Configure()
+                    .WithRabbitMQEndpoints<ITestMessage>()
+                        .Named("Obvs.TestService.DisposeInCallback")
+                        .ConnectToBroker(TestBroker.Uri)
+                        .SerializedAsJson()
+                        .AsClientAndServer()
+                    .Create();
+            var disposed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var subscription = serviceBus.Commands.OfType<TestCommand>().Subscribe(_ =>
+            {
+                ((IDisposable)serviceBus).Dispose();
+                disposed.SetResult(true);
+            });
+
+            await serviceBus.SendAsync(new TestCommand { Id = 1 });
+
+            Assert.True(await disposed.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        }
+
+        [Fact, Trait("Category", "Explicit")]
         public async Task ShouldSendAndReceiveMessagesOverServiceBus()
         {
             IServiceBus serviceBus = ServiceBus.Configure()

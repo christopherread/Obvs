@@ -119,5 +119,27 @@ namespace Obvs.Kafka.Tests
 
             Assert.Contains(messages, message => message.Data == data);
         }
+
+        [Fact]
+        [Trait("Category", "Explicit")]
+        public async Task ShouldNotDeadlockWhenASubscriberDisposesItsSubscription()
+        {
+            // Code that runs on receiving a message may shut the app down. If messages arrived on the consume
+            // thread, disposing the subscription there would wait for that same thread, forever.
+            var received = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var disposed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            IDisposable subscription = null;
+            subscription = _source.Messages.OfType<TestMessage>().Subscribe(_ =>
+            {
+                received.TrySetResult(true);
+                subscription.Dispose();
+                disposed.TrySetResult(true);
+            });
+
+            await _publisher.PublishAsync(new TestMessage($"dispose in callback {Guid.NewGuid()}"));
+
+            Assert.True(await received.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+            Assert.True(await disposed.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        }
     }
 }
