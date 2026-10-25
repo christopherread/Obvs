@@ -62,7 +62,7 @@ namespace Obvs.RabbitMQ.Tests
                 await messagePublisher.PublishAsync(message);
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
             Assert.True(receivedMessages1.Count == 7, "Incorrect number of messages received for first subscription");
             Assert.True(receivedMessages2.Count == 7, "Incorrect number of messages received for second subscription");
@@ -80,7 +80,7 @@ namespace Obvs.RabbitMQ.Tests
             sub2.Dispose();
             messagePublisher.Dispose();
             messageSource.Dispose();
-            await connection.Value.CloseAsync();
+            await connection.Value.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
         }
 
         private static IMessagePublisher<IMessage> CreateMessagePublisher(string format, Lazy<IConnection> connection,
