@@ -26,6 +26,20 @@ namespace Obvs.Tests
         }
 
         [Fact]
+        public void ShouldDisposeEndpointsOnlyOnceWhenDisposedTwice()
+        {
+            IServiceEndpoint serviceEndpoint = A.Fake<IServiceEndpoint>();
+            IServiceEndpointClient serviceEndpointClient = A.Fake<IServiceEndpointClient>();
+            var serviceBus = new ServiceBus(new[] { serviceEndpointClient }, new[] { serviceEndpoint });
+
+            serviceBus.Dispose();
+            serviceBus.Dispose();
+
+            A.CallTo(() => serviceEndpoint.Dispose()).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient.Dispose()).MustHaveHappenedOnceExactly();
+        }
+
+        [Fact]
         public void ShouldOnlySubscribeToUnderlyingEndpointRequestsOnce()
         {
             IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
