@@ -99,6 +99,7 @@ The analyzer ships inside the main package, so it's on by default. First rules:
 | OBVS003 | A request handler's response type doesn't implement `IResponse` for the same service | — |
 | OBVS004 | A service has no transport or no serializer configured | Add `Use<Transport>()` |
 | OBVS005 | The result of `Subscribe` on a bus stream is discarded | Store the subscription, or suggest a handler |
+| OBVS006 | An `async` lambda passed to `Subscribe` on a bus stream (compiles to `async void`) | Convert to `HandleCommand`, `HandleEvent` or `HandleRequest` |
 
 Each diagnostic says what's wrong, how to fix it, and links to a docs page.
 
@@ -106,7 +107,47 @@ Each diagnostic says what's wrong, how to fix it, and links to a docs page.
 
 Tracking: #87
 
-Rx stays, but it's no longer the only way in:
+Obvs is the *observable* bus, and v7 keeps it that way: **observable-first, not observable-only**. Every service's messages stay `IObservable<T>` streams, and the transports still produce observables. What v7 adds are familiar entry points layered on that core, so the most common job ("when a command arrives, do some async work") is hard to get wrong.
+
+#### Why the observable core alone isn't enough
+
+Treating messages as streams is still the right idea. Rx makes things that are painful elsewhere simple: correlating messages across services, windowing, throttling, several subscribers to one stream, and requests that return many responses. But the most common use is reacting to one message with async work, and that is easy to get subtly wrong with Rx. The repo's own example service does it:
+
+```csharp
+// Examples/Service.ActiveMQ/Program.cs (v6)
+_subscription = serviceBus.Commands.OfType<Command1>().Subscribe(async cmd =>
+{
+    await serviceBus.PublishAsync(new Event1 { Data = cmd.Data });
+});
+```
+
+That lambda compiles to `async void`, so:
+- an exception in it can crash the process, or go unnoticed;
+- nothing limits how many run at once;
+- nothing waits for in-flight work at shutdown.
+
+Other common pitfalls:
+- **Subscription lifetime.** A dropped `IDisposable` keeps the subscription running forever; disposing too early stops messages silently.
+- **Cancellation by disposal.** Rx cancels by disposing, while the rest of .NET passes a `CancellationToken`.
+- **Awaiting an observable waits for it to complete.** So `await bus.GetResponses(req)` hangs without `Take(1)` and a timeout.
+- **`OnError` ends a stream.** That's why v6 routes errors to the separate `Exceptions` stream.
+- **No backpressure.** A slow handler behind `ObserveOn` builds an unbounded queue.
+
+Agents reproduce common patterns well and rare ones badly, and there is far more handler and `async`/`await` code in the world than Rx code.
+
+#### Three layers, one engine
+
+```
+             ┌──────────────────────────────────────────┐
+  Handlers   │ HandleCommand<T>(async (cmd, ctx, ct) =>)│  react to a message
+             ├──────────────────────────────────────────┤
+  Await      │ RequestAsync<TReq, TResp>(..., ct)       │  ask, get one answer
+             │ Events<T>(ct) → IAsyncEnumerable<T>      │  pull at your own pace
+             ├──────────────────────────────────────────┤
+  Rx (core)  │ IObservable<T> Commands / Events / ...   │  reason about streams
+             └──────────────────────────────────────────┘
+                 transports produce observables
+```
 
 ```csharp
 // Handlers, registered with DI
@@ -126,14 +167,49 @@ public sealed class PlaceOrderHandler(IOrderRepository orders) : ICommandHandler
 // Awaitable request/response
 Quote quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
 
-// Async streams
+// Pull-based consumption with backpressure
 await foreach (var placed in client.Events<OrderPlaced>(ct)) { ... }
 ```
 
-- Every async method takes a `CancellationToken`.
-- `MessageContext` carries the message's headers and correlation ID, and lets a handler publish, send or reply, so replies can't go to the wrong place.
-- Handler exceptions are logged, traced, and either retried or dead-lettered according to transport options. They don't vanish.
-- `IObservable` streams (`Commands`, `Events`, ...) remain for advanced composition.
+The upper layers are thin adapters over the observable core, so Rx still does the plumbing. Roughly:
+
+```csharp
+// A handler
+Commands.OfType<T>()
+    .Select(cmd => Observable.FromAsync(ct => RunHandlerAsync(cmd, ct))) // DI scope, trace span, try/catch, retry
+    .Merge(options.MaxConcurrency);                                      // bounded concurrency
+// subscribed when the host starts, disposed when it stops, waiting for in-flight work
+
+// RequestAsync
+GetResponses(request).OfType<TResp>().Take(1).Timeout(timeout).ToTask(ct);
+
+// Events<T>(ct): the observable feeds a bounded Channel<T>, read out as IAsyncEnumerable<T>
+```
+
+The streams remain first class for what Rx is uniquely good at:
+
+```csharp
+// Orders with no payment within 5 minutes
+var unpaid = bus.Events.OfType<OrderPlaced>()
+    .SelectMany(order => bus.Events.OfType<PaymentReceived>()
+        .Where(p => p.OrderId == order.Id)
+        .Take(1)
+        .Timeout(TimeSpan.FromMinutes(5), Observable.Return<PaymentReceived>(null))
+        .Where(p => p is null)
+        .Select(_ => order));
+```
+
+#### Rules
+
+- **Guidance:** the docs give one rule: *use a handler to react to a message, and use observables to reason about streams of messages.*
+- **Cancellation:** every async method takes a `CancellationToken`.
+- **Replies:** `MessageContext` carries the message's headers and correlation ID, and lets a handler publish, send or reply, so replies can't go to the wrong place.
+- **Errors:** handler exceptions are logged, traced, and either retried or dead-lettered according to transport options. They don't vanish, and they never end the underlying stream.
+- **One obvious way:** two ways to consume messages is a cost. Analyzer OBVS006 (see 3) flags `Subscribe(async ...)` on a bus stream and offers a code fix that turns it into a handler, so the guidance is enforced by the compiler, not a style guide.
+
+#### The name
+
+`IObservable` stays on `IServiceBus` in the core package (see open question 1). v7 also makes the bus more observable in the operational sense: OpenTelemetry traces (7), contracts the bus can describe itself (8), and an MCP `watch` tool that is a live view of the message streams (9).
 
 ### 5. A testing kit
 
@@ -269,7 +345,7 @@ The same tasks double as onboarding material for people.
 
 ## Open questions
 
-1. **Rx's place.** Should the `IObservable` streams stay on `IServiceBus`, or move to an `Obvs.Reactive` package in 7.0?
+1. ~~**Rx's place.** Should the `IObservable` streams stay on `IServiceBus`, or move to an `Obvs.Reactive` package in 7.0?~~ **Resolved: they stay in the core.** Observables are the library's identity and the engine the handler and `await` layers are built on, so moving them out would cost more than it saves. See 4.
 2. **Default serializer for new services.** System.Text.Json is proposed. Is that acceptable for users who mix v6 and v7 services by default?
 3. **Retries and dead-lettering.** Should Obvs own these policies across transports, or delegate to each broker's features?
 4. **Which transports to keep.** Is there enough use of ActiveMQ and NetMQ to justify porting them to the new model?
