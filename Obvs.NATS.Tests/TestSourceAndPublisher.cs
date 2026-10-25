@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Threading;
@@ -32,7 +34,8 @@ namespace Obvs.NATS.Tests
             var source = new MessageSource<TestMessage>(lazyConnection, subjectPrefix, deserializers);
             var publisher = new MessagePublisher<TestMessage>(lazyConnection, subjectPrefix, serializer);
 
-            var subscription = source.Messages.ObserveOn(Scheduler.Default).Subscribe(Console.WriteLine);
+            var received = new ConcurrentQueue<TestMessage>();
+            var subscription = source.Messages.ObserveOn(Scheduler.Default).Subscribe(received.Enqueue);
 
             for (var i = 0; i < 10; i++)
             {
@@ -41,6 +44,8 @@ namespace Obvs.NATS.Tests
 
             await Task.Delay(TimeSpan.FromSeconds(1));
             subscription.Dispose();
+
+            Assert.Equal(Enumerable.Range(0, 10), received.Select(message => message.Id));
         }
     }
 }

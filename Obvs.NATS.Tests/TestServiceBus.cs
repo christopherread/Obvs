@@ -42,16 +42,19 @@ namespace Obvs.NATS.Tests
                 Console.WriteLine(request);
                 bus.ReplyAsync(request, new TestResponse {Id = request.Id});
             });
-            bus.Events.Subscribe(Console.WriteLine);
+            var events = new List<IEvent>();
+            bus.Events.Subscribe(events.Add);
 
             await bus.SendAsync(new TestCommand {Id = 1});
 
-            var response = await bus.GetResponse<TestResponse>(new TestRequest());
-            Console.WriteLine(response);
+            var response = await bus.GetResponse<TestResponse>(new TestRequest {Id = 2});
+            Assert.Equal(2, response.Id);
 
             await Task.Delay(TimeSpan.FromSeconds(1));
 
             ((IDisposable)bus).Dispose();
+
+            Assert.Contains(events, ev => ev is TestEvent testEvent && testEvent.Id == 1);
         }
     }
 }
