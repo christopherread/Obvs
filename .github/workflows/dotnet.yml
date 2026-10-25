@@ -41,7 +41,9 @@ jobs:
     - name: Build
       run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.gitversion.outputs.semVer }} -p:ContinuousIntegrationBuild=true -p:Deterministic=true
     - name: Test
-      run: dotnet test --no-build --configuration Release --verbosity normal --filter Category!=Explicit 
+      # xUnit v3 runs on Microsoft.Testing.Platform (global.json). Exit code 8 means a project ran no tests,
+      # as the transport test projects only contain Explicit tests.
+      run: dotnet test --solution Obvs.sln --no-build --configuration Release -- --filter-not-trait "Category=Explicit" --ignore-exit-code 8
     - name: Pack
       if: github.event_name == 'push'
       run: |

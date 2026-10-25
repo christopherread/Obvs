@@ -50,7 +50,7 @@ namespace Obvs.NetMQ.Tests
             await publisher.PublishAsync(new TestMessage2 { Id = 2 });
             await publisher.PublishAsync(new TestMessage1 { Id = 3 });
             await publisher.PublishAsync(new TestMessage2 { Id = 3 });
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
             sub.Dispose();
             source.Dispose();
@@ -98,7 +98,7 @@ namespace Obvs.NetMQ.Tests
             await publisher.PublishAsync(new TestMessage2 { Id = 2 });
             await publisher.PublishAsync(new TestMessage1 { Id = 3 });
             await publisher.PublishAsync(new TestMessage2 { Id = 3 });
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
             sub.Dispose();
             source.Dispose();
@@ -153,7 +153,7 @@ namespace Obvs.NetMQ.Tests
 			    }
 		    }
 
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
             sub.Dispose();
             source.Dispose();

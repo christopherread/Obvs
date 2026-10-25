@@ -48,7 +48,7 @@ namespace Obvs.RabbitMQ.Tests
             var sub6 = serviceBus.GetResponses(new TestRequest { Id = 456 }).Subscribe(observer);
 
             // wait some time until we think all messages have been sent and received from RabbitMQ
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
             // test we got everything we expected
             Assert.True(messages.OfType<TestCommand>().Count() == 1, "TestCommand not received");
