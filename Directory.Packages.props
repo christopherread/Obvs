@@ -7,7 +7,7 @@
         <PackageVersion Include="Apache.NMS.ActiveMQ" Version="2.3.0"/>
         <PackageVersion Include="App.Metrics.Abstractions" Version="4.3.0"/>
         <PackageVersion Include="Confluent.Kafka" Version="2.16.0"/>
-        <PackageVersion Include="MessagePack" Version="1.9.11"/>
+        <PackageVersion Include="MessagePack" Version="3.1.12"/>
         <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="10.0.13"/>
         <PackageVersion Include="MsgPack.Cli" Version="1.0.1"/>
         <PackageVersion Include="NATS.Client" Version="1.1.8"/>

@@ -1,6 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
 
 using FakeItEasy;
+
+using MessagePack.Resolvers;
 
 using Obvs.Configuration;
 using Obvs.Serialization.MessagePack;
@@ -39,6 +44,75 @@ namespace Obvs.Serialization.Tests {
             Assert.Equal(message.Date.Kind, deserialize.Date.Kind);
         }
 
+        // Bytes written by MessagePack-CSharp 1.9.11, so services on either version can talk to each other
+        private const string Version1Bytes = "94C07BA8536F6D654E616D65D6FF4B72B333";
+
+        private static TestMessage CreateFixedMessage() {
+            return new TestMessage { Id = 123, Name = "SomeName", Date = new DateTime(2010, 2, 10, 13, 22, 59, DateTimeKind.Utc) };
+        }
+
+        [Fact]
+        public void ShouldSerializeToSameBytesAsVersion1() {
+            IMessageSerializer serializer = new MessagePackCSharpMessageSerializer();
+
+            var serialize = serializer.Serialize(CreateFixedMessage());
+
+            Assert.Equal(Version1Bytes, Convert.ToHexString(serialize));
+        }
+
+        [Fact]
+        public void ShouldDeserializeBytesWrittenByVersion1() {
+            IMessageDeserializer<TestMessage> deserializer = new MessagePackCSharpMessageDeserializer<TestMessage>();
+
+            var deserialize = deserializer.Deserialize(Convert.FromHexString(Version1Bytes));
+
+            Assert.Equal(CreateFixedMessage(), deserialize);
+        }
+
+        [Fact]
+        public void ShouldUseResolverPassedToConstructor() {
+            IMessageSerializer serializer = new MessagePackCSharpMessageSerializer(ContractlessStandardResolver.Instance);
+            IMessageDeserializer<UnattributedMessage> deserializer = new MessagePackCSharpMessageDeserializer<UnattributedMessage>(ContractlessStandardResolver.Instance);
+
+            var serialize = serializer.Serialize(new UnattributedMessage { Name = "SomeName" });
+            var deserialize = deserializer.Deserialize(serialize);
+
+            Assert.Equal("SomeName", deserialize.Name);
+        }
+
+        [Fact]
+        public void ShouldDeserializeModeratelyNestedMessages() {
+            IMessageDeserializer<NestedMessage> deserializer = new MessagePackCSharpMessageDeserializer<NestedMessage>();
+
+            var deserialize = deserializer.Deserialize(CreateNestedPayload(10));
+
+            Assert.NotNull(deserialize.Child);
+        }
+
+        [Fact]
+        public void ShouldRejectExcessivelyNestedMessages() {
+            IMessageDeserializer<NestedMessage> deserializer = new MessagePackCSharpMessageDeserializer<NestedMessage>();
+
+            Assert.ThrowsAny<Exception>(() => deserializer.Deserialize(CreateNestedPayload(1000)));
+        }
+
+        [Fact]
+        public void ShouldDeserializeDictionariesWithHashCollisionResistantKeys() {
+            IMessageSerializer serializer = new MessagePackCSharpMessageSerializer();
+            IMessageDeserializer<DictionaryMessage> deserializer = new MessagePackCSharpMessageDeserializer<DictionaryMessage>();
+
+            var serialize = serializer.Serialize(new DictionaryMessage { Values = new Dictionary<string, int> { ["a"] = 1 } });
+            var deserialize = deserializer.Deserialize(serialize);
+
+            Assert.Equal(1, deserialize.Values["a"]);
+            Assert.NotSame(EqualityComparer<string>.Default, deserialize.Values.Comparer);
+        }
+
+        // A NestedMessage nested 'depth' times: each level is a one-element array holding its child
+        private static byte[] CreateNestedPayload(int depth) {
+            return Enumerable.Repeat((byte)0x91, depth).Append((byte)0xC0).ToArray();
+        }
+
         [Fact]
         public void ShouldPassInCorrectFluentConfig() {
             var fakeConfigurator = A.Fake<ICanSpecifyEndpointSerializers<IMessage, ICommand, IEvent, IRequest, IResponse>>();
@@ -49,5 +123,21 @@ namespace Obvs.Serialization.Tests {
                     A<IMessageDeserializerFactory>.That.IsInstanceOf(typeof(MessagePackCSharpMessageDeserializerFactory))))
                 .MustHaveHappened(1, Times.Exactly);
         }
+    }
+
+    public class UnattributedMessage : IMessage {
+        public string Name { get; set; }
+    }
+
+    [DataContract]
+    public class NestedMessage : IMessage {
+        [DataMember(Order = 0)]
+        public NestedMessage Child { get; set; }
+    }
+
+    [DataContract]
+    public class DictionaryMessage : IMessage {
+        [DataMember(Order = 0)]
+        public Dictionary<string, int> Values { get; set; }
     }
 }
