@@ -28,7 +28,7 @@ namespace Obvs.NetMQ.Extensions
             return false;
         }
 
-        public static void SendToTopic(this PublisherSocket socket, string topic, string typeName, byte[] serializedMessage)
+        public static void SendToTopic(this NetMQSocket socket, string topic, string typeName, byte[] serializedMessage)
         {
             socket.TrySendMultipartMessage(
                 new NetMQMessage(new[]
