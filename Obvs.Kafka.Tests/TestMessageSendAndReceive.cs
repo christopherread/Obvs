@@ -82,7 +82,7 @@ namespace Obvs.Kafka.Tests
 
             var delay1 = TimeSpan.FromSeconds(2);
             Console.WriteLine($"Waiting {delay1}...");
-            await Task.Delay(delay1);
+            await Task.Delay(delay1, TestContext.Current.CancellationToken);
 
             await _publisher.PublishAsync(new TestMessage($"hello world {DateTime.Now}"));
             await _publisher.PublishAsync(new TestMessage($"hello world {DateTime.Now}"));
@@ -90,7 +90,7 @@ namespace Obvs.Kafka.Tests
 
             var delay2 = TimeSpan.FromSeconds(2);
             Console.WriteLine($"Waiting {delay2}...");
-            await Task.Delay(delay2);
+            await Task.Delay(delay2, TestContext.Current.CancellationToken);
 
             Assert.NotEmpty(messages);
             Assert.Equal(3, messages.Count);

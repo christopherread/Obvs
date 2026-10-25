@@ -13,6 +13,8 @@ using Xunit;
 
 namespace Obvs.NetMQ.Tests
 {
+    // Each test uses its own port, clear of the ranges TestServiceBusWithNetMq binds,
+    // because xUnit runs test classes in parallel
     public class TestPublishSubscribe
     {
         [Fact, Trait("Category", "Explicit")]
@@ -29,7 +31,7 @@ namespace Obvs.NetMQ.Tests
 
             }, err => Console.WriteLine("Error: " + err));
 
-            IMessageSource<IMessage> source = new MessageSource<IMessage>("tcp://localhost:5556",
+            IMessageSource<IMessage> source = new MessageSource<IMessage>("tcp://localhost:5560",
                 new IMessageDeserializer<IMessage>[]
                 {
                     new JsonMessageDeserializer<TestMessage1>(), 
@@ -39,7 +41,7 @@ namespace Obvs.NetMQ.Tests
 
             var sub = source.Messages.Subscribe(observer);
 
-            IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5556",
+            IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5560",
                 new JsonMessageSerializer(), topic);
 
             await publisher.PublishAsync(new TestMessage1 { Id = 1 });
@@ -48,7 +50,11 @@ namespace Obvs.NetMQ.Tests
             await publisher.PublishAsync(new TestMessage2 { Id = 2 });
             await publisher.PublishAsync(new TestMessage1 { Id = 3 });
             await publisher.PublishAsync(new TestMessage2 { Id = 3 });
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+
+            sub.Dispose();
+            source.Dispose();
+            publisher.Dispose();
 
             Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 1), "TestMessage1 1 not received");
             Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 2), "TestMessage1 2 not received");
@@ -57,9 +63,6 @@ namespace Obvs.NetMQ.Tests
             Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 1), "TestMessage2 1 not received");
             Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 2), "TestMessage2 2 not received");
             Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 3), "TestMessage2 3 not received");
-
-            sub.Dispose();
-            source.Dispose();
         }
 
         [Fact, Trait("Category", "Explicit")]
@@ -76,7 +79,7 @@ namespace Obvs.NetMQ.Tests
 
             }, err => Console.WriteLine("Error: " + err));
 
-            IMessageSource<IMessage> source = new MessageSource<IMessage>("tcp://localhost:5556",
+            IMessageSource<IMessage> source = new MessageSource<IMessage>("tcp://localhost:5561",
                 new IMessageDeserializer<IMessage>[]
                 {
                     new ProtoBufMessageDeserializer<TestMessage1>(), 
@@ -86,7 +89,7 @@ namespace Obvs.NetMQ.Tests
             
             var sub = source.Messages.Subscribe(observer);
 
-            IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5556",
+            IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5561",
                 new ProtoBufMessageSerializer(), topic);
 
             await publisher.PublishAsync(new TestMessage1 { Id = 1 });
@@ -95,7 +98,11 @@ namespace Obvs.NetMQ.Tests
             await publisher.PublishAsync(new TestMessage2 { Id = 2 });
             await publisher.PublishAsync(new TestMessage1 { Id = 3 });
             await publisher.PublishAsync(new TestMessage2 { Id = 3 });
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+
+            sub.Dispose();
+            source.Dispose();
+            publisher.Dispose();
 
             Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 1), "TestMessage1 1 not received");
             Assert.True(messages.OfType<TestMessage1>().Any(msg => msg.Id == 2), "TestMessage1 2 not received");
@@ -104,9 +111,6 @@ namespace Obvs.NetMQ.Tests
             Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 1), "TestMessage2 1 not received");
             Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 2), "TestMessage2 2 not received");
             Assert.True(messages.OfType<TestMessage2>().Any(msg => msg.Id == 3), "TestMessage2 3 not received");
-
-            sub.Dispose();
-            source.Dispose();
         }
 
 		[Fact, Trait("Category", "Explicit")]
@@ -117,8 +121,10 @@ namespace Obvs.NetMQ.Tests
 
 			const string topic = "TestTopicxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 			IDisposable sub;
+			MessageSource<IMessage> source;
+			MessagePublisher<IMessage> publisher;
 			{
-			    var source = new MessageSource<IMessage>("tcp://localhost:5557",
+			    source = new MessageSource<IMessage>("tcp://localhost:5562",
 				    new IMessageDeserializer<IMessage>[]
 				    {
 						new ProtoBufMessageDeserializer<TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters>(), 
@@ -134,7 +140,7 @@ namespace Obvs.NetMQ.Tests
 		    }
 
 		    {
-			    var publisher = new MessagePublisher<IMessage>("tcp://localhost:5557",
+			    publisher = new MessagePublisher<IMessage>("tcp://localhost:5562",
 				    new ProtoBufMessageSerializer(), 
 				    topic);
 
@@ -147,9 +153,11 @@ namespace Obvs.NetMQ.Tests
 			    }
 		    }
 
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
             sub.Dispose();
+            source.Dispose();
+            publisher.Dispose();
 	    }
 
         [ProtoContract]

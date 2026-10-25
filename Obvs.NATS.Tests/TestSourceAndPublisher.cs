@@ -39,7 +39,7 @@ namespace Obvs.NATS.Tests
                 await publisher.PublishAsync(new TestMessage {Id = i});
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
             subscription.Dispose();
         }
     }

@@ -49,7 +49,7 @@ namespace Obvs.NATS.Tests
             var response = await bus.GetResponse<TestResponse>(new TestRequest());
             Console.WriteLine(response);
 
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
             ((IDisposable)bus).Dispose();
         }
