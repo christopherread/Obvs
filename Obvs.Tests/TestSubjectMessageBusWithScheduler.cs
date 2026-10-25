@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Reactive.Testing;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Obvs.Tests
@@ -17,23 +18,23 @@ namespace Obvs.Tests
         }
 
         [Fact]
-        public void OnNextReturnsImmediatelyEvenIfMessageIsntEmitted()
+        public async Task OnNextReturnsImmediatelyEvenIfMessageIsntEmitted()
         {
             bool received = false;
             _testObj.Messages.Subscribe(_ => received = true);
 
-            _testObj.PublishAsync("Bleb").Wait();
+            await _testObj.PublishAsync("Bleb");
 
             Assert.False(received);
         }
 
         [Fact]
-        public void OnNextReturnsImmediatelyThenMessageEmitted()
+        public async Task OnNextReturnsImmediatelyThenMessageEmitted()
         {
             bool received = false;
             _testObj.Messages.Subscribe(_ => received = true);
 
-            _testObj.PublishAsync("Bleb").Wait();
+            await _testObj.PublishAsync("Bleb");
 
             _scheduler.AdvanceBy(1);
 
@@ -41,15 +42,15 @@ namespace Obvs.Tests
         }
 
         [Fact]
-        public void PublishReturnsImmediatelyWithNoObservers()
+        public async Task PublishReturnsImmediatelyWithNoObservers()
         {
-            _testObj.PublishAsync("Bleb").Wait();
+            await _testObj.PublishAsync("Bleb");
         }
 
         [Fact]
-        public void PublishReturnsImmediatelyWithNoObservers_NoCachedMessages()
+        public async Task PublishReturnsImmediatelyWithNoObservers_NoCachedMessages()
         {
-            _testObj.PublishAsync("Bleb").Wait();
+            await _testObj.PublishAsync("Bleb");
 
             bool received = false;
             _testObj.Messages.Subscribe(_ => received = true);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using Obvs.Types;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Obvs.Tests
@@ -17,7 +18,7 @@ namespace Obvs.Tests
         }
 
         [Fact]
-        public void PublishBlocksUntilMessageHasBeenConsumed()
+        public async Task PublishBlocksUntilMessageHasBeenConsumed()
         {
             var subscriberThreadId = -1;
             _testObj.Events.Subscribe(_ => subscriberThreadId = Thread.CurrentThread.ManagedThreadId);
@@ -29,11 +30,11 @@ namespace Obvs.Tests
             Assert.NotEqual(-1, subscriberThreadId);
             Assert.Equal(threadId, subscriberThreadId);
 
-            task.Wait();
+            await task;
         }
 
         [Fact]
-        public void SendBlocksUntilMessageHasBeenConsumed()
+        public async Task SendBlocksUntilMessageHasBeenConsumed()
         {
             var subscriberThreadId = -1;
             _testObj.Commands.Subscribe(_ => subscriberThreadId = Thread.CurrentThread.ManagedThreadId);
@@ -45,7 +46,7 @@ namespace Obvs.Tests
             Assert.NotEqual(-1, subscriberThreadId);
             Assert.Equal(threadId, subscriberThreadId);
 
-            task.Wait();
+            await task;
         }
 
         [Fact]
@@ -78,13 +79,13 @@ namespace Obvs.Tests
         [Fact]
         public void PublishReturnsWithNoObservers()
         {
-            Assert.True(_testObj.PublishAsync(new TestServiceEvent1()).Wait(1));
+            Assert.True(_testObj.PublishAsync(new TestServiceEvent1()).IsCompleted);
         }
 
         [Fact]
         public void SendReturnsWithNoObservers()
         {
-            Assert.True(_testObj.SendAsync(new TestServiceCommand1()).Wait(1));
+            Assert.True(_testObj.SendAsync(new TestServiceCommand1()).IsCompleted);
         }
     }
 }
