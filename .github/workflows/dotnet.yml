@@ -5,6 +5,9 @@ on:
     branches: [ master ]
     tags: ['v*' ]
     paths-ignore: ['README.md']
+  pull_request:
+    branches: [ master ]
+    paths-ignore: ['README.md']
 
 jobs:
   build:
@@ -13,50 +16,50 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
-        
+
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 10.0.x
     - name: Setup GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.7    
+      uses: gittools/actions/gitversion/setup@v4
       with:
-        versionSpec: '5.x'
-        
+        versionSpec: '6.x'
+
     - name: Determine Version
       id:   gitversion
-      uses: gittools/actions/gitversion/execute@v0.9.7
-      with:
-        useConfigFile: true
-        
+      uses: gittools/actions/gitversion/execute@v4
+
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.gitversion.outputs.nuGetVersion }} -p:ContinuousIntegrationBuild=true -p:Deterministic=true
+      run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.gitversion.outputs.semVer }} -p:ContinuousIntegrationBuild=true -p:Deterministic=true
     - name: Test
       run: dotnet test --no-build --configuration Release --verbosity normal --filter Category!=Explicit 
     - name: Pack
+      if: github.event_name == 'push'
       run: |
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs 
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.ActiveMQ
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Kafka
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Logging.NLog
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Monitoring.AppMetrics
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Monitoring.ElasticSearch
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Monitoring.PerformanceCounters
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.NATS
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.NetMQ
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.RabbitMQ
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Serialization.Json
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Serialization.MessagePack
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Serialization.MessagePack-CSharp
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Serialization.NetJson
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Serialization.Xml
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }} Obvs.Serialization.Yaml
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs 
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.ActiveMQ
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Kafka
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Logging.NLog
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Monitoring.AppMetrics
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Monitoring.ElasticSearch
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Monitoring.PerformanceCounters
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.NATS
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.NetMQ
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.RabbitMQ
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Json
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.MessagePack
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.MessagePack-CSharp
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.NetJson
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Xml
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Yaml
     - name: Publish
+      if: github.event_name == 'push'
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }} 
       run: |
