@@ -1,7 +1,10 @@
-version: '3.5'
 services:
   amq:
-    image: rmohr/activemq:latest
+    image: apache/activemq-classic:6.2.0
+    environment:
+      # Require the credentials the examples connect with
+      - ACTIVEMQ_CONNECTION_USER=admin
+      - ACTIVEMQ_CONNECTION_PASSWORD=admin
     ports:
       - "61616:61616"
       - "8161:8161"
