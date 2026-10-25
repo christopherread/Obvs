@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Disposables;
 using System.Threading;
+using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Obvs.Hosting;
 using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
 
@@ -61,7 +63,7 @@ namespace Obvs.Kafka
             CreateProducer();
 
             var wrapperMessage = ToWrapperMessage(message, properties);
-            var msg = new Message<Null, WrapperMessage> {Value = wrapperMessage};
+            var msg = new Message<Null, WrapperMessage> {Value = wrapperMessage, Headers = GetHeaders(message)};
 
             await _producer.ProduceAsync(_topic, msg);
         }
@@ -78,6 +80,23 @@ namespace Obvs.Kafka
                     Payload = stream.ToArray()
                 };
             }
+        }
+
+        // The message's Obvs headers (such as trace context) as Kafka headers, which v6 receivers ignore
+        private static Headers GetHeaders(TMessage message)
+        {
+            var headers = ObvsMessageHeaders.Get(message);
+            if (headers.Count == 0)
+            {
+                return null;
+            }
+
+            var kafkaHeaders = new Headers();
+            foreach (var header in headers)
+            {
+                kafkaHeaders.Add(header.Key, Encoding.UTF8.GetBytes(header.Value));
+            }
+            return kafkaHeaders;
         }
 
         private void CreateProducer()

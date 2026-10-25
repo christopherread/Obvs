@@ -1,0 +1,229 @@
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
+using System.Threading.Tasks;
+using Confluent.Kafka;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Obvs.Hosting;
+using Obvs.Serialization.Json;
+using Xunit;
+
+namespace Obvs.Kafka.Tests.Hosting
+{
+    // End to end through AddObvs and UseKafka against a real broker (KAFKA_BOOTSTRAP_SERVERS, default localhost:9092).
+    // Service names are unique to each run, so every run starts without the service's topics and creates them.
+    public class TestKafkaHosting : IClassFixture<TestKafkaHosting.ServiceNames>
+    {
+        private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
+        private readonly ServiceNames _serviceNames;
+
+        public TestKafkaHosting(ServiceNames serviceNames)
+        {
+            _serviceNames = serviceNames;
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldCreateTheServicesTopics()
+        {
+            var serviceName = _serviceNames.Create("topics");
+
+            using var host = await StartHostAsync(serviceName);
+
+            using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = TestBroker.BootstrapServers }).Build();
+            var topics = admin.GetMetadata(Timeout).Topics.Select(topic => topic.Topic).ToList();
+            Assert.Contains($"{serviceName}.Commands", topics);
+            Assert.Contains($"{serviceName}.Events", topics);
+            Assert.Contains($"{serviceName}.Requests", topics);
+            Assert.Contains($"{serviceName}.Responses", topics);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldSendCommandsAndPublishEventsOverKafka()
+        {
+            using var host = await StartHostAsync(_serviceNames.Create("commands-events"));
+            var bus = host.Services.GetRequiredService<IServiceBus>();
+
+            var command = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            Assert.Equal("o-1", (await command.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
+
+            var placed = bus.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
+            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            Assert.Equal("o-1", (await placed.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldReturnResponsesOverKafka()
+        {
+            using var host = await StartHostAsync(_serviceNames.Create("requests"), service => service
+                .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote { Price = 9.99m })));
+
+            var quote = await host.Services.GetRequiredService<IServiceBusClient>()
+                .RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, Timeout, TestContext.Current.CancellationToken);
+
+            Assert.Equal(9.99m, quote.Price);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldDeliverToEveryBusInTheProcess()
+        {
+            // As with the other transports, each bus receives every message, so they mustn't share a consumer group
+            var serviceName = _serviceNames.Create("every-bus");
+            using var hostA = await StartHostAsync(serviceName);
+            using var hostB = await StartHostAsync(serviceName);
+            var busA = hostA.Services.GetRequiredService<IServiceBus>();
+            var busB = hostB.Services.GetRequiredService<IServiceBus>();
+
+            var receivedByA = busA.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
+            var receivedByB = busB.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
+            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" });
+
+            Assert.Equal("o-1", (await receivedByA.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
+            Assert.Equal("o-1", (await receivedByB.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldKeepWorkingWhenAnotherHostInTheProcessStops()
+        {
+            var serviceName = _serviceNames.Create("two-hosts");
+            using var hostA = await StartHostAsync(serviceName);
+            var hostB = await StartHostAsync(serviceName);
+            await hostB.StopAsync(TestContext.Current.CancellationToken);
+            hostB.Dispose();
+            var busA = hostA.Services.GetRequiredService<IServiceBus>();
+
+            var command = busA.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
+            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" });
+
+            Assert.Equal("o-1", (await command.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldNotDeadlockWhenASubscriberDisposesTheBus()
+        {
+            var host = await StartHostAsync(_serviceNames.Create("dispose-in-callback"));
+            var bus = host.Services.GetRequiredService<IServiceBus>();
+            var disposed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var subscription = bus.Commands.OfType<PlaceOrder>().Subscribe(_ =>
+            {
+                host.Dispose();
+                disposed.SetResult(true);
+            });
+
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+
+            Assert.True(await disposed.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken));
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldContinueTheSendersTraceAcrossKafka()
+        {
+            var serviceName = _serviceNames.Create("tracing");
+            using var activities = new ActivityRecorder();
+            using var receiver = await StartHostAsync(serviceName, service => service.AsServer()
+                .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
+            using var sender = await StartHostAsync(serviceName, service => service.AsClient());
+
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+
+            var send = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"send {serviceName}"));
+            var process = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"process {serviceName}"));
+            Assert.Equal(send.TraceId, process.TraceId);
+            Assert.Equal(send.SpanId, process.ParentSpanId);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldCarryHeadersTheAppSetsOverKafka()
+        {
+            var serviceName = _serviceNames.Create("headers");
+            var received = new TaskCompletionSource<IReadOnlyDictionary<string, string>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var receiver = await StartHostAsync(serviceName, service => service.AsServer()
+                .HandleCommand<PlaceOrder>((command, context, ct) =>
+                {
+                    received.TrySetResult(ObvsMessageHeaders.Get(command));
+                    return Task.CompletedTask;
+                }));
+            using var sender = await StartHostAsync(serviceName, service => service.AsClient());
+            var placeOrder = new PlaceOrder { OrderId = "o-1" };
+            ObvsMessageHeaders.Set(placeOrder, new Dictionary<string, string> { ["x-tenant"] = "acme" });
+
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(placeOrder);
+
+            var headers = await received.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+            Assert.Equal("acme", headers["x-tenant"]);
+        }
+
+        private static async Task<IHost> StartHostAsync(string serviceName, Action<ObvsServiceBuilder> configure = null)
+        {
+            var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
+            builder.Services.AddObvs(obvs => obvs.AddService<IOrderMessage>(serviceName, service =>
+            {
+                service
+                    .UseKafka(options => options.BootstrapServers = TestBroker.BootstrapServers)
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>)));
+                configure?.Invoke(service);
+            }));
+            var host = builder.Build();
+            await host.StartAsync(TestContext.Current.CancellationToken);
+            return host;
+        }
+
+        private static async Task<T> WaitForAsync<T>(Func<T> find) where T : class
+        {
+            var deadline = DateTime.UtcNow + Timeout;
+            T found;
+            while ((found = find()) == null && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(20, TestContext.Current.CancellationToken);
+            }
+            return found ?? throw new TimeoutException($"The expected {typeof(T).Name} wasn't recorded in time.");
+        }
+
+        // Names services uniquely for this run, and deletes their topics afterwards
+        public sealed class ServiceNames : IAsyncDisposable
+        {
+            private readonly string _runId = Guid.NewGuid().ToString("N").Substring(0, 8);
+
+            public string Create(string name) => $"obvs-kafka-{name}-{_runId}";
+
+            public async ValueTask DisposeAsync()
+            {
+                using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = TestBroker.BootstrapServers }).Build();
+                var topics = admin.GetMetadata(Timeout).Topics.Select(topic => topic.Topic).Where(topic => topic.StartsWith("obvs-kafka-") && topic.Contains(_runId)).ToList();
+                if (topics.Count > 0)
+                {
+                    await admin.DeleteTopicsAsync(topics);
+                }
+            }
+        }
+
+        private sealed class ActivityRecorder : IDisposable
+        {
+            private readonly ConcurrentQueue<Activity> _stopped = new ConcurrentQueue<Activity>();
+            private readonly ActivityListener _listener;
+
+            public ActivityRecorder()
+            {
+                _listener = new ActivityListener
+                {
+                    ShouldListenTo = source => source.Name == ObvsTelemetry.ActivitySourceName,
+                    Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+                    ActivityStopped = activity => _stopped.Enqueue(activity),
+                };
+                ActivitySource.AddActivityListener(_listener);
+            }
+
+            public IReadOnlyList<Activity> For(string serviceName)
+            {
+                return _stopped.Where(activity => (activity.GetTagItem("messaging.destination.name") as string) == serviceName).ToList();
+            }
+
+            public void Dispose() => _listener.Dispose();
+        }
+    }
+}
