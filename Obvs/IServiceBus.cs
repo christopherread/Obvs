@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Configuration;
 using Obvs.Extensions;
@@ -30,6 +31,7 @@ namespace Obvs
     public class ServiceBus : IServiceBus, IDisposable
     {
         private readonly IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse> _serviceBus;
+        private int _disposed;
 
         // ReSharper disable once UnusedMember.Global
         public ServiceBus(IEnumerable<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>> endpointClients, 
@@ -95,6 +97,11 @@ namespace Obvs
 
         public void Dispose()
         {
+            // Safe to call more than once: a container can track the same bus behind several registrations
+            if (Interlocked.Exchange(ref _disposed, 1) == 1)
+            {
+                return;
+            }
             ((IDisposable)_serviceBus).Dispose();
         }
     }
