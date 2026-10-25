@@ -40,8 +40,25 @@ namespace Obvs.NATS
             using (var stream = new MemoryStream())
             {
                 ProtoBuf.Serializer.Serialize(stream, wrapper);
-                await _connection.PublishAsync(subject, stream.ToArray()).ConfigureAwait(false);
+                await _connection.PublishAsync(subject, stream.ToArray(), GetHeaders(message)).ConfigureAwait(false);
             }
+        }
+
+        // The message's Obvs headers (such as trace context) as NATS headers, which v6 receivers ignore
+        private static NatsHeaders GetHeaders(TMessage message)
+        {
+            var headers = ObvsMessageHeaders.Get(message);
+            if (headers.Count == 0)
+            {
+                return null;
+            }
+
+            var natsHeaders = new NatsHeaders();
+            foreach (var header in headers)
+            {
+                natsHeaders[header.Key] = header.Value;
+            }
+            return natsHeaders;
         }
 
         public void Dispose()
