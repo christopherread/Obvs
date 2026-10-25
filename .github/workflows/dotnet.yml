@@ -2,11 +2,11 @@ name: .NET
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, v7 ]
     tags: ['v*' ]
     paths-ignore: ['README.md']
   pull_request:
-    branches: [ master ]
+    branches: [ master, v7 ]
     paths-ignore: ['README.md']
 
 jobs:
@@ -90,7 +90,7 @@ jobs:
       # as the transport test projects only contain Explicit tests.
       run: dotnet test --solution Obvs.sln --no-build --configuration Release -- --filter-not-trait "Category=Explicit" --ignore-exit-code 8
     - name: Pack
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
       run: |
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs 
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.ActiveMQ
@@ -109,13 +109,13 @@ jobs:
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Xml
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Yaml
     - name: NuGet Login
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
       id: nuget
       uses: NuGet/login@v1
       with:
         user: inter8ection
     - name: Publish
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
       env:
         NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
       run: |
