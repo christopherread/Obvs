@@ -68,6 +68,43 @@ builder.Services.AddObvs(obvs => obvs
 - `IServiceBus` and `IServiceBusClient` are resolvable from DI. Handlers are resolved from DI with a scope per message (see 4).
 - The non-generic surface (`IServiceBus` over `IMessage`, `ICommand`, ...) is the default. The six-parameter generic variants stay available, but are no longer what the docs lead with.
 
+#### Lifetime
+
+The bus stays a single shared instance, as in v6. Dependency injection makes that explicit and enforced instead of a convention:
+
+```csharp
+services.TryAddSingleton<ServiceBus>(sp => /* build from options */);
+services.TryAddSingleton<IServiceBus>(sp => sp.GetRequiredService<ServiceBus>());       // same instance,
+services.TryAddSingleton<IServiceBusClient>(sp => sp.GetRequiredService<ServiceBus>()); // not a second bus
+services.AddHostedService<ObvsHostedService>();
+```
+
+- **One instance behind both interfaces.** `IServiceBus` and `IServiceBusClient` forward to the same registration. Registering each separately is a classic DI mistake that would create two buses.
+- **The container owns it.**
+  - The hosted service starts it when the app starts: connecting, declaring and subscribing before the app takes traffic, and surfacing configuration errors immediately (see 6).
+  - On shutdown it stops the bus, letting in-flight handlers finish.
+  - The container disposes it. Application code no longer disposes the bus, unlike v6's `((IDisposable)serviceBus).Dispose()`.
+- **Handlers are scoped, the bus is not.** Each message's handler is resolved in its own DI scope, so handlers can depend on scoped services such as a `DbContext`. The bus never holds onto a scoped service.
+- **`AddObvs` is safe to call more than once.** Repeated calls add to the same bus configuration, or fail with an actionable error on conflicts. They never create a second bus by accident.
+- **Singleton means one per container, not one per process.** Each `WebApplicationFactory`, test harness (see 5) or extra host in a process builds its own container, and therefore its own bus. That's what tests want, but v6 derives broker-side names from the *process*, so two buses in one process collide:
+
+  | Transport | v6 naming | Two buses in one process |
+  |---|---|---|
+  | RabbitMQ | Exclusive queues named host-user-**process ID**-subscriber count | The second bus declares the same exclusive queue name and fails |
+  | Kafka | `GroupId` = host-user-**process ID** | Both buses join one consumer group and Kafka splits the messages between them, so each silently misses some |
+  | ActiveMQ | Client ID from the process, plus the Windows user on .NET Framework | Duplicate client ID on net472, so the second connection is refused |
+  | Request/response | `RequesterId` = process name-host-user-process ID | Harmless: responses are also matched by request ID |
+
+  v7 gives each bus an **instance ID**: a GUID by default, overridable in options for stable names across restarts where a transport needs them. Every broker-side name uses it instead of the process ID. Calling v6's `.Create()` twice in one process hits the same collisions; DI just makes it much more likely.
+- **Several buses on purpose.** This is rarely needed, since one bus already hosts many services across different transports. Where it is, keyed services are supported, with the unkeyed bus as the default:
+
+  ```csharp
+  services.AddObvs("analytics", obvs => ...);
+  public sealed class Reporter([FromKeyedServices("analytics")] IServiceBus analyticsBus) { ... }
+  ```
+
+- **No host required.** Scripts and small console tools can use a lightweight builder that wraps a private container (`await using var bus = await ObvsBus.StartAsync(obvs => ...)`), with the same lifetime rules.
+
 ### 2. Explicit, generated message registration
 
 Tracking: #85
