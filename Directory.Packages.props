@@ -7,11 +7,11 @@
         <PackageVersion Include="Apache.NMS.ActiveMQ" Version="2.3.0"/>
         <PackageVersion Include="App.Metrics.Abstractions" Version="4.3.0"/>
         <PackageVersion Include="Confluent.Kafka" Version="2.16.0"/>
+        <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="9.5.3"/>
         <PackageVersion Include="MessagePack" Version="3.1.12"/>
         <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="10.0.13"/>
         <PackageVersion Include="MsgPack.Cli" Version="1.0.1"/>
-        <PackageVersion Include="NATS.Client" Version="1.1.8"/>
-        <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="9.5.3"/>
+        <PackageVersion Include="NATS.Client.Core" Version="3.3.1"/>
         <PackageVersion Include="NetJSON" Version="1.4.7"/>
         <PackageVersion Include="NetMQ" Version="4.0.4.5"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>

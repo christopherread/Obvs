@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NATS.Client;
+using NATS.Client.Core;
 using Obvs.Serialization;
 using Obvs.Serialization.Json;
 using Xunit;
@@ -16,11 +18,7 @@ namespace Obvs.NATS.Tests
         [Fact, Trait("Category", "Explicit")]
         public async Task TestSendAndReceiveMessage()
         {
-            var lazyConnection = new Lazy<IConnection>(() =>
-            {
-                var cf = new ConnectionFactory();
-                return cf.CreateConnection(TestBroker.Url);
-            }, LazyThreadSafetyMode.ExecutionAndPublication);
+            await using var connection = new NatsConnection(new NatsOpts { Url = TestBroker.Url });
 
             const string subjectPrefix = "Obvs.NATS.Tests";
             var deserializers = new List<IMessageDeserializer<TestMessage>>
@@ -29,10 +27,11 @@ namespace Obvs.NATS.Tests
             };
             IMessageSerializer serializer = new JsonMessageSerializer();
 
-            var source = new MessageSource<TestMessage>(lazyConnection, subjectPrefix, deserializers);
-            var publisher = new MessagePublisher<TestMessage>(lazyConnection, subjectPrefix, serializer);
+            var source = new MessageSource<TestMessage>(connection, subjectPrefix, deserializers);
+            var publisher = new MessagePublisher<TestMessage>(connection, subjectPrefix, serializer);
 
-            var subscription = source.Messages.ObserveOn(Scheduler.Default).Subscribe(Console.WriteLine);
+            var received = new ConcurrentQueue<TestMessage>();
+            var subscription = source.Messages.ObserveOn(Scheduler.Default).Subscribe(received.Enqueue);
 
             for (var i = 0; i < 10; i++)
             {
@@ -41,6 +40,8 @@ namespace Obvs.NATS.Tests
 
             await Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
             subscription.Dispose();
+
+            Assert.Equal(Enumerable.Range(0, 10), received.Select(message => message.Id));
         }
     }
 }

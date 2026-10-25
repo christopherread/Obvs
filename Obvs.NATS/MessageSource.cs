@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using NATS.Client;
+using System.Threading;
+using System.Threading.Tasks;
+using NATS.Client.Core;
 using Obvs.Serialization;
 
 namespace Obvs.NATS
@@ -12,17 +15,17 @@ namespace Obvs.NATS
         where TMessage : class
     {
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
-        private readonly Lazy<IConnection> _lazyConnection;
+        private readonly INatsConnection _connection;
         private readonly Func<Dictionary<string, string>, bool> _filter;
         private readonly string _subject;
 
-        public MessageSource(Lazy<IConnection> lazyConnection,
+        public MessageSource(INatsConnection connection,
             string subjectPrefix,
             IEnumerable<IMessageDeserializer<TMessage>> deserializers,
             Func<Dictionary<string, string>, bool> filter = null)
         {
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
-            _lazyConnection = lazyConnection;
+            _connection = connection;
             _filter = filter;
             _subject = string.Format("{0}.*", subjectPrefix);
         }
@@ -31,35 +34,71 @@ namespace Obvs.NATS
         {
             get
             {
+#pragma warning disable VSTHRD002 // IObservable.Subscribe and IDisposable.Dispose are synchronous
                 return Observable.Create<TMessage>(observer =>
-                    _lazyConnection.Value
-                        .SubscribeAsync(_subject)
-                        .ToObservable()
-                        .Select(Unwrap)
-                        .Where(MatchesFilter)
-                        .Select(Deserialize)
-                        .Subscribe(observer));
+                {
+                    // Block until the server has the subscription, so messages published straight after
+                    // Subscribe returns aren't missed. NATS.Net doesn't capture the synchronization context,
+                    // so blocking here can't deadlock.
+                    var subscription = _connection.SubscribeCoreAsync<byte[]>(_subject).AsTask().GetAwaiter().GetResult();
+                    var cancellation = new CancellationTokenSource();
+                    // ReceiveAsync reports its own failures to the observer
+                    _ = Task.Run(() => ReceiveAsync(subscription, observer, cancellation.Token));
+
+                    return Disposable.Create(() =>
+                    {
+                        cancellation.Cancel();
+                        subscription.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                        cancellation.Dispose();
+                    });
+                });
+#pragma warning restore VSTHRD002
             }
         }
 
-        private bool MatchesFilter(Tuple<string, MessageWrapper> tuple)
+        private async Task ReceiveAsync(INatsSub<byte[]> subscription, IObserver<TMessage> observer, CancellationToken token)
         {
-            return _filter == null || _filter(tuple.Item2.Properties);
-        }
-
-        private static Tuple<string, MessageWrapper> Unwrap(MsgHandlerEventArgs args)
-        {
-            using (var stream = new MemoryStream(args.Message.Data))
+            try
             {
-                var wrapper = ProtoBuf.Serializer.Deserialize<MessageWrapper>(stream);
-                return Tuple.Create(args.Message.Subject, wrapper);
+                while (await subscription.Msgs.WaitToReadAsync(token).ConfigureAwait(false))
+                {
+                    NatsMsg<byte[]> msg;
+                    while (subscription.Msgs.TryRead(out msg))
+                    {
+                        var wrapper = Unwrap(msg.Data);
+                        if (MatchesFilter(wrapper))
+                        {
+                            observer.OnNext(Deserialize(msg.Subject, wrapper));
+                        }
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception exception)
+            {
+                observer.OnError(exception);
             }
         }
 
-        private TMessage Deserialize(Tuple<string, MessageWrapper> tuple)
+        private bool MatchesFilter(MessageWrapper wrapper)
+        {
+            return _filter == null || _filter(wrapper.Properties);
+        }
+
+        private static MessageWrapper Unwrap(byte[] data)
+        {
+            using (var stream = new MemoryStream(data))
+            {
+                return ProtoBuf.Serializer.Deserialize<MessageWrapper>(stream);
+            }
+        }
+
+        private TMessage Deserialize(string subject, MessageWrapper wrapper)
         {
             IMessageDeserializer<TMessage> deserializer;
-            var messageType = GetMessageType(tuple.Item1);
+            var messageType = GetMessageType(subject);
 
             if (!_deserializers.TryGetValue(messageType, out deserializer))
             {
@@ -70,7 +109,7 @@ namespace Obvs.NATS
                 
                 deserializer = _deserializers.Values.Single();
             }
-            return deserializer.Deserialize(new MemoryStream(tuple.Item2.Body));
+            return deserializer.Deserialize(new MemoryStream(wrapper.Body));
         }
 
         private static string GetMessageType(string subject)
