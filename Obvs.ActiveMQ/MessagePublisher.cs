@@ -5,6 +5,7 @@ using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using Apache.NMS;
 using Obvs.ActiveMQ.Extensions;
+using Obvs.Hosting;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
 
@@ -108,6 +109,7 @@ namespace Obvs.ActiveMQ
             var msg = GenerateMessage(message, _producer, _serializer);
 
             msg.Properties.AddProperties(properties);
+            SetHeaders(msg, message);
 
             _producer.Send(msg, _deliveryMode(message), _priority(message), _timeToLive(message));
         }
@@ -126,6 +128,19 @@ namespace Obvs.ActiveMQ
             }
 
             return bytesMessage;
+        }
+
+        // The message's Obvs headers (such as trace context) as message properties, which v6 receivers ignore.
+        // The type name property Obvs relies on is never overwritten.
+        private static void SetHeaders(IMessage msg, TMessage message)
+        {
+            foreach (var header in ObvsMessageHeaders.Get(message))
+            {
+                if (header.Key != MessagePropertyNames.TypeName)
+                {
+                    msg.Properties.SetString(header.Key, header.Value);
+                }
+            }
         }
 
         private static void AppendTypeNameProperty(TMessage message, Dictionary<string, object> properties)

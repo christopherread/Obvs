@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Xml.Serialization;
 using Apache.NMS;
 using Apache.NMS.Util;
@@ -56,6 +58,13 @@ namespace Obvs.ActiveMQ.Tests
 
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
                 _acknowledgementMode);
+        }
+
+        // Messages reach subscribers on the task pool, so wait for delivery rather than expecting it on the listener's thread
+        private void AssertDelivered(ITestMessage message)
+        {
+            SpinWait.SpinUntil(() => Fake.GetCalls(_observer).Any(call => call.Method.Name == nameof(_observer.OnNext) && ReferenceEquals(call.Arguments[0], message)), TimeSpan.FromSeconds(5));
+            A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
         }
 
         [Fact]
@@ -143,7 +152,7 @@ namespace Obvs.ActiveMQ.Tests
             _source.Messages.Subscribe(_observer);
             consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
 
-            A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
+            AssertDelivered(message);
         }
 
         [Fact]
@@ -161,7 +170,7 @@ namespace Obvs.ActiveMQ.Tests
             _source.Messages.Subscribe(_observer);
             consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
 
-            A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
+            AssertDelivered(message);
         }
 
         [Fact]
@@ -188,7 +197,7 @@ namespace Obvs.ActiveMQ.Tests
             _source.Messages.Subscribe(_observer);
             consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
 
-            A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
+            AssertDelivered(message);
         }
 
         [Fact]
@@ -214,7 +223,7 @@ namespace Obvs.ActiveMQ.Tests
             consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
 
             A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).MustHaveHappened();
-            A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
+            AssertDelivered(message);
         }
 
         [Fact]
@@ -248,7 +257,7 @@ namespace Obvs.ActiveMQ.Tests
             consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
 
             A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).MustHaveHappened();
-            A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
+            AssertDelivered(message);
         }
     }
 }
