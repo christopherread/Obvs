@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Apache.NMS;
@@ -50,6 +51,10 @@ namespace Obvs.ActiveMQ
                         .Select(message => new { message, deserializer = GetDeserializer(message) })
                         .Where(msg => msg.deserializer != null)
                         .Select(msg => DeserializeAndAcknowledge(msg.message, msg.deserializer))
+                        // Hand messages to subscribers on the task pool, in order. Subscriber code running on the
+                        // session's dispatch thread could otherwise deadlock it, for example by disposing the bus,
+                        // which stops the connection and waits for that thread.
+                        .ObserveOn(TaskPoolScheduler.Default)
                         .Subscribe(observer);
 
                     return Disposable.Create(() =>
