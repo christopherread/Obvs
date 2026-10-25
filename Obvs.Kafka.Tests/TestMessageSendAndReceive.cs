@@ -44,13 +44,8 @@ namespace Obvs.Kafka.Tests
 
         public TestMessageSendAndReceive()
         {
-            // Steps to run local kafka broker:
-            // - Install: Docker for Windows / Docker Desktop
-            // - Clone: https://github.com/wurstmeister/kafka-docker
-            // - Edit: docker-compose-single-broker.yml
-            // - Change: KAFKA_ADVERTISED_HOST_NAME: localhost
-            // - Run: docker-compose -f "docker-compose-single-broker.yml" up -d --build
-            var cfg = new KafkaConfiguration("localhost:9092");
+            // Run a local broker with: docker run -p 9092:9092 apache/kafka
+            var cfg = new KafkaConfiguration(TestBroker.BootstrapServers);
             var sourceConfig = new KafkaSourceConfiguration();
             var producerConfig = new KafkaProducerConfiguration();
             const string topicName = "test-topic-3";

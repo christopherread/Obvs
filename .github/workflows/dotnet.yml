@@ -17,6 +17,41 @@ jobs:
       contents: read
       id-token: write # NuGet Trusted Publishing
 
+    # Brokers for the transport tests marked Category=Explicit
+    services:
+      rabbitmq:
+        image: rabbitmq:4.4-alpine
+        ports: ['5672:5672']
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q check_port_connectivity"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      nats:
+        image: nats:2.15
+        ports: ['4222:4222']
+      kafka:
+        image: apache/kafka:4.4.0
+        ports: ['9092:9092']
+        # Setting any KAFKA_* variable replaces the image's defaults, so configure a full single-node KRaft broker
+        env:
+          KAFKA_NODE_ID: 1
+          KAFKA_PROCESS_ROLES: broker,controller
+          KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+          KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 1
+          KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+          KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: 1
+          # Assign partitions to the test's new consumer group straight away
+          KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+        options: >-
+          --health-cmd "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"
+          --health-interval 5s --health-timeout 10s --health-retries 20
+
     steps:
     - name: Checkout
       uses: actions/checkout@v7
@@ -40,6 +75,21 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.gitversion.outputs.semVer }} -p:ContinuousIntegrationBuild=true -p:Deterministic=true
+    - name: Prepare Kafka
+      # The test consumer starts at the latest offset and doesn't wait for partition assignment, so create its
+      # topic and warm up the group coordinator (which creates __consumer_offsets) before the tests run
+      run: |
+        docker exec ${{ job.services.kafka.id }} /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic test-topic-3
+        docker exec ${{ job.services.kafka.id }} /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test-topic-3 --group ci-warmup --timeout-ms 10000 || true
+    - name: Test transports against brokers
+      env:
+        RABBITMQ_URI: amqp://localhost:5672
+        NATS_URL: nats://localhost:4222
+        KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+      run: |
+        dotnet test --project Obvs.RabbitMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.NATS.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.Kafka.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
     - name: Test
       # xUnit v3 runs on Microsoft.Testing.Platform (global.json). Exit code 8 means a project ran no tests,
       # as the transport test projects only contain Explicit tests.

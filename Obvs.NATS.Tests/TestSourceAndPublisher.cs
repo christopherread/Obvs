@@ -19,7 +19,7 @@ namespace Obvs.NATS.Tests
             var lazyConnection = new Lazy<IConnection>(() =>
             {
                 var cf = new ConnectionFactory();
-                return cf.CreateConnection("nats://192.168.99.100:32774"); // change to local Docker address:port that maps onto 4222
+                return cf.CreateConnection(TestBroker.Url);
             }, LazyThreadSafetyMode.ExecutionAndPublication);
 
             const string subjectPrefix = "Obvs.NATS.Tests";
