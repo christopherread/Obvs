@@ -7,8 +7,8 @@
     <Version>1.0.0</Version>
     <Authors />
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
-    <PackageReleaseNotes>Minor dependency update</PackageReleaseNotes>
-    <Description>MessagePack serialization for Obvs</Description>
+    <PackageReleaseNotes>Deprecated: MsgPack.Cli is no longer maintained. Use Obvs.Serialization.MessagePack-CSharp instead.</PackageReleaseNotes>
+    <Description>Deprecated: use Obvs.Serialization.MessagePack-CSharp. MessagePack serialization for Obvs using MsgPack.Cli, which is no longer maintained.</Description>
   </PropertyGroup>
 
   <ItemGroup>

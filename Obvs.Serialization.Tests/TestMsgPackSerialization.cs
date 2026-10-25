@@ -1,4 +1,8 @@
+// These tests exercise the deprecated MsgPack.Cli serializer on purpose
+#pragma warning disable CS0618
+
 using System;
+using System.Reflection;
 using FakeItEasy;
 using Xunit;
 using Obvs.Configuration;
@@ -11,6 +15,30 @@ namespace Obvs.Serialization.Tests
 
     public class TestMsgPackSerialization
     {
+        [Theory]
+        [InlineData(typeof(MsgPackMessageSerializer))]
+        [InlineData(typeof(MsgPackMessageDeserializer<>))]
+        [InlineData(typeof(MsgPackMessageDeserializerFactory))]
+        public void ShouldBeObsoleteInFavourOfMessagePackCSharp(Type type)
+        {
+            var obsolete = type.GetCustomAttribute<ObsoleteAttribute>();
+
+            Assert.NotNull(obsolete);
+            Assert.False(obsolete.IsError);
+            Assert.Contains("Obvs.Serialization.MessagePack-CSharp", obsolete.Message);
+        }
+
+        [Fact]
+        public void FluentConfigShouldBeObsoleteInFavourOfMessagePackCSharp()
+        {
+            // Obvs.Serialization.MessagePack-CSharp has a class with the same full name, so look it up in this package's assembly
+            var extensions = typeof(MsgPackMessageSerializer).Assembly.GetType("Obvs.Serialization.MessagePack.Configuration.FluentConfigExtensions");
+            var obsolete = extensions.GetMethod("SerializedAsMsgPack").GetCustomAttribute<ObsoleteAttribute>();
+
+            Assert.NotNull(obsolete);
+            Assert.Contains("SerializedAsMessagePackCSharp", obsolete.Message);
+        }
+
         [Fact]
         public void ShouldSerializeToMsgPack()
         {
