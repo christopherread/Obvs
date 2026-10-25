@@ -17,6 +17,27 @@ jobs:
       contents: read
       id-token: write # NuGet Trusted Publishing
 
+    # Brokers for the transport tests marked Category=Explicit
+    services:
+      rabbitmq:
+        image: rabbitmq:4.4-alpine
+        ports: ['5672:5672']
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q check_port_connectivity"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      nats:
+        image: nats:2.15
+        ports: ['4222:4222']
+      kafka:
+        image: apache/kafka:4.4.0
+        ports: ['9092:9092']
+        env:
+          # Assign partitions to the test's new consumer group straight away
+          KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+        options: >-
+          --health-cmd "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"
+          --health-interval 5s --health-timeout 10s --health-retries 20
+
     steps:
     - name: Checkout
       uses: actions/checkout@v7
@@ -42,6 +63,18 @@ jobs:
       run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.gitversion.outputs.semVer }} -p:ContinuousIntegrationBuild=true -p:Deterministic=true
     - name: Test
       run: dotnet test --no-build --configuration Release --verbosity normal --filter Category!=Explicit 
+    - name: Create Kafka test topic
+      # The test consumer reads from the latest offset, so the topic must exist before it subscribes
+      run: docker exec ${{ job.services.kafka.id }} /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic test-topic-3
+    - name: Test transports against brokers
+      env:
+        RABBITMQ_URI: amqp://localhost:5672
+        NATS_URL: nats://localhost:4222
+        KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+      run: |
+        dotnet test Obvs.RabbitMQ.Tests --no-build --configuration Release --verbosity normal --filter Category=Explicit
+        dotnet test Obvs.NATS.Tests --no-build --configuration Release --verbosity normal --filter Category=Explicit
+        dotnet test Obvs.Kafka.Tests --no-build --configuration Release --verbosity normal --filter Category=Explicit
     - name: Pack
       if: github.event_name == 'push'
       run: |
