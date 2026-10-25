@@ -84,6 +84,7 @@ jobs:
         dotnet test --project Obvs.RabbitMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
         dotnet test --project Obvs.NATS.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
         dotnet test --project Obvs.Kafka.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.NetMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
     - name: Test
       # xUnit v3 runs on Microsoft.Testing.Platform (global.json). Exit code 8 means a project ran no tests,
       # as the transport test projects only contain Explicit tests.
