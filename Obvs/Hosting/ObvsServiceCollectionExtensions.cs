@@ -34,7 +34,7 @@ namespace Microsoft.Extensions.DependencyInjection
             var registrationKey = key ?? DefaultBusKey;
             if (!registrations.TryGetValue(registrationKey, out var builder))
             {
-                builder = new ObvsBuilder();
+                builder = new ObvsBuilder(services);
                 registrations.Add(registrationKey, builder);
                 AddBus(services, key, builder);
             }

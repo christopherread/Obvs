@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using Obvs.Configuration;
 using Obvs.Types;
 
@@ -13,9 +14,13 @@ namespace Obvs.Hosting
     {
         private readonly List<ObvsServiceBuilder> _services = new List<ObvsServiceBuilder>();
 
-        internal ObvsBuilder()
+        internal ObvsBuilder(IServiceCollection services)
         {
+            Services = services;
         }
+
+        /// <summary>The container's services, for extensions that need to register their own.</summary>
+        public IServiceCollection Services { get; }
 
         /// <summary>
         /// Adds a service whose messages all implement <typeparamref name="TServiceMessage"/>.
@@ -29,7 +34,7 @@ namespace Obvs.Hosting
                 throw new ArgumentException("A service needs a name, which is used to name its destinations on the broker.", nameof(name));
             }
 
-            var service = new ObvsServiceBuilder(name, typeof(TServiceMessage));
+            var service = new ObvsServiceBuilder(name, typeof(TServiceMessage), Services);
             configure?.Invoke(service);
             _services.Add(service);
             return this;

@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using Obvs.Configuration;
 
 namespace Obvs.Hosting
@@ -8,10 +9,11 @@ namespace Obvs.Hosting
     /// </summary>
     public sealed class ObvsServiceBuilder
     {
-        internal ObvsServiceBuilder(string name, Type serviceMessageType)
+        internal ObvsServiceBuilder(string name, Type serviceMessageType, IServiceCollection services)
         {
             Name = name;
             ServiceMessageType = serviceMessageType;
+            Services = services;
         }
 
         /// <summary>The service's name, unique on the bus.</summary>
@@ -19,6 +21,9 @@ namespace Obvs.Hosting
 
         /// <summary>The interface every message of this service implements.</summary>
         public Type ServiceMessageType { get; }
+
+        /// <summary>The container's services, for transports that need to register their own.</summary>
+        public IServiceCollection Services { get; }
 
         internal Func<IServiceProvider, IServiceEndpointProvider> EndpointProviderFactory { get; private set; }
 
