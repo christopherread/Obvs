@@ -19,16 +19,21 @@ namespace Obvs.AzureSB
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
 
         /// <param name="createProcessor">Creates a processor for the queue or subscription, once per subscription to <see cref="Messages"/></param>
-        /// <param name="maxDeliveryAttempts">How many times a message whose handler fails is delivered before it's dead-lettered</param>
-        public MessageSource(Func<ServiceBusProcessorOptions, ServiceBusProcessor> createProcessor, IEnumerable<IMessageDeserializer<TMessage>> deserializers, int maxDeliveryAttempts)
+        /// <param name="options">How many messages to deliver at once, how long to renew their locks, and how many times to deliver a failing one</param>
+        public MessageSource(Func<ServiceBusProcessorOptions, ServiceBusProcessor> createProcessor, IEnumerable<IMessageDeserializer<TMessage>> deserializers, AzureServiceBusOptions options)
         {
             _deserializers = deserializers.ToDictionary(deserializer => deserializer.GetTypeName());
 
             Messages = Observable.Create<TMessage>(observer =>
                 {
-                    // One message at a time keeps them in order. Each waits in its callback until it's settled: by its
-                    // handler, or as it arrives if no handler takes it.
-                    var processor = createProcessor(new ServiceBusProcessorOptions { AutoCompleteMessages = false, MaxConcurrentCalls = 1 });
+                    // One message at a time (MaxConcurrentCalls 1, the default) keeps them in order. Each waits in its callback
+                    // until it's settled, by its handler or as it arrives if no handler takes it, while its lock is renewed.
+                    var processor = createProcessor(new ServiceBusProcessorOptions
+                    {
+                        AutoCompleteMessages = false,
+                        MaxConcurrentCalls = options.MaxConcurrentCalls,
+                        MaxAutoLockRenewalDuration = options.MaxLockRenewalDuration,
+                    });
                     var waiting = new ConcurrentDictionary<MessageSettlement, bool>();
                     var stopped = false;
                     processor.ProcessMessageAsync += async args =>
@@ -50,7 +55,7 @@ namespace Obvs.AzureSB
                             return;
                         }
 
-                        var settlement = new MessageSettlement(args, maxDeliveryAttempts);
+                        var settlement = new MessageSettlement(args, options.MaxDeliveryAttempts);
                         ObvsMessageSettlement.Set(message, settlement);
                         waiting[settlement] = true;
                         try
@@ -93,6 +98,8 @@ namespace Obvs.AzureSB
                 })
                 // Hand messages to subscribers on the task pool, in order. Subscriber code running in the processor's
                 // callback could otherwise deadlock it, for example by disposing the bus, which waits for that callback.
+                // With MaxConcurrentCalls above 1, callbacks deliver at the same time, but observers take one at a time
+                .Synchronize()
                 .ObserveOn(TaskPoolScheduler.Default);
         }
 
