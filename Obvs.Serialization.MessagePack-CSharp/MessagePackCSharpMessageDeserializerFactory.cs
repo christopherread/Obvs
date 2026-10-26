@@ -8,7 +8,7 @@ using Obvs.Configuration;
 
 namespace Obvs.Serialization.MessagePack
 {
-    public class MessagePackCSharpMessageDeserializerFactory : IMessageDeserializerFactory
+    public class MessagePackCSharpMessageDeserializerFactory : IMessageDeserializerFactory, IMessageTypeDeserializerFactory
     {
         private readonly IFormatterResolver _resolver;
 
@@ -27,9 +27,13 @@ namespace Obvs.Serialization.MessagePack
             where TServiceMessage : class
         {
             return MessageTypes.Get<TMessage, TServiceMessage>(assemblyFilter, typeFilter)
-                .Select(type => typeof(MessagePackCSharpMessageDeserializer<>).MakeGenericType(type))
-                .Select(deserializerGeneric => Activator.CreateInstance(deserializerGeneric, _resolver) as IMessageDeserializer<TMessage>)
+                .Select(type => Create<TMessage>(type))
                 .ToArray();
+        }
+
+        public IMessageDeserializer<TMessage> Create<TMessage>(Type messageType) where TMessage : class
+        {
+            return (IMessageDeserializer<TMessage>)Activator.CreateInstance(typeof(MessagePackCSharpMessageDeserializer<>).MakeGenericType(messageType), _resolver);
         }
     }
 }

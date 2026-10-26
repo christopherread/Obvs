@@ -7,7 +7,7 @@ using ProtoBuf.Meta;
 
 namespace Obvs.Serialization.ProtoBuf
 {
-    public class ProtoBufMessageDeserializerFactory : IMessageDeserializerFactory
+    public class ProtoBufMessageDeserializerFactory : IMessageDeserializerFactory, IMessageTypeDeserializerFactory
     {
         private readonly RuntimeTypeModel _model;
 
@@ -20,9 +20,13 @@ namespace Obvs.Serialization.ProtoBuf
             where TServiceMessage : class
         {
             return MessageTypes.Get<TMessage, TServiceMessage>(assemblyFilter, typeFilter)
-                .Select(type => typeof(ProtoBufMessageDeserializer<>).MakeGenericType(type))
-                .Select(deserializerGeneric => Activator.CreateInstance(deserializerGeneric, _model) as IMessageDeserializer<TMessage>)
+                .Select(type => Create<TMessage>(type))
                 .ToArray();
+        }
+
+        public IMessageDeserializer<TMessage> Create<TMessage>(Type messageType) where TMessage : class
+        {
+            return (IMessageDeserializer<TMessage>)Activator.CreateInstance(typeof(ProtoBufMessageDeserializer<>).MakeGenericType(messageType), _model);
         }
     }
 }
