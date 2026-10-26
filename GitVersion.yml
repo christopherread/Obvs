@@ -1,2 +1,7 @@
 mode: ContinuousDeployment
 strategies: [Mainline]
+# The Mainline strategy throws "Cannot find the base commit of merged branch" on f3fc238, the merge commit that
+# recorded master as merged into v7 (#125), so version calculation skips it. A later merge commit from master
+# into v7 would need adding here too.
+ignore:
+  sha: [f3fc2388d150a4bfd95d26d713b4d502ec8d6d38]
