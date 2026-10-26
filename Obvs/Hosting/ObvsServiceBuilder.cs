@@ -106,9 +106,11 @@ namespace Obvs.Hosting
 
         internal Func<IServiceProvider, IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>> EndpointProviderFactory { get; private set; }
 
-        internal bool IsClient { get; private set; } = true;
+        /// <summary>Whether this app is a client of the service, sending its commands and requests and receiving its events. True by default.</summary>
+        public bool IsClient { get; private set; } = true;
 
-        internal bool IsServer { get; private set; } = true;
+        /// <summary>Whether this app is the service's server, receiving its commands and requests and publishing its events. True by default.</summary>
+        public bool IsServer { get; private set; } = true;
 
         /// <summary>
         /// Uses an existing transport's endpoint provider, created from the container when the bus starts.

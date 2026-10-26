@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -14,6 +16,10 @@ namespace Obvs.Hosting
     {
         // Service Bus limits subscription names, and each bus's event subscription is named after its instance ID
         private const int MaxSubscriptionNameLength = 50;
+
+        // The lock durations Service Bus allows on a queue or subscription
+        private static readonly TimeSpan MinLockDuration = TimeSpan.FromSeconds(5);
+        private static readonly TimeSpan MaxLockDuration = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// Carries this service's messages over Azure Service Bus, with settings bound from <paramref name="configuration"/>,
@@ -65,7 +71,8 @@ namespace Obvs.Hosting
         {
             return service
                 .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetNamespace))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)));
+                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
+                    serviceProvider.GetService<IServiceBusAdministrationFactory>()));
         }
 
         private static AzureServiceBusOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
@@ -95,6 +102,21 @@ namespace Obvs.Hosting
                 yield return $"Service '{service.Name}' sets Azure Service Bus MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but it must be at least 1. " +
                              "Leave it unset for Service Bus's default of 10.";
             }
+            if (options.MaxConcurrentCalls < 1)
+            {
+                yield return $"Service '{service.Name}' sets Azure Service Bus MaxConcurrentCalls to {options.MaxConcurrentCalls}, but it must be at least 1. " +
+                             "Leave it unset to handle one message at a time, in order.";
+            }
+            if (options.LockDuration is TimeSpan lockDuration && (lockDuration < MinLockDuration || lockDuration > MaxLockDuration))
+            {
+                yield return $"Service '{service.Name}' sets Azure Service Bus LockDuration to {lockDuration}, but Service Bus allows between 5 seconds and 5 minutes. " +
+                             "Leave it unset for Service Bus's default of 1 minute.";
+            }
+            if (options.MaxLockRenewalDuration < TimeSpan.Zero)
+            {
+                yield return $"Service '{service.Name}' sets Azure Service Bus MaxLockRenewalDuration to {options.MaxLockRenewalDuration}, but it can't be negative. " +
+                             "Set TimeSpan.Zero to never renew a message's lock.";
+            }
             if (service.InstanceId.Length > MaxSubscriptionNameLength)
             {
                 yield return $"Service '{service.Name}' uses Azure Service Bus, which names this bus's event subscription after its instance ID " +
@@ -104,11 +126,22 @@ namespace Obvs.Hosting
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, AzureServiceBusOptions options)
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, AzureServiceBusOptions options,
+            IServiceBusAdministrationFactory administrationFactory)
         {
+            var admin = administrationFactory?.Create(options) ?? new ServiceBusAdministration(options);
             var providerType = typeof(AzureServiceBusEndpointProvider<>).MakeGenericType(service.ServiceMessageType);
-            return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
-                service.Name, service.InstanceId, options, service.Serializer, service.DeserializerFactory);
+            try
+            {
+                return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
+                    service.Name, service.InstanceId, options, service.Serializer, service.DeserializerFactory, admin, service.IsClient);
+            }
+            catch (TargetInvocationException exception) when (exception.InnerException != null)
+            {
+                // Reflection wraps what the provider throws, such as a configuration error found setting up entities
+                ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+                throw;
+            }
         }
     }
 }

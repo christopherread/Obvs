@@ -88,6 +88,68 @@ namespace Obvs.AzureSB.Tests.Hosting
         }
 
         [Fact]
+        public void ShouldBindDeliveryAndLockSettingsFromConfiguration()
+        {
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:Orders:AzureServiceBus:FullyQualifiedNamespace"] = "contoso.servicebus.windows.net",
+                ["Obvs:Orders:AzureServiceBus:MaxConcurrentCalls"] = "4",
+                ["Obvs:Orders:AzureServiceBus:LockDuration"] = "00:00:30",
+                ["Obvs:Orders:AzureServiceBus:MaxLockRenewalDuration"] = "00:10:00",
+            });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseAzureServiceBus(configuration.GetSection("Obvs:Orders:AzureServiceBus"))
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var options = host.Services.GetRequiredService<IOptionsMonitor<AzureServiceBusOptions>>().Get("orders");
+            Assert.Equal(4, options.MaxConcurrentCalls);
+            Assert.Equal(TimeSpan.FromSeconds(30), options.LockDuration);
+            Assert.Equal(TimeSpan.FromMinutes(10), options.MaxLockRenewalDuration);
+        }
+
+        [Fact]
+        public void ShouldDeliverOneMessageAtATimeAndRenewLocksForFiveMinutesByDefault()
+        {
+            var options = new AzureServiceBusOptions();
+
+            Assert.Equal(1, options.MaxConcurrentCalls);
+            Assert.Null(options.LockDuration);
+            Assert.Equal(TimeSpan.FromMinutes(5), options.MaxLockRenewalDuration);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenMaxConcurrentCallsIsLessThanOne()
+        {
+            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxConcurrentCalls = 0));
+
+            Assert.Contains("'orders'", error);
+            Assert.Contains("MaxConcurrentCalls", error);
+            Assert.Contains("at least 1", error);
+        }
+
+        [Theory]
+        [InlineData("00:00:04")]
+        [InlineData("00:05:01")]
+        public async Task ShouldFailToStartWhenLockDurationIsOutsideWhatServiceBusAllows(string lockDuration)
+        {
+            var error = Assert.Single(await StartupErrorsAsync(options => options.LockDuration = TimeSpan.Parse(lockDuration)));
+
+            Assert.Contains("'orders'", error);
+            Assert.Contains("LockDuration", error);
+            Assert.Contains("5 seconds and 5 minutes", error);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenMaxLockRenewalDurationIsNegative()
+        {
+            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxLockRenewalDuration = TimeSpan.FromSeconds(-1)));
+
+            Assert.Contains("'orders'", error);
+            Assert.Contains("MaxLockRenewalDuration", error);
+        }
+
+        [Fact]
         public async Task ShouldFailToStartWhenTheNamespaceIsMissingFromConfiguration()
         {
             var configuration = Configuration(new Dictionary<string, string>());
@@ -169,6 +231,21 @@ namespace Obvs.AzureSB.Tests.Hosting
             Assert.Contains("'orders'", error);
             Assert.Contains("50 characters", error);
             Assert.Contains("UseInstanceId", error);
+        }
+
+        // Starts a host whose options are valid apart from what configure sets, and returns the startup errors
+        private static async Task<IReadOnlyList<string>> StartupErrorsAsync(Action<AzureServiceBusOptions> configure)
+        {
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseAzureServiceBus(options =>
+                    {
+                        options.FullyQualifiedNamespace = "contoso.servicebus.windows.net";
+                        configure(options);
+                    })
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+            return exception.Errors;
         }
 
         private static IConfiguration Configuration(IDictionary<string, string> values)
