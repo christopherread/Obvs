@@ -61,6 +61,9 @@ jobs:
     - name: Start Service Bus emulator
       # Its compose file mounts a config from the repo, so it can't be a service container. It starts while the build runs.
       run: docker compose -f Obvs.AzureSB.Tests/Emulator/docker-compose.yml up -d
+    - name: Start LocalStack
+      # SQS and SNS for the Amazon SQS tests, started like the Service Bus emulator from the test project's compose file
+      run: docker compose -f Obvs.AmazonSqs.Tests/LocalStack/docker-compose.yml up -d
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
@@ -88,6 +91,11 @@ jobs:
         for i in $(seq 1 60); do curl -sf http://localhost:5300/health && exit 0; sleep 2; done
         docker compose -f Obvs.AzureSB.Tests/Emulator/docker-compose.yml logs
         exit 1
+    - name: Wait for LocalStack
+      run: |
+        for i in $(seq 1 60); do curl -sf http://localhost:4566/_localstack/init/ready | grep -q '"completed": true' && exit 0; sleep 2; done
+        docker compose -f Obvs.AmazonSqs.Tests/LocalStack/docker-compose.yml logs
+        exit 1
     - name: Test transports against brokers
       env:
         RABBITMQ_URI: amqp://localhost:5672
@@ -101,6 +109,7 @@ jobs:
         dotnet test --project Obvs.NetMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
         dotnet test --project Obvs.ActiveMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
         dotnet test --project Obvs.AzureSB.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.AmazonSqs.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
     - name: Test
       # xUnit v3 runs on Microsoft.Testing.Platform (global.json). Exit code 8 means a project ran no tests,
       # as the transport test projects only contain Explicit tests.
@@ -110,6 +119,7 @@ jobs:
       run: |
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs 
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.ActiveMQ
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.AmazonSqs
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.AzureSB
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Kafka
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Logging.NLog
