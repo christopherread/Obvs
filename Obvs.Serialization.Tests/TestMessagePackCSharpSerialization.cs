@@ -18,6 +18,19 @@ namespace Obvs.Serialization.Tests {
     
     public class TestMessagePackCSharpSerialization {
         [Fact]
+        public void ShouldCreateADeserializerForAGivenType() {
+            // For services that register their messages with AddMessages, so nothing is scanned
+            var factory = (IMessageTypeDeserializerFactory)new MessagePackCSharpMessageDeserializerFactory();
+            var deserializer = factory.Create<IMessage>(typeof(TestMessage));
+            var messageBefore = CreateFixedMessage(); // A UTC date, which MessagePack keeps as is
+
+            var messageAfter = deserializer.Deserialize(new MessagePackCSharpMessageSerializer().Serialize(messageBefore));
+
+            Assert.Equal(typeof(TestMessage).Name, deserializer.GetTypeName());
+            Assert.Equal(messageBefore, messageAfter);
+        }
+
+        [Fact]
         public void ShouldSerializeToMessagePackCSharp() {
             IMessageSerializer serializer = new MessagePackCSharpMessageSerializer();
 

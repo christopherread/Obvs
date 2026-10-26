@@ -19,6 +19,8 @@ namespace Obvs.Hosting
         private readonly ObvsBuilder _bus;
         private readonly List<Func<IServiceProvider, IEnumerable<string>>> _validators = new List<Func<IServiceProvider, IEnumerable<string>>>();
         private readonly List<HandlerRegistration> _handlers = new List<HandlerRegistration>();
+        private readonly List<Type> _messages = new List<Type>();
+        private IMessageDeserializerFactory _deserializerFactory;
 
         internal ObvsServiceBuilder(string name, Type serviceMessageType, IServiceCollection services, ObvsBuilder bus)
         {
@@ -46,14 +48,42 @@ namespace Obvs.Hosting
         /// <summary>The serializer set with <see cref="SerializedWith"/>, if any.</summary>
         public IMessageSerializer Serializer { get; private set; }
 
-        /// <summary>The deserializer factory set with <see cref="SerializedWith"/>, if any.</summary>
-        public IMessageDeserializerFactory DeserializerFactory { get; private set; }
+        /// <summary>
+        /// The deserializer factory set with <see cref="SerializedWith"/>, if any. If the service registers its messages
+        /// with <see cref="AddMessages"/>, it creates deserializers for those types only.
+        /// </summary>
+        public IMessageDeserializerFactory DeserializerFactory => _deserializerFactory == null || _messages.Count == 0
+            ? _deserializerFactory
+            : new RegisteredMessageDeserializerFactory(_deserializerFactory, _messages);
 
         /// <summary>Serializes the service's messages with <paramref name="serializer"/> and <paramref name="deserializerFactory"/>.</summary>
         public ObvsServiceBuilder SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
         {
             Serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-            DeserializerFactory = deserializerFactory ?? throw new ArgumentNullException(nameof(deserializerFactory));
+            _deserializerFactory = deserializerFactory ?? throw new ArgumentNullException(nameof(deserializerFactory));
+            return this;
+        }
+
+        /// <summary>
+        /// The message types registered with <see cref="AddMessages"/>, or none if the service finds its messages by
+        /// scanning assemblies.
+        /// </summary>
+        public IReadOnlyCollection<Type> Messages => _messages;
+
+        /// <summary>
+        /// Registers the service's message types: its commands, events, requests and responses. Its transport then
+        /// deserializes exactly these, instead of scanning assemblies for types implementing the service's message
+        /// interface. Each must be a public class implementing that interface and one of ICommand, IEvent, IRequest
+        /// or IResponse, which is checked at startup. Can be called more than once.
+        /// </summary>
+        public ObvsServiceBuilder AddMessages(params Type[] messageTypes)
+        {
+            if (messageTypes == null || messageTypes.Contains(null))
+            {
+                throw new ArgumentNullException(nameof(messageTypes), "Message types can't be null.");
+            }
+
+            _messages.AddRange(messageTypes.Where(type => !_messages.Contains(type)).Distinct());
             return this;
         }
 
@@ -69,7 +99,9 @@ namespace Obvs.Hosting
 
         internal IEnumerable<string> Validate(IServiceProvider serviceProvider)
         {
-            return ValidateHandlers().Concat(_validators.SelectMany(validate => validate(serviceProvider) ?? Enumerable.Empty<string>()));
+            return ValidateMessages()
+                .Concat(ValidateHandlers())
+                .Concat(_validators.SelectMany(validate => validate(serviceProvider) ?? Enumerable.Empty<string>()));
         }
 
         internal Func<IServiceProvider, IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>> EndpointProviderFactory { get; private set; }
@@ -182,6 +214,41 @@ namespace Obvs.Hosting
         private static THandler ResolveHandler<THandler>(MessageContext context) where THandler : class
         {
             return ActivatorUtilities.GetServiceOrCreateInstance<THandler>(context.Services);
+        }
+
+        private static readonly (Type Interface, string Kind)[] MessageKinds =
+        {
+            (typeof(ICommand), "command"), (typeof(IEvent), "event"), (typeof(IRequest), "request"), (typeof(IResponse), "response"),
+        };
+
+        private IEnumerable<string> ValidateMessages()
+        {
+            foreach (var type in _messages)
+            {
+                if (!ServiceMessageType.IsAssignableFrom(type))
+                {
+                    yield return $"Service '{Name}' registers {type.Name}, which doesn't implement {ServiceMessageType.Name}. " +
+                                 $"Make it implement {ServiceMessageType.Name}, or register it on the service it belongs to.";
+                }
+
+                var kinds = MessageKinds.Where(kind => kind.Interface.IsAssignableFrom(type)).Select(kind => kind.Kind).ToArray();
+                if (kinds.Length != 1)
+                {
+                    var found = kinds.Length == 0 ? "isn't a command, event, request or response" : "is a " + string.Join(" and a ", kinds);
+                    yield return $"Service '{Name}' registers {type.Name}, which {found}. " +
+                                 "A message must implement exactly one of ICommand, IEvent, IRequest or IResponse.";
+                }
+
+                if (!type.IsClass || type.IsAbstract)
+                {
+                    yield return $"Service '{Name}' registers {type.Name}, which is {(type.IsInterface ? "an interface" : "abstract")}, so it can't be deserialized. " +
+                                 "Register the concrete message classes instead.";
+                }
+                else if (!type.IsVisible)
+                {
+                    yield return $"Service '{Name}' registers {type.Name}, which isn't public, so it can't be deserialized. Make it public.";
+                }
+            }
         }
 
         private IEnumerable<string> ValidateHandlers()

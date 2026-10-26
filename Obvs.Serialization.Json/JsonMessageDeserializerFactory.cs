@@ -7,7 +7,7 @@ using Obvs.Configuration;
 
 namespace Obvs.Serialization.Json
 {
-    public class JsonMessageDeserializerFactory : IMessageDeserializerFactory
+    public class JsonMessageDeserializerFactory : IMessageDeserializerFactory, IMessageTypeDeserializerFactory
     {
         private readonly Type _deserializerType;
         private readonly JsonSerializerSettings _serializerSettings;
@@ -23,9 +23,13 @@ namespace Obvs.Serialization.Json
             where TServiceMessage : class
         {
             return MessageTypes.Get<TMessage, TServiceMessage>(assemblyFilter, typeFilter)
-                .Select(type => _deserializerType.MakeGenericType(type))
-                .Select(deserializerGeneric => Activator.CreateInstance(deserializerGeneric, _serializerSettings) as IMessageDeserializer<TMessage>)
+                .Select(type => Create<TMessage>(type))
                 .ToArray();
+        }
+
+        public IMessageDeserializer<TMessage> Create<TMessage>(Type messageType) where TMessage : class
+        {
+            return (IMessageDeserializer<TMessage>)Activator.CreateInstance(_deserializerType.MakeGenericType(messageType), _serializerSettings);
         }
     }
 }
