@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
@@ -18,28 +19,57 @@ namespace Obvs.AzureSB
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
 
         /// <param name="createProcessor">Creates a processor for the queue or subscription, once per subscription to <see cref="Messages"/></param>
-        public MessageSource(Func<ServiceBusProcessorOptions, ServiceBusProcessor> createProcessor, IEnumerable<IMessageDeserializer<TMessage>> deserializers)
+        /// <param name="maxDeliveryAttempts">How many times a message whose handler fails is delivered before it's dead-lettered</param>
+        public MessageSource(Func<ServiceBusProcessorOptions, ServiceBusProcessor> createProcessor, IEnumerable<IMessageDeserializer<TMessage>> deserializers, int maxDeliveryAttempts)
         {
             _deserializers = deserializers.ToDictionary(deserializer => deserializer.GetTypeName());
 
             Messages = Observable.Create<TMessage>(observer =>
                 {
-                    // One message at a time keeps them in order; handlers can run concurrently above this
-                    var processor = createProcessor(new ServiceBusProcessorOptions { AutoCompleteMessages = true, MaxConcurrentCalls = 1 });
+                    // One message at a time keeps them in order. Each waits in its callback until it's settled: by its
+                    // handler, or as it arrives if no handler takes it.
+                    var processor = createProcessor(new ServiceBusProcessorOptions { AutoCompleteMessages = false, MaxConcurrentCalls = 1 });
+                    var waiting = new ConcurrentDictionary<MessageSettlement, bool>();
                     var stopped = false;
-                    processor.ProcessMessageAsync += args =>
+                    processor.ProcessMessageAsync += async args =>
                     {
-                        var message = Deserialize(args.Message);
-                        if (message != null)
+                        TMessage message;
+                        try
+                        {
+                            message = Deserialize(args.Message);
+                        }
+                        catch (Exception)
+                        {
+                            // Service Bus redelivers it, then dead-letters it after the entity's MaxDeliveryCount
+                            await args.AbandonMessageAsync(args.Message).ConfigureAwait(false);
+                            return;
+                        }
+                        if (message == null)
+                        {
+                            await args.CompleteMessageAsync(args.Message).ConfigureAwait(false);
+                            return;
+                        }
+
+                        var settlement = new MessageSettlement(args, maxDeliveryAttempts);
+                        ObvsMessageSettlement.Set(message, settlement);
+                        waiting[settlement] = true;
+                        try
                         {
                             observer.OnNext(message);
+                            if (stopped)
+                            {
+                                settlement.StopWaiting();
+                            }
+                            await settlement.Settled.ConfigureAwait(false);
                         }
-                        return Task.CompletedTask;
+                        finally
+                        {
+                            waiting.TryRemove(settlement, out _);
+                        }
                     };
                     processor.ProcessErrorAsync += args =>
                     {
-                        // The processor retries transient errors itself. A message that fails to deserialize is
-                        // abandoned, so Service Bus redelivers it and dead-letters it after the entity's MaxDeliveryCount.
+                        // The processor retries transient errors itself
                         if (!stopped && args.ErrorSource != ServiceBusErrorSource.ProcessMessageCallback &&
                             !(args.Exception is ServiceBusException serviceBusException && serviceBusException.IsTransient))
                         {
@@ -49,9 +79,15 @@ namespace Obvs.AzureSB
                     };
                     processor.StartProcessingAsync().GetAwaiter().GetResult();
 
+                    // Callbacks still waiting for a handler stop waiting, so stopping the processor can't wait on a
+                    // handler that is itself stopping the bus
                     return Disposable.Create(() =>
                     {
                         stopped = true;
+                        foreach (var settlement in waiting.Keys)
+                        {
+                            settlement.StopWaiting();
+                        }
                         processor.DisposeAsync().AsTask().GetAwaiter().GetResult();
                     });
                 })

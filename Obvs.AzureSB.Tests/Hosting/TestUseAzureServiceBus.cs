@@ -46,6 +46,48 @@ namespace Obvs.AzureSB.Tests.Hosting
         }
 
         [Fact]
+        public void ShouldBindMaxDeliveryAttemptsFromConfiguration()
+        {
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:Orders:AzureServiceBus:FullyQualifiedNamespace"] = "contoso.servicebus.windows.net",
+                ["Obvs:Orders:AzureServiceBus:MaxDeliveryAttempts"] = "3",
+            });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseAzureServiceBus(configuration.GetSection("Obvs:Orders:AzureServiceBus"))
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            Assert.Equal(3, host.Services.GetRequiredService<IOptionsMonitor<AzureServiceBusOptions>>().Get("orders").MaxDeliveryAttempts);
+        }
+
+        [Fact]
+        public void ShouldDeliverAFailingMessageTenTimesByDefault()
+        {
+            Assert.Equal(10, new AzureServiceBusOptions().MaxDeliveryAttempts);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenMaxDeliveryAttemptsIsLessThanOne()
+        {
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseAzureServiceBus(options =>
+                    {
+                        options.FullyQualifiedNamespace = "contoso.servicebus.windows.net";
+                        options.MaxDeliveryAttempts = 0;
+                    })
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("MaxDeliveryAttempts", error);
+            Assert.Contains("at least 1", error);
+        }
+
+        [Fact]
         public async Task ShouldFailToStartWhenTheNamespaceIsMissingFromConfiguration()
         {
             var configuration = Configuration(new Dictionary<string, string>());
