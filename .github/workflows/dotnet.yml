@@ -61,6 +61,9 @@ jobs:
     - name: Start Service Bus emulator
       # Its compose file mounts a config from the repo, so it can't be a service container. It starts while the build runs.
       run: docker compose -f Obvs.AzureSB.Tests/Emulator/docker-compose.yml up -d
+    - name: Start NATS JetStream server
+      # Service containers can't take a command, and the nats service above stays core NATS, without JetStream
+      run: docker run -d -p 4223:4222 nats:2.15 -js
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
@@ -92,6 +95,7 @@ jobs:
       env:
         RABBITMQ_URI: amqp://localhost:5672
         NATS_URL: nats://localhost:4222
+        NATS_JETSTREAM_URL: nats://localhost:4223
         KAFKA_BOOTSTRAP_SERVERS: localhost:9092
         ACTIVEMQ_URI: activemq:tcp://localhost:61616
       run: |
