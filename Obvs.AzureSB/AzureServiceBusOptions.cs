@@ -20,5 +20,11 @@ namespace Obvs.AzureSB
 
         /// <summary>A connection string with a shared access key, for example for the Service Bus emulator.</summary>
         public string ConnectionString { get; set; }
+
+        /// <summary>
+        /// How many times a message is delivered to a handler that keeps failing before it's moved to its queue's or
+        /// subscription's dead-letter subqueue. 10 by default, as in Service Bus. Applied to entities Obvs creates.
+        /// </summary>
+        public int MaxDeliveryAttempts { get; set; } = 10;
     }
 }

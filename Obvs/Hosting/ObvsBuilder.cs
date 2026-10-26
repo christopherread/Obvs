@@ -76,13 +76,14 @@ namespace Obvs.Hosting
             foreach (var service in _services)
             {
                 var provider = service.EndpointProviderFactory(serviceProvider);
+                Func<Type, bool> isHandled = messageType => service.Handlers.Any(handler => handler.MessageType.IsAssignableFrom(messageType));
                 if (service.IsServer)
                 {
-                    endpoints.Add(new TelemetryServiceEndpoint(provider.CreateEndpoint(), service.Name, logger));
+                    endpoints.Add(new TelemetryServiceEndpoint(new SettlingServiceEndpoint(provider.CreateEndpoint(), isHandled, service.Name, logger), service.Name, logger));
                 }
                 if (service.IsClient)
                 {
-                    endpointClients.Add(new TelemetryServiceEndpointClient(provider.CreateEndpointClient(), service.Name, logger));
+                    endpointClients.Add(new TelemetryServiceEndpointClient(new SettlingServiceEndpointClient(provider.CreateEndpointClient(), isHandled, service.Name, logger), service.Name, logger));
                 }
             }
 

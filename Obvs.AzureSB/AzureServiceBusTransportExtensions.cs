@@ -90,6 +90,11 @@ namespace Obvs.Hosting
             {
                 yield return $"Service '{service.Name}' uses Azure Service Bus but has no serializer. Call SerializedWith(...) on it inside AddService(\"{service.Name}\", ...).";
             }
+            if (options.MaxDeliveryAttempts < 1)
+            {
+                yield return $"Service '{service.Name}' sets Azure Service Bus MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but it must be at least 1. " +
+                             "Leave it unset for Service Bus's default of 10.";
+            }
             if (service.InstanceId.Length > MaxSubscriptionNameLength)
             {
                 yield return $"Service '{service.Name}' uses Azure Service Bus, which names this bus's event subscription after its instance ID " +

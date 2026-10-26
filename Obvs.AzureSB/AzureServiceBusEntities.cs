@@ -16,9 +16,11 @@ namespace Obvs.AzureSB
         private static readonly TimeSpan AutoDeleteOnIdle = TimeSpan.FromMinutes(5);
 
         private readonly ServiceBusAdministrationClient _admin;
+        private readonly int _maxDeliveryCount;
 
         public AzureServiceBusEntities(string serviceName, string instanceId, AzureServiceBusOptions options)
         {
+            _maxDeliveryCount = options.MaxDeliveryAttempts;
             Commands = $"{serviceName}.Commands";
             Requests = $"{serviceName}.Requests";
             Events = $"{serviceName}.Events";
@@ -43,8 +45,8 @@ namespace Obvs.AzureSB
         // Entities are created on first use by any bus of the service; another bus may create them at the same time
         public async Task CreateServiceEntitiesAsync()
         {
-            await CreateQueueAsync(new CreateQueueOptions(Commands)).ConfigureAwait(false);
-            await CreateQueueAsync(new CreateQueueOptions(Requests)).ConfigureAwait(false);
+            await CreateQueueAsync(new CreateQueueOptions(Commands) { MaxDeliveryCount = _maxDeliveryCount }).ConfigureAwait(false);
+            await CreateQueueAsync(new CreateQueueOptions(Requests) { MaxDeliveryCount = _maxDeliveryCount }).ConfigureAwait(false);
             await IgnoreIfExists(async () =>
             {
                 if (!(await _admin.TopicExistsAsync(Events).ConfigureAwait(false)).Value)
@@ -60,10 +62,10 @@ namespace Obvs.AzureSB
             {
                 if (!(await _admin.SubscriptionExistsAsync(Events, EventSubscription).ConfigureAwait(false)).Value)
                 {
-                    await _admin.CreateSubscriptionAsync(new CreateSubscriptionOptions(Events, EventSubscription) { AutoDeleteOnIdle = AutoDeleteOnIdle }).ConfigureAwait(false);
+                    await _admin.CreateSubscriptionAsync(new CreateSubscriptionOptions(Events, EventSubscription) { AutoDeleteOnIdle = AutoDeleteOnIdle, MaxDeliveryCount = _maxDeliveryCount }).ConfigureAwait(false);
                 }
             }).ConfigureAwait(false);
-            await CreateQueueAsync(new CreateQueueOptions(Replies) { AutoDeleteOnIdle = AutoDeleteOnIdle }).ConfigureAwait(false);
+            await CreateQueueAsync(new CreateQueueOptions(Replies) { AutoDeleteOnIdle = AutoDeleteOnIdle, MaxDeliveryCount = _maxDeliveryCount }).ConfigureAwait(false);
         }
 
         public async Task DeleteBusEntitiesAsync()

@@ -35,18 +35,22 @@ namespace Obvs.Hosting
     }
 
     // Queues messages from the bus and runs the handler on them, MaxConcurrency at a time. With one worker,
-    // messages are handled one at a time in arrival order, as an Rx subscriber would see them.
+    // messages are handled one at a time in arrival order, as an Rx subscriber would see them. Each message is
+    // settled with its transport once handled: completed, abandoned if the handler threw, or released if the
+    // runner stopped before handling it.
     internal sealed class HandlerRunner
     {
         private readonly IDisposable _subscription;
         private readonly Channel<IMessage> _queue;
+        private readonly Func<IMessage, Task> _release;
         private readonly Task[] _workers;
         private readonly CancellationTokenSource _cancelHandlers = new CancellationTokenSource();
 
-        private HandlerRunner(IDisposable subscription, Channel<IMessage> queue, Func<IMessage, CancellationToken, Task> handle, int maxConcurrency)
+        private HandlerRunner(IDisposable subscription, Channel<IMessage> queue, Func<IMessage, CancellationToken, Task> handle, Func<IMessage, Task> release, int maxConcurrency)
         {
             _subscription = subscription;
             _queue = queue;
+            _release = release;
             _workers = Enumerable.Range(0, maxConcurrency)
                 .Select(_ => Task.Run(() => WorkAsync(handle)))
                 .ToArray();
@@ -57,8 +61,16 @@ namespace Obvs.Hosting
             where TMessage : class, IMessage
         {
             var queue = Channel.CreateUnbounded<IMessage>(new UnboundedChannelOptions { SingleReader = options.MaxConcurrency == 1 });
+            Task Release(IMessage message) => Settlement.ReleaseAsync(message, serviceName, logger);
+            // Once the runner is stopping its queue takes no more, so messages still arriving go back to the transport
             var subscription = messages.Subscribe(
-                message => queue.Writer.TryWrite(message),
+                message =>
+                {
+                    if (!queue.Writer.TryWrite(message))
+                    {
+                        _ = Release(message);
+                    }
+                },
                 error => logger.LogError(error, "The {MessageType} stream on service '{ServiceName}' failed, so its handler stopped receiving.", typeof(TMessage).Name, serviceName));
             var scopes = serviceProvider.GetRequiredService<IServiceScopeFactory>();
 
@@ -70,6 +82,7 @@ namespace Obvs.Hosting
                 using (var activity = ObvsDiagnostics.StartProcess(serviceName, message.GetType(), ObvsDiagnostics.ExtractParent(message)))
                 {
                     var scope = scopes.CreateAsyncScope();
+                    var cancelled = false;
                     try
                     {
                         await handler((TMessage)message, new MessageContext(serviceName, scope.ServiceProvider, bus), cancellationToken).ConfigureAwait(false);
@@ -77,6 +90,7 @@ namespace Obvs.Hosting
                     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                     {
                         // Shutdown ran out of time and cancelled the handler
+                        cancelled = true;
                     }
                     catch (Exception exception)
                     {
@@ -89,17 +103,22 @@ namespace Obvs.Hosting
                         await scope.DisposeAsync().ConfigureAwait(false);
                         ObvsDiagnostics.RecordProcessed(serviceName, message.GetType(), started, failure);
                     }
+
+                    // A request's handler has already sent its reply, so the request is only completed once it has
+                    await (cancelled ? Release(message)
+                        : failure != null ? Settlement.AbandonAsync(message, failure, serviceName, logger)
+                        : Settlement.CompleteAsync(message, serviceName, logger)).ConfigureAwait(false);
                 }
             }
 
-            return new HandlerRunner(subscription, queue, Handle, options.MaxConcurrency);
+            return new HandlerRunner(subscription, queue, Handle, Release, options.MaxConcurrency);
         }
 
-        // Stops receiving, then lets queued and running messages finish. If stopping runs out of time,
-        // running handlers are cancelled and anything still queued is dropped.
+        // Stops taking messages, then lets queued and running ones finish and settle before unsubscribing, as some
+        // transports can only settle a message while it's subscribed. If stopping runs out of time, running
+        // handlers are cancelled, and they and anything still queued are released.
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            _subscription.Dispose();
             _queue.Writer.TryComplete();
 
             var finished = Task.WhenAll(_workers);
@@ -107,7 +126,13 @@ namespace Obvs.Hosting
             if (await Task.WhenAny(finished, timedOut).ConfigureAwait(false) == timedOut)
             {
                 _cancelHandlers.Cancel();
+                while (_queue.Reader.TryRead(out var message))
+                {
+                    await _release(message).ConfigureAwait(false);
+                }
             }
+
+            _subscription.Dispose();
         }
 
         private async Task WorkAsync(Func<IMessage, CancellationToken, Task> handle)
