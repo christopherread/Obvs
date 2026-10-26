@@ -61,6 +61,9 @@ jobs:
     - name: Start Service Bus emulator
       # Its compose file mounts a config from the repo, so it can't be a service container. It starts while the build runs.
       run: docker compose -f Obvs.AzureSB.Tests/Emulator/docker-compose.yml up -d
+    - name: Start Kafka SASL broker
+      # A second Kafka broker, requiring SASL sign-in, on port 9094. It starts while the build runs.
+      run: docker compose -f Obvs.Kafka.Tests/SaslBroker/docker-compose.yml up -d
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
@@ -88,11 +91,17 @@ jobs:
         for i in $(seq 1 60); do curl -sf http://localhost:5300/health && exit 0; sleep 2; done
         docker compose -f Obvs.AzureSB.Tests/Emulator/docker-compose.yml logs
         exit 1
+    - name: Wait for Kafka SASL broker
+      run: |
+        docker compose -f Obvs.Kafka.Tests/SaslBroker/docker-compose.yml up -d --wait --wait-timeout 120 && exit 0
+        docker compose -f Obvs.Kafka.Tests/SaslBroker/docker-compose.yml logs
+        exit 1
     - name: Test transports against brokers
       env:
         RABBITMQ_URI: amqp://localhost:5672
         NATS_URL: nats://localhost:4222
         KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+        KAFKA_SASL_BOOTSTRAP_SERVERS: 127.0.0.1:9094
         ACTIVEMQ_URI: activemq:tcp://localhost:61616
       run: |
         dotnet test --project Obvs.RabbitMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"

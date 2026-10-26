@@ -26,6 +26,7 @@ namespace Obvs.Kafka
         private readonly Func<Dictionary<string, string>, bool> _propertyFilter;
 
         private readonly ConsumerConfig _consumerConfig;
+        private readonly Action<IClient, string> _oauthBearerTokenRefreshHandler;
 
         // How long Subscribe waits for Kafka to assign partitions, and for each offset query while it does
         private static readonly TimeSpan PartitionAssignmentTimeout = TimeSpan.FromSeconds(30);
@@ -56,7 +57,11 @@ namespace Obvs.Kafka
                 SessionTimeoutMs = 6000,
                 AutoOffsetReset = AutoOffsetReset.Latest,
             };
+            kafkaConfig.ApplyTo(_consumerConfig);
+            _oauthBearerTokenRefreshHandler = kafkaConfig.OAuthBearerTokenRefreshHandler;
         }
+
+        internal ConsumerConfig ConsumerConfig => _consumerConfig;
 
         public IObservable<TMessage> Messages
         {
@@ -89,7 +94,7 @@ namespace Obvs.Kafka
         {
             try
             {
-                using (var consumer = new ConsumerBuilder<Ignore, WrapperMessage>(_consumerConfig)
+                var builder = new ConsumerBuilder<Ignore, WrapperMessage>(_consumerConfig)
                     .SetValueDeserializer(new ConsumerValueDeserializer<WrapperMessage>())
                     .SetErrorHandler((_, e) => observer.OnError(new Exception($"Consumer ErrorHandler: {e.Reason}")))
                     .SetPartitionsAssignedHandler((c, partitions) =>
@@ -97,8 +102,13 @@ namespace Obvs.Kafka
                         var offsets = StartOffsets(c, partitions);
                         subscribedEvent.Set();
                         return offsets;
-                    })
-                    .Build())
+                    });
+                if (_oauthBearerTokenRefreshHandler != null)
+                {
+                    builder.SetOAuthBearerTokenRefreshHandler(_oauthBearerTokenRefreshHandler);
+                }
+
+                using (var consumer = builder.Build())
                 {
                     consumer.Subscribe(_topicName);
 
