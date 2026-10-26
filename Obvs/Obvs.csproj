@@ -18,6 +18,11 @@
     <PackageReference Include="System.Diagnostics.DiagnosticSource" />
     <PackageReference Include="System.Threading.Channels" />
   </ItemGroup>
+  <!-- The [ObvsMessages] source generator ships in this package, so projects using Obvs get it -->
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs.Generators\Obvs.Generators.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <None Include="..\Obvs.Generators\bin\$(Configuration)\netstandard2.0\Obvs.Generators.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
