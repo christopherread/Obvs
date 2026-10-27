@@ -186,6 +186,9 @@ namespace Obvs.Tests.Hosting
 
             var error = Assert.Single(exception.Errors);
             Assert.Contains("'orders'", error);
+            Assert.Contains("UseRabbitMq", error);
+            Assert.Contains("UseAzureServiceBus", error);
+            Assert.Contains("UseInMemory", error);
             Assert.Contains("UseEndpointProvider", error);
         }
 
@@ -204,6 +207,7 @@ namespace Obvs.Tests.Hosting
             var error = Assert.Single(exception.Errors);
             Assert.Contains("'orders'", error);
             Assert.Contains("more than once", error);
+            Assert.Contains("unique name", error);
         }
 
         [Fact]

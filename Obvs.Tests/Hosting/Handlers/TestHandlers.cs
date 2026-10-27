@@ -259,6 +259,74 @@ namespace Obvs.Tests.Hosting.Handlers
             Assert.Contains("'orders'", error);
             Assert.Contains("ShipOrder", error);
             Assert.Contains("IOrderMessage", error);
+            Assert.Contains("Register the handler on the service that ShipOrder belongs to", error);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenAHandlersMaxConcurrencyIsBelowOne()
+        {
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => StartOrdersAsync(service => service
+                .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 0)));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("PlaceOrder", error);
+            Assert.Contains("MaxConcurrency 0", error);
+            Assert.Contains("at least 1", error);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenACommandHasTwoHandlers()
+        {
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => StartOrdersAsync(service => service
+                .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask)
+                .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask)));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("2 handlers for PlaceOrder", error);
+            Assert.Contains("HandleEvent", error);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenARequestHasTwoHandlers()
+        {
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => StartOrdersAsync(service => service
+                .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote(request.Sku, 1m)))
+                .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote(request.Sku, 2m)))));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("2 handlers for GetQuote", error);
+        }
+
+        [Fact]
+        public async Task ShouldRunEveryHandlerForAnEvent()
+        {
+            var first = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var second = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            await using var harness = await StartOrdersAsync(service => service
+                .HandleEvent<OrderPlaced>((placed, context, ct) => { first.TrySetResult(true); return Task.CompletedTask; })
+                .HandleEvent<OrderPlaced>((placed, context, ct) => { second.TrySetResult(true); return Task.CompletedTask; }));
+
+            await harness.Bus.PublishAsync(new OrderPlaced("o-1"), Ct);
+
+            Assert.True(await first.Task.WaitAsync(Timeout, Ct));
+            Assert.True(await second.Task.WaitAsync(Timeout, Ct));
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenAHandledMessageIsntRegistered()
+        {
+            // A service that registers its messages only receives those, so this handler would never run
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => StartOrdersAsync(service => service
+                .AddMessages(typeof(OrderPlaced))
+                .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask)));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("PlaceOrder", error);
+            Assert.Contains("AddMessages(typeof(PlaceOrder))", error);
         }
 
         private static Task<ObvsTestHarness> StartOrdersAsync(Action<ObvsServiceBuilder> configure)

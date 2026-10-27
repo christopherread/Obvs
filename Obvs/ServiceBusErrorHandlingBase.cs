@@ -61,6 +61,14 @@ namespace Obvs
             return "Error sending commands";
         }
 
+        protected static string NoEndpointMessage(TMessage message)
+        {
+            var type = message.GetType();
+            return $"No service on the bus takes {type.Name}: it doesn't implement the message interface of any service the bus has. " +
+                   $"Add the service it belongs to with AddService<TServiceMessage>(...) inside AddObvs, where {type.Name} implements " +
+                   "TServiceMessage, or make it implement the message interface of a service the bus already has.";
+        }
+
         protected void Catch(Action action, List<Exception> exceptions, string message = null)
         {
             try
