@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -175,6 +176,8 @@ namespace Obvs.AmazonSqs
                 }
             }
 
+            private bool _retrying;
+
             private void Run()
             {
                 var ct = _stopping.Token;
@@ -198,6 +201,11 @@ namespace Obvs.AmazonSqs
                         {
                             _places.Release(places);
                             throw;
+                        }
+                        if (_retrying)
+                        {
+                            _retrying = false;
+                            _source._options.Logger.LogInformation("Amazon SQS receives from {QueueUrl} again", _source._queueUrl);
                         }
                         if (messages.Count < places)
                         {
@@ -225,6 +233,13 @@ namespace Obvs.AmazonSqs
                         {
                             _observer.OnError(exception);
                             return;
+                        }
+                        // Once when it starts retrying, not every RetryDelay
+                        if (!_retrying)
+                        {
+                            _retrying = true;
+                            _source._options.Logger.LogWarning(exception, "Amazon SQS couldn't receive from {QueueUrl}, and retries until it can: {Message}",
+                                _source._queueUrl, exception.Message);
                         }
                     }
                 }

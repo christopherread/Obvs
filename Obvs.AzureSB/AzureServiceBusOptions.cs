@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using System;
 using Azure.Core;
 
@@ -45,5 +47,8 @@ namespace Obvs.AzureSB
         /// that runs longer loses the lock, and the message is delivered again.
         /// </summary>
         public TimeSpan MaxLockRenewalDuration { get; set; } = TimeSpan.FromMinutes(5);
+
+        // Set by UseAzureServiceBus from the app's logging
+        internal ILogger Logger { get; set; } = NullLogger.Instance;
     }
 }

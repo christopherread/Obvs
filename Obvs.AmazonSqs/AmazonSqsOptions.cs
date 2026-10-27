@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using System;
 using Amazon.Runtime;
 
@@ -71,5 +73,8 @@ namespace Obvs.AmazonSqs
         /// bus's setting rather than their own. Allow for clock differences between machines.
         /// </summary>
         public TimeSpan AbandonedAfter { get; set; } = TimeSpan.FromHours(1);
+
+        // Set by UseAmazonSqs from the app's logging
+        internal ILogger Logger { get; set; } = NullLogger.Instance;
     }
 }
