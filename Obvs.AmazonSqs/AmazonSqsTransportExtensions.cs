@@ -33,7 +33,6 @@ namespace Obvs.Hosting
         /// for example <c>builder.Configuration.GetSection("Obvs:Orders:AmazonSqs")</c>. Commands and requests go to SQS
         /// queues the service's buses share, so each is handled once; events go to an SNS topic that delivers them to
         /// every bus. The service's queues and topic, and this bus's own queues, are created at startup if they don't exist.
-        /// The service also needs a serializer: call <c>SerializedWith(...)</c>.
         /// </summary>
         public static ObvsServiceBuilder UseAmazonSqs(this ObvsServiceBuilder service, IConfiguration configuration)
         {
@@ -55,7 +54,6 @@ namespace Obvs.Hosting
         /// Carries this service's messages over Amazon SQS and SNS, with settings set in code. Commands and requests go to
         /// SQS queues the service's buses share, so each is handled once; events go to an SNS topic that delivers them to
         /// every bus. The service's queues and topic, and this bus's own queues, are created at startup if they don't exist.
-        /// The service also needs a serializer: call <c>SerializedWith(...)</c>.
         /// </summary>
         public static ObvsServiceBuilder UseAmazonSqs(this ObvsServiceBuilder service, Action<AmazonSqsOptions> configure)
         {

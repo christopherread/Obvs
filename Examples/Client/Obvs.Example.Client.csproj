@@ -1,15 +1,16 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <StartupObject>Obvs.Example.Client.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Obvs" Version="6.0.19" />
-    <PackageReference Include="Obvs.ActiveMQ" Version="6.0.19" />
-    <PackageReference Include="Obvs.Serialization.Json" Version="6.0.19" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.19.1" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
   </ItemGroup>
+  <!-- Built from this repo until v7 is on NuGet; then these become PackageReferences to Obvs and Obvs.ActiveMQ 7.0.0 -->
   <ItemGroup>
+    <ProjectReference Include="..\..\Obvs.ActiveMQ\Obvs.ActiveMQ.csproj" />
     <ProjectReference Include="..\Messages\Obvs.Example.Messages.csproj" />
   </ItemGroup>
 </Project>

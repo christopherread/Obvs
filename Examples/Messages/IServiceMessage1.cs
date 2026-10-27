@@ -1,4 +1,4 @@
-﻿using Obvs.Types;
+using Obvs.Types;
 
 namespace Obvs.Example.Messages
 {
@@ -29,12 +29,14 @@ namespace Obvs.Example.Messages
 
     public class Request1 : IServiceMessage1, IRequest
     {
+        public string Question { get; set; }
         public string RequestId { get; set; }
         public string RequesterId { get; set; }
     }
 
     public class Response1 : IServiceMessage1, IResponse
     {
+        public string Answer { get; set; }
         public string RequestId { get; set; }
         public string RequesterId { get; set; }
     }
