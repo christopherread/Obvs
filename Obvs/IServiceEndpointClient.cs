@@ -28,7 +28,7 @@ namespace Obvs
         /// <param name="cancellationToken">Stops waiting for the broker</param>
         Task SendAsync(TCommand command, CancellationToken cancellationToken = default);
 
-        /// <summary>Sends <paramref name="request"/> when subscribed to, and returns the service's responses.</summary>
+        /// <summary>Sends <paramref name="request"/> when subscribed to, and returns the service's responses. If the send fails, the stream ends with its error.</summary>
         IObservable<TResponse> GetResponses(TRequest request);
     }
 
@@ -99,12 +99,36 @@ namespace Obvs
         {
             return Observable.Create<TResponse>(observer =>
             {
+                // Subscribed first, so a response can't arrive before anything is listening
                 IDisposable disposable = _responseSource.Messages.Subscribe(observer);
 
-                _requestPublisher.PublishAsync(request);
+                Task send;
+                try
+                {
+                    send = _requestPublisher.PublishAsync(request);
+                }
+                catch (Exception exception)
+                {
+                    send = Task.FromException(exception);
+                }
+                RequestSends.Started(send);
+                _ = ReportSendFailureAsync(send, observer);
 
                 return disposable;
             });
+        }
+
+        // A request that wasn't sent won't be answered, so the stream ends with the send's error
+        private static async Task ReportSendFailureAsync(Task send, IObserver<TResponse> observer)
+        {
+            try
+            {
+                await send.ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                observer.OnError(exception);
+            }
         }
 
         /// <inheritdoc />

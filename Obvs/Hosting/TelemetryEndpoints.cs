@@ -1,4 +1,5 @@
 using System;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -67,20 +68,19 @@ namespace Obvs.Hosting
             return Telemetry.SendAsync("send", _serviceName, command, _logger, () => _inner.SendAsync(command, cancellationToken));
         }
 
-        // The inner endpoint sends the request when subscribed to, so the span covers the subscription. Each request's
-        // stream can see every response on the service, as the bus only picks out the request's own after this, so
-        // a request counts only its own responses as received.
+        // The inner endpoint sends the request when subscribed to, so the span runs from the subscription until the
+        // send finishes. Each request's stream can see every response on the service, as the bus only picks out the
+        // request's own after this, so a request counts only its own responses as received.
         public IObservable<IResponse> GetResponses(IRequest request)
         {
             return Observable.Create<IResponse>(observer =>
             {
-                using (var activity = ObvsDiagnostics.StartProducer("request", _serviceName, request.GetType()))
+                var subscription = new SingleAssignmentDisposable();
+                _ = TraceRequestAsync(request, () =>
                 {
-                    ObvsDiagnostics.InjectTraceContext(activity, request);
-                    Telemetry.LogAndCount("request", _serviceName, request, _logger);
                     try
                     {
-                        return _inner.GetResponses(request)
+                        subscription.Disposable = RequestSends.Watch(() => _inner.GetResponses(request)
                             .Do(response =>
                             {
                                 if (response.RequestId == request.RequestId && response.RequesterId == request.RequesterId)
@@ -88,15 +88,30 @@ namespace Obvs.Hosting
                                     ObvsDiagnostics.RecordReceived(_serviceName, response.GetType());
                                 }
                             })
-                            .Subscribe(observer);
+                            .Subscribe(observer), out var sent);
+                        return sent;
                     }
                     catch (Exception exception)
                     {
-                        ObvsDiagnostics.RecordFailure(activity, exception);
+                        observer.OnError(exception);
                         throw;
                     }
-                }
+                });
+                return subscription;
             });
+        }
+
+        // Runs synchronously until the send's first await, so the subscription is made before GetResponses returns
+        private async Task TraceRequestAsync(IRequest request, Func<Task> subscribeAndSend)
+        {
+            try
+            {
+                await Telemetry.SendAsync("request", _serviceName, request, _logger, subscribeAndSend).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Recorded on the span and counted; the response stream has already ended with it
+            }
         }
 
         public bool CanHandle(IMessage message) => _inner.CanHandle(message);
@@ -127,12 +142,6 @@ namespace Obvs.Hosting
                 }
                 ObvsDiagnostics.RecordSent(operation, serviceName, message.GetType());
             }
-        }
-
-        public static void LogAndCount(string operation, string serviceName, IMessage message, ILogger logger)
-        {
-            ObvsDiagnostics.RecordSent(operation, serviceName, message.GetType());
-            Log(operation, serviceName, message, logger);
         }
 
         private static void Log(string operation, string serviceName, IMessage message, ILogger logger)

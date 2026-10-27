@@ -53,6 +53,50 @@ namespace Obvs.Tests.Hosting.Handlers
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending).WaitAsync(TimeSpan.FromSeconds(2), Ct);
         }
 
+        [Fact]
+        public async Task ShouldThrowTheSendFailureRatherThanTimingOut()
+        {
+            var transport = new RequestTransport { SendFailure = new InvalidOperationException("The broker refused the request") };
+            await using var harness = await StartClientAsync(transport);
+
+            var pending = harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct);
+
+            // Long before the five-minute timeout
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => pending).WaitAsync(TimeSpan.FromSeconds(2), Ct);
+            Assert.Equal("The broker refused the request", exception.Message);
+        }
+
+        [Fact]
+        public async Task ShouldSendTheNextRequestAfterOneFailsToSend()
+        {
+            var transport = new RequestTransport { SendFailure = new InvalidOperationException("The broker refused the request") };
+            await using var harness = await StartClientAsync(transport);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct))
+                .WaitAsync(TimeSpan.FromSeconds(2), Ct);
+
+            transport.SendFailure = null;
+            var quote = await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-2"), TimeSpan.FromSeconds(5), Ct);
+
+            Assert.Equal("sku-2", quote.Sku);
+        }
+
+        [Fact]
+        public async Task ShouldReceiveAResponseThatArrivesDuringTheSend()
+        {
+            await using var harness = await StartClientAsync(new RequestTransport());
+
+            var quote = await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), Ct);
+
+            Assert.Equal("sku-1", quote.Sku);
+        }
+
+        private static Task<ObvsTestHarness> StartClientAsync(RequestTransport transport)
+        {
+            return ObvsTestHarness.StartAsync(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.AsClient().UseEndpointProvider(_ => transport))),
+                cancellationToken: Ct);
+        }
+
         private static Task<ObvsTestHarness> StartOrdersAsync()
         {
             return ObvsTestHarness.StartAsync(services => services.AddObvs(obvs => obvs
