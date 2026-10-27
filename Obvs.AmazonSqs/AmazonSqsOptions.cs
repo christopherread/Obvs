@@ -49,5 +49,27 @@ namespace Obvs.AmazonSqs
         /// startup checks that the visibility timeout exceeds this.
         /// </summary>
         public TimeSpan MaxHandlerDuration { get; set; } = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// Whether buses delete the queues, and topic subscriptions, that crashed buses of the service left behind. True
+        /// by default. Each bus records on its own queues when it was last seen, refreshing it every
+        /// <see cref="LastSeenInterval"/>, and deletes other buses' queues not seen for their <see cref="AbandonedAfter"/>.
+        /// A running bus recreates its queues if they go missing, for example after being paused for longer than that. When
+        /// false, the bus neither records when it was last seen, so other buses leave its queues alone, nor cleans up.
+        /// </summary>
+        public bool CleanUpAbandonedQueues { get; set; } = true;
+
+        /// <summary>
+        /// How often the bus records on its own queues that it's still running, and looks for queues crashed buses left
+        /// behind. 5 minutes by default.
+        /// </summary>
+        public TimeSpan LastSeenInterval { get; set; } = TimeSpan.FromMinutes(5);
+
+        /// <summary>
+        /// How long the bus's queues may go without it being seen before other buses delete them, at least three times
+        /// <see cref="LastSeenInterval"/>. 1 hour by default. Recorded on the bus's own queues, so other buses go by this
+        /// bus's setting rather than their own. Allow for clock differences between machines.
+        /// </summary>
+        public TimeSpan AbandonedAfter { get; set; } = TimeSpan.FromHours(1);
     }
 }
