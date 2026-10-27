@@ -21,6 +21,13 @@ namespace Obvs.Hosting
         private static readonly Histogram<double> ProcessDuration = Meter.CreateHistogram<double>(
             "messaging.process.duration", "s", "How long handlers took to process messages.");
 
+        private static readonly Counter<long> ReceivedMessages = Meter.CreateCounter<long>(
+            "messaging.client.consumed.messages", "{message}", "Commands, events and requests received, whether or not a handler takes them.");
+
+        // The conventions have no failed-messages counter, as process.duration's error.type covers it, so this one is Obvs's own
+        private static readonly Counter<long> FailedMessages = Meter.CreateCounter<long>(
+            "obvs.process.failed.messages", "{message}", "Messages whose handler threw.");
+
         public const string System = "obvs";
 
         // operation is send, publish, request or reply
@@ -109,6 +116,15 @@ namespace Obvs.Hosting
                 new KeyValuePair<string, object>("obvs.message.type", messageType.Name));
         }
 
+        public static void RecordReceived(string serviceName, Type messageType)
+        {
+            ReceivedMessages.Add(1,
+                new KeyValuePair<string, object>("messaging.system", System),
+                new KeyValuePair<string, object>("messaging.operation.name", "receive"),
+                new KeyValuePair<string, object>("messaging.destination.name", serviceName),
+                new KeyValuePair<string, object>("obvs.message.type", messageType.Name));
+        }
+
         public static void RecordProcessed(string serviceName, Type messageType, long startTimestamp, Exception failure)
         {
             var seconds = (Stopwatch.GetTimestamp() - startTimestamp) / (double)Stopwatch.Frequency;
@@ -122,6 +138,7 @@ namespace Obvs.Hosting
             if (failure != null)
             {
                 tags.Add("error.type", failure.GetType().FullName);
+                FailedMessages.Add(1, tags);
             }
             ProcessDuration.Record(seconds, tags);
         }
