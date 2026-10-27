@@ -25,7 +25,7 @@ namespace Obvs.Hosting
             var name = service.Name;
             var serviceMessageType = service.ServiceMessageType;
             return service.UseEndpointProvider(serviceProvider =>
-                new InMemoryEndpointProvider(name, serviceMessageType, serviceProvider.GetRequiredService<InMemoryBroker>()));
+                new InMemoryEndpointProvider(name, serviceMessageType, serviceProvider.GetRequiredService<InMemoryBroker>()), "InMemory");
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Obvs.Hosting
             service.Services.TryAddSingleton(broker);
             var name = service.Name;
             var serviceMessageType = service.ServiceMessageType;
-            return service.UseEndpointProvider(_ => new InMemoryEndpointProvider(name, serviceMessageType, broker));
+            return service.UseEndpointProvider(_ => new InMemoryEndpointProvider(name, serviceMessageType, broker), "InMemory");
         }
     }
 }

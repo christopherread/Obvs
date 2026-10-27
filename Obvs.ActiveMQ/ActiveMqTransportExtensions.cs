@@ -59,7 +59,7 @@ namespace Obvs.Hosting
         {
             return service
                 .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetBrokerUri))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)));
+                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)), "ActiveMQ");
         }
 
         private static ActiveMqOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)

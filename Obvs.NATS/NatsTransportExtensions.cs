@@ -57,7 +57,7 @@ namespace Obvs.Hosting
         {
             return service
                 .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetUrl))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)));
+                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)), "NATS");
         }
 
         private static NatsOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)

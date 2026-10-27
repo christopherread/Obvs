@@ -51,11 +51,13 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 services.AddSingleton<IServiceBus>(serviceProvider => builder.Build(serviceProvider));
                 services.AddSingleton<IServiceBusClient>(serviceProvider => serviceProvider.GetRequiredService<IServiceBus>());
+                services.AddSingleton(serviceProvider => new ObvsContracts(builder, serviceProvider));
             }
             else
             {
                 services.AddKeyedSingleton<IServiceBus>(key, (serviceProvider, _) => builder.Build(serviceProvider));
                 services.AddKeyedSingleton<IServiceBusClient>(key, (serviceProvider, _) => serviceProvider.GetRequiredKeyedService<IServiceBus>(key));
+                services.AddKeyedSingleton(key, (serviceProvider, _) => new ObvsContracts(builder, serviceProvider));
             }
 
             // Not AddHostedService, which would de-duplicate the hosted services of keyed buses
