@@ -27,7 +27,6 @@ namespace Obvs.Hosting
         /// for example <c>builder.Configuration.GetSection("Obvs:Orders:AzureServiceBus")</c>. Commands and requests go to
         /// queues the service's buses share, so each is handled once; events reach every bus. The service's queues and
         /// topic, and this bus's own subscription and reply queue, are created at startup if they don't exist.
-        /// The service also needs a serializer: call <c>SerializedWith(...)</c>.
         /// </summary>
         public static ObvsServiceBuilder UseAzureServiceBus(this ObvsServiceBuilder service, IConfiguration configuration)
         {
@@ -50,7 +49,6 @@ namespace Obvs.Hosting
         /// Carries this service's messages over Azure Service Bus, with settings set in code. Commands and requests go to
         /// queues the service's buses share, so each is handled once; events reach every bus. The service's queues and
         /// topic, and this bus's own subscription and reply queue, are created at startup if they don't exist.
-        /// The service also needs a serializer: call <c>SerializedWith(...)</c>.
         /// </summary>
         public static ObvsServiceBuilder UseAzureServiceBus(this ObvsServiceBuilder service, Action<AzureServiceBusOptions> configure)
         {

@@ -27,7 +27,7 @@ namespace Obvs.Hosting
         /// for example <c>builder.Configuration.GetSection("Obvs:Orders:NatsJetStream")</c>. Messages are kept in streams
         /// until handled: commands and requests through consumers the service's buses share, so each is handled once;
         /// events reach every bus. The service's streams, and this bus's own consumers, are created at startup if they
-        /// don't exist. The service also needs a serializer: call <c>SerializedWith(...)</c>.
+        /// don't exist.
         /// </summary>
         public static ObvsServiceBuilder UseNatsJetStream(this ObvsServiceBuilder service, IConfiguration configuration)
         {
@@ -49,7 +49,7 @@ namespace Obvs.Hosting
         /// Carries this service's messages over NATS JetStream, with settings set in code. Messages are kept in streams
         /// until handled: commands and requests through consumers the service's buses share, so each is handled once;
         /// events reach every bus. The service's streams, and this bus's own consumers, are created at startup if they
-        /// don't exist. The service also needs a serializer: call <c>SerializedWith(...)</c>.
+        /// don't exist.
         /// </summary>
         public static ObvsServiceBuilder UseNatsJetStream(this ObvsServiceBuilder service, Action<NatsJetStreamOptions> configure)
         {

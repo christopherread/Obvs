@@ -16,7 +16,7 @@ namespace Obvs.Hosting
         /// <summary>
         /// Carries this service's messages over NATS, with settings bound from <paramref name="configuration"/>,
         /// for example <c>builder.Configuration.GetSection("Obvs:Orders:Nats")</c>. Each service on each bus gets
-        /// its own connection. The service also needs a serializer: call <c>SerializedWith(...)</c>.
+        /// its own connection.
         /// </summary>
         public static ObvsServiceBuilder UseNats(this ObvsServiceBuilder service, IConfiguration configuration)
         {
@@ -36,7 +36,6 @@ namespace Obvs.Hosting
 
         /// <summary>
         /// Carries this service's messages over NATS, with settings set in code.
-        /// The service also needs a serializer: call <c>SerializedWith(...)</c>.
         /// </summary>
         public static ObvsServiceBuilder UseNats(this ObvsServiceBuilder service, Action<NatsOptions> configure)
         {

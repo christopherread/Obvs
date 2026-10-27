@@ -18,7 +18,7 @@ namespace Obvs.Hosting
         /// Carries this service's messages over Kafka, with settings bound from <paramref name="configuration"/>,
         /// for example <c>builder.Configuration.GetSection("Obvs:Orders:Kafka")</c>, including security settings for managed
         /// platforms such as Confluent Cloud, Amazon MSK and Azure Event Hubs. The service's topics are
-        /// created at startup if they don't exist. The service also needs a serializer: call <c>SerializedWith(...)</c>.
+        /// created at startup if they don't exist.
         /// </summary>
         public static ObvsServiceBuilder UseKafka(this ObvsServiceBuilder service, IConfiguration configuration)
         {
@@ -39,7 +39,6 @@ namespace Obvs.Hosting
         /// Carries this service's messages over Kafka, with settings bound from <paramref name="configuration"/>, then
         /// changed by <paramref name="configure"/>, for example to set <see cref="KafkaOptions.OAuthBearerTokenProvider"/>,
         /// which can't come from configuration. The service's topics are created at startup if they don't exist.
-        /// The service also needs a serializer: call <c>SerializedWith(...)</c>.
         /// </summary>
         public static ObvsServiceBuilder UseKafka(this ObvsServiceBuilder service, IConfiguration configuration, Action<KafkaOptions> configure)
         {
@@ -62,7 +61,7 @@ namespace Obvs.Hosting
 
         /// <summary>
         /// Carries this service's messages over Kafka, with settings set in code. The service's topics are
-        /// created at startup if they don't exist. The service also needs a serializer: call <c>SerializedWith(...)</c>.
+        /// created at startup if they don't exist.
         /// </summary>
         public static ObvsServiceBuilder UseKafka(this ObvsServiceBuilder service, Action<KafkaOptions> configure)
         {

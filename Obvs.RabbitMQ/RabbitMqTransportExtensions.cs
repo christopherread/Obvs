@@ -16,7 +16,6 @@ namespace Obvs.Hosting
         /// <summary>
         /// Carries this service's messages over RabbitMQ, with settings bound from <paramref name="configuration"/>,
         /// for example <c>builder.Configuration.GetSection("Obvs:Orders:RabbitMq")</c>.
-        /// The service also needs a serializer: call <c>SerializedWith(...)</c>.
         /// </summary>
         public static ObvsServiceBuilder UseRabbitMq(this ObvsServiceBuilder service, IConfiguration configuration)
         {
@@ -36,7 +35,6 @@ namespace Obvs.Hosting
 
         /// <summary>
         /// Carries this service's messages over RabbitMQ, with settings set in code.
-        /// The service also needs a serializer: call <c>SerializedWith(...)</c>.
         /// </summary>
         public static ObvsServiceBuilder UseRabbitMq(this ObvsServiceBuilder service, Action<RabbitMqOptions> configure)
         {

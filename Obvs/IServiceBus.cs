@@ -47,6 +47,7 @@ namespace Obvs
         }
 
         // ReSharper disable once UnusedMember.Global
+        [Obsolete("Configure buses with services.AddObvs(obvs => obvs.AddService<TServiceMessage>(name, service => service.Use<Transport>(...))) instead, or ObvsBus.StartAsync(...) without a host. See https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md.")]
         public static ICanAddEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse> Configure()
         {
             return new ServiceBusFluentCreator<IMessage, ICommand, IEvent, IRequest, IResponse>(new DefaultRequestCorrelationProvider());
@@ -194,6 +195,7 @@ namespace Obvs
         }
 
         // ReSharper disable once UnusedMember.Global
+        [Obsolete("Configure buses with services.AddObvs(obvs => obvs.AddService<TServiceMessage>(name, service => service.Use<Transport>(...))) instead, or ObvsBus.StartAsync(...) without a host. See https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md.")]
         public static ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> Configure()
         {
             return new ServiceBusFluentCreator<TMessage, TCommand, TEvent, TRequest, TResponse>();

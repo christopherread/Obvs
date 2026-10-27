@@ -5,7 +5,8 @@
     <Company>Christopher Read</Company>
     <Copyright>Copyright © Christopher Read 2014</Copyright>
     <Authors />
-    <NoWarn>NU1701</NoWarn>
+    <!-- CS0618: tests v6's fluent configuration, which is obsolete in v7 -->
+    <NoWarn>NU1701;CS0618</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="FakeItEasy" />
