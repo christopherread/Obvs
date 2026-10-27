@@ -2,11 +2,11 @@
 
 `Obvs.AmazonSqs` carries a service's messages over Amazon SQS and SNS. Commands and requests go to SQS queues the service's buses share, so each one is handled once. Events go to an SNS topic, which delivers them to a queue for each bus. The queues and topic are created at startup if they don't exist.
 
+<!-- snippet: sqs-setup -->
 ```csharp
 builder.Services.AddObvs(obvs => obvs
     .AddService<IOrderMessage>("orders", service => service
-        .UseAmazonSqs(builder.Configuration.GetSection("Obvs:Orders:AmazonSqs"))
-        .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>)))));
+        .UseAmazonSqs(builder.Configuration.GetSection("Obvs:Orders:AmazonSqs"))));
 ```
 
 ```json
@@ -21,6 +21,7 @@ builder.Services.AddObvs(obvs => obvs
 
 Or in code:
 
+<!-- snippet: sqs-region -->
 ```csharp
 service.UseAmazonSqs(options => options.Region = "eu-west-1");
 ```
@@ -78,6 +79,7 @@ For example, to handle up to 8 messages at once with handlers that can take up t
 }
 ```
 
+<!-- snippet: sqs-concurrency -->
 ```csharp
 service
     .UseAmazonSqs(builder.Configuration.GetSection("Obvs:Orders:AmazonSqs"))
@@ -88,6 +90,7 @@ service
 
 By default the bus signs in with the AWS SDK's default credential chain: environment variables, the shared credentials and config files, and the IAM role of the EC2 instance, ECS task or Lambda function it runs in. To sign in some other way, set `Credentials` in code. With the other settings in configuration, call `UseAmazonSqs` with the configuration section, then `services.Configure<AmazonSqsOptions>("orders", ...)` with the service's name:
 
+<!-- snippet: sqs-credentials -->
 ```csharp
 service.UseAmazonSqs(builder.Configuration.GetSection("Obvs:Orders:AmazonSqs"));
 builder.Services.Configure<AmazonSqsOptions>("orders", options => options.Credentials = new BasicAWSCredentials(accessKey, secretKey));
@@ -104,7 +107,6 @@ SQS doesn't know a handler is still running. If a handler takes longer than `Vis
 The bus checks the settings when it starts, and reports every problem together in one `ObvsConfigurationException`, saying which setting to change. It checks that:
 
 - a region is set, and `ServiceUrl`, when set, is an `http` or `https` URL;
-- the service has a serializer;
 - `MaxDeliveryAttempts` is from 1 to 1000, and `MaxConcurrentCalls` is at least 1;
 - `VisibilityTimeout` is from 1 second to 12 hours, and exceeds `MaxHandlerDuration`;
 - with clean-up on, `LastSeenInterval` is positive and `AbandonedAfter` is at least three times it;
@@ -306,6 +308,7 @@ Point the service at it with `ServiceUrl`. LocalStack accepts any credentials, b
 }
 ```
 
+<!-- snippet: sqs-localstack -->
 ```csharp
 service.UseAmazonSqs(options =>
 {

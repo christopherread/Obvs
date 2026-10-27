@@ -11,6 +11,7 @@ using Obvs.Types;
 // In the builder's namespace, so UseNats() is found without an extra using
 namespace Obvs.Hosting
 {
+    /// <summary>Carries services over core NATS: <c>service.UseNats(...)</c> inside <c>AddService</c>.</summary>
     public static class NatsTransportExtensions
     {
         /// <summary>

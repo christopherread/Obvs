@@ -12,6 +12,9 @@ namespace Obvs.Serialization.Compression
     {
         private readonly CompressionLevel _level;
 
+        /// <summary>Gzips what <paramref name="inner"/> writes.</summary>
+        /// <param name="inner">The serializer whose output to compress</param>
+        /// <param name="level">How hard to compress. Fastest matches v6's GzippedJson serializers</param>
         public GzipMessageSerializer(IMessageSerializer inner, CompressionLevel level = CompressionLevel.Fastest)
         {
             Inner = inner;
@@ -21,6 +24,7 @@ namespace Obvs.Serialization.Compression
         /// <summary>The serializer whose output this compresses.</summary>
         public IMessageSerializer Inner { get; }
 
+        /// <inheritdoc />
         public void Serialize(Stream stream, object message)
         {
             using (var gzip = new GZipStream(stream, _level, true))

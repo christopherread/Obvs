@@ -7,6 +7,7 @@ using Obvs.Hosting;
 // In this namespace, as is conventional for AddX extensions, so they're found without an extra using
 namespace Microsoft.Extensions.DependencyInjection
 {
+    /// <summary>Adds Obvs buses to a container.</summary>
     public static class ObvsServiceCollectionExtensions
     {
         /// <summary>

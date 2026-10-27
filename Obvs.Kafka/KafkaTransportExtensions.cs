@@ -12,6 +12,7 @@ using Obvs.Types;
 // In the builder's namespace, so UseKafka() is found without an extra using
 namespace Obvs.Hosting
 {
+    /// <summary>Carries services over Kafka: <c>service.UseKafka(...)</c> inside <c>AddService</c>.</summary>
     public static class KafkaTransportExtensions
     {
         /// <summary>

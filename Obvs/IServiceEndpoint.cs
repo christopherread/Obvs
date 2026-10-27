@@ -7,6 +7,7 @@ using Obvs.Types;
 
 namespace Obvs
 {
+    /// <summary>A service's server endpoint, for the bus's standard message interfaces.</summary>
     public interface IServiceEndpoint : IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>
     {
     }
@@ -32,14 +33,22 @@ namespace Obvs
         Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default);
     }
 
+    /// <summary>A service's server endpoint, for the bus's standard message interfaces.</summary>
     public class ServiceEndpoint : ServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>, IServiceEndpoint
     {
+        /// <summary>An endpoint over these sources and publishers.</summary>
+        /// <param name="requestSource">Where requests arrive</param>
+        /// <param name="commandSource">Where commands arrive</param>
+        /// <param name="eventPublisher">Where events go</param>
+        /// <param name="responsePublisher">Where responses go</param>
+        /// <param name="serviceType">The service's message interface</param>
         public ServiceEndpoint(IMessageSource<IRequest> requestSource, IMessageSource<ICommand> commandSource, IMessagePublisher<IEvent> eventPublisher, IMessagePublisher<IResponse> responsePublisher, Type serviceType) 
             : base(requestSource, commandSource, eventPublisher, responsePublisher, serviceType)
         {
         }
     }
 
+    /// <summary>A service's server endpoint, over a transport's sources and publishers.</summary>
     public class ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> : IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
@@ -53,6 +62,12 @@ namespace Obvs
         private readonly IMessagePublisher<TResponse> _responsePublisher;
         private readonly string _name;
 
+        /// <summary>An endpoint over these sources and publishers.</summary>
+        /// <param name="requestSource">Where requests arrive</param>
+        /// <param name="commandSource">Where commands arrive</param>
+        /// <param name="eventPublisher">Where events go</param>
+        /// <param name="responsePublisher">Where responses go</param>
+        /// <param name="serviceType">The service's message interface</param>
         public ServiceEndpoint(IMessageSource<TRequest> requestSource,
             IMessageSource<TCommand> commandSource,
             IMessagePublisher<TEvent> eventPublisher,
@@ -67,31 +82,37 @@ namespace Obvs
             _name = string.Format("{0}[{1}]", GetType().GetTypeInfo().GetSimpleName(), ServiceType.Name);
         }
 
+        /// <inheritdoc />
         public IObservable<TRequest> Requests
         {
             get { return _requestSource.Messages; }
         }
 
+        /// <inheritdoc />
         public IObservable<TCommand> Commands
         {
             get { return _commandSource.Messages; }
         }
 
+        /// <inheritdoc />
         public Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default)
         {
             return _eventPublisher.PublishAsync(ev, cancellationToken);
         }
 
+        /// <inheritdoc />
         public Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default)
         {
             return _responsePublisher.PublishAsync(response, cancellationToken);
         }
 
+        /// <inheritdoc />
         public bool CanHandle(TMessage message)
         {
             return ServiceType.IsInstanceOfType(message);
         }
 
+        /// <inheritdoc />
         public string Name
         {
             get { return _name; }
@@ -99,6 +120,7 @@ namespace Obvs
 
         private Type ServiceType { get; set; }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             _commandSource.Dispose();

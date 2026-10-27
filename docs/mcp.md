@@ -10,9 +10,12 @@
 dotnet add package Obvs.Mcp
 ```
 
+<!-- snippet: mcp-setup -->
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddObvs(obvs => ...);
+builder.Services.AddObvs(obvs => obvs
+    .AddService<IOrderMessage>("orders", service => service
+        .UseRabbitMq(builder.Configuration.GetSection("Obvs:Orders:RabbitMq"))));
 builder.Services.AddObvsMcp();
 
 var app = builder.Build();
@@ -47,6 +50,7 @@ claude mcp add --transport http obvs http://localhost:5000/obvs/mcp
 - **Development only:** `MapObvsMcp` throws outside the Development environment. An agent that can send messages can do real work. To run it in a shared test environment, set `AllowOutsideDevelopment`, and consider turning sending off.
 - **Inspection only:** with `AllowSending = false`, the server offers only `list_services`, `describe_service`, `watch` and `recent_errors`.
 
+<!-- snippet: mcp-options -->
 ```csharp
 builder.Services.AddObvsMcp(options =>
 {

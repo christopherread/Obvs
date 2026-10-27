@@ -23,6 +23,9 @@
 using System;
 using System.Diagnostics.Tracing;
 
+// A copy of Microsoft.IO.RecyclableMemoryStream: its public members are exempt from the rule that every one is documented
+#pragma warning disable CS1570, CS1572, CS1591
+
 namespace Obvs.ActiveMQ.RecyclableMemoryStream
 {
     public sealed partial class RecyclableMemoryStreamManager

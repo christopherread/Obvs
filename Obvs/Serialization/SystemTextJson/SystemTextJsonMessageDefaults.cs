@@ -2,6 +2,7 @@ using System.Text.Json;
 
 namespace Obvs.Serialization.SystemTextJson
 {
+    /// <summary>The System.Text.Json options Obvs uses unless it's given others.</summary>
     public static class SystemTextJsonMessageDefaults
     {
         /// <summary>

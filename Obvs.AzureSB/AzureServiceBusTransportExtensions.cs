@@ -13,6 +13,7 @@ using Obvs.Types;
 // In the builder's namespace, so UseAzureServiceBus() is found without an extra using
 namespace Obvs.Hosting
 {
+    /// <summary>Carries services over Azure Service Bus: <c>service.UseAzureServiceBus(...)</c> inside <c>AddService</c>.</summary>
     public static class AzureServiceBusTransportExtensions
     {
         // Service Bus limits subscription names, and each bus's event subscription is named after its instance ID

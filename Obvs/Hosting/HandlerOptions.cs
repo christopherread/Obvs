@@ -1,5 +1,6 @@
 namespace Obvs.Hosting
 {
+    /// <summary>How a handler runs, set with the <c>configure</c> argument of <c>HandleCommand</c>, <c>HandleEvent</c> or <c>HandleRequest</c>.</summary>
     public sealed class HandlerOptions
     {
         /// <summary>

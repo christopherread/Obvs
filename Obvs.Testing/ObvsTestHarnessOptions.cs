@@ -3,6 +3,7 @@ using System.Reactive.Concurrency;
 
 namespace Obvs.Testing
 {
+    /// <summary>How the test harness waits, and on which clock and scheduler.</summary>
     public sealed class ObvsTestHarnessOptions
     {
         /// <summary>How long <c>Sent</c>, <c>Published</c>, <c>Requested</c> and <c>Replied</c> wait when no timeout is passed. Five seconds by default.</summary>

@@ -19,6 +19,7 @@ The schemas describe the messages' JSON shape. A service that serializes with Me
 
 ## At run time
 
+<!-- snippet: contracts-describe -->
 ```csharp
 var contracts = app.Services.GetRequiredService<ObvsContracts>();
 string all = contracts.Describe();
@@ -31,6 +32,7 @@ A keyed bus has its own: `GetRequiredKeyedService<ObvsContracts>("analytics")`. 
 
 Commit each bus's contract, and check it in a test with `ObvsContractSnapshot` from `Obvs.Testing`:
 
+<!-- snippet: contracts-snapshot -->
 ```csharp
 [Fact]
 public async Task TheOrdersContractHasNoBreakingChanges()

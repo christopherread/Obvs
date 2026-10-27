@@ -13,6 +13,7 @@ using AcknowledgementMode = Obvs.ActiveMQ.AcknowledgementMode;
 // In the builder's namespace, so UseActiveMq() is found without an extra using
 namespace Obvs.Hosting
 {
+    /// <summary>Carries services over ActiveMQ: <c>service.UseActiveMq(...)</c> inside <c>AddService</c>.</summary>
     public static class ActiveMqTransportExtensions
     {
         /// <summary>

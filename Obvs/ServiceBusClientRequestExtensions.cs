@@ -7,6 +7,7 @@ using Obvs.Types;
 
 namespace Obvs
 {
+    /// <summary>Awaitable requests.</summary>
     public static class ServiceBusClientRequestExtensions
     {
         /// <summary>

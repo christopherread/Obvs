@@ -6,6 +6,9 @@ using Obvs.Configuration;
 using Obvs.Serialization;
 using RabbitMQ.Client;
 
+// v6's RabbitMQ transport building blocks, public for v6's fluent configuration; v7 apps use UseRabbitMq(...): its public members are exempt from the rule that every one is documented
+#pragma warning disable CS1570, CS1572, CS1591
+
 namespace Obvs.RabbitMQ.Configuration
 {
     public class RabbitMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>

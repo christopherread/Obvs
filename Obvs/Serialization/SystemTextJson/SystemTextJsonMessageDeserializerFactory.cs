@@ -7,6 +7,7 @@ using Obvs.Configuration;
 
 namespace Obvs.Serialization.SystemTextJson
 {
+    /// <summary>Creates System.Text.Json deserializers for a service's messages: a service's default.</summary>
     public class SystemTextJsonMessageDeserializerFactory : IMessageDeserializerFactory, IMessageTypeDeserializerFactory
     {
         private readonly JsonSerializerOptions _options;
@@ -17,6 +18,7 @@ namespace Obvs.Serialization.SystemTextJson
             _options = options ?? SystemTextJsonMessageDefaults.Options;
         }
 
+        /// <inheritdoc />
         public IEnumerable<IMessageDeserializer<TMessage>> Create<TMessage, TServiceMessage>(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
             where TMessage : class
             where TServiceMessage : class
@@ -26,6 +28,7 @@ namespace Obvs.Serialization.SystemTextJson
                 .ToArray();
         }
 
+        /// <inheritdoc />
         public IMessageDeserializer<TMessage> Create<TMessage>(Type messageType) where TMessage : class
         {
             return (IMessageDeserializer<TMessage>)Activator.CreateInstance(

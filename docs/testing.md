@@ -8,11 +8,13 @@ dotnet add package Obvs.Testing
 
 ## A test
 
+<!-- snippet: test-a-handler -->
 ```csharp
 [Fact]
 public async Task PlacingAnOrderPublishesOrderPlaced()
 {
     await using var harness = await ObvsTestHarness.StartAsync(services => services
+        .AddSingleton<IOrderStore, InMemoryOrderStore>()
         .AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service
             .UseInMemory()
             .HandleCommand<PlaceOrder, PlaceOrderHandler>())));
@@ -53,19 +55,21 @@ No matching OrderPlaced was published within 00:00:05. Messages that passed thro
 
 `RequestAsync` works as it does against a real broker. The in-memory transport correlates each response with its request.
 
+<!-- snippet: test-a-request -->
 ```csharp
 var quote = await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5));
 ```
 
 ## Time
 
+<!-- snippet: test-with-time -->
 ```csharp
 var time = new FakeTimeProvider();
 await using var harness = await ObvsTestHarness.StartAsync(
-    services => ...,
+    services => services.AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service.UseInMemory())),
     options =>
     {
-        options.TimeProvider = time;           // the harness's timeouts
+        options.TimeProvider = time;             // the harness's timeouts
         options.Scheduler = new TestScheduler(); // where the broker delivers, for Rx's virtual time
     });
 ```

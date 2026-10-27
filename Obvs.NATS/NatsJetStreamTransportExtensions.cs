@@ -15,6 +15,7 @@ using Obvs.Types;
 // In the builder's namespace, so UseNatsJetStream() is found without an extra using
 namespace Obvs.Hosting
 {
+    /// <summary>Carries services over NATS JetStream: <c>service.UseNatsJetStream(...)</c> inside <c>AddService</c>.</summary>
     public static class NatsJetStreamTransportExtensions
     {
         // Characters JetStream doesn't allow in stream and consumer names, which Obvs makes from the service's name and

@@ -5,8 +5,10 @@ using System.Reflection;
 
 namespace Obvs.Extensions
 {
+    /// <summary>Helpers for message types.</summary>
     public static class TypeExtensions
     {
+        /// <summary>The type's name, without a generic type's arity.</summary>
         public static string GetSimpleName(this TypeInfo t)
         {
             if (t.IsGenericType)
@@ -18,11 +20,13 @@ namespace Obvs.Extensions
             return t.Name;
         }
 
+        /// <summary>Whether the type can be created without arguments.</summary>
         public static bool HasDefaultConstructor(this TypeInfo type)
         {
             return (type.GetConstructor(Type.EmptyTypes) != null || !type.GetConstructors().Any());
         }
 
+        /// <summary>Whether the type is a concrete <typeparamref name="TMessage"/> and <typeparamref name="TServiceMessage"/>, which can be deserialized.</summary>
         public static bool IsValidMessageType<TMessage, TServiceMessage>(this TypeInfo type)
             where TMessage : class
             where TServiceMessage : class

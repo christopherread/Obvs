@@ -10,10 +10,15 @@ using Obvs.Types;
 
 namespace Obvs
 {
+    /// <summary>The bus as a client, for the bus's standard message interfaces: resolve it from the container after <c>AddObvs</c>.</summary>
     public interface IServiceBusClient : IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>
     {
     }
 
+    /// <summary>
+    /// The bus as a client of its services: it sends commands and requests, and receives events and responses. Use
+    /// <see cref="ServiceBusClientRequestExtensions.RequestAsync{TRequest, TResponse}"/> to await a response.
+    /// </summary>
     public interface IServiceBusClient<TMessage, in TCommand, out TEvent, in TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
@@ -21,56 +26,78 @@ namespace Obvs
         where TRequest : class, TMessage
         where TResponse : class, TMessage
     {
+        /// <summary>The events the bus receives, from the services it's a client of.</summary>
         IObservable<TEvent> Events { get; }
 
+        /// <summary>Sends <paramref name="command"/> to its service.</summary>
+        /// <param name="command">The command</param>
+        /// <param name="cancellationToken">Stops waiting for the broker</param>
         Task SendAsync(TCommand command, CancellationToken cancellationToken = default);
+        /// <summary>Sends each of <paramref name="commands"/> to its service.</summary>
+        /// <param name="commands">The commands</param>
+        /// <param name="cancellationToken">Stops sending, and waiting for the broker</param>
         Task SendAsync(IEnumerable<TCommand> commands, CancellationToken cancellationToken = default);
 
+        /// <summary>Sends <paramref name="request"/> when subscribed to, and returns its responses.</summary>
         IObservable<TResponse> GetResponses(TRequest request);
+        /// <summary>Sends <paramref name="request"/> when subscribed to, and returns its responses of type <typeparamref name="T"/>.</summary>
         IObservable<T> GetResponses<T>(TRequest request) where T : TResponse;
+        /// <summary>Sends <paramref name="request"/> when subscribed to, and returns its first response of type <typeparamref name="T"/>.</summary>
         IObservable<T> GetResponse<T>(TRequest request) where T : TResponse;
 
+        /// <summary>Errors the services' streams report while the bus runs, such as a queue that's gone. A hosted bus logs them too.</summary>
         IObservable<Exception> Exceptions { get; }
     }
 
+    /// <summary>The bus as a client, for the bus's standard message interfaces.</summary>
     public class ServiceBusClient : IServiceBusClient, IDisposable
     {
         private readonly IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse> _serviceBusClient;
 
+        /// <summary>Wraps a generic client.</summary>
+        /// <param name="serviceBusClient">The client</param>
         public ServiceBusClient(IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse> serviceBusClient)
         {
             _serviceBusClient = serviceBusClient;
         }
 
+        /// <inheritdoc />
         public IObservable<IEvent> Events => _serviceBusClient.Events;
 
+        /// <inheritdoc />
         public Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
         {
             return _serviceBusClient.SendAsync(command, cancellationToken);
         }
 
+        /// <inheritdoc />
         public Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default)
         {
             return _serviceBusClient.SendAsync(commands, cancellationToken);
         }
 
+        /// <inheritdoc />
         public IObservable<IResponse> GetResponses(IRequest request)
         {
             return _serviceBusClient.GetResponses(request);
         }
 
+        /// <inheritdoc />
         public IObservable<T> GetResponses<T>(IRequest request) where T : IResponse
         {
             return _serviceBusClient.GetResponses<T>(request);
         }
 
+        /// <inheritdoc />
         public IObservable<T> GetResponse<T>(IRequest request) where T : IResponse
         {
             return _serviceBusClient.GetResponse<T>(request);
         }
 
+        /// <inheritdoc />
         public IObservable<Exception> Exceptions => _serviceBusClient.Exceptions;
 
+        /// <inheritdoc />
         public void Dispose()
         {
             ((IDisposable)_serviceBusClient).Dispose();
@@ -86,12 +113,19 @@ namespace Obvs
         where TRequest : class, TMessage
         where TResponse : class, TMessage
     {
+        /// <summary>The server endpoints of the services the bus serves.</summary>
         protected readonly IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> Endpoints;
         private readonly IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> _endpointClients;
         private readonly IRequestCorrelationProvider<TRequest, TResponse> _requestCorrelationProvider;
         private readonly IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> _localBus;
         private readonly LocalBusOptions _localBusOption;
 
+        /// <summary>A client over these endpoints.</summary>
+        /// <param name="endpointClients">The client endpoints of the services the bus uses</param>
+        /// <param name="endpoints">The server endpoints of the services the bus serves</param>
+        /// <param name="requestCorrelationProvider">How responses are matched to requests</param>
+        /// <param name="localBus">An in-process bus that also carries messages, or null</param>
+        /// <param name="localBusOption">Which messages go to the local bus</param>
         public ServiceBusClient(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, 
                                 IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> endpoints, 
                                 IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider,
@@ -113,8 +147,10 @@ namespace Obvs
             _requestCorrelationProvider = requestCorrelationProvider;
         }
 
+        /// <inheritdoc />
         public IObservable<TEvent> Events { get; }
 
+        /// <inheritdoc />
         public Task SendAsync(TCommand command, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -145,16 +181,19 @@ namespace Obvs
             return _localBus == null ? Observable.Empty<TEvent>() : _localBus.Events;
         }
 
+        /// <summary>The local bus's commands, if there is one.</summary>
         protected IObservable<TCommand> GetLocalCommands()
         {
             return _localBus == null ? Observable.Empty<TCommand>() : _localBus.Commands;
         }
 
+        /// <summary>The local bus's requests, if there is one.</summary>
         protected IObservable<TRequest> GetLocalRequests()
         {
             return _localBus == null ? Observable.Empty<TRequest>() : _localBus.Requests;
         }
 
+        /// <summary>Publishes <paramref name="ev"/> on the local bus, if it takes it, collecting errors in <paramref name="exceptions"/>.</summary>
         protected IEnumerable<Task> PublishLocal(TEvent ev, List<Exception> exceptions, CancellationToken cancellationToken)
         {
             return ShouldPublishLocally(ev)
@@ -169,6 +208,7 @@ namespace Obvs
                 : Enumerable.Empty<Task>();
         }
 
+        /// <summary>Replies on the local bus, if it takes the response, collecting errors in <paramref name="exceptions"/>.</summary>
         protected IEnumerable<Task> ReplyLocal(TRequest request, TResponse response, List<Exception> exceptions, CancellationToken cancellationToken)
         {
             return ShouldPublishLocally(response)
@@ -204,6 +244,7 @@ namespace Obvs
             return false;
         }
 
+        /// <inheritdoc />
         public Task SendAsync(IEnumerable<TCommand> commands, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -237,6 +278,7 @@ namespace Obvs
             return Task.WhenAll(tasks);
         }
 
+        /// <inheritdoc />
         public IObservable<TResponse> GetResponses(TRequest request)
         {
             if (_requestCorrelationProvider == null)
@@ -261,11 +303,13 @@ namespace Obvs
                 : Observable.Empty<TResponse>();
         }
 
+        /// <inheritdoc />
         public IObservable<T> GetResponses<T>(TRequest request) where T : TResponse
         {
             return GetResponses(request).OfType<T>();
         }
 
+        /// <inheritdoc />
         public IObservable<T> GetResponse<T>(TRequest request) where T : TResponse
         {
             return GetResponses(request).OfType<T>().Take(1);
@@ -276,6 +320,7 @@ namespace Obvs
             return _endpointClients.Where(endpoint => endpoint.CanHandle(message)).ToArray();
         }
 
+        /// <inheritdoc />
         public override void Dispose()
         {
             base.Dispose();

@@ -24,6 +24,7 @@ Create an API key for the cluster in the Confluent Cloud console or with `conflu
 }
 ```
 
+<!-- snippet: kafka-from-configuration -->
 ```csharp
 service.UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"));
 ```
@@ -50,6 +51,7 @@ To sign in with tokens from an identity provider configured in Confluent Cloud, 
 }
 ```
 
+<!-- snippet: kafka-confluent-oauth -->
 ```csharp
 service.UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"), options =>
     options.OAuthBearerTokenProvider = async cancellationToken =>

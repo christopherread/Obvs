@@ -56,6 +56,9 @@ namespace Obvs.Testing
     /// <summary>A message passing through an <see cref="InMemoryBroker"/>.</summary>
     public sealed class InMemoryMessage
     {
+        /// <summary>A message, and the service it was sent on.</summary>
+        /// <param name="serviceName">The service's name</param>
+        /// <param name="message">The message</param>
         public InMemoryMessage(string serviceName, IMessage message)
         {
             ServiceName = serviceName;
@@ -65,6 +68,7 @@ namespace Obvs.Testing
         /// <summary>The name of the service the message belongs to.</summary>
         public string ServiceName { get; }
 
+        /// <summary>The message.</summary>
         public IMessage Message { get; }
     }
 }

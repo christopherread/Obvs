@@ -8,6 +8,8 @@ namespace Obvs.Testing
     /// </summary>
     public sealed class ObvsTestTimeoutException : TimeoutException
     {
+        /// <summary>What wasn't seen in time, and what was.</summary>
+        /// <param name="message">The message expected, and the messages that passed through the broker</param>
         public ObvsTestTimeoutException(string message)
             : base(message)
         {

@@ -6,6 +6,7 @@ using Obvs.Extensions;
 
 namespace Obvs.Configuration
 {
+    /// <summary>Finds message types by scanning the app's assemblies.</summary>
     public static class MessageTypes
     {
         /// <summary>
@@ -50,6 +51,12 @@ namespace Obvs.Configuration
             }
         }
         
+        /// <summary>
+        /// The public, concrete types that are <typeparamref name="TMessage"/> and <typeparamref name="TServiceMessage"/>, in the
+        /// assemblies that reference Obvs, filtered by <paramref name="assemblyFilter"/> and <paramref name="typeFilter"/>.
+        /// </summary>
+        /// <param name="assemblyFilter">Which assemblies to scan, or all</param>
+        /// <param name="typeFilter">Which types to include, or all</param>
         public static IEnumerable<Type> Get<TMessage, TServiceMessage>(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
             where TMessage : class
             where TServiceMessage : class

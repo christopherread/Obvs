@@ -11,6 +11,9 @@ namespace Obvs.Hosting
     /// </summary>
     public static class ObvsContractComparer
     {
+        /// <summary>The changes from <paramref name="before"/> to <paramref name="after"/> that would break an app built against <paramref name="before"/>, each described.</summary>
+        /// <param name="before">The committed document</param>
+        /// <param name="after">The current document</param>
         public static IReadOnlyList<string> FindBreakingChanges(string before, string after)
         {
             var changes = new List<string>();

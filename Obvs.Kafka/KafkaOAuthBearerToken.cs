@@ -6,6 +6,9 @@ namespace Obvs.Kafka
     /// <summary>A token for Kafka's <c>OAUTHBEARER</c> sign-in, returned by <see cref="KafkaOptions.OAuthBearerTokenProvider"/>.</summary>
     public sealed class KafkaOAuthBearerToken
     {
+        /// <summary>A token, and when it expires.</summary>
+        /// <param name="value">The token</param>
+        /// <param name="expiresAt">When it expires; the client gets a new one before then</param>
         public KafkaOAuthBearerToken(string value, DateTimeOffset expiresAt)
         {
             Value = value;

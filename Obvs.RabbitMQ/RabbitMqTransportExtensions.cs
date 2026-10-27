@@ -11,6 +11,7 @@ using Obvs.Types;
 // In the builder's namespace, so UseRabbitMq() is found without an extra using
 namespace Obvs.Hosting
 {
+    /// <summary>Carries services over RabbitMQ: <c>service.UseRabbitMq(...)</c> inside <c>AddService</c>.</summary>
     public static class RabbitMqTransportExtensions
     {
         /// <summary>

@@ -34,6 +34,7 @@ dotnet add package AWS.MSK.Auth
 }
 ```
 
+<!-- not compiled: needs the AWS.MSK.Auth package -->
 ```csharp
 using Amazon;
 using AWS.MSK.Auth;
@@ -77,6 +78,7 @@ MSK keeps SCRAM credentials in AWS Secrets Manager, in a secret whose name start
 }
 ```
 
+<!-- snippet: kafka-from-configuration -->
 ```csharp
 service.UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"));
 ```

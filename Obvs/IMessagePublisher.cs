@@ -16,11 +16,13 @@ namespace Obvs
     public class DefaultMessagePublisher<TMessage> : IMessagePublisher<TMessage>
         where TMessage : class
     {
+        /// <inheritdoc />
         public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(true);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
         }

@@ -3,6 +3,9 @@
 
 using System.Threading;
 
+// A copy of Newtonsoft.Json's array pool sample, whose comments aren't checked
+#pragma warning disable CS1570, CS1572, CS1591
+
 namespace Obvs.Serialization.Json.Utils
 {
     /// <summary>
