@@ -17,9 +17,12 @@ namespace Obvs.Serialization.Json.Configuration
         {
             if (gzipped)
             {
+                // v6's fluent configuration, which keeps them until it goes
+#pragma warning disable CS0618
                 return config.SerializedWith(
                     new GzippedJsonMessageSerializer(serializerSettings), 
                     new JsonMessageDeserializerFactory(typeof(GzippedJsonMessageDeserializer<>), serializerSettings));
+#pragma warning restore CS0618
             }
 
             return config.SerializedWith(
