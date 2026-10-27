@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Microsoft.Extensions.Logging;
 using Obvs.Hosting;
 using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
@@ -27,18 +28,19 @@ namespace Obvs.Kafka
 
         private readonly ConsumerConfig _consumerConfig;
         private readonly Action<IClient, string> _oauthBearerTokenRefreshHandler;
+        private readonly ILogger _logger;
 
         // How long Subscribe waits for Kafka to assign partitions, and for each offset query while it does
         private static readonly TimeSpan PartitionAssignmentTimeout = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan OffsetQueryTimeout = TimeSpan.FromSeconds(10);
 
-        /// <param name="uniqueGroupSuffix">Only required if you intend to create two or more message sources in the same process</param>
+        /// <param name="groupId">The consumer group. Without one, the group is named after the process, so each process receives every message</param>
         public MessageSource(KafkaConfiguration kafkaConfig,
             KafkaSourceConfiguration sourceConfig, 
             string topicName,
             IEnumerable<IMessageDeserializer<TMessage>> deserializers,
             Func<Dictionary<string, string>, bool> propertyFilter,
-            string uniqueGroupSuffix = null)
+            string groupId = null)
         {
             _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
             _topicName = topicName;
@@ -47,8 +49,7 @@ namespace Obvs.Kafka
             _consumerConfig = new ConsumerConfig
             {
                 ClientId = clientId,
-                // A group of its own, so it receives every message and other sources' subscriptions don't rebalance it
-                GroupId = string.IsNullOrEmpty(uniqueGroupSuffix) ? clientId : $"{clientId}-{topicName}-{uniqueGroupSuffix}",
+                GroupId = string.IsNullOrEmpty(groupId) ? clientId : groupId,
                 BootstrapServers = kafkaConfig.BootstrapServers,
                 FetchMinBytes = sourceConfig.FetchMinBytes,
                 FetchMaxBytes = sourceConfig.FetchMaxBytes,
@@ -59,6 +60,7 @@ namespace Obvs.Kafka
             };
             kafkaConfig.ApplyTo(_consumerConfig);
             _oauthBearerTokenRefreshHandler = kafkaConfig.OAuthBearerTokenRefreshHandler;
+            _logger = kafkaConfig.Logger;
         }
 
         internal ConsumerConfig ConsumerConfig => _consumerConfig;
@@ -94,39 +96,49 @@ namespace Obvs.Kafka
         {
             try
             {
-                var builder = new ConsumerBuilder<Ignore, WrapperMessage>(_consumerConfig)
-                    .SetValueDeserializer(new ConsumerValueDeserializer<WrapperMessage>())
-                    .SetErrorHandler((_, e) => observer.OnError(new Exception($"Consumer ErrorHandler: {e.Reason}")))
-                    .SetPartitionsAssignedHandler((c, partitions) =>
-                    {
-                        var offsets = StartOffsets(c, partitions);
-                        subscribedEvent.Set();
-                        return offsets;
-                    });
-                if (_oauthBearerTokenRefreshHandler != null)
+                // Cancelled when the subscription ends, or by the error handler, which runs on this thread as a side
+                // effect of Consume, when an error ends it. Consume then stops waiting for a message.
+                using (var consuming = CancellationTokenSource.CreateLinkedTokenSource(token))
                 {
-                    builder.SetOAuthBearerTokenRefreshHandler(_oauthBearerTokenRefreshHandler);
-                }
-
-                using (var consumer = builder.Build())
-                {
-                    consumer.Subscribe(_topicName);
-
-                    try
-                    {
-                        while (!token.IsCancellationRequested)
+                    var builder = new ConsumerBuilder<Ignore, WrapperMessage>(_consumerConfig)
+                        .SetValueDeserializer(new ConsumerValueDeserializer<WrapperMessage>())
+                        .SetErrorHandler((_, error) =>
                         {
-                            ConsumeMessage(token, observer, consumer);
+                            if (OnClientError(error, observer))
+                            {
+                                consuming.Cancel();
+                            }
+                        })
+                        .SetPartitionsAssignedHandler((c, partitions) =>
+                        {
+                            var offsets = StartOffsets(c, partitions, _logger);
+                            subscribedEvent.Set();
+                            return offsets;
+                        });
+                    if (_oauthBearerTokenRefreshHandler != null)
+                    {
+                        builder.SetOAuthBearerTokenRefreshHandler(_oauthBearerTokenRefreshHandler);
+                    }
+
+                    using (var consumer = builder.Build())
+                    {
+                        consumer.Subscribe(_topicName);
+
+                        try
+                        {
+                            while (!consuming.IsCancellationRequested && ConsumeMessage(consuming.Token, observer, consumer))
+                            {
+                            }
                         }
-                    }
-                    catch (Exception exception)
-                    {
-                        observer.OnError(exception);
-                    }
-                    finally
-                    {
-                        consumer.Unsubscribe();
-                        consumer.Close();
+                        catch (Exception exception)
+                        {
+                            observer.OnError(exception);
+                        }
+                        finally
+                        {
+                            consumer.Unsubscribe();
+                            consumer.Close();
+                        }
                     }
                 }
             }
@@ -145,16 +157,32 @@ namespace Obvs.Kafka
 
         // Fix each partition's start position at assignment: the group's committed offset, or else the current
         // end of the log. Leaving "latest" to be resolved later would skip messages published in the meantime.
-        private static IEnumerable<TopicPartitionOffset> StartOffsets(IConsumer<Ignore, WrapperMessage> consumer, List<TopicPartition> partitions)
+        // The end of the log is committed straight away, so a bus that takes the partition over, or this one
+        // restarted, carries on from there even if nothing was consumed, rather than skipping to the end again.
+        private static IEnumerable<TopicPartitionOffset> StartOffsets(IConsumer<Ignore, WrapperMessage> consumer, List<TopicPartition> partitions, ILogger logger)
         {
-            return consumer.Committed(partitions, OffsetQueryTimeout)
-                .Select(committed => committed.Offset != Offset.Unset
-                    ? committed
-                    : new TopicPartitionOffset(committed.TopicPartition, consumer.QueryWatermarkOffsets(committed.TopicPartition, OffsetQueryTimeout).High))
+            var committed = consumer.Committed(partitions, OffsetQueryTimeout);
+            var fromEnd = committed
+                .Where(offset => offset.Offset == Offset.Unset)
+                .Select(offset => new TopicPartitionOffset(offset.TopicPartition, consumer.QueryWatermarkOffsets(offset.TopicPartition, OffsetQueryTimeout).High))
                 .ToList();
+            if (fromEnd.Count > 0)
+            {
+                try
+                {
+                    consumer.Commit(fromEnd);
+                }
+                catch (KafkaException exception)
+                {
+                    // This consumer still starts from there; only a later one might not
+                    logger.LogWarning(exception, "Kafka consumer couldn't commit its start position: {Reason}", exception.Error.Reason);
+                }
+            }
+            return committed.Where(offset => offset.Offset != Offset.Unset).Concat(fromEnd).ToList();
         }
 
-        private void ConsumeMessage(CancellationToken token, IObserver<TMessage> observer, IConsumer<Ignore, WrapperMessage> consumer)
+        // Returns false once the subscription has ended
+        private bool ConsumeMessage(CancellationToken token, IObserver<TMessage> observer, IConsumer<Ignore, WrapperMessage> consumer)
         {
             try
             {
@@ -168,11 +196,43 @@ namespace Obvs.Kafka
                     SetHeaders(message, kafkaMessage.Headers);
                     observer.OnNext(message);
                 }
+                return true;
+            }
+            catch (ConsumeException exception)
+            {
+                // Including a message that isn't an Obvs message, which has been consumed and is skipped
+                return !OnClientError(exception, observer);
             }
             catch (Exception exception)
             {
                 observer.OnError(exception);
+                return false;
             }
+        }
+
+        // Returns true when the error ends the subscription
+        internal bool OnClientError(Error error, IObserver<TMessage> observer)
+        {
+            return OnClientError(new KafkaException(error), observer);
+        }
+
+        // librdkafka recovers by itself from the errors it reports, such as brokers that are down or a failed OAUTHBEARER
+        // token refresh, unless they're fatal. Being refused access to a topic, the group or the cluster doesn't fix
+        // itself either. Only those end the subscription; the rest are logged and consumption carries on.
+        private bool OnClientError(KafkaException exception, IObserver<TMessage> observer)
+        {
+            var error = exception.Error;
+            if (error.IsFatal
+                || error.Code == ErrorCode.TopicAuthorizationFailed
+                || error.Code == ErrorCode.GroupAuthorizationFailed
+                || error.Code == ErrorCode.ClusterAuthorizationFailed)
+            {
+                observer.OnError(exception);
+                return true;
+            }
+
+            _logger.LogWarning(exception, "Kafka consumer of {Topic} reported an error, and carries on: {Reason}", _topicName, error.Reason);
+            return false;
         }
 
         private TMessage DeserializePayload(WrapperMessage msg)

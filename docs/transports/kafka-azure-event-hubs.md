@@ -75,4 +75,8 @@ Give the identity **Azure Event Hubs Data Sender** and **Azure Event Hubs Data R
 
 ## Consumer groups
 
-Each bus uses consumer groups of its own, named after the machine and process, so every restart uses new ones. Event Hubs allows 1,000 Kafka consumer groups per namespace, and groups left behind by stopped buses can count towards it until they're removed, so a service that restarts often, or runs many instances, can approach the limit.
+Event Hubs allows **1,000 Kafka consumer groups per namespace**, in each tier with a Kafka endpoint. Kafka consumer groups are created as they're used, and don't need creating in the portal like Event Hubs' own consumer groups.
+
+Each service uses two [consumer groups](kafka.md#consumer-groups) shared by its buses, for commands and requests, and two for each bus, for events and responses, named after the bus's instance ID. That's a new GUID each time a bus starts, unless it's set with `UseInstanceId(...)`, so by default every restart adds two groups, and the old ones stay until they're removed. Microsoft doesn't document when Event Hubs removes unused Kafka consumer groups, so a service that restarts often, or runs many instances, can approach the limit.
+
+To stay well within it, give each bus a fixed instance ID of its own with `UseInstanceId(...)`, such as the pod name in a Kubernetes StatefulSet, so a restarted bus reuses its groups. It then also receives the events published while it was stopped.

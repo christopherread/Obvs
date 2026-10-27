@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Obvs.Configuration;
 using Obvs.Kafka;
@@ -89,7 +90,8 @@ namespace Obvs.Hosting
         {
             return service
                 .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSet))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)));
+                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
+                    serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.Kafka")));
         }
 
         private static KafkaOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
@@ -114,9 +116,13 @@ namespace Obvs.Hosting
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, KafkaOptions options)
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, KafkaOptions options, ILogger logger)
         {
             var kafkaConfiguration = new KafkaConfiguration(options);
+            if (logger != null)
+            {
+                kafkaConfiguration.Logger = logger;
+            }
             KafkaTopics.EnsureCreated(service.Name, kafkaConfiguration, new[]
             {
                 $"{service.Name}.Commands", $"{service.Name}.Events", $"{service.Name}.Requests", $"{service.Name}.Responses",

@@ -7,6 +7,7 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Obvs.Hosting;
@@ -70,21 +71,96 @@ namespace Obvs.Kafka.Tests.Hosting
         }
 
         [Fact, Trait("Category", "Explicit")]
-        public async Task ShouldDeliverToEveryBusInTheProcess()
+        public async Task ShouldHandleEachCommandOnceAcrossTheServicesBuses()
         {
-            // As with the other transports, each bus receives every message, so they mustn't share a consumer group
+            // The service's buses share a consumer group for commands, so Kafka gives each command to one of them
+            var serviceName = _serviceNames.Create("command-once");
+            var handled = new ConcurrentQueue<string>();
+            Action<ObvsServiceBuilder> handle = service => service.AsServer()
+                .HandleCommand<PlaceOrder>((command, context, ct) =>
+                {
+                    handled.Enqueue(command.OrderId);
+                    return Task.CompletedTask;
+                });
+            using var hostA = await StartHostAsync(serviceName, handle);
+            using var hostB = await StartHostAsync(serviceName, handle);
+            using var sender = await StartHostAsync(serviceName, service => service.AsClient());
+            var orderIds = Enumerable.Range(0, 10).Select(i => $"o-{i}").ToList();
+
+            foreach (var orderId in orderIds)
+            {
+                await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = orderId });
+            }
+
+            await WaitForAsync(() => handled.Count >= orderIds.Count ? handled : null);
+            // Long enough for a second delivery to arrive, if there were one
+            await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+            Assert.Equal(orderIds, handled.OrderBy(orderId => orderId));
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldDeliverEveryEventToEveryBus()
+        {
+            // As with the other transports, each bus receives every event, so they have consumer groups of their own
             var serviceName = _serviceNames.Create("every-bus");
             using var hostA = await StartHostAsync(serviceName);
             using var hostB = await StartHostAsync(serviceName);
             var busA = hostA.Services.GetRequiredService<IServiceBus>();
             var busB = hostB.Services.GetRequiredService<IServiceBus>();
 
-            var receivedByA = busA.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            var receivedByB = busB.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            var receivedByA = busA.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
+            var receivedByB = busB.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
+            await busA.PublishAsync(new OrderPlaced { OrderId = "o-1" });
 
             Assert.Equal("o-1", (await receivedByA.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
             Assert.Equal("o-1", (await receivedByB.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldHandleCommandsSentWhileTheServiceWasDown()
+        {
+            // The commands group outlives the bus, so a bus started later, even with another instance ID, carries on from it
+            var serviceName = _serviceNames.Create("commands-while-down");
+            var handled = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Action<ObvsServiceBuilder> handle = service => service.AsServer()
+                .HandleCommand<PlaceOrder>((command, context, ct) =>
+                {
+                    handled.TrySetResult(command.OrderId);
+                    return Task.CompletedTask;
+                });
+            var first = await StartHostAsync(serviceName, handle);
+            await first.StopAsync(TestContext.Current.CancellationToken);
+            first.Dispose();
+            using var sender = await StartHostAsync(serviceName, service => service.AsClient());
+
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            using var restarted = await StartHostAsync(serviceName, handle);
+
+            Assert.Equal("o-1", await handled.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken));
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldReceiveEventsPublishedWhileABusWithAFixedInstanceIdWasDown()
+        {
+            // The bus's events group is named after its instance ID, so restarting with the same one carries on from it
+            var serviceName = _serviceNames.Create("events-while-down");
+            var instanceId = $"subscriber-{Guid.NewGuid():N}";
+            var received = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Action<ObvsServiceBuilder> handle = service => service.AsClient()
+                .HandleEvent<OrderPlaced>((ev, context, ct) =>
+                {
+                    received.TrySetResult(ev.OrderId);
+                    return Task.CompletedTask;
+                });
+            var first = await StartHostAsync(serviceName, handle, instanceId);
+            await first.StopAsync(TestContext.Current.CancellationToken);
+            first.Dispose();
+            using var publisher = await StartHostAsync(serviceName, service => service.AsServer());
+
+            await publisher.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            using var restarted = await StartHostAsync(serviceName, handle, instanceId);
+
+            Assert.Equal("o-1", await received.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken));
         }
 
         [Fact, Trait("Category", "Explicit")]
@@ -158,16 +234,23 @@ namespace Obvs.Kafka.Tests.Hosting
             Assert.Equal("acme", headers["x-tenant"]);
         }
 
-        private static async Task<IHost> StartHostAsync(string serviceName, Action<ObvsServiceBuilder> configure = null)
+        private static async Task<IHost> StartHostAsync(string serviceName, Action<ObvsServiceBuilder> configure = null, string instanceId = null)
         {
             var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
-            builder.Services.AddObvs(obvs => obvs.AddService<IOrderMessage>(serviceName, service =>
+            builder.Services.AddObvs(obvs =>
             {
-                service
-                    .UseKafka(options => options.BootstrapServers = TestBroker.BootstrapServers)
-                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>)));
-                configure?.Invoke(service);
-            }));
+                if (instanceId != null)
+                {
+                    obvs.UseInstanceId(instanceId);
+                }
+                obvs.AddService<IOrderMessage>(serviceName, service =>
+                {
+                    service
+                        .UseKafka(options => options.BootstrapServers = TestBroker.BootstrapServers)
+                        .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>)));
+                    configure?.Invoke(service);
+                });
+            });
             var host = builder.Build();
             await host.StartAsync(TestContext.Current.CancellationToken);
             return host;
@@ -184,7 +267,7 @@ namespace Obvs.Kafka.Tests.Hosting
             return found ?? throw new TimeoutException($"The expected {typeof(T).Name} wasn't recorded in time.");
         }
 
-        // Names services uniquely for this run, and deletes their topics afterwards
+        // Names services uniquely for this run, and deletes their topics and consumer groups afterwards
         public sealed class ServiceNames : IAsyncDisposable
         {
             private readonly string _runId = Guid.NewGuid().ToString("N").Substring(0, 8);
@@ -194,10 +277,23 @@ namespace Obvs.Kafka.Tests.Hosting
             public async ValueTask DisposeAsync()
             {
                 using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = TestBroker.BootstrapServers }).Build();
-                var topics = admin.GetMetadata(Timeout).Topics.Select(topic => topic.Topic).Where(topic => topic.StartsWith("obvs-kafka-") && topic.Contains(_runId)).ToList();
+                bool IsThisRuns(string name) => name.StartsWith("obvs-kafka-") && name.Contains(_runId);
+                var topics = admin.GetMetadata(Timeout).Topics.Select(topic => topic.Topic).Where(IsThisRuns).ToList();
                 if (topics.Count > 0)
                 {
                     await admin.DeleteTopicsAsync(topics);
+                }
+                var groups = (await admin.ListConsumerGroupsAsync()).Valid.Select(group => group.GroupId).Where(IsThisRuns).ToList();
+                try
+                {
+                    if (groups.Count > 0)
+                    {
+                        await admin.DeleteGroupsAsync(groups);
+                    }
+                }
+                catch (DeleteGroupsException exception) when (exception.Results.All(result => result.Error.Code == ErrorCode.NoError || result.Error.Code == ErrorCode.NonEmptyGroup))
+                {
+                    // Groups of hosts that were disposed without being stopped still have members. Kafka removes them later.
                 }
             }
         }

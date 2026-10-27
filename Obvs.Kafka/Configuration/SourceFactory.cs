@@ -15,7 +15,7 @@ namespace Obvs.Kafka.Configuration
             Func<Dictionary<string, string>, bool> propertyFilter, 
             Func<Assembly, bool> assemblyFilter = null, 
             Func<Type, bool> typeFilter = null,
-            string uniqueGroupSuffix = null)
+            string groupId = null)
             where TMessage : class
             where TServiceMessage : class
         {
@@ -25,7 +25,7 @@ namespace Obvs.Kafka.Configuration
                 topic,
                 deserializerFactory.Create<TMessage, TServiceMessage>(assemblyFilter, typeFilter),
                 propertyFilter,
-                uniqueGroupSuffix);
+                groupId);
         }
     }
 }

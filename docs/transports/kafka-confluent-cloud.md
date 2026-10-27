@@ -73,7 +73,7 @@ At startup the bus creates its four topics (`orders.Commands`, `orders.Events`, 
 
 - `CREATE` on the topics, or create them beforehand;
 - `READ` and `WRITE` on the topics;
-- `READ` on consumer groups with any name (`*`), because each bus names its own consumer groups after the machine and process.
+- `READ` on consumer groups with the prefix `orders.`, which all the service's [consumer groups](kafka.md#consumer-groups) start with.
 
 ## Startup checks
 
