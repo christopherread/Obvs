@@ -17,6 +17,10 @@ namespace Obvs.ActiveMQ.Extensions
                     action();
                     tcs.SetResult(true);
                 }
+                catch (OperationCanceledException)
+                {
+                    tcs.SetCanceled();
+                }
                 catch (Exception ex)
                 {
                     tcs.SetException(ex);

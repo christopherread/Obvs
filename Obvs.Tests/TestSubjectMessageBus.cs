@@ -23,7 +23,7 @@ namespace Obvs.Tests
 
             int threadId = Thread.CurrentThread.ManagedThreadId;
 
-            var task = _testObj.PublishAsync("Bleb");
+            var task = _testObj.PublishAsync("Bleb", TestContext.Current.CancellationToken);
 
             Assert.NotEqual(-1, subscriberThreadId);
             Assert.Equal(threadId, subscriberThreadId);
@@ -35,7 +35,7 @@ namespace Obvs.Tests
         [Fact]
         public void PublishReturnsWithNoObservers()
         {
-            Assert.True(_testObj.PublishAsync("Bleb").IsCompleted);
+            Assert.True(_testObj.PublishAsync("Bleb", TestContext.Current.CancellationToken).IsCompleted);
         }
     }
 }

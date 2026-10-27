@@ -41,7 +41,7 @@ namespace Obvs.AzureSB.Tests.Hosting
                     await finish.Task;
                 }));
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             await started.Task.WaitAsync(Timeout, Ct);
 
             Assert.Equal(1, await MessagesOnQueueAsync($"{serviceName}.Commands"));
@@ -59,7 +59,7 @@ namespace Obvs.AzureSB.Tests.Hosting
                     ? throw new InvalidOperationException("Out of stock")
                     : Task.CompletedTask));
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await WaitUntilAsync(() => Task.FromResult(Volatile.Read(ref attempts) == 2));
             await WaitUntilAsync(async () => await MessagesOnQueueAsync($"{serviceName}.Commands") == 0);
@@ -79,7 +79,7 @@ namespace Obvs.AzureSB.Tests.Hosting
                     throw new InvalidOperationException("Out of stock");
                 }), maxDeliveryAttempts: 2);
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await using var client = TestBroker.CreateClient();
             await using var deadLetters = client.CreateReceiver($"{serviceName}.Commands", new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
@@ -100,7 +100,7 @@ namespace Obvs.AzureSB.Tests.Hosting
             var bus = host.Services.GetRequiredService<IServiceBus>();
             var received = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
 
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await received.WaitAsync(Timeout, Ct)).OrderId);
             await WaitUntilAsync(async () => await MessagesOnQueueAsync($"{serviceName}.Commands") == 0);
@@ -118,7 +118,7 @@ namespace Obvs.AzureSB.Tests.Hosting
                     started.TrySetResult(true);
                     await finish.Task;
                 }));
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             await started.Task.WaitAsync(Timeout, Ct);
 
             var stopping = host.StopAsync(Ct);

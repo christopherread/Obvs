@@ -44,12 +44,12 @@ namespace Obvs.NetMQ.Tests
             IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5560",
                 new JsonMessageSerializer(), topic);
 
-            await publisher.PublishAsync(new TestMessage1 { Id = 1 });
-            await publisher.PublishAsync(new TestMessage1 { Id = 2 });
-            await publisher.PublishAsync(new TestMessage2 { Id = 1 });
-            await publisher.PublishAsync(new TestMessage2 { Id = 2 });
-            await publisher.PublishAsync(new TestMessage1 { Id = 3 });
-            await publisher.PublishAsync(new TestMessage2 { Id = 3 });
+            await publisher.PublishAsync(new TestMessage1 { Id = 1 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage1 { Id = 2 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 1 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 2 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage1 { Id = 3 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 3 }, TestContext.Current.CancellationToken);
             await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
             sub.Dispose();
@@ -92,12 +92,12 @@ namespace Obvs.NetMQ.Tests
             IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5561",
                 new ProtoBufMessageSerializer(), topic);
 
-            await publisher.PublishAsync(new TestMessage1 { Id = 1 });
-            await publisher.PublishAsync(new TestMessage1 { Id = 2 });
-            await publisher.PublishAsync(new TestMessage2 { Id = 1 });
-            await publisher.PublishAsync(new TestMessage2 { Id = 2 });
-            await publisher.PublishAsync(new TestMessage1 { Id = 3 });
-            await publisher.PublishAsync(new TestMessage2 { Id = 3 });
+            await publisher.PublishAsync(new TestMessage1 { Id = 1 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage1 { Id = 2 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 1 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 2 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage1 { Id = 3 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 3 }, TestContext.Current.CancellationToken);
             await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
             sub.Dispose();
@@ -149,7 +149,7 @@ namespace Obvs.NetMQ.Tests
 				    await publisher.PublishAsync(new TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
 				    {
 					    Id = i
-				    });
+				    }, TestContext.Current.CancellationToken);
 			    }
 		    }
 

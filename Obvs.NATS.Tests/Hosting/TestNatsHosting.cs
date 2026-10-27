@@ -27,11 +27,11 @@ namespace Obvs.NATS.Tests.Hosting
             var bus = host.Services.GetRequiredService<IServiceBus>();
 
             var command = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             Assert.Equal("o-1", (await command.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
 
             var placed = bus.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
-            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             Assert.Equal("o-1", (await placed.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
         }
 
@@ -58,7 +58,7 @@ namespace Obvs.NATS.Tests.Hosting
             var busA = hostA.Services.GetRequiredService<IServiceBus>();
 
             var command = busA.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await command.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
         }
@@ -75,7 +75,7 @@ namespace Obvs.NATS.Tests.Hosting
                 disposed.SetResult(true);
             });
 
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.True(await disposed.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken));
         }
@@ -89,7 +89,7 @@ namespace Obvs.NATS.Tests.Hosting
                 .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
             using var sender = await StartHostAsync(serviceName, service => service.AsClient());
 
-            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             var send = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"send {serviceName}"));
             var process = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"process {serviceName}"));
@@ -112,7 +112,7 @@ namespace Obvs.NATS.Tests.Hosting
             var placeOrder = new PlaceOrder { OrderId = "o-1" };
             ObvsMessageHeaders.Set(placeOrder, new Dictionary<string, string> { ["x-tenant"] = "acme" });
 
-            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(placeOrder);
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(placeOrder, TestContext.Current.CancellationToken);
 
             var headers = await received.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
             Assert.Equal("acme", headers["x-tenant"]);

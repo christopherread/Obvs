@@ -122,7 +122,7 @@ namespace Obvs
             var exceptions = new List<Exception>();
 
             var tasks = EndpointClientsThatCanHandle(command)
-                .Select(endpoint => CatchUnlessCancelled(() => endpoint.SendAsync(command), exceptions, cancellationToken, CommandErrorMessage(endpoint)))
+                .Select(endpoint => CatchUnlessCancelled(() => endpoint.SendAsync(command, cancellationToken), exceptions, cancellationToken, CommandErrorMessage(endpoint)))
                 .Union(SendLocal(command, exceptions, cancellationToken))
                 .ToArray();
 

@@ -23,7 +23,7 @@ namespace Obvs.Tests
             bool received = false;
             _testObj.Messages.Subscribe(_ => received = true);
 
-            await _testObj.PublishAsync("Bleb");
+            await _testObj.PublishAsync("Bleb", TestContext.Current.CancellationToken);
 
             Assert.False(received);
         }
@@ -34,7 +34,7 @@ namespace Obvs.Tests
             bool received = false;
             _testObj.Messages.Subscribe(_ => received = true);
 
-            await _testObj.PublishAsync("Bleb");
+            await _testObj.PublishAsync("Bleb", TestContext.Current.CancellationToken);
 
             _scheduler.AdvanceBy(1);
 
@@ -44,13 +44,13 @@ namespace Obvs.Tests
         [Fact]
         public async Task PublishReturnsImmediatelyWithNoObservers()
         {
-            await _testObj.PublishAsync("Bleb");
+            await _testObj.PublishAsync("Bleb", TestContext.Current.CancellationToken);
         }
 
         [Fact]
         public async Task PublishReturnsImmediatelyWithNoObservers_NoCachedMessages()
         {
-            await _testObj.PublishAsync("Bleb");
+            await _testObj.PublishAsync("Bleb", TestContext.Current.CancellationToken);
 
             bool received = false;
             _testObj.Messages.Subscribe(_ => received = true);

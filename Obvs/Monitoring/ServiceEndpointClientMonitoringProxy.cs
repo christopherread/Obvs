@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Extensions;
 
@@ -64,10 +65,10 @@ namespace Obvs.Monitoring
             }
         }
 
-        public Task SendAsync(TCommand command)
+        public Task SendAsync(TCommand command, CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
-            return _endpointClient.SendAsync(command)
+            return _endpointClient.SendAsync(command, cancellationToken)
                 .ContinueWith(_ =>
                 {
                     stopwatch.Stop();

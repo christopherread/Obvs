@@ -1,6 +1,7 @@
 using System;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Types;
 
@@ -27,7 +28,7 @@ namespace Obvs.Tests
             get { return GetType().FullName; }
         }
 
-        public Task SendAsync(ICommand command)
+        public Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
         {
             Messages.OnNext(command);
             return Task.FromResult(true);
@@ -103,13 +104,13 @@ namespace Obvs.Tests
             }
         }
 
-        public Task PublishAsync(IEvent ev)
+        public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default)
         {
             Messages.OnNext(ev);
             return Task.FromResult(true);
         }
 
-        public Task ReplyAsync(IRequest request, IResponse response)
+        public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default)
         {
             response.RequestId = request.RequestId;
             response.RequesterId = request.RequesterId;

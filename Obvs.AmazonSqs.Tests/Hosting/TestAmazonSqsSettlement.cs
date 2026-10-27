@@ -40,7 +40,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                     await finish.Task;
                 }));
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             await started.Task.WaitAsync(Timeout, Ct);
 
             Assert.Equal(1, await TestBroker.MessagesOnQueueAsync($"{serviceName}-commands", Ct));
@@ -60,7 +60,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                     : Task.CompletedTask),
                 configureOptions: options => options.VisibilityTimeout = TimeSpan.FromMinutes(5));
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await WaitUntilAsync(() => Task.FromResult(Volatile.Read(ref attempts) == 2));
             await WaitUntilAsync(async () => await TestBroker.MessagesOnQueueAsync($"{serviceName}-commands", Ct) == 0);
@@ -80,7 +80,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                     throw new InvalidOperationException("Out of stock");
                 }), configureOptions: options => options.MaxDeliveryAttempts = 2);
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             var deadLetter = await ReceiveDeadLetterAsync(serviceName);
             Assert.Equal(2, Volatile.Read(ref attempts));
@@ -124,7 +124,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             var bus = host.Services.GetRequiredService<IServiceBus>();
             var received = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
 
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await received.WaitAsync(Timeout, Ct)).OrderId);
             await WaitUntilAsync(async () => await TestBroker.MessagesOnQueueAsync($"{serviceName}-commands", Ct) == 0);
@@ -140,7 +140,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             var bus = host.Services.GetRequiredService<IServiceBus>();
             var placed = bus.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
 
-            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             await bus.RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
             await placed.WaitAsync(Timeout, Ct);
 
@@ -160,7 +160,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                     started.TrySetResult(true);
                     await finish.Task;
                 }));
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             await started.Task.WaitAsync(Timeout, Ct);
 
             var stopping = host.StopAsync(Ct);

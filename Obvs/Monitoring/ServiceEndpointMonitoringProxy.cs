@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Obvs.Monitoring
@@ -79,10 +80,10 @@ namespace Obvs.Monitoring
             }
         }
 
-        public Task PublishAsync(TEvent ev)
+        public Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
-            return _endpoint.PublishAsync(ev)
+            return _endpoint.PublishAsync(ev, cancellationToken)
                 .ContinueWith(_ =>
                 {
                     stopwatch.Stop();
@@ -90,10 +91,10 @@ namespace Obvs.Monitoring
                 }, TaskContinuationOptions.ExecuteSynchronously);
         }
 
-        public Task ReplyAsync(TRequest request, TResponse response)
+        public Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
-            return _endpoint.ReplyAsync(request, response)
+            return _endpoint.ReplyAsync(request, response, cancellationToken)
                 .ContinueWith(_ =>
                 {
                     stopwatch.Stop();

@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Extensions;
 using Obvs.Types;
@@ -18,17 +19,17 @@ namespace Obvs
         where TRequest : TMessage
         where TResponse : TMessage
     {
-        /// <summary> Requests awaiting a <see cref="ReplyAsync(TRequest, TResponse)"/> </summary>
+        /// <summary> Requests awaiting a <see cref="ReplyAsync(TRequest, TResponse, CancellationToken)"/> </summary>
         IObservable<TRequest> Requests { get; }
 
-        /// <summary> Fire-and-Forget Commands from <see cref="PublishAsync(TEvent)"/> </summary>
+        /// <summary> Fire-and-Forget Commands from <see cref="PublishAsync(TEvent, CancellationToken)"/> </summary>
         IObservable<TCommand> Commands { get; }
 
         /// <summary> Publishing <paramref name="tEvent"/>s yields corresponding <see cref="Commands"/> </summary>
-        Task PublishAsync(TEvent tEvent);
+        Task PublishAsync(TEvent tEvent, CancellationToken cancellationToken = default);
 
         /// <summary> Used for <paramref name="response"/>s to <paramref name="request"/>s from <see cref="Requests"/> </summary>
-        Task ReplyAsync(TRequest request, TResponse response);
+        Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default);
     }
 
     public class ServiceEndpoint : ServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>, IServiceEndpoint
@@ -76,14 +77,14 @@ namespace Obvs
             get { return _commandSource.Messages; }
         }
 
-        public Task PublishAsync(TEvent ev)
+        public Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default)
         {
-            return _eventPublisher.PublishAsync(ev);
+            return _eventPublisher.PublishAsync(ev, cancellationToken);
         }
 
-        public Task ReplyAsync(TRequest request, TResponse response)
+        public Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default)
         {
-            return _responsePublisher.PublishAsync(response);
+            return _responsePublisher.PublishAsync(response, cancellationToken);
         }
 
         public bool CanHandle(TMessage message)

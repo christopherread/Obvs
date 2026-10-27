@@ -35,7 +35,7 @@ namespace Obvs.RabbitMQ.Tests
                 disposed.SetResult(true);
             });
 
-            await serviceBus.SendAsync(new TestCommand { Id = 1 });
+            await serviceBus.SendAsync(new TestCommand { Id = 1 }, TestContext.Current.CancellationToken);
 
             Assert.True(await disposed.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
         }
@@ -69,7 +69,7 @@ namespace Obvs.RabbitMQ.Tests
             var sub5 = serviceBus.Requests.OfType<TestRequest>().Subscribe(fakeService2);
 
             // send some messages
-            await serviceBus.SendAsync(new TestCommand { Id = 123 });
+            await serviceBus.SendAsync(new TestCommand { Id = 123 }, TestContext.Current.CancellationToken);
             var sub6 = serviceBus.GetResponses(new TestRequest { Id = 456 }).Subscribe(observer);
 
             // wait some time until we think all messages have been sent and received from RabbitMQ

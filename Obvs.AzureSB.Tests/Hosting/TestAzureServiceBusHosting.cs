@@ -70,11 +70,11 @@ namespace Obvs.AzureSB.Tests.Hosting
             var bus = host.Services.GetRequiredService<IServiceBus>();
 
             var command = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             Assert.Equal("o-1", (await command.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
 
             var placed = bus.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
-            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             Assert.Equal("o-1", (await placed.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
         }
 
@@ -107,7 +107,7 @@ namespace Obvs.AzureSB.Tests.Hosting
 
             for (var i = 0; i < 10; i++)
             {
-                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" });
+                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" }, TestContext.Current.CancellationToken);
             }
 
             await WaitForAsync(() => handled.Count >= 10 ? handled : null);
@@ -125,7 +125,7 @@ namespace Obvs.AzureSB.Tests.Hosting
 
             var receivedByA = clientA.Services.GetRequiredService<IServiceBusClient>().Events.OfType<OrderPlaced>().FirstAsync().ToTask();
             var receivedByB = clientB.Services.GetRequiredService<IServiceBusClient>().Events.OfType<OrderPlaced>().FirstAsync().ToTask();
-            await server.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await server.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await receivedByA.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
             Assert.Equal("o-1", (await receivedByB.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
@@ -142,7 +142,7 @@ namespace Obvs.AzureSB.Tests.Hosting
             var busA = hostA.Services.GetRequiredService<IServiceBus>();
 
             var command = busA.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await command.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
         }
@@ -177,7 +177,7 @@ namespace Obvs.AzureSB.Tests.Hosting
                 disposed.SetResult(true);
             });
 
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.True(await disposed.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken));
         }
@@ -191,7 +191,7 @@ namespace Obvs.AzureSB.Tests.Hosting
                 .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
             using var sender = await StartHostAsync(serviceName, service => service.AsClient());
 
-            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             var send = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"send {serviceName}"));
             var process = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"process {serviceName}"));
@@ -214,7 +214,7 @@ namespace Obvs.AzureSB.Tests.Hosting
             var placeOrder = new PlaceOrder { OrderId = "o-1" };
             ObvsMessageHeaders.Set(placeOrder, new Dictionary<string, string> { ["x-tenant"] = "acme" });
 
-            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(placeOrder);
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(placeOrder, TestContext.Current.CancellationToken);
 
             var headers = await received.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
             Assert.Equal("acme", headers["x-tenant"]);

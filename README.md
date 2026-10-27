@@ -105,7 +105,7 @@ Define custom endpoints that can wrap API calls or integrations with other syste
             		}
         	}
 
-        	public Task SendAsync(ICommand command)
+        	public Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
         	{
             		// call external API
         	}

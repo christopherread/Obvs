@@ -41,24 +41,24 @@ namespace Obvs.Kafka
 
         internal ProducerConfig ProducerConfig => _producerConfig;
 
-        public Task PublishAsync(TMessage message)
+        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
         {
             if (_disposed)
             {
                 throw new InvalidOperationException("Publisher has been disposed already.");
             }
 
-            return Publish(message);
+            return Publish(message, cancellationToken);
         }
 
-        private Task Publish(TMessage message)
+        private Task Publish(TMessage message, CancellationToken cancellationToken)
         {
             var properties = _propertyProvider?.Invoke(message);
 
-            return Publish(message, properties);
+            return Publish(message, properties, cancellationToken);
         }
 
-        private async Task Publish(TMessage message, Dictionary<string, string> properties)
+        private async Task Publish(TMessage message, Dictionary<string, string> properties, CancellationToken cancellationToken)
         {
             if (_disposed)
             {
@@ -70,7 +70,7 @@ namespace Obvs.Kafka
             var wrapperMessage = ToWrapperMessage(message, properties);
             var msg = new Message<Null, WrapperMessage> {Value = wrapperMessage, Headers = GetHeaders(message)};
 
-            await _producer.ProduceAsync(_topic, msg);
+            await _producer.ProduceAsync(_topic, msg, cancellationToken);
         }
 
         private WrapperMessage ToWrapperMessage(TMessage message, Dictionary<string, string> properties)

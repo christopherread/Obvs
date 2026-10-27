@@ -45,7 +45,7 @@ namespace Obvs.ActiveMQ.Tests
             }
 
             var disposed = DisposeOnReceiving();
-            await serviceBus.SendAsync(new TestCommand { Id = 1 });
+            await serviceBus.SendAsync(new TestCommand { Id = 1 }, TestContext.Current.CancellationToken);
 
             await disposed.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         }

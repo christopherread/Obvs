@@ -30,13 +30,13 @@ namespace Obvs.RabbitMQ
             }, LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
-        public async Task PublishAsync(TMessage message)
+        public async Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
         {
             var body = _serializer.Serialize(message);
             var properties = new BasicProperties {ContentType = "bytes", Headers = GetHeaders(message)};
             var routingKey = GetRoutingKey(message);
             var channel = await _channel.Value.ConfigureAwait(false);
-            await channel.BasicPublishAsync(_exchange, routingKey, false, properties, body).ConfigureAwait(false);
+            await channel.BasicPublishAsync(_exchange, routingKey, false, properties, body, cancellationToken).ConfigureAwait(false);
         }
 
         // The message's Obvs headers (such as trace context) as AMQP headers

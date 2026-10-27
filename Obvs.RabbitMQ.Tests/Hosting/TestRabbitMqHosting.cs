@@ -24,11 +24,11 @@ namespace Obvs.RabbitMQ.Tests.Hosting
             var bus = host.Services.GetRequiredService<IServiceBus>();
 
             var command = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             Assert.Equal("o-1", (await command.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
 
             var placed = bus.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
-            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             Assert.Equal("o-1", (await placed.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
         }
 
@@ -63,7 +63,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
 
             var receivedByA = busA.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
             var receivedByB = busB.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await receivedByA.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
             Assert.Equal("o-1", (await receivedByB.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
@@ -85,7 +85,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
                 disposed.SetResult(true);
             });
 
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.True(await disposed.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken));
         }

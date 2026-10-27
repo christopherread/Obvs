@@ -1,6 +1,7 @@
 using System;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
+using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
 using Microsoft.Extensions.DependencyInjection;
@@ -314,6 +315,32 @@ namespace Obvs.Tests.Hosting
             Assert.NotNull(validatedWith);
         }
 
+        [Fact]
+        public async Task ShouldPassTheTokenThroughToTheTransport()
+        {
+            var endpoint = A.Fake<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            var endpointClient = A.Fake<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            A.CallTo(() => endpoint.CanHandle(A<IMessage>._)).Returns(true);
+            A.CallTo(() => endpointClient.CanHandle(A<IMessage>._)).Returns(true);
+            var provider = A.Fake<IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            A.CallTo(() => provider.CreateEndpoint()).Returns(endpoint);
+            A.CallTo(() => provider.CreateEndpointClient()).Returns(endpointClient);
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => provider))));
+            await host.StartAsync(TestContext.Current.CancellationToken);
+            var bus = host.Services.GetRequiredService<IServiceBus>();
+            var command = new PlaceOrder { OrderId = "o-1" };
+            var ev = new OrderPlaced { OrderId = "o-1" };
+            using var cancellation = new CancellationTokenSource();
+            var token = cancellation.Token;
+
+            await bus.SendAsync(command, token);
+            await bus.PublishAsync(ev, token);
+
+            A.CallTo(() => endpointClient.SendAsync(command, token)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => endpoint.PublishAsync(ev, token)).MustHaveHappenedOnceExactly();
+        }
+
         private static IHost BuildHost(Action<IServiceCollection> configure)
         {
             var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
@@ -326,6 +353,11 @@ namespace Obvs.Tests.Hosting
         public interface IShippingMessage : IMessage { }
 
         public class PlaceOrder : IOrderMessage, ICommand
+        {
+            public string OrderId { get; set; }
+        }
+
+        public class OrderPlaced : IOrderMessage, IEvent
         {
             public string OrderId { get; set; }
         }

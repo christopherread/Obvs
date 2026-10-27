@@ -30,7 +30,7 @@ namespace Obvs.NetMQ.Tests
                 return source.Messages.Subscribe(received.Enqueue);
             }, TestContext.Current.CancellationToken);
 
-            await publisher.PublishAsync(new SlowJoinerMessage { Id = 1 });
+            await publisher.PublishAsync(new SlowJoinerMessage { Id = 1 }, TestContext.Current.CancellationToken);
 
             using (await subscribeLate)
             {

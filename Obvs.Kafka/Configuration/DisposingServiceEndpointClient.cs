@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Obvs.Kafka.Configuration
@@ -35,9 +36,9 @@ namespace Obvs.Kafka.Configuration
             get { return _endpointClient.Name; }
         }
 
-        public Task SendAsync(TCommand command)
+        public Task SendAsync(TCommand command, CancellationToken cancellationToken = default)
         {
-            return _endpointClient.SendAsync(command);
+            return _endpointClient.SendAsync(command, cancellationToken);
         }
 
         public IObservable<TResponse> GetResponses(TRequest request)

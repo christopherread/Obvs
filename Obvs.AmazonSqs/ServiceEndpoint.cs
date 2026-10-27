@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SimpleNotificationService;
 using Amazon.SQS;
@@ -32,9 +33,9 @@ namespace Obvs.AmazonSqs
 
         public bool CanHandle(IMessage message) => _endpoint.CanHandle(message);
 
-        public Task PublishAsync(IEvent ev) => _endpoint.PublishAsync(ev);
+        public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default) => _endpoint.PublishAsync(ev, cancellationToken);
 
-        public Task ReplyAsync(IRequest request, IResponse response)
+        public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default)
         {
             if (!ReplyAddresses.TryGet(request, out var replyTo))
             {
@@ -42,7 +43,7 @@ namespace Obvs.AmazonSqs
                     $"Request {request.GetType().Name} {request.RequestId} didn't arrive over Amazon SQS with a reply queue, so there's nowhere to send its {response.GetType().Name}.");
             }
 
-            return QueueMessagePublisher<IResponse>.SendAsync(_sqs, replyTo, response, _serializer);
+            return QueueMessagePublisher<IResponse>.SendAsync(_sqs, replyTo, response, _serializer, cancellationToken: cancellationToken);
         }
 
         public void Dispose()

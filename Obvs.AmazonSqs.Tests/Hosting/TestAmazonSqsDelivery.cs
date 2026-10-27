@@ -31,7 +31,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
 
             for (var i = 0; i < 3; i++)
             {
-                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" });
+                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" }, TestContext.Current.CancellationToken);
             }
 
             await WaitUntilAsync(() => running.Current == 3);
@@ -48,7 +48,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
 
             for (var i = 0; i < 3; i++)
             {
-                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" });
+                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" }, TestContext.Current.CancellationToken);
             }
 
             await WaitUntilAsync(() => running.Current == 1);
@@ -93,7 +93,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                     options.MaxConcurrentCalls = 2;
                 });
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await WaitUntilAsync(() => Volatile.Read(ref attempts) == 1);
             await Task.Delay(TimeSpan.FromSeconds(9), Ct);
@@ -121,7 +121,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                     options.MaxConcurrentCalls = 2;
                 });
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await WaitUntilAsync(() => Volatile.Read(ref attempts) >= 2);
         }

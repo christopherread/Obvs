@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Types;
 
@@ -62,16 +63,16 @@ namespace Obvs.Logging
             get { return _endpoint.Commands.Do(LogCommandReceived, LogCommandsException, LogCommandsCompleted); }
         }
 
-        public Task PublishAsync(TEvent ev)
+        public Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default)
         {
             LogPublishEvent(ev);
-            return _endpoint.PublishAsync(ev);
+            return _endpoint.PublishAsync(ev, cancellationToken);
         }
 
-        public Task ReplyAsync(TRequest request, TResponse response)
+        public Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default)
         {
             LogReplyRequest(request, response);
-            return _endpoint.ReplyAsync(request, response);
+            return _endpoint.ReplyAsync(request, response, cancellationToken);
         }
         
         public void Dispose()

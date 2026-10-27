@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Obvs.Hosting;
@@ -23,11 +24,11 @@ namespace Obvs.AzureSB
             _replyTo = replyTo;
         }
 
-        public Task PublishAsync(TMessage message)
+        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
         {
             var serviceBusMessage = ToServiceBusMessage(message, _serializer);
             serviceBusMessage.ReplyTo = _replyTo;
-            return _sender.SendMessageAsync(serviceBusMessage);
+            return _sender.SendMessageAsync(serviceBusMessage, cancellationToken);
         }
 
         // The type name tells the receiver which deserializer to use. Obvs headers (such as trace context) become

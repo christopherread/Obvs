@@ -1,5 +1,6 @@
 using System;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Obvs.Types;
@@ -28,14 +29,14 @@ namespace Obvs.Hosting
 
         public IObservable<ICommand> Commands { get; }
 
-        public Task PublishAsync(IEvent ev)
+        public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default)
         {
-            return Telemetry.SendAsync("publish", _serviceName, ev, _logger, () => _inner.PublishAsync(ev));
+            return Telemetry.SendAsync("publish", _serviceName, ev, _logger, () => _inner.PublishAsync(ev, cancellationToken));
         }
 
-        public Task ReplyAsync(IRequest request, IResponse response)
+        public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default)
         {
-            return Telemetry.SendAsync("reply", _serviceName, response, _logger, () => _inner.ReplyAsync(request, response));
+            return Telemetry.SendAsync("reply", _serviceName, response, _logger, () => _inner.ReplyAsync(request, response, cancellationToken));
         }
 
         public bool CanHandle(IMessage message) => _inner.CanHandle(message);
@@ -61,9 +62,9 @@ namespace Obvs.Hosting
 
         public IObservable<IEvent> Events { get; }
 
-        public Task SendAsync(ICommand command)
+        public Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
         {
-            return Telemetry.SendAsync("send", _serviceName, command, _logger, () => _inner.SendAsync(command));
+            return Telemetry.SendAsync("send", _serviceName, command, _logger, () => _inner.SendAsync(command, cancellationToken));
         }
 
         // The inner endpoint sends the request when subscribed to, so the span covers the subscription. Responses

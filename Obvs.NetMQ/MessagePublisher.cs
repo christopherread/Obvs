@@ -79,8 +79,9 @@ namespace Obvs.NetMQ
             socket.SendToTopic(_topic, message.GetType().Name, _serializer.Serialize(message));
         }
 
-        public Task PublishAsync(TMessage message)
+        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             Publish(message);
             return Task.FromResult(true);
         }

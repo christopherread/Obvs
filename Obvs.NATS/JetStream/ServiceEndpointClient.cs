@@ -35,7 +35,7 @@ namespace Obvs.NATS.JetStream
 
         public bool CanHandle(IMessage message) => _endpointClient.CanHandle(message);
 
-        public Task SendAsync(ICommand command) => _endpointClient.SendAsync(command);
+        public Task SendAsync(ICommand command, CancellationToken cancellationToken = default) => _endpointClient.SendAsync(command, cancellationToken);
 
         public IObservable<IResponse> GetResponses(IRequest request) => _endpointClient.GetResponses(request);
 

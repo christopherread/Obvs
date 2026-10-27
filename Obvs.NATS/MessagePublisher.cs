@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using NATS.Client.Core;
 using Obvs.Serialization;
@@ -25,7 +26,7 @@ namespace Obvs.NATS
             _properties = properties ?? (message => null);
         }
 
-        public async Task PublishAsync(TMessage message)
+        public async Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
         {
             byte[] body;
             using (var stream = new MemoryStream())
@@ -40,7 +41,7 @@ namespace Obvs.NATS
             using (var stream = new MemoryStream())
             {
                 ProtoBuf.Serializer.Serialize(stream, wrapper);
-                await _connection.PublishAsync(subject, stream.ToArray(), GetHeaders(message)).ConfigureAwait(false);
+                await _connection.PublishAsync(subject, stream.ToArray(), GetHeaders(message), cancellationToken: cancellationToken).ConfigureAwait(false);
             }
         }
 
