@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging;
 using System;
 using Azure.Core;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Obvs.AzureSB
 {
@@ -48,7 +48,9 @@ namespace Obvs.AzureSB
         /// </summary>
         public TimeSpan MaxLockRenewalDuration { get; set; } = TimeSpan.FromMinutes(5);
 
-        // Set by UseAzureServiceBus from the app's logging
+        // Set by UseAzureServiceBus from the app's logging, and the service's name, for metrics
         internal ILogger Logger { get; set; } = NullLogger.Instance;
+
+        internal string ServiceName { get; set; }
     }
 }

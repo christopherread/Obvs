@@ -107,22 +107,35 @@ namespace Obvs.Hosting
             activity.AddException(exception);
         }
 
-        public static void RecordSent(string operation, string serviceName, Type messageType)
+        public static void RecordSent(string operation, string serviceName, Type messageType, Exception failure = null)
         {
-            SentMessages.Add(1,
-                new KeyValuePair<string, object>("messaging.system", System),
-                new KeyValuePair<string, object>("messaging.operation.name", operation),
-                new KeyValuePair<string, object>("messaging.destination.name", serviceName),
-                new KeyValuePair<string, object>("obvs.message.type", messageType.Name));
+            SentMessages.Add(1, Tags(operation, serviceName, messageType.Name, failure));
         }
 
         public static void RecordReceived(string serviceName, Type messageType)
         {
-            ReceivedMessages.Add(1,
-                new KeyValuePair<string, object>("messaging.system", System),
-                new KeyValuePair<string, object>("messaging.operation.name", "receive"),
-                new KeyValuePair<string, object>("messaging.destination.name", serviceName),
-                new KeyValuePair<string, object>("obvs.message.type", messageType.Name));
+            ReceivedMessages.Add(1, Tags("receive", serviceName, messageType.Name, null));
+        }
+
+        public static void RecordReceived(string serviceName, string messageTypeName, Exception failure)
+        {
+            ReceivedMessages.Add(1, Tags("receive", serviceName, messageTypeName, failure));
+        }
+
+        private static TagList Tags(string operation, string serviceName, string messageTypeName, Exception failure)
+        {
+            var tags = new TagList
+            {
+                { "messaging.system", System },
+                { "messaging.operation.name", operation },
+                { "messaging.destination.name", serviceName },
+                { "obvs.message.type", messageTypeName },
+            };
+            if (failure != null)
+            {
+                tags.Add("error.type", failure.GetType().FullName);
+            }
+            return tags;
         }
 
         public static void RecordProcessed(string serviceName, Type messageType, long startTimestamp, Exception failure)

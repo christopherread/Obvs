@@ -16,10 +16,12 @@ namespace Obvs.Hosting
         /// The <c>Meter</c> for metrics, each tagged with <c>messaging.system</c> (<c>obvs</c>), <c>messaging.operation.name</c>,
         /// <c>messaging.destination.name</c> (the service) and <c>obvs.message.type</c>:
         /// <list type="bullet">
-        /// <item><description><c>messaging.client.sent.messages</c>: messages sent, published, requested or replied, with the operation's name.</description></item>
-        /// <item><description><c>messaging.client.consumed.messages</c>: commands, events and requests received (operation <c>receive</c>), counted
-        /// once each as they arrive, whether or not a handler takes them. Responses aren't counted, and nor are messages a transport
-        /// couldn't deserialize.</description></item>
+        /// <item><description><c>messaging.client.sent.messages</c>: messages sent, published, requested or replied, with the operation's name,
+        /// counted once the attempt is over, with <c>error.type</c> if it failed.</description></item>
+        /// <item><description><c>messaging.client.consumed.messages</c>: messages received (operation <c>receive</c>), counted once each as
+        /// they arrive, whether or not a handler takes them: commands, events and requests, and each response by the request it answers.
+        /// Messages a transport couldn't deserialize are counted with <c>error.type</c>, by the transports that report them through
+        /// <see cref="ObvsTransportTelemetry"/>: Azure Service Bus, Amazon SQS and NATS JetStream.</description></item>
         /// <item><description><c>messaging.process.duration</c>: how long each handler run took, in seconds (operation <c>process</c>), with
         /// <c>error.type</c> (the exception's full type name) when the handler threw.</description></item>
         /// <item><description><c>obvs.process.failed.messages</c>: messages whose handler threw (operation <c>process</c>), with <c>error.type</c>.

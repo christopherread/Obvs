@@ -54,6 +54,77 @@ namespace Obvs.AmazonSqs.Tests
             Assert.Empty(errors);
         }
 
+        [Fact]
+        public async Task ShouldCountAMessageItCantDeserialize()
+        {
+            var counted = new ConcurrentQueue<(string Type, object ErrorType)>();
+            var serviceName = "orders-" + Guid.NewGuid().ToString("N");
+            using var listener = ConsumedMessagesListener(serviceName, counted);
+            var encoded = MessageCodec.Encode(new PlaceOrder { OrderId = "o-1" }, new NotJsonSerializer());
+            var corrupt = new Message
+            {
+                Body = encoded.Body,
+                ReceiptHandle = "receipt-1",
+                MessageAttributes = encoded.Attributes.ToDictionary(a => a.Key, a => new MessageAttributeValue { DataType = "String", StringValue = a.Value }),
+            };
+            var sqs = A.Fake<IAmazonSQS>();
+            var receives = 0;
+            A.CallTo(() => sqs.ReceiveMessageAsync(A<ReceiveMessageRequest>._, A<CancellationToken>._))
+                .ReturnsLazily(() => Task.FromResult(new ReceiveMessageResponse
+                {
+                    Messages = Interlocked.Increment(ref receives) == 1 ? new List<Message> { corrupt } : new List<Message>(),
+                }));
+            var source = new MessageSource<ICommand>(sqs, QueueUrl, null, new IMessageDeserializer<ICommand>[] { new JsonMessageDeserializer<PlaceOrder>() },
+                new AmazonSqsOptions { ServiceName = serviceName });
+
+            using (source.Messages.Subscribe(_ => { }, _ => { }))
+            {
+                await WaitUntilAsync(() => counted.Count > 0);
+            }
+
+            var (type, errorType) = Assert.Single(counted);
+            Assert.Equal(nameof(PlaceOrder), type);
+            Assert.NotNull(errorType);
+        }
+
+        // Writes something JSON deserializers can't read
+        private sealed class NotJsonSerializer : IMessageSerializer
+        {
+            public void Serialize(System.IO.Stream stream, object message)
+            {
+                var bytes = System.Text.Encoding.UTF8.GetBytes("not json");
+                stream.Write(bytes, 0, bytes.Length);
+            }
+        }
+
+        private static System.Diagnostics.Metrics.MeterListener ConsumedMessagesListener(string serviceName, ConcurrentQueue<(string Type, object ErrorType)> counted)
+        {
+            var listener = new System.Diagnostics.Metrics.MeterListener
+            {
+                InstrumentPublished = (instrument, l) =>
+                {
+                    if (instrument.Meter.Name == Obvs.Hosting.ObvsTelemetry.MeterName && instrument.Name == "messaging.client.consumed.messages")
+                    {
+                        l.EnableMeasurementEvents(instrument);
+                    }
+                },
+            };
+            listener.SetMeasurementEventCallback<long>((instrument, value, tags, state) =>
+            {
+                var tagged = new Dictionary<string, object>();
+                foreach (var tag in tags)
+                {
+                    tagged[tag.Key] = tag.Value;
+                }
+                if ((string)tagged["messaging.destination.name"] == serviceName)
+                {
+                    counted.Enqueue(((string)tagged["obvs.message.type"], tagged.TryGetValue("error.type", out var errorType) ? errorType : null));
+                }
+            });
+            listener.Start();
+            return listener;
+        }
+
         private static async Task WaitUntilAsync(Func<bool> condition)
         {
             var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);

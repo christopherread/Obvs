@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +6,7 @@ using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Obvs.AmazonSqs;
 using Obvs.Configuration;
@@ -183,6 +183,7 @@ namespace Obvs.Hosting
             {
                 options.Logger = logger;
             }
+            options.ServiceName = service.Name;
             var providerType = typeof(AmazonSqsEndpointProvider<>).MakeGenericType(service.ServiceMessageType);
             try
             {

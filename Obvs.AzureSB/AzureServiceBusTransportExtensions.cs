@@ -1,10 +1,10 @@
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Obvs.AzureSB;
 using Obvs.Configuration;
@@ -130,6 +130,7 @@ namespace Obvs.Hosting
             {
                 options.Logger = logger;
             }
+            options.ServiceName = service.Name;
             var admin = administrationFactory?.Create(options) ?? new ServiceBusAdministration(options);
             var providerType = typeof(AzureServiceBusEndpointProvider<>).MakeGenericType(service.ServiceMessageType);
             try

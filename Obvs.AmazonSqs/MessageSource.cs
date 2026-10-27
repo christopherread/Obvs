@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,6 +12,8 @@ using System.Threading.Tasks;
 using Amazon.Runtime;
 using Amazon.SQS;
 using Amazon.SQS.Model;
+using Microsoft.Extensions.Logging;
+using Obvs.Hosting;
 using Obvs.Serialization;
 
 namespace Obvs.AmazonSqs
@@ -105,7 +106,16 @@ namespace Obvs.AmazonSqs
                 return null;
             }
 
-            var message = deserializer.Deserialize(new MemoryStream(decoded.Body));
+            TMessage message;
+            try
+            {
+                message = deserializer.Deserialize(new MemoryStream(decoded.Body));
+            }
+            catch (Exception exception)
+            {
+                ObvsTransportTelemetry.RecordUndeserializable(_options.ServiceName, decoded.TypeName, exception);
+                throw;
+            }
             if (decoded.Headers.Count > 0)
             {
                 ObvsMessageHeaders.Set(message, decoded.Headers);
