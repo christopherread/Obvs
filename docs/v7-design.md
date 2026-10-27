@@ -179,7 +179,7 @@ Agents reproduce common patterns well and rare ones badly, and there is far more
   Handlers   │ HandleCommand<T>(async (cmd, ctx, ct) =>)│  react to a message
              ├──────────────────────────────────────────┤
   Await      │ RequestAsync<TReq, TResp>(..., ct)       │  ask, get one answer
-             │ Events<T>(ct) → IAsyncEnumerable<T>      │  pull at your own pace
+             │ ReadEventsAsync<T>(ct) → IAsyncEnumerable│  pull at your own pace
              ├──────────────────────────────────────────┤
   Rx (core)  │ IObservable<T> Commands / Events / ...   │  reason about streams
              └──────────────────────────────────────────┘
@@ -205,7 +205,7 @@ public sealed class PlaceOrderHandler(IOrderRepository orders) : ICommandHandler
 Quote quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
 
 // Pull-based consumption with backpressure
-await foreach (var placed in client.Events<OrderPlaced>(ct)) { ... }
+await foreach (var placed in client.ReadEventsAsync<OrderPlaced>(ct)) { ... }
 ```
 
 The upper layers are thin adapters over the observable core, so Rx still does the plumbing. Roughly:
@@ -220,7 +220,8 @@ Commands.OfType<T>()
 // RequestAsync
 GetResponses(request).OfType<TResp>().Take(1).Timeout(timeout).ToTask(ct);
 
-// Events<T>(ct): the observable feeds a bounded Channel<T>, read out as IAsyncEnumerable<T>
+// ReadEventsAsync<T>(ct): the observable feeds a bounded Channel<T>, read out as IAsyncEnumerable<T>. A reader that falls
+// further behind than the channel holds gets an exception, rather than holding up the bus's other subscribers.
 ```
 
 The streams remain first class for what Rx is uniquely good at:
