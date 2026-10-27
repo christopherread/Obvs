@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO.Compression;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Obvs.Configuration;
 using Obvs.Serialization;
+using Obvs.Serialization.Compression;
 using Obvs.Serialization.SystemTextJson;
 using Obvs.Types;
 
@@ -21,7 +23,10 @@ namespace Obvs.Hosting
         private readonly List<Func<IServiceProvider, IEnumerable<string>>> _validators = new List<Func<IServiceProvider, IEnumerable<string>>>();
         private readonly List<HandlerRegistration> _handlers = new List<HandlerRegistration>();
         private readonly List<Type> _messages = new List<Type>();
+        private IMessageSerializer _serializer = new SystemTextJsonMessageSerializer();
         private IMessageDeserializerFactory _deserializerFactory = new SystemTextJsonMessageDeserializerFactory();
+        private CompressionLevel? _compression;
+        private long _maxDecompressedBytes;
 
         internal ObvsServiceBuilder(string name, Type serviceMessageType, IServiceCollection services, ObvsBuilder bus)
         {
@@ -46,22 +51,48 @@ namespace Obvs.Hosting
         /// </summary>
         public string InstanceId => _bus.InstanceId;
 
-        /// <summary>The serializer set with <see cref="SerializedWith"/>, or System.Text.Json by default.</summary>
-        public IMessageSerializer Serializer { get; private set; } = new SystemTextJsonMessageSerializer();
+        /// <summary>The serializer set with <see cref="SerializedWith"/>, or System.Text.Json by default, gzipped if <see cref="Compressed"/>.</summary>
+        public IMessageSerializer Serializer => _compression == null ? _serializer : new GzipMessageSerializer(_serializer, _compression.Value);
 
         /// <summary>
         /// The deserializer factory set with <see cref="SerializedWith"/>, or System.Text.Json by default. If the service registers its messages
         /// with <see cref="AddMessages"/>, it creates deserializers for those types only.
         /// </summary>
-        public IMessageDeserializerFactory DeserializerFactory => _deserializerFactory == null || _messages.Count == 0
-            ? _deserializerFactory
-            : new RegisteredMessageDeserializerFactory(_deserializerFactory, _messages);
+        public IMessageDeserializerFactory DeserializerFactory
+        {
+            get
+            {
+                var factory = _compression == null
+                    ? _deserializerFactory
+                    : new GzipMessageDeserializerFactory(_deserializerFactory, _maxDecompressedBytes, Name);
+                return _messages.Count == 0 ? factory : new RegisteredMessageDeserializerFactory(factory, _messages);
+            }
+        }
 
         /// <summary>Serializes the service's messages with <paramref name="serializer"/> and <paramref name="deserializerFactory"/>.</summary>
         public ObvsServiceBuilder SerializedWith(IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory)
         {
-            Serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+            _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _deserializerFactory = deserializerFactory ?? throw new ArgumentNullException(nameof(deserializerFactory));
+            return this;
+        }
+
+        /// <summary>The largest a compressed message may decompress to, unless <see cref="Compressed"/> says otherwise: 16 MB.</summary>
+        public const long DefaultMaxDecompressedBytes = 16 * 1024 * 1024;
+
+        /// <summary>
+        /// Gzips the service's messages, whichever serializer it uses. A message that decompresses to more than
+        /// <paramref name="maxDecompressedBytes"/> isn't read. Compressed JSON from Obvs.Serialization.Json is the same as
+        /// v6's GzippedJson serializers write and read. Every app that uses the service must compress its messages.
+        /// </summary>
+        public ObvsServiceBuilder Compressed(CompressionLevel level = CompressionLevel.Fastest, long maxDecompressedBytes = DefaultMaxDecompressedBytes)
+        {
+            if (maxDecompressedBytes < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxDecompressedBytes), maxDecompressedBytes, "The limit must be at least 1 byte.");
+            }
+            _compression = level;
+            _maxDecompressedBytes = maxDecompressedBytes;
             return this;
         }
 

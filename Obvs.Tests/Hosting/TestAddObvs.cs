@@ -338,6 +338,25 @@ namespace Obvs.Tests.Hosting
         }
 
         [Fact]
+        public void ShouldCompressWhicheverSerializerTheServiceUses()
+        {
+            ObvsServiceBuilder byDefault = null;
+            ObvsServiceBuilder serializedAfter = null;
+            var serializer = A.Fake<IMessageSerializer>();
+            var deserializerFactory = A.Fake<IMessageDeserializerFactory>();
+            BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => byDefault = service.Compressed())
+                .AddService<IShippingMessage>("shipping", service => serializedAfter = service
+                    .Compressed(System.IO.Compression.CompressionLevel.Optimal)
+                    .SerializedWith(serializer, deserializerFactory))));
+
+            Assert.IsType<Obvs.Serialization.Compression.GzipMessageSerializer>(byDefault.Serializer);
+            Assert.IsType<Obvs.Serialization.Compression.GzipMessageDeserializerFactory>(byDefault.DeserializerFactory);
+            var compressed = Assert.IsType<Obvs.Serialization.Compression.GzipMessageSerializer>(serializedAfter.Serializer);
+            Assert.Same(serializer, compressed.Inner);
+        }
+
+        [Fact]
         public async Task ShouldPassTheTokenThroughToTheTransport()
         {
             var endpoint = A.Fake<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
