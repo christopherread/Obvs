@@ -47,8 +47,8 @@ namespace Obvs.NATS.JetStream
             var connection = Connect();
             var jetStream = new NatsJSContext(connection);
             var endpoint = new ServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>(
-                new MessageSource<IRequest>(jetStream, _topology.Requests, _serviceName, Deserializers<IRequest>(), _options),
-                new MessageSource<ICommand>(jetStream, _topology.Commands, _serviceName, Deserializers<ICommand>(), _options),
+                new MessageSource<IRequest>(jetStream, _topology, _topology.Requests, _serviceName, Deserializers<IRequest>(), _options),
+                new MessageSource<ICommand>(jetStream, _topology, _topology.Commands, _serviceName, Deserializers<ICommand>(), _options),
                 new MessagePublisher<IEvent>(jetStream, _topology.Events.SubjectPrefix, _serializer),
                 new DefaultMessagePublisher<IResponse>(), // Responses go to each request's reply subject instead
                 typeof(TServiceMessage));
@@ -60,8 +60,8 @@ namespace Obvs.NATS.JetStream
             var connection = Connect();
             var jetStream = new NatsJSContext(connection);
             var endpointClient = new ServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>(
-                new MessageSource<IEvent>(jetStream, _topology.Events, _serviceName, Deserializers<IEvent>(), _options),
-                new MessageSource<IResponse>(jetStream, _topology.Responses, _serviceName, Deserializers<IResponse>(), _options),
+                new MessageSource<IEvent>(jetStream, _topology, _topology.Events, _serviceName, Deserializers<IEvent>(), _options),
+                new MessageSource<IResponse>(jetStream, _topology, _topology.Responses, _serviceName, Deserializers<IResponse>(), _options),
                 new MessagePublisher<IRequest>(jetStream, _topology.Requests.SubjectPrefix, _serializer, _topology.Responses.SubjectPrefix),
                 new MessagePublisher<ICommand>(jetStream, _topology.Commands.SubjectPrefix, _serializer),
                 typeof(TServiceMessage));

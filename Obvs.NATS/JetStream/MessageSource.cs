@@ -3,11 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NATS.Client.Core;
 using NATS.Client.JetStream;
 using Obvs.Serialization;
 
@@ -19,44 +21,136 @@ namespace Obvs.NATS.JetStream
         // How long Dispose waits for messages being delivered to finish settling
         private static readonly TimeSpan StopTimeout = TimeSpan.FromSeconds(10);
 
+        // How long a receive loop waits before trying again after an error, doubling each time in a row up to the last
+        private static readonly TimeSpan FirstRetryDelay = TimeSpan.FromMilliseconds(250);
+        private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromSeconds(5);
+
+        // JetStream's error codes for a consumer that doesn't exist, and for a server or account without JetStream
+        private const int ConsumerNotFound = 10014;
+        private const int JetStreamNotEnabledForAccount = 10039;
+        private const int JetStreamNotEnabled = 10076;
+
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly INatsJSContext _jetStream;
+        private readonly JetStreamTopology _topology;
         private readonly JetStreamTopology.Destination _destination;
         private readonly string _serviceName;
         private readonly NatsJetStreamOptions _options;
         private readonly ConcurrentDictionary<Receiver, bool> _receivers = new ConcurrentDictionary<Receiver, bool>();
+        private readonly object _gate = new object();
+        private IObservable<TMessage> _shared;
+        private TimeSpan _retryDelay;
 
-        public MessageSource(INatsJSContext jetStream, JetStreamTopology.Destination destination, string serviceName,
+        public MessageSource(INatsJSContext jetStream, JetStreamTopology topology, JetStreamTopology.Destination destination, string serviceName,
             IEnumerable<IMessageDeserializer<TMessage>> deserializers, NatsJetStreamOptions options)
         {
             _jetStream = jetStream;
+            _topology = topology;
             _destination = destination;
             _serviceName = serviceName;
             _options = options;
             _deserializers = deserializers.ToDictionary(deserializer => deserializer.GetTypeName());
 
-            Messages = Observable.Create<TMessage>(observer =>
-                {
-                    var receiver = new Receiver(this, observer);
-                    _receivers[receiver] = true;
-                    return Disposable.Create(() =>
-                    {
-                        _receivers.TryRemove(receiver, out _);
-                        receiver.Stop();
-                    });
-                })
-                // Hand messages to subscribers on the task pool, in order. Subscriber code running on the receive loop
-                // could otherwise deadlock it, for example by disposing the bus, which waits for that loop. With
-                // MaxConcurrentMessages above 1, messages arrive at the same time, but observers take one at a time.
-                .Synchronize()
-                .ObserveOn(TaskPoolScheduler.Default)
-                // One receive loop per consumer, however many subscribe, such as each pending request waiting for its
-                // response: loops of their own would take each other's messages
-                .Publish()
-                .RefCount();
+            Messages = Observable.Defer(Shared);
         }
 
         public IObservable<TMessage> Messages { get; }
+
+        // One receive loop per consumer, however many subscribe, such as each pending request waiting for its response:
+        // loops of their own would take each other's messages. A loop that ended with an error isn't shared any more, as
+        // a bus subscribes again as soon as a source reports one, and that starts a new loop.
+        private IObservable<TMessage> Shared()
+        {
+            lock (_gate)
+            {
+                if (_shared != null)
+                {
+                    return _shared;
+                }
+
+                IObservable<TMessage> shared = null;
+                shared = Observable.Create<TMessage>(observer =>
+                    {
+                        var receiver = new Receiver(this, observer);
+                        _receivers[receiver] = true;
+                        return Disposable.Create(() =>
+                        {
+                            _receivers.TryRemove(receiver, out _);
+                            receiver.Stop();
+                        });
+                    })
+                    // Hand messages to subscribers on the task pool, in order. Subscriber code running on the receive loop
+                    // could otherwise deadlock it, for example by disposing the bus, which waits for that loop. With
+                    // MaxConcurrentMessages above 1, messages arrive at the same time, but observers take one at a time.
+                    .Synchronize()
+                    .ObserveOn(TaskPoolScheduler.Default)
+                    .Do(_ => { }, _ => Forget(shared), () => Forget(shared))
+                    .Publish()
+                    .RefCount();
+                return _shared = shared;
+            }
+        }
+
+        private void Forget(IObservable<TMessage> shared)
+        {
+            lock (_gate)
+            {
+                if (_shared == shared)
+                {
+                    _shared = null;
+                }
+            }
+        }
+
+        // Shared by the source's loops, so a bus subscribing again after an error waits as long as the loop would have
+        private TimeSpan RetryDelay
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return _retryDelay;
+                }
+            }
+        }
+
+        private TimeSpan NextRetryDelay()
+        {
+            lock (_gate)
+            {
+                var doubled = TimeSpan.FromTicks(_retryDelay.Ticks * 2);
+                return _retryDelay = _retryDelay == TimeSpan.Zero ? FirstRetryDelay : doubled < MaxRetryDelay ? doubled : MaxRetryDelay;
+            }
+        }
+
+        private void ResetRetryDelay()
+        {
+            lock (_gate)
+            {
+                _retryDelay = TimeSpan.Zero;
+            }
+        }
+
+        // Errors that can pass, such as a lost connection, which the client re-establishes by itself, or a cluster electing
+        // a leader. Ones that won't, such as a deleted stream, or a server without JetStream, end the loop.
+        private static bool IsTransient(Exception exception)
+        {
+            switch (exception)
+            {
+                case NatsJSApiException apiException:
+                    return apiException.Error.Code >= 500
+                        && apiException.Error.ErrCode != JetStreamNotEnabled
+                        && apiException.Error.ErrCode != JetStreamNotEnabledForAccount;
+                case NatsException _:
+                case TimeoutException _:
+                case OperationCanceledException _:
+                case IOException _:
+                case SocketException _:
+                    return true;
+                default:
+                    return false;
+            }
+        }
 
         // Messages of a type this service doesn't know are skipped
         private TMessage Deserialize(INatsJSMsg<byte[]> received)
@@ -146,25 +240,43 @@ namespace Obvs.NATS.JetStream
                 }
             }
 
+            // The client reconnects by itself, and sends a pull it was waiting on again, so a lost connection only holds the
+            // loop up. Messages it had taken but not settled are delivered again once their AckWait runs out.
             private async Task ReceiveAsync()
             {
                 var token = _cancellation.Token;
                 try
                 {
-                    var consumer = await _source._jetStream.GetConsumerAsync(_source._destination.Stream, _source._destination.Consumer, token).ConfigureAwait(false);
+                    var retryDelay = _source.RetryDelay;
+                    if (retryDelay > TimeSpan.Zero)
+                    {
+                        await Task.Delay(retryDelay, token).ConfigureAwait(false);
+                    }
+
+                    INatsJSConsumer consumer = null;
                     while (!token.IsCancellationRequested)
                     {
                         await _slots.WaitAsync(token).ConfigureAwait(false);
                         INatsJSMsg<byte[]> received;
                         try
                         {
-                            received = await consumer.NextAsync<byte[]>(cancellationToken: token).ConfigureAwait(false);
+                            consumer = consumer ?? await GetConsumerAsync(token).ConfigureAwait(false);
+                            received = await PullAsync(consumer, token).ConfigureAwait(false);
+                        }
+                        catch (Exception exception) when (!token.IsCancellationRequested && IsTransient(exception))
+                        {
+                            // Fetching the consumer again finds out whether it, or its stream, has gone
+                            _slots.Release();
+                            consumer = null;
+                            await Task.Delay(_source.NextRetryDelay(), token).ConfigureAwait(false);
+                            continue;
                         }
                         catch
                         {
                             _slots.Release();
                             throw;
                         }
+                        _source.ResetRetryDelay();
 
                         if (received == null)
                         {
@@ -188,9 +300,55 @@ namespace Obvs.NATS.JetStream
                 {
                     if (!_stopped)
                     {
+                        _source.NextRetryDelay();
                         _observer.OnError(exception);
                     }
                 }
+            }
+
+            // A bus's own consumer deletes itself when the bus hasn't pulled for a while, as when it couldn't reach the
+            // server, so it's created again. A consumer the service's buses share is only deleted on purpose.
+            private async Task<INatsJSConsumer> GetConsumerAsync(CancellationToken token)
+            {
+                var destination = _source._destination;
+                try
+                {
+                    return await _source._jetStream.GetConsumerAsync(destination.Stream, destination.Consumer, token).ConfigureAwait(false);
+                }
+                catch (NatsJSApiException exception) when (exception.Error.ErrCode == ConsumerNotFound && destination.OwnedByBus)
+                {
+                    return await _source._topology.CreateConsumerAsync(_source._jetStream, destination, token).ConfigureAwait(false);
+                }
+                catch (NatsNoRespondersException exception)
+                {
+                    throw new InvalidOperationException(
+                        $"Service '{_source._serviceName}' uses NATS JetStream, but the server at {_source._options.Url} doesn't have JetStream enabled any more.",
+                        exception);
+                }
+            }
+
+            // A pull nothing answers returns nothing, as one that expires does: the consumer, its stream or JetStream has
+            // gone, so it fails instead
+            private static async Task<INatsJSMsg<byte[]>> PullAsync(INatsJSConsumer consumer, CancellationToken token)
+            {
+                var unanswered = false;
+                var opts = new NatsJSNextOpts
+                {
+                    NotificationHandler = (notification, cancellationToken) =>
+                    {
+                        if (notification is NatsJSNoRespondersNotification)
+                        {
+                            unanswered = true;
+                        }
+                        return Task.CompletedTask;
+                    },
+                };
+                var received = await consumer.NextAsync<byte[]>(opts: opts, cancellationToken: token).ConfigureAwait(false);
+                if (received == null && unanswered)
+                {
+                    throw new NatsNoRespondersException();
+                }
+                return received;
             }
 
             private async Task DeliverAsync(INatsJSMsg<byte[]> received)
