@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -56,6 +57,25 @@ namespace Obvs.AzureSB.Tests.Hosting
             await Task.Delay(TimeSpan.FromSeconds(3), Ct);
             Assert.Equal(1, running.Most);
             running.Finish();
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldReturnTheResponseToEachOfABusesConcurrentRequests()
+        {
+            // Every request in flight listens on the bus's one reply queue
+            var serviceName = _serviceNames.Create("concurrent-requests");
+            using var server = await StartHostAsync(serviceName, options => options.MaxConcurrentCalls = 10,
+                service => service.AsServer().HandleRequest<GetQuote, Quote>(async (request, context, ct) =>
+                {
+                    await Task.Delay(200, ct);
+                    return new Quote { Price = decimal.Parse(request.Sku) };
+                }, handler => handler.MaxConcurrency = 10));
+            using var client = await StartHostAsync(serviceName, options => { }, service => service.AsClient());
+            var bus = client.Services.GetRequiredService<IServiceBusClient>();
+
+            var quotes = await Task.WhenAll(Enumerable.Range(1, 10).Select(i => bus.RequestAsync<GetQuote, Quote>(new GetQuote { Sku = $"{i}" }, Timeout, Ct)));
+
+            Assert.Equal(Enumerable.Range(1, 10).Select(i => (decimal)i), quotes.Select(quote => quote.Price));
         }
 
         [Fact, Trait("Category", "Explicit")]

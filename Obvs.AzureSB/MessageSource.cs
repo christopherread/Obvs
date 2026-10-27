@@ -18,7 +18,7 @@ namespace Obvs.AzureSB
     {
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
 
-        /// <param name="createProcessor">Creates a processor for the queue or subscription, once per subscription to <see cref="Messages"/></param>
+        /// <param name="createProcessor">Creates a processor for the queue or subscription, when <see cref="Messages"/> gets its first subscriber</param>
         /// <param name="options">How many messages to deliver at once, how long to renew their locks, and how many times to deliver a failing one</param>
         public MessageSource(Func<ServiceBusProcessorOptions, ServiceBusProcessor> createProcessor, IEnumerable<IMessageDeserializer<TMessage>> deserializers, AzureServiceBusOptions options)
         {
@@ -100,7 +100,11 @@ namespace Obvs.AzureSB
                 // callback could otherwise deadlock it, for example by disposing the bus, which waits for that callback.
                 // With MaxConcurrentCalls above 1, callbacks deliver at the same time, but observers take one at a time
                 .Synchronize()
-                .ObserveOn(TaskPoolScheduler.Default);
+                .ObserveOn(TaskPoolScheduler.Default)
+                // One processor per queue or subscription, however many subscribe, such as each pending request waiting
+                // for its response: processors of their own would take each other's messages
+                .Publish()
+                .RefCount();
         }
 
         public IObservable<TMessage> Messages { get; }
