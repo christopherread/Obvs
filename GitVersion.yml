@@ -5,3 +5,10 @@ strategies: [Mainline]
 # into v7 would need adding here too.
 ignore:
   sha: [f3fc2388d150a4bfd95d26d713b4d502ec8d6d38]
+branches:
+  # A pull request's merge commit is traced back to master, through every branch merged on the way. When one of
+  # those branches started at the same commit as the pull request's and another branch, such as branches worked on
+  # in parallel and not yet deleted, Mainline throws InvalidOperationException for a branch configuration that
+  # inherits its increment and doesn't say whether it's a main branch. Saying pull requests aren't avoids that.
+  pull-request:
+    is-main-branch: false
