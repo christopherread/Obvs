@@ -41,13 +41,17 @@ namespace Obvs.AmazonSqs
         public IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse> CreateEndpointClient()
         {
             var sqs = AmazonSqsEntities.CreateSqsClient(_options);
+            // With clean-up on, the bus recreates its own queues if another bus deletes them, so receiving waits for them
+            var recreated = _options.CleanUpAbandonedQueues;
             var endpointClient = new ServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>(
-                new MessageSource<IEvent>(sqs, _entities.EventQueueUrl, _entities.DeadLettersUrl, Deserializers<IEvent>(), _options),
-                new MessageSource<IResponse>(sqs, _entities.RepliesUrl, _entities.DeadLettersUrl, Deserializers<IResponse>(), _options),
+                new MessageSource<IEvent>(sqs, _entities.EventQueueUrl, _entities.DeadLettersUrl, Deserializers<IEvent>(), _options, recreated),
+                new MessageSource<IResponse>(sqs, _entities.RepliesUrl, _entities.DeadLettersUrl, Deserializers<IResponse>(), _options, recreated),
                 new QueueMessagePublisher<IRequest>(sqs, _entities.RequestsUrl, _serializer, _entities.RepliesUrl),
                 new QueueMessagePublisher<ICommand>(sqs, _entities.CommandsUrl, _serializer),
                 typeof(TServiceMessage));
-            return new ServiceEndpointClient(sqs, endpointClient, _entities);
+            var housekeeping = _options.CleanUpAbandonedQueues ? new BusHousekeeping(_entities, _options.LastSeenInterval) : null;
+            housekeeping?.Start();
+            return new ServiceEndpointClient(sqs, endpointClient, _entities, housekeeping);
         }
 
         private IEnumerable<IMessageDeserializer<T>> Deserializers<T>() where T : class

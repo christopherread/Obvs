@@ -24,6 +24,9 @@ namespace Obvs.Hosting
         private static readonly TimeSpan MinVisibilityTimeout = TimeSpan.FromSeconds(1);
         private static readonly TimeSpan MaxVisibilityTimeout = TimeSpan.FromHours(12);
 
+        // How many times a bus refreshes when it was last seen, at least, before it counts as abandoned
+        private const int MinRefreshesPerWindow = 3;
+
         /// <summary>
         /// Carries this service's messages over Amazon SQS and SNS, with settings bound from <paramref name="configuration"/>,
         /// for example <c>builder.Configuration.GetSection("Obvs:Orders:AmazonSqs")</c>. Commands and requests go to SQS
@@ -120,6 +123,20 @@ namespace Obvs.Hosting
             {
                 yield return $"Service '{service.Name}' sets Amazon SQS MaxHandlerDuration to {options.MaxHandlerDuration}, but it must be positive. " +
                              "Set it to the longest a handler takes with a message, or leave it unset for 30 seconds.";
+            }
+            if (options.CleanUpAbandonedQueues)
+            {
+                if (options.LastSeenInterval <= TimeSpan.Zero)
+                {
+                    yield return $"Service '{service.Name}' sets Amazon SQS LastSeenInterval to {options.LastSeenInterval}, but it must be positive. " +
+                                 "Leave it unset for 5 minutes, or set CleanUpAbandonedQueues to false to turn clean-up off.";
+                }
+                else if (options.AbandonedAfter.Ticks < options.LastSeenInterval.Ticks * MinRefreshesPerWindow)
+                {
+                    yield return $"Service '{service.Name}' sets Amazon SQS AbandonedAfter to {options.AbandonedAfter}, which must be at least three times " +
+                                 $"LastSeenInterval ({options.LastSeenInterval}), so that a bus missing a refresh or two isn't taken for crashed and has its queues deleted. " +
+                                 "Raise AbandonedAfter, or lower LastSeenInterval.";
+                }
             }
             foreach (var error in ValidateNames(service))
             {

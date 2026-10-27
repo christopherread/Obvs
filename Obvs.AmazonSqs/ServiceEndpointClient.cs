@@ -7,19 +7,24 @@ using Obvs.Types;
 namespace Obvs.AmazonSqs
 {
     // A client of the service: sends commands and requests to the shared queues, and receives events and responses on
-    // this bus's own queues, which it deletes, with its subscription to the service's topic, when disposed
+    // this bus's own queues, which it keeps recording as seen while it runs, and deletes, with its subscription to the
+    // service's topic, when disposed
     internal sealed class ServiceEndpointClient : IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>
     {
         private readonly IAmazonSQS _sqs;
         private readonly IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse> _endpointClient;
         private readonly AmazonSqsEntities _entities;
+        private readonly BusHousekeeping _housekeeping;
         private int _disposed;
 
-        public ServiceEndpointClient(IAmazonSQS sqs, IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse> endpointClient, AmazonSqsEntities entities)
+        /// <param name="housekeeping">Null when clean-up is off</param>
+        public ServiceEndpointClient(IAmazonSQS sqs, IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse> endpointClient, AmazonSqsEntities entities,
+            BusHousekeeping housekeeping)
         {
             _sqs = sqs;
             _endpointClient = endpointClient;
             _entities = entities;
+            _housekeeping = housekeeping;
         }
 
         public IObservable<IEvent> Events => _endpointClient.Events;
@@ -38,6 +43,8 @@ namespace Obvs.AmazonSqs
             {
                 return;
             }
+            // First, so a refresh can't recreate the queues once they're deleted
+            _housekeeping?.Dispose();
             _endpointClient.Dispose();
             _sqs.Dispose();
             _entities.DeleteBusEntitiesAsync().GetAwaiter().GetResult();

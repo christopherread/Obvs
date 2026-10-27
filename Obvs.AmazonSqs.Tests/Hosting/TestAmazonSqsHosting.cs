@@ -272,6 +272,29 @@ namespace Obvs.AmazonSqs.Tests.Hosting
         }
 
         [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldReceiveAgainOnceAQueueDeletedFromUnderTheBusIsBack()
+        {
+            // The bus reports the missing queue and subscribes again, which mustn't replay the error it just reported
+            var serviceName = _serviceNames.Create("queue-deleted");
+            using var host = await StartHostAsync(serviceName, configureOptions: options => options.CleanUpAbandonedQueues = false);
+            var bus = host.Services.GetRequiredService<IServiceBus>();
+            var command = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
+            using var sqs = TestBroker.CreateSqsClient();
+            var commandsAttributes = await TestBroker.QueueAttributesAsync($"{serviceName}-commands", Ct);
+
+            await sqs.DeleteQueueAsync(await TestBroker.QueueUrlAsync($"{serviceName}-commands", Ct), Ct);
+            await Task.Delay(TimeSpan.FromSeconds(3), Ct);
+            await sqs.CreateQueueAsync(new CreateQueueRequest
+            {
+                QueueName = $"{serviceName}-commands",
+                Attributes = new Dictionary<string, string> { ["RedrivePolicy"] = commandsAttributes["RedrivePolicy"] },
+            }, Ct);
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+
+            Assert.Equal("o-1", (await command.WaitAsync(Timeout, Ct)).OrderId);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
         public async Task ShouldContinueTheSendersTraceAcrossAmazonSqs()
         {
             var serviceName = _serviceNames.Create("tracing");
@@ -383,7 +406,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             return host;
         }
 
-        private static async Task<string> TopicArnAsync(string topicName)
+        internal static async Task<string> TopicArnAsync(string topicName)
         {
             using var sns = TestBroker.CreateSnsClient();
             string nextToken = null;
@@ -401,13 +424,13 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             return null;
         }
 
-        private static async Task<List<Subscription>> SubscriptionsAsync(string topicArn)
+        internal static async Task<List<Subscription>> SubscriptionsAsync(string topicArn)
         {
             using var sns = TestBroker.CreateSnsClient();
             return (await sns.ListSubscriptionsByTopicAsync(topicArn, Ct)).Subscriptions ?? new List<Subscription>();
         }
 
-        private static async Task<T> WaitForAsync<T>(Func<T> find) where T : class
+        internal static async Task<T> WaitForAsync<T>(Func<T> find) where T : class
         {
             var deadline = DateTime.UtcNow + Timeout;
             T found;

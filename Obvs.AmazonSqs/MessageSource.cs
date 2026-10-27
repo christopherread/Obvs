@@ -25,21 +25,43 @@ namespace Obvs.AmazonSqs
         private readonly AmazonSqsOptions _options;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly ConcurrentDictionary<ReceiveLoop, bool> _loops = new ConcurrentDictionary<ReceiveLoop, bool>();
+        private readonly bool _queueRecreatedIfMissing;
+        private readonly object _sharedLock = new object();
+        private IObservable<TMessage> _shared;
 
         /// <param name="sqs">Shared with the endpoint's other sources and publishers, which dispose it</param>
         /// <param name="options">How many messages to have in hand at once, how long to hide them, and how many times to deliver a failing one</param>
-        public MessageSource(IAmazonSQS sqs, string queueUrl, string deadLetterQueueUrl, IEnumerable<IMessageDeserializer<TMessage>> deserializers, AmazonSqsOptions options)
+        /// <param name="queueRecreatedIfMissing">
+        /// The bus recreates the queue if it goes missing, so receiving waits for it to come back rather than reporting an error
+        /// </param>
+        public MessageSource(IAmazonSQS sqs, string queueUrl, string deadLetterQueueUrl, IEnumerable<IMessageDeserializer<TMessage>> deserializers, AmazonSqsOptions options,
+            bool queueRecreatedIfMissing = false)
         {
             _sqs = sqs;
             _queueUrl = queueUrl;
             _deadLetterQueueUrl = deadLetterQueueUrl;
             _options = options;
+            _queueRecreatedIfMissing = queueRecreatedIfMissing;
             _deserializers = deserializers.ToDictionary(deserializer => deserializer.GetTypeName());
+            Messages = Observable.Defer(() =>
+            {
+                lock (_sharedLock)
+                {
+                    return _shared ?? (_shared = CreateShared());
+                }
+            });
+        }
 
-            // One receive loop, shared by the source's subscribers while it has any. A loop each would compete for the
-            // queue's messages: every request in flight subscribes to the reply queue, and a response one request's loop
-            // received would be lost to the request it belongs to.
-            Messages = Observable.Create<TMessage>(observer =>
+        public IObservable<TMessage> Messages { get; }
+
+        // One receive loop, shared by the source's subscribers while it has any. A loop each would compete for the
+        // queue's messages: every request in flight subscribes to the reply queue, and a response one request's loop
+        // received would be lost to the request it belongs to. Once the loop reports an error, the next subscriber
+        // starts a new one: the bus subscribes again straight away, and would otherwise get the same error back.
+        private IObservable<TMessage> CreateShared()
+        {
+            IObservable<TMessage> shared = null;
+            shared = Observable.Create<TMessage>(observer =>
                 {
                     var loop = new ReceiveLoop(this, observer);
                     _loops[loop] = true;
@@ -53,11 +75,22 @@ namespace Obvs.AmazonSqs
                 // Hand messages to subscribers on the task pool, in order. Subscriber code running on the receive loop's
                 // thread could otherwise deadlock it, for example by disposing the bus, which waits for the loop to stop.
                 .ObserveOn(TaskPoolScheduler.Default)
+                .Do(_ => { }, _ => Forget(shared), () => Forget(shared))
                 .Publish()
                 .RefCount();
+            return shared;
         }
 
-        public IObservable<TMessage> Messages { get; }
+        private void Forget(IObservable<TMessage> shared)
+        {
+            lock (_sharedLock)
+            {
+                if (_shared == shared)
+                {
+                    _shared = null;
+                }
+            }
+        }
 
         // Messages of a type this service doesn't know are skipped
         private TMessage Deserialize(Message received)
@@ -182,12 +215,17 @@ namespace Obvs.AmazonSqs
                         {
                             return;
                         }
+                        // The bus subscribes again as soon as it's told, so wait first: an error that lasts is reported
+                        // once each RetryDelay, not as fast as SQS can refuse
+                        if (ct.WaitHandle.WaitOne(RetryDelay))
+                        {
+                            return;
+                        }
                         if (IsPermanent(exception))
                         {
                             _observer.OnError(exception);
                             return;
                         }
-                        ct.WaitHandle.WaitOne(RetryDelay);
                     }
                 }
             }
@@ -261,12 +299,12 @@ namespace Obvs.AmazonSqs
                 settling.ContinueWith(_ => _places.Release(), TaskScheduler.Default);
             }
 
-            // Errors retrying won't fix, such as a queue that's gone or credentials SQS refuses
-            private static bool IsPermanent(Exception exception)
+            // Errors retrying won't fix, such as a queue that's gone, unless the bus recreates it, or credentials SQS refuses
+            private bool IsPermanent(Exception exception)
             {
                 if (exception is QueueDoesNotExistException)
                 {
-                    return true;
+                    return !_source._queueRecreatedIfMissing;
                 }
                 if (!(exception is AmazonServiceException service) || service.Retryable != null)
                 {

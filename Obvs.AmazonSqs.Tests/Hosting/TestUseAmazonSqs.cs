@@ -103,6 +103,84 @@ namespace Obvs.AmazonSqs.Tests.Hosting
         }
 
         [Fact]
+        public void ShouldCleanUpQueuesNotSeenForAnHourRefreshingEveryFiveMinutesByDefault()
+        {
+            var options = new AmazonSqsOptions();
+
+            Assert.True(options.CleanUpAbandonedQueues);
+            Assert.Equal(TimeSpan.FromMinutes(5), options.LastSeenInterval);
+            Assert.Equal(TimeSpan.FromHours(1), options.AbandonedAfter);
+        }
+
+        [Fact]
+        public void ShouldBindCleanUpSettingsFromConfiguration()
+        {
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:Orders:AmazonSqs:Region"] = "eu-west-1",
+                ["Obvs:Orders:AmazonSqs:CleanUpAbandonedQueues"] = "false",
+                ["Obvs:Orders:AmazonSqs:LastSeenInterval"] = "00:10:00",
+                ["Obvs:Orders:AmazonSqs:AbandonedAfter"] = "1.00:00:00",
+            });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseAmazonSqs(configuration.GetSection("Obvs:Orders:AmazonSqs"))
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var options = host.Services.GetRequiredService<IOptionsMonitor<AmazonSqsOptions>>().Get("orders");
+            Assert.False(options.CleanUpAbandonedQueues);
+            Assert.Equal(TimeSpan.FromMinutes(10), options.LastSeenInterval);
+            Assert.Equal(TimeSpan.FromDays(1), options.AbandonedAfter);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenTheLastSeenIntervalIsntPositive()
+        {
+            var error = Assert.Single(await StartupErrorsAsync(options => options.LastSeenInterval = TimeSpan.Zero));
+
+            Assert.Contains("'orders'", error);
+            Assert.Contains("LastSeenInterval", error);
+            Assert.Contains("positive", error);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenABusCouldBeTakenForAbandonedAfterMissingTwoRefreshes()
+        {
+            // A refresh that fails or runs late mustn't get a live bus's queues deleted
+            var error = Assert.Single(await StartupErrorsAsync(options =>
+            {
+                options.LastSeenInterval = TimeSpan.FromMinutes(10);
+                options.AbandonedAfter = TimeSpan.FromMinutes(29);
+            }));
+
+            Assert.Contains("'orders'", error);
+            Assert.Contains("AbandonedAfter", error);
+            Assert.Contains("LastSeenInterval", error);
+            Assert.Contains("three times", error);
+        }
+
+        [Fact]
+        public async Task ShouldNotCheckTheCleanUpSettingsWhenCleanUpIsOff()
+        {
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseAmazonSqs(options =>
+                    {
+                        options.Region = "eu-west-1";
+                        options.CleanUpAbandonedQueues = false;
+                        options.LastSeenInterval = TimeSpan.Zero;
+                        options.AbandonedAfter = TimeSpan.Zero;
+                        // Fails startup with the one error below rather than connecting to AWS
+                        options.MaxConcurrentCalls = 0;
+                    })
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+
+            Assert.Contains("MaxConcurrentCalls", Assert.Single(exception.Errors));
+        }
+
+        [Fact]
         public async Task ShouldFailToStartWhenTheRegionIsMissingFromConfiguration()
         {
             var configuration = Configuration(new Dictionary<string, string>());

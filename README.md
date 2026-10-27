@@ -37,7 +37,7 @@
 
 ### Extensions
 
-* Transports: ActiveMQ / RabbitMQ / NetMQ / AzureServiceBus / Kafka / EventStore
+* Transports: ActiveMQ / RabbitMQ / NetMQ / AzureServiceBus / Kafka / EventStore / [Amazon SQS and SNS](docs/transports/amazon-sqs.md) (v7)
 * Serialization: XML / JSON.Net / NetJson / ProtoBuf / MessagePack (via MessagePack-CSharp; the MsgPack.Cli-based package is deprecated)
 * Logging: NLog / log4net
 * Monitoring: Performance Counters / ElasticSearch

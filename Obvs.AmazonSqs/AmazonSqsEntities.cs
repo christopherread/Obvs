@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.SimpleNotificationService;
@@ -30,6 +31,7 @@ namespace Obvs.AmazonSqs
         private readonly string _serviceName;
         private readonly string _instanceId;
         private readonly AmazonSqsOptions _options;
+        private string _deadLettersArn;
         private string _subscriptionArn;
 
         public AmazonSqsEntities(string serviceName, string instanceId, AmazonSqsOptions options)
@@ -99,42 +101,84 @@ namespace Obvs.AmazonSqs
 
         // Creates the entities the bus needs that don't exist yet; another bus of the service may create them at the
         // same time. Settings apply only to queues Obvs creates; existing ones keep theirs.
-        public async Task EnsureCreatedAsync(bool includeBusEntities)
+        public async Task EnsureCreatedAsync(bool includeBusEntities, CancellationToken ct = default)
         {
             using (var sqs = CreateSqsClient(_options))
             using (var sns = CreateSnsClient(_options))
             {
-                DeadLettersUrl = await EnsureQueueAsync(sqs, DeadLetters, new Dictionary<string, string> { [QueueAttributeName.MessageRetentionPeriod] = DeadLetterRetentionSeconds }).ConfigureAwait(false);
-                var deadLettersArn = await QueueArnAsync(sqs, DeadLettersUrl).ConfigureAwait(false);
-                CommandsUrl = await EnsureQueueAsync(sqs, Commands, QueueAttributes(deadLettersArn)).ConfigureAwait(false);
-                RequestsUrl = await EnsureQueueAsync(sqs, Requests, QueueAttributes(deadLettersArn)).ConfigureAwait(false);
-                EventsTopicArn = (await sns.CreateTopicAsync(new CreateTopicRequest { Name = Events }).ConfigureAwait(false)).TopicArn;
+                DeadLettersUrl = await EnsureQueueAsync(sqs, DeadLetters, new Dictionary<string, string> { [QueueAttributeName.MessageRetentionPeriod] = DeadLetterRetentionSeconds }, null, ct).ConfigureAwait(false);
+                _deadLettersArn = await QueueArnAsync(sqs, DeadLettersUrl, ct).ConfigureAwait(false);
+                CommandsUrl = await EnsureQueueAsync(sqs, Commands, QueueAttributes(_deadLettersArn), null, ct).ConfigureAwait(false);
+                RequestsUrl = await EnsureQueueAsync(sqs, Requests, QueueAttributes(_deadLettersArn), null, ct).ConfigureAwait(false);
+                EventsTopicArn = (await sns.CreateTopicAsync(new CreateTopicRequest { Name = Events }, ct).ConfigureAwait(false)).TopicArn;
 
-                if (!includeBusEntities)
+                if (includeBusEntities)
                 {
-                    return;
+                    await EnsureBusEntitiesAsync(sqs, sns, ct).ConfigureAwait(false);
                 }
-
-                var tags = new Dictionary<string, string> { [InstanceIdTag] = _instanceId, [ServiceTag] = _serviceName };
-                RepliesUrl = await EnsureQueueAsync(sqs, Replies, QueueAttributes(deadLettersArn), tags).ConfigureAwait(false);
-                EventQueueUrl = await EnsureQueueAsync(sqs, EventQueue, QueueAttributes(deadLettersArn), tags).ConfigureAwait(false);
-                var eventQueueArn = await QueueArnAsync(sqs, EventQueueUrl).ConfigureAwait(false);
-
-                // The topic may send to the queue, and delivers each event's body and attributes as published
-                await sqs.SetQueueAttributesAsync(new SetQueueAttributesRequest
-                {
-                    QueueUrl = EventQueueUrl,
-                    Attributes = new Dictionary<string, string> { [QueueAttributeName.Policy] = TopicMaySendPolicy(eventQueueArn, EventsTopicArn) },
-                }).ConfigureAwait(false);
-                _subscriptionArn = (await sns.SubscribeAsync(new SubscribeRequest
-                {
-                    TopicArn = EventsTopicArn,
-                    Protocol = "sqs",
-                    Endpoint = eventQueueArn,
-                    Attributes = new Dictionary<string, string> { ["RawMessageDelivery"] = "true" },
-                    ReturnSubscriptionArn = true,
-                }).ConfigureAwait(false)).SubscriptionArn;
             }
+        }
+
+        // Records that the bus is still running, recreating its own queues and subscription if another bus took it for
+        // crashed and deleted them, for example while it was paused
+        public async Task RefreshBusEntitiesAsync(CancellationToken ct)
+        {
+            using (var sqs = CreateSqsClient(_options))
+            using (var sns = CreateSnsClient(_options))
+            {
+                await EnsureBusEntitiesAsync(sqs, sns, ct).ConfigureAwait(false);
+            }
+        }
+
+        // Deletes the queues and subscriptions crashed buses of the service left behind
+        public async Task SweepAbandonedAsync(CancellationToken ct)
+        {
+            using (var sqs = CreateSqsClient(_options))
+            using (var sns = CreateSnsClient(_options))
+            {
+                await AbandonedQueues.SweepAsync(sqs, sns, _serviceName, _instanceId, EventsTopicArn, ct).ConfigureAwait(false);
+            }
+        }
+
+        // Tags the queues whether this bus created them or found them, as when it restarts with a fixed instance ID, so
+        // they record when it was last seen from now on, or no longer do if it has clean-up turned off. Subscribing
+        // again returns the subscription already there.
+        private async Task EnsureBusEntitiesAsync(IAmazonSQS sqs, IAmazonSimpleNotificationService sns, CancellationToken ct)
+        {
+            var tags = new Dictionary<string, string> { [InstanceIdTag] = _instanceId, [ServiceTag] = _serviceName };
+            if (_options.CleanUpAbandonedQueues)
+            {
+                foreach (var tag in AbandonedQueues.LastSeenTags(_options, DateTimeOffset.UtcNow))
+                {
+                    tags[tag.Key] = tag.Value;
+                }
+            }
+            RepliesUrl = await EnsureQueueAsync(sqs, Replies, QueueAttributes(_deadLettersArn), tags, ct).ConfigureAwait(false);
+            EventQueueUrl = await EnsureQueueAsync(sqs, EventQueue, QueueAttributes(_deadLettersArn), tags, ct).ConfigureAwait(false);
+            foreach (var queueUrl in new[] { RepliesUrl, EventQueueUrl })
+            {
+                await sqs.TagQueueAsync(new TagQueueRequest { QueueUrl = queueUrl, Tags = tags }, ct).ConfigureAwait(false);
+                if (!_options.CleanUpAbandonedQueues)
+                {
+                    await sqs.UntagQueueAsync(new UntagQueueRequest { QueueUrl = queueUrl, TagKeys = new List<string> { AbandonedQueues.LastSeenTag, AbandonedQueues.AbandonedAfterTag } }, ct).ConfigureAwait(false);
+                }
+            }
+            var eventQueueArn = await QueueArnAsync(sqs, EventQueueUrl, ct).ConfigureAwait(false);
+
+            // The topic may send to the queue, and delivers each event's body and attributes as published
+            await sqs.SetQueueAttributesAsync(new SetQueueAttributesRequest
+            {
+                QueueUrl = EventQueueUrl,
+                Attributes = new Dictionary<string, string> { [QueueAttributeName.Policy] = TopicMaySendPolicy(eventQueueArn, EventsTopicArn) },
+            }, ct).ConfigureAwait(false);
+            _subscriptionArn = (await sns.SubscribeAsync(new SubscribeRequest
+            {
+                TopicArn = EventsTopicArn,
+                Protocol = "sqs",
+                Endpoint = eventQueueArn,
+                Attributes = new Dictionary<string, string> { ["RawMessageDelivery"] = "true" },
+                ReturnSubscriptionArn = true,
+            }, ct).ConfigureAwait(false)).SubscriptionArn;
         }
 
         // The bus's own queues, and its subscription to the service's topic
@@ -180,11 +224,11 @@ namespace Obvs.AmazonSqs
             return (int)Math.Ceiling(options.VisibilityTimeout.TotalSeconds);
         }
 
-        private static async Task<string> EnsureQueueAsync(IAmazonSQS sqs, string name, Dictionary<string, string> attributes, Dictionary<string, string> tags = null)
+        private static async Task<string> EnsureQueueAsync(IAmazonSQS sqs, string name, Dictionary<string, string> attributes, Dictionary<string, string> tags, CancellationToken ct)
         {
             try
             {
-                return (await sqs.GetQueueUrlAsync(name).ConfigureAwait(false)).QueueUrl;
+                return (await sqs.GetQueueUrlAsync(name, ct).ConfigureAwait(false)).QueueUrl;
             }
             catch (QueueDoesNotExistException)
             {
@@ -195,27 +239,27 @@ namespace Obvs.AmazonSqs
             {
                 try
                 {
-                    return (await sqs.CreateQueueAsync(new CreateQueueRequest { QueueName = name, Attributes = attributes, Tags = tags }).ConfigureAwait(false)).QueueUrl;
+                    return (await sqs.CreateQueueAsync(new CreateQueueRequest { QueueName = name, Attributes = attributes, Tags = tags }, ct).ConfigureAwait(false)).QueueUrl;
                 }
                 catch (QueueNameExistsException)
                 {
                     // Another bus created it at the same time, with other settings
-                    return (await sqs.GetQueueUrlAsync(name).ConfigureAwait(false)).QueueUrl;
+                    return (await sqs.GetQueueUrlAsync(name, ct).ConfigureAwait(false)).QueueUrl;
                 }
                 catch (QueueDeletedRecentlyException) when (DateTime.UtcNow < deadline)
                 {
-                    await Task.Delay(RecreateRetryDelay).ConfigureAwait(false);
+                    await Task.Delay(RecreateRetryDelay, ct).ConfigureAwait(false);
                 }
             }
         }
 
-        private static async Task<string> QueueArnAsync(IAmazonSQS sqs, string queueUrl)
+        public static async Task<string> QueueArnAsync(IAmazonSQS sqs, string queueUrl, CancellationToken ct)
         {
             var response = await sqs.GetQueueAttributesAsync(new GetQueueAttributesRequest
             {
                 QueueUrl = queueUrl,
                 AttributeNames = new List<string> { QueueAttributeName.QueueArn },
-            }).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
             return response.Attributes[QueueAttributeName.QueueArn];
         }
 
