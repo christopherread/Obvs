@@ -17,7 +17,7 @@ namespace Obvs.Testing.Tests
             await using var harness = await StartOrdersHarnessAsync();
 
             var waiting = harness.Published<OrderPlaced>();
-            await harness.Bus.PublishAsync(new OrderPlaced("o-1"));
+            await harness.Bus.PublishAsync(new OrderPlaced("o-1"), TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await waiting).OrderId);
         }
@@ -26,7 +26,7 @@ namespace Obvs.Testing.Tests
         public async Task ShouldReturnAMessagePublishedBeforeWaitingStarts()
         {
             await using var harness = await StartOrdersHarnessAsync();
-            await harness.Bus.PublishAsync(new OrderPlaced("o-1"));
+            await harness.Bus.PublishAsync(new OrderPlaced("o-1"), TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await harness.Published<OrderPlaced>()).OrderId);
         }
@@ -35,8 +35,8 @@ namespace Obvs.Testing.Tests
         public async Task ShouldReturnOnlyAMessageMatchingThePredicate()
         {
             await using var harness = await StartOrdersHarnessAsync();
-            await harness.Bus.PublishAsync(new OrderPlaced("o-1"));
-            await harness.Bus.PublishAsync(new OrderPlaced("o-2"));
+            await harness.Bus.PublishAsync(new OrderPlaced("o-1"), TestContext.Current.CancellationToken);
+            await harness.Bus.PublishAsync(new OrderPlaced("o-2"), TestContext.Current.CancellationToken);
 
             Assert.Equal("o-2", (await harness.Published<OrderPlaced>(placed => placed.OrderId == "o-2")).OrderId);
         }
@@ -48,7 +48,7 @@ namespace Obvs.Testing.Tests
             using var service = harness.Bus.Commands.OfType<PlaceOrder>()
                 .Subscribe(command => _ = harness.Bus.PublishAsync(new OrderPlaced(command.OrderId)));
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
 
             await harness.Published<OrderPlaced>(placed => placed.OrderId == "o-1");
         }
@@ -60,7 +60,7 @@ namespace Obvs.Testing.Tests
                 .AddService<IOrderMessage>("orders", service => service.UseInMemory().AsClient())),
                 cancellationToken: TestContext.Current.CancellationToken);
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await harness.Sent<PlaceOrder>()).OrderId);
         }
@@ -82,8 +82,8 @@ namespace Obvs.Testing.Tests
         public async Task ShouldRecordEveryMessageInOrder()
         {
             await using var harness = await StartOrdersHarnessAsync();
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
-            await harness.Bus.PublishAsync(new OrderPlaced("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
+            await harness.Bus.PublishAsync(new OrderPlaced("o-1"), TestContext.Current.CancellationToken);
             await harness.Published<OrderPlaced>();
 
             Assert.Equal(new object[] { new PlaceOrder("o-1"), new OrderPlaced("o-1") }, harness.Messages);
@@ -93,7 +93,7 @@ namespace Obvs.Testing.Tests
         public async Task ShouldListTheMessagesSeenWhenWaitingTimesOut()
         {
             await using var harness = await StartOrdersHarnessAsync();
-            await harness.Bus.PublishAsync(new OrderPlaced("o-1"));
+            await harness.Bus.PublishAsync(new OrderPlaced("o-1"), TestContext.Current.CancellationToken);
             await harness.Published<OrderPlaced>();
 
             var exception = await Assert.ThrowsAsync<ObvsTestTimeoutException>(

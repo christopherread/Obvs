@@ -23,7 +23,7 @@ namespace Obvs.Tests.Hosting.Handlers
             await using var harness = await StartOrdersAsync(service => service
                 .HandleCommand<PlaceOrder>((command, context, ct) => context.PublishAsync(new OrderPlaced(command.OrderId), ct)));
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), Ct);
 
             await harness.Published<OrderPlaced>(placed => placed.OrderId == "o-1");
         }
@@ -50,7 +50,7 @@ namespace Obvs.Tests.Hosting.Handlers
                     return Task.CompletedTask;
                 }));
 
-            await harness.Bus.PublishAsync(new OrderPlaced("o-1"));
+            await harness.Bus.PublishAsync(new OrderPlaced("o-1"), Ct);
 
             Assert.Equal("o-1", (await handled.Task.WaitAsync(Timeout, Ct)).OrderId);
         }
@@ -65,8 +65,8 @@ namespace Obvs.Tests.Hosting.Handlers
                     .HandleCommand<PlaceOrder, PlaceOrderHandler>())),
                 cancellationToken: Ct);
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
-            await harness.Client.SendAsync(new PlaceOrder("o-2"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), Ct);
+            await harness.Client.SendAsync(new PlaceOrder("o-2"), Ct);
             var first = await harness.Published<OrderPlaced>(placed => placed.OrderId.StartsWith("o-1:"));
             var second = await harness.Published<OrderPlaced>(placed => placed.OrderId.StartsWith("o-2:"));
 
@@ -95,7 +95,7 @@ namespace Obvs.Tests.Hosting.Handlers
 
             foreach (var id in ids)
             {
-                await harness.Client.SendAsync(new PlaceOrder(id));
+                await harness.Client.SendAsync(new PlaceOrder(id), Ct);
             }
             await harness.Published<OrderPlaced>(placed => placed.OrderId == ids.Last());
 
@@ -125,7 +125,7 @@ namespace Obvs.Tests.Hosting.Handlers
 
             for (var i = 1; i <= 6; i++)
             {
-                await harness.Client.SendAsync(new PlaceOrder($"o-{i}"));
+                await harness.Client.SendAsync(new PlaceOrder($"o-{i}"), Ct);
             }
             for (var i = 1; i <= 6; i++)
             {
@@ -143,8 +143,8 @@ namespace Obvs.Tests.Hosting.Handlers
                     ? throw new InvalidOperationException("boom")
                     : context.PublishAsync(new OrderPlaced(command.OrderId), ct)));
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
-            await harness.Client.SendAsync(new PlaceOrder("o-2"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), Ct);
+            await harness.Client.SendAsync(new PlaceOrder("o-2"), Ct);
 
             await harness.Published<OrderPlaced>(placed => placed.OrderId == "o-2");
         }
@@ -160,7 +160,7 @@ namespace Obvs.Tests.Hosting.Handlers
                     .HandleCommand<PlaceOrder>((command, context, ct) => throw new InvalidOperationException("boom")))),
                 cancellationToken: Ct);
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), Ct);
 
             var error = await WaitForAsync(() => logs.Entries.FirstOrDefault(entry => entry.Level == LogLevel.Error));
             Assert.IsType<InvalidOperationException>(error.Exception);
@@ -182,7 +182,7 @@ namespace Obvs.Tests.Hosting.Handlers
                     finished = true;
                 }));
             await host.StartAsync(Ct);
-            await host.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder("o-1"));
+            await host.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder("o-1"), Ct);
             await started.Task.WaitAsync(Timeout, Ct);
 
             var stopping = host.StopAsync(Ct);
@@ -214,7 +214,7 @@ namespace Obvs.Tests.Hosting.Handlers
                     }
                 }));
             await host.StartAsync(Ct);
-            await host.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder("o-1"));
+            await host.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder("o-1"), Ct);
             await started.Task.WaitAsync(Timeout, Ct);
 
             using var shutdownTimeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));

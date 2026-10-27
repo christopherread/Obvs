@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Extensions;
 
@@ -83,6 +84,17 @@ namespace Obvs
                 exceptions.Add(message == null ? exception : new Exception(message, exception));
             }
             return Task.FromResult(false);
+        }
+
+        /// <summary>
+        /// <see cref="Catch(Func{Task}, List{Exception}, string)"/>, after checking <paramref name="cancellationToken"/>
+        /// outside it, so a send to several endpoints stops at the next one once cancelled, and the cancellation
+        /// isn't collected as that endpoint's failure.
+        /// </summary>
+        protected Task CatchUnlessCancelled(Func<Task> func, List<Exception> exceptions, CancellationToken cancellationToken, string message = null)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Catch(func, exceptions, message);
         }
 
         public virtual void Dispose()

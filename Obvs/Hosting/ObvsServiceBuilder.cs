@@ -179,7 +179,7 @@ namespace Obvs.Hosting
                 var response = await handler(request, context, cancellationToken).ConfigureAwait(false);
                 if (response != null)
                 {
-                    await context.ReplyAsync(request, response).ConfigureAwait(false);
+                    await context.ReplyAsync(request, response, cancellationToken).ConfigureAwait(false);
                 }
             }, configure, bus => bus.Requests.OfType<TRequest>());
         }

@@ -55,7 +55,7 @@ namespace Obvs.Tests.Hosting
 
             var received = host.Services.GetRequiredService<IServiceBus>()
                 .Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            await host.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             var command = await received.WaitAsync(Timeout, TestContext.Current.CancellationToken);
             Assert.Equal("o-1", command.OrderId);
@@ -151,7 +151,7 @@ namespace Obvs.Tests.Hosting
 
             var receivedByB = busB.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
             var receivedByA = busA.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            await hostA.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await hostA.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await receivedByA.WaitAsync(Timeout, TestContext.Current.CancellationToken);
             Assert.False(receivedByB.IsCompleted);

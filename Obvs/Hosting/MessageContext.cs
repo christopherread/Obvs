@@ -29,20 +29,18 @@ namespace Obvs.Hosting
         /// <summary>Publishes an event.</summary>
         public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            return _bus.PublishAsync(ev);
+            return _bus.PublishAsync(ev, cancellationToken);
         }
 
-        internal Task ReplyAsync(IRequest request, IResponse response)
+        internal Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken)
         {
-            return _bus.ReplyAsync(request, response);
+            return _bus.ReplyAsync(request, response, cancellationToken);
         }
 
         /// <summary>Sends a command.</summary>
         public Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            return _bus.SendAsync(command);
+            return _bus.SendAsync(command, cancellationToken);
         }
     }
 }

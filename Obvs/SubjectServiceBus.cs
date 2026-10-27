@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Extensions;
 using Obvs.Types;
@@ -79,15 +80,17 @@ namespace Obvs
         public IObservable<TCommand> Commands { get; }
         public IObservable<Exception> Exceptions => Observable.Empty<Exception>();
 
-        public Task SendAsync(TCommand command)
+        public Task SendAsync(TCommand command, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _commands.OnNext(command);
             return Task.CompletedTask;
         }
 
-        public Task SendAsync(IEnumerable<TCommand> commands)
+        public Task SendAsync(IEnumerable<TCommand> commands, CancellationToken cancellationToken = default)
         {
-            return Task.WhenAll(commands.Select(SendAsync));
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.WhenAll(commands.Select(command => SendAsync(command, cancellationToken)));
         }
 
         public IObservable<TResponse> GetResponses(TRequest request)
@@ -119,18 +122,21 @@ namespace Obvs
             return GetResponses(request).OfType<T>();
         }
 
-        public Task PublishAsync(TEvent ev)
+        public Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _events.OnNext(ev);
             return Task.CompletedTask;
         }
 
-        public Task ReplyAsync(TRequest request, TResponse response)
+        public Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default)
         {
             if (_requestCorrelationProvider == null)
             {
                 throw new InvalidOperationException("Please configure the SubjectServiceBus with a IRequestCorrelationProvider");
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             _requestCorrelationProvider.SetCorrelationIds(request, response);
 
