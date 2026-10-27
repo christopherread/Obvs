@@ -83,10 +83,6 @@ namespace Obvs.Hosting
             {
                 yield return $"Service '{service.Name}' has no NATS server address. Set {whereToSetUrl}, for example nats://localhost:4222.";
             }
-            if (service.Serializer == null || service.DeserializerFactory == null)
-            {
-                yield return $"Service '{service.Name}' uses NATS JetStream but has no serializer. Call SerializedWith(...) on it inside AddService(\"{service.Name}\", ...).";
-            }
             if (options.MaxDeliveryAttempts < 1)
             {
                 yield return $"Service '{service.Name}' sets NATS JetStream MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but it must be at least 1. " +

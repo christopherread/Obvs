@@ -143,18 +143,12 @@ jobs:
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.AmazonSqs
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.AzureSB
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Kafka
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Logging.NLog
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Monitoring.AppMetrics
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Monitoring.ElasticSearch
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Monitoring.PerformanceCounters
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.NATS
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.NetMQ
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.RabbitMQ
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Json
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.MessagePack-CSharp
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.NetJson
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.MessagePack
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.ProtoBuf
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Xml
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Yaml
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Testing
     - name: NuGet Login

@@ -76,19 +76,6 @@ namespace Obvs.ActiveMQ.Tests.Hosting
             Assert.Contains("BrokerUri", error);
         }
 
-        [Fact]
-        public async Task ShouldFailToStartWithoutASerializer()
-        {
-            using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseActiveMq(options => options.BrokerUri = "activemq:tcp://activemq.example:61616"))));
-
-            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
-
-            var error = Assert.Single(exception.Errors);
-            Assert.Contains("'orders'", error);
-            Assert.Contains("SerializedWith", error);
-        }
-
         private static IConfiguration Configuration(IDictionary<string, string> values)
         {
             return new ConfigurationBuilder().AddInMemoryCollection(values).Build();

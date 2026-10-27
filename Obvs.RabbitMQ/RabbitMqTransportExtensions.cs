@@ -71,10 +71,6 @@ namespace Obvs.Hosting
             {
                 yield return $"Service '{service.Name}' has no RabbitMQ broker address. Set {whereToSetUri}, for example amqp://localhost:5672.";
             }
-            if (service.Serializer == null || service.DeserializerFactory == null)
-            {
-                yield return $"Service '{service.Name}' uses RabbitMQ but has no serializer. Call SerializedWith(...) on it inside AddService(\"{service.Name}\", ...).";
-            }
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time

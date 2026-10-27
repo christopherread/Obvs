@@ -216,20 +216,6 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             Assert.Contains("http://localhost:4566", error);
         }
 
-        [Fact]
-        public async Task ShouldFailToStartWithoutASerializer()
-        {
-            using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service
-                    .UseAmazonSqs(options => options.Region = "eu-west-1"))));
-
-            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
-
-            var error = Assert.Single(exception.Errors);
-            Assert.Contains("'orders'", error);
-            Assert.Contains("SerializedWith", error);
-        }
-
         [Theory]
         [InlineData(0)]
         [InlineData(1001)]

@@ -109,10 +109,6 @@ namespace Obvs.Hosting
             {
                 yield return error;
             }
-            if (service.Serializer == null || service.DeserializerFactory == null)
-            {
-                yield return $"Service '{service.Name}' uses Kafka but has no serializer. Call SerializedWith(...) on it inside AddService(\"{service.Name}\", ...).";
-            }
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time

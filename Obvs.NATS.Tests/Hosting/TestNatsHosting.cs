@@ -118,6 +118,22 @@ namespace Obvs.NATS.Tests.Hosting
             Assert.Equal("acme", headers["x-tenant"]);
         }
 
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldSerializeWithSystemTextJsonWhenNoSerializerIsSet()
+        {
+            var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
+            builder.Services.AddObvs(obvs => obvs.AddService<IOrderMessage>("obvs-nats-default-serializer", service => service
+                .UseNats(options => options.Url = TestBroker.Url)));
+            using var host = builder.Build();
+            await host.StartAsync(TestContext.Current.CancellationToken);
+            var bus = host.Services.GetRequiredService<IServiceBus>();
+
+            var command = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+
+            Assert.Equal("o-1", (await command.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
+        }
+
         private static async Task<IHost> StartHostAsync(string serviceName, Action<ObvsServiceBuilder> configure = null)
         {
             var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });

@@ -93,10 +93,6 @@ namespace Obvs.Hosting
                 yield return $"Service '{service.Name}' sets both an Azure Service Bus namespace and a connection string. Set one, not both: " +
                              "FullyQualifiedNamespace to sign in with a credential, or ConnectionString to use a shared access key.";
             }
-            if (service.Serializer == null || service.DeserializerFactory == null)
-            {
-                yield return $"Service '{service.Name}' uses Azure Service Bus but has no serializer. Call SerializedWith(...) on it inside AddService(\"{service.Name}\", ...).";
-            }
             if (options.MaxDeliveryAttempts < 1)
             {
                 yield return $"Service '{service.Name}' sets Azure Service Bus MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but it must be at least 1. " +

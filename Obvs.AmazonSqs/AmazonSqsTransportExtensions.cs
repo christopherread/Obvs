@@ -94,10 +94,6 @@ namespace Obvs.Hosting
                 yield return $"Service '{service.Name}' sets Amazon SQS ServiceUrl to '{options.ServiceUrl}', which isn't an http or https URL. " +
                              $"Set {whereToSetServiceUrl} to one such as http://localhost:4566, or leave it unset to use AWS's own endpoints.";
             }
-            if (service.Serializer == null || service.DeserializerFactory == null)
-            {
-                yield return $"Service '{service.Name}' uses Amazon SQS but has no serializer. Call SerializedWith(...) on it inside AddService(\"{service.Name}\", ...).";
-            }
             if (options.MaxDeliveryAttempts < 1 || options.MaxDeliveryAttempts > 1000)
             {
                 yield return $"Service '{service.Name}' sets Amazon SQS MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but SQS allows between 1 and 1000. " +

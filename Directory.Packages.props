@@ -9,9 +9,7 @@
         <PackageVersion Include="AWSSDK.SQS" Version="4.0.100.20"/>
         <PackageVersion Include="Azure.Identity" Version="1.21.0"/>
         <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.21.0"/>
-        <PackageVersion Include="App.Metrics.Abstractions" Version="4.3.0"/>
         <PackageVersion Include="Confluent.Kafka" Version="2.16.0"/>
-        <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="9.5.3"/>
         <PackageVersion Include="MessagePack" Version="3.1.12"/>
         <PackageVersion Include="Microsoft.Bcl.TimeProvider" Version="10.0.13"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0"/>
@@ -21,20 +19,17 @@
         <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.13"/>
         <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13"/>
         <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.13"/>
-        <PackageVersion Include="MsgPack.Cli" Version="1.0.1"/>
         <PackageVersion Include="NATS.Client.Core" Version="3.3.1"/>
         <PackageVersion Include="NATS.Client.JetStream" Version="3.3.1"/>
-        <PackageVersion Include="NetJSON" Version="1.4.7"/>
         <PackageVersion Include="NetMQ" Version="4.0.4.5"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
-        <PackageVersion Include="NLog" Version="6.2.2"/>
         <PackageVersion Include="protobuf-net" Version="3.4.40"/>
         <PackageVersion Include="RabbitMQ.Client" Version="7.2.2"/>
         <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="10.0.13"/>
         <PackageVersion Include="System.Reactive" Version="7.0.0"/>
         <PackageVersion Include="System.Reflection.Emit.Lightweight" Version="4.7.0"/>
+        <PackageVersion Include="System.Text.Json" Version="10.0.13"/>
         <PackageVersion Include="System.Threading.Channels" Version="10.0.13"/>
-        <PackageVersion Include="YamlDotNet" Version="18.1.0"/>
     </ItemGroup>
     <!-- Tests -->
     <ItemGroup>
