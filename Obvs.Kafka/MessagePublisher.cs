@@ -24,6 +24,7 @@ namespace Obvs.Kafka
         private bool _disposed;
         private long _created;
         private IProducer<Null, WrapperMessage> _producer;
+        private readonly Action<IClient, string> _oauthBearerTokenRefreshHandler;
 
         public MessagePublisher(KafkaConfiguration kafkaConfiguration, KafkaProducerConfiguration producerConfig, string topic, IMessageSerializer serializer, Func<TMessage, Dictionary<string, string>> propertyProvider)
         {
@@ -34,7 +35,11 @@ namespace Obvs.Kafka
                 BootstrapServers = kafkaConfiguration.BootstrapServers,
                 BatchNumMessages = producerConfig.BatchFlushSize
             };
+            kafkaConfiguration.ApplyTo(_producerConfig);
+            _oauthBearerTokenRefreshHandler = kafkaConfiguration.OAuthBearerTokenRefreshHandler;
         }
+
+        internal ProducerConfig ProducerConfig => _producerConfig;
 
         public Task PublishAsync(TMessage message)
         {
@@ -103,9 +108,13 @@ namespace Obvs.Kafka
         {
             if (Interlocked.CompareExchange(ref _created, 1, 0) == 0)
             {
-                _producer = new ProducerBuilder<Null, WrapperMessage>(_producerConfig)
-                    .SetValueSerializer(new ProducerValueSerializer<WrapperMessage>())
-                    .Build();
+                var builder = new ProducerBuilder<Null, WrapperMessage>(_producerConfig)
+                    .SetValueSerializer(new ProducerValueSerializer<WrapperMessage>());
+                if (_oauthBearerTokenRefreshHandler != null)
+                {
+                    builder.SetOAuthBearerTokenRefreshHandler(_oauthBearerTokenRefreshHandler);
+                }
+                _producer = builder.Build();
 
                 _disposable = Disposable.Create(() =>
                 {

@@ -1,0 +1,36 @@
+# A single-node Kafka broker that requires SASL sign-in, for the Explicit tests in TestKafkaSasl: PLAIN with the test
+# user below, or OAUTHBEARER with Kafka's built-in validator for unsigned tokens. It listens on 9094, away from the
+# plain broker on 9092 that the other Explicit tests use.
+# Start with: docker compose -f Obvs.Kafka.Tests/SaslBroker/docker-compose.yml up -d
+name: obvs-kafka-sasl
+services:
+  kafka:
+    image: apache/kafka:4.4.0
+    ports:
+      - "9094:9094"
+    # Setting any KAFKA_* variable replaces the image's defaults, so configure a full single-node KRaft broker.
+    # INTERNAL is for the broker itself and the health check, and isn't published. SASL is advertised as 127.0.0.1 rather
+    # than localhost because Colima doesn't forward IPv6, and connections tried on ::1 fail.
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: SASL://:9094,INTERNAL://:19092,CONTROLLER://:19093
+      KAFKA_ADVERTISED_LISTENERS: SASL://127.0.0.1:9094,INTERNAL://localhost:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SASL:SASL_PLAINTEXT,INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:19093
+      KAFKA_LISTENER_NAME_SASL_SASL_ENABLED_MECHANISMS: PLAIN,OAUTHBEARER
+      KAFKA_LISTENER_NAME_SASL_PLAIN_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required user_obvs="obvs-secret";
+      KAFKA_LISTENER_NAME_SASL_OAUTHBEARER_SASL_JAAS_CONFIG: org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required;
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: 1
+    healthcheck:
+      test: /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092
+      interval: 5s
+      timeout: 10s
+      retries: 20

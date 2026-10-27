@@ -15,6 +15,9 @@
     <PackageReference Include="protobuf-net" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Obvs.Kafka.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Obvs\Obvs.csproj" />
   </ItemGroup>
 </Project>
