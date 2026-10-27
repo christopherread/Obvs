@@ -11,7 +11,7 @@ using Xunit;
 namespace Obvs.AzureSB.Tests.Hosting
 {
     // How many messages a bus handles at once, and how long it keeps a message locked while a handler runs
-    public class TestAzureServiceBusDelivery : IClassFixture<TestAzureServiceBusHosting.ServiceNames>
+    public class TestAzureServiceBusDelivery : IClassFixture<TestAzureServiceBusHosting.ServiceNames>, IAsyncDisposable
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
         private readonly TestAzureServiceBusHosting.ServiceNames _serviceNames;
@@ -20,6 +20,8 @@ namespace Obvs.AzureSB.Tests.Hosting
         {
             _serviceNames = serviceNames;
         }
+
+        public ValueTask DisposeAsync() => _serviceNames.DeleteCreatedAsync();
 
         private static CancellationToken Ct => TestContext.Current.CancellationToken;
 

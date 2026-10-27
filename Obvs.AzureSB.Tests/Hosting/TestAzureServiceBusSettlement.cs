@@ -14,7 +14,7 @@ using Xunit;
 namespace Obvs.AzureSB.Tests.Hosting
 {
     // Messages a handler handles stay on Service Bus until the handler settles them (see TestSettlement in Obvs.Tests)
-    public class TestAzureServiceBusSettlement : IClassFixture<TestAzureServiceBusHosting.ServiceNames>
+    public class TestAzureServiceBusSettlement : IClassFixture<TestAzureServiceBusHosting.ServiceNames>, IAsyncDisposable
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
         private readonly TestAzureServiceBusHosting.ServiceNames _serviceNames;
@@ -23,6 +23,8 @@ namespace Obvs.AzureSB.Tests.Hosting
         {
             _serviceNames = serviceNames;
         }
+
+        public ValueTask DisposeAsync() => _serviceNames.DeleteCreatedAsync();
 
         private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
