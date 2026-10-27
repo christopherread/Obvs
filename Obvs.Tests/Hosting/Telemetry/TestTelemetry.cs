@@ -156,6 +156,81 @@ namespace Obvs.Tests.Hosting.Telemetry
         }
 
         [Fact]
+        public async Task ShouldCountEachReceivedMessageOnceHoweverManySubscribe()
+        {
+            using var metrics = new MetricRecorder();
+            await using var harness = await StartAsync(service => service
+                .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
+            var seen = 0;
+            using var subscription = harness.Bus.Commands.Subscribe(_ => Interlocked.Increment(ref seen));
+
+            await harness.Client.SendAsync(new PlaceOrder("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-2"));
+
+            await WaitForAsync(() => metrics.For(_service, "messaging.process.duration").Count == 2 && Volatile.Read(ref seen) == 2 ? new object() : null);
+            var received = metrics.For(_service, "messaging.client.consumed.messages");
+            Assert.Equal(2, received.Count);
+            Assert.Equal(2, received.Sum(m => m.Value));
+            Assert.All(received, m => Assert.Equal("obvs", m.Tags["messaging.system"]));
+            Assert.All(received, m => Assert.Equal("receive", m.Tags["messaging.operation.name"]));
+            Assert.All(received, m => Assert.Equal(nameof(PlaceOrder), m.Tags["obvs.message.type"]));
+        }
+
+        [Fact]
+        public async Task ShouldCountReceivedMessagesNoHandlerTakes()
+        {
+            using var metrics = new MetricRecorder();
+            await using var harness = await StartAsync(service => { });
+            var seen = 0;
+            using var subscription = harness.Client.Events.Subscribe(_ => Interlocked.Increment(ref seen));
+
+            await harness.Bus.PublishAsync(new OrderPlaced("o-1"));
+
+            var received = await WaitForAsync(() =>
+            {
+                var measurements = metrics.For(_service, "messaging.client.consumed.messages");
+                return measurements.Count == 1 ? measurements : null;
+            });
+            Assert.Equal(nameof(OrderPlaced), received.Single().Tags["obvs.message.type"]);
+            Assert.Equal(1, Volatile.Read(ref seen));
+        }
+
+        [Fact]
+        public async Task ShouldCountReceivedRequestsButNotResponses()
+        {
+            using var metrics = new MetricRecorder();
+            await using var harness = await StartAsync(service => service
+                .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote(request.Sku, 9.99m))));
+
+            await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), Timeout, Ct);
+
+            await WaitForAsync(() => metrics.For(_service, "messaging.process.duration").Count == 1 ? new object() : null);
+            var received = metrics.For(_service, "messaging.client.consumed.messages");
+            Assert.Equal(nameof(GetQuote), Assert.Single(received).Tags["obvs.message.type"]);
+        }
+
+        [Fact]
+        public async Task ShouldCountMessagesWhoseHandlerFailed()
+        {
+            using var metrics = new MetricRecorder();
+            await using var harness = await StartAsync(service => service
+                .HandleCommand<PlaceOrder>((command, context, ct) => command.OrderId == "o-2"
+                    ? throw new InvalidOperationException("boom")
+                    : Task.CompletedTask));
+
+            await harness.Client.SendAsync(new PlaceOrder("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-2"));
+
+            await WaitForAsync(() => metrics.For(_service, "messaging.process.duration").Count == 2 ? new object() : null);
+            var failed = Assert.Single(metrics.For(_service, "obvs.process.failed.messages"));
+            Assert.Equal(1, failed.Value);
+            Assert.Equal(typeof(InvalidOperationException).FullName, failed.Tags["error.type"]);
+            Assert.Equal("obvs", failed.Tags["messaging.system"]);
+            Assert.Equal("process", failed.Tags["messaging.operation.name"]);
+            Assert.Equal(nameof(PlaceOrder), failed.Tags["obvs.message.type"]);
+        }
+
+        [Fact]
         public async Task ShouldLogSentMessagesAtDebugLevelOnly()
         {
             var logs = new ListLoggerProvider();

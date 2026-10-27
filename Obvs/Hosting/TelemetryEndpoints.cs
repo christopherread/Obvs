@@ -7,7 +7,8 @@ using Obvs.Types;
 namespace Obvs.Hosting
 {
     // Wraps a service's endpoints, which know which service a message belongs to, to trace, count and
-    // log (at Debug) every outgoing message
+    // log (at Debug) every outgoing message, and count every incoming command, event and request. The bus
+    // shares one subscription to each endpoint's streams among its subscribers, so each is counted once.
     internal sealed class TelemetryServiceEndpoint : IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>
     {
         private readonly IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse> _inner;
@@ -19,11 +20,13 @@ namespace Obvs.Hosting
             _inner = inner;
             _serviceName = serviceName;
             _logger = logger;
+            Requests = inner.Requests.CountReceived(serviceName);
+            Commands = inner.Commands.CountReceived(serviceName);
         }
 
-        public IObservable<IRequest> Requests => _inner.Requests;
+        public IObservable<IRequest> Requests { get; }
 
-        public IObservable<ICommand> Commands => _inner.Commands;
+        public IObservable<ICommand> Commands { get; }
 
         public Task PublishAsync(IEvent ev)
         {
@@ -53,16 +56,19 @@ namespace Obvs.Hosting
             _inner = inner;
             _serviceName = serviceName;
             _logger = logger;
+            Events = inner.Events.CountReceived(serviceName);
         }
 
-        public IObservable<IEvent> Events => _inner.Events;
+        public IObservable<IEvent> Events { get; }
 
         public Task SendAsync(ICommand command)
         {
             return Telemetry.SendAsync("send", _serviceName, command, _logger, () => _inner.SendAsync(command));
         }
 
-        // The inner endpoint sends the request when subscribed to, so the span covers the subscription
+        // The inner endpoint sends the request when subscribed to, so the span covers the subscription. Responses
+        // aren't counted as received: each request's stream can see every response on the service, as the bus
+        // only picks out the request's own after this.
         public IObservable<IResponse> GetResponses(IRequest request)
         {
             return Observable.Create<IResponse>(observer =>
@@ -115,6 +121,11 @@ namespace Obvs.Hosting
         {
             ObvsDiagnostics.RecordSent(operation, serviceName, message.GetType());
             logger.LogDebug("Obvs {Operation} {MessageType} on service '{ServiceName}'.", operation, message.GetType().Name, serviceName);
+        }
+
+        public static IObservable<T> CountReceived<T>(this IObservable<T> messages, string serviceName) where T : class
+        {
+            return messages.Do(message => ObvsDiagnostics.RecordReceived(serviceName, message.GetType()));
         }
     }
 }
