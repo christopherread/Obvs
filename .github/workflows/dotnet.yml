@@ -67,6 +67,9 @@ jobs:
     - name: Start NATS JetStream server
       # Service containers can't take a command, and the nats service above stays core NATS, without JetStream
       run: docker run -d -p 4223:4222 nats:2.15 -js
+    - name: Start LocalStack
+      # SQS and SNS for the Amazon SQS tests, started like the Service Bus emulator from the test project's compose file
+      run: docker compose -f Obvs.AmazonSqs.Tests/LocalStack/docker-compose.yml up -d
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
@@ -99,6 +102,11 @@ jobs:
         docker compose -f Obvs.Kafka.Tests/SaslBroker/docker-compose.yml up -d --wait --wait-timeout 120 && exit 0
         docker compose -f Obvs.Kafka.Tests/SaslBroker/docker-compose.yml logs
         exit 1
+    - name: Wait for LocalStack
+      run: |
+        for i in $(seq 1 60); do curl -sf http://localhost:4566/_localstack/init/ready | grep -q '"completed": true' && exit 0; sleep 2; done
+        docker compose -f Obvs.AmazonSqs.Tests/LocalStack/docker-compose.yml logs
+        exit 1
     - name: Test transports against brokers
       env:
         RABBITMQ_URI: amqp://localhost:5672
@@ -114,6 +122,7 @@ jobs:
         dotnet test --project Obvs.NetMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
         dotnet test --project Obvs.ActiveMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
         dotnet test --project Obvs.AzureSB.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.AmazonSqs.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
     - name: Test
       # xUnit v3 runs on Microsoft.Testing.Platform (global.json). Exit code 8 means a project ran no tests,
       # as the transport test projects only contain Explicit tests.
@@ -123,6 +132,7 @@ jobs:
       run: |
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs 
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.ActiveMQ
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.AmazonSqs
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.AzureSB
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Kafka
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Logging.NLog

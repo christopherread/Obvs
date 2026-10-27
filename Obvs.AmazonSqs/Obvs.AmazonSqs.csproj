@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net472;netstandard2.0;net10.0</TargetFrameworks>
+    <Company></Company>
+    <Copyright>Copyright © Christopher Read 2026</Copyright>
+    <Version>1.0.0</Version>
+    <Authors>Christopher Read</Authors>
+    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
+    <Description>Amazon SQS and SNS transport support for Obvs</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.SimpleNotificationService" />
+    <PackageReference Include="AWSSDK.SQS" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Obvs.AmazonSqs.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs\Obvs.csproj" />
+  </ItemGroup>
+</Project>

@@ -5,6 +5,8 @@
     <!-- Libraries -->
     <ItemGroup>
         <PackageVersion Include="Apache.NMS.ActiveMQ" Version="2.3.0"/>
+        <PackageVersion Include="AWSSDK.SimpleNotificationService" Version="4.0.100.21"/>
+        <PackageVersion Include="AWSSDK.SQS" Version="4.0.100.20"/>
         <PackageVersion Include="Azure.Identity" Version="1.21.0"/>
         <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.21.0"/>
         <PackageVersion Include="App.Metrics.Abstractions" Version="4.3.0"/>

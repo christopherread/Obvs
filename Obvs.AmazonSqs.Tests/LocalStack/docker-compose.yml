@@ -1,0 +1,11 @@
+# LocalStack for the Explicit tests, serving SQS and SNS on port 4566.
+# Start with: docker compose -f Obvs.AmazonSqs.Tests/LocalStack/docker-compose.yml up -d
+# Pinned to 4.14.0, the last image that runs without a LocalStack account: later ones quit unless LOCALSTACK_AUTH_TOKEN is set.
+name: obvs-localstack
+services:
+  localstack:
+    image: localstack/localstack:4.14.0
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: sqs,sns
