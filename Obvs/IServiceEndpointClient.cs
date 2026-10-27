@@ -1,6 +1,7 @@
 using System;
 using System.Reactive.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Extensions;
 using Obvs.Types;
@@ -19,7 +20,7 @@ namespace Obvs
         where TResponse : TMessage
     {
         IObservable<TEvent> Events { get; }
-        Task SendAsync(TCommand command);
+        Task SendAsync(TCommand command, CancellationToken cancellationToken = default);
 
         IObservable<TResponse> GetResponses(TRequest request);
     }
@@ -65,9 +66,9 @@ namespace Obvs
             get { return _eventSource.Messages; }
         }
 
-        public Task SendAsync(TCommand command)
+        public Task SendAsync(TCommand command, CancellationToken cancellationToken = default)
         {
-            return _commandPublisher.PublishAsync(command);
+            return _commandPublisher.PublishAsync(command, cancellationToken);
         }
 
         public IObservable<TResponse> GetResponses(TRequest request)

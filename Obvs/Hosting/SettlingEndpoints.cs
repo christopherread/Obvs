@@ -1,5 +1,6 @@
 using System;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Obvs.Types;
@@ -23,9 +24,9 @@ namespace Obvs.Hosting
 
         public IObservable<ICommand> Commands { get; }
 
-        public Task PublishAsync(IEvent ev) => _inner.PublishAsync(ev);
+        public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default) => _inner.PublishAsync(ev, cancellationToken);
 
-        public Task ReplyAsync(IRequest request, IResponse response) => _inner.ReplyAsync(request, response);
+        public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default) => _inner.ReplyAsync(request, response, cancellationToken);
 
         public bool CanHandle(IMessage message) => _inner.CanHandle(message);
 
@@ -50,7 +51,7 @@ namespace Obvs.Hosting
 
         public IObservable<IEvent> Events { get; }
 
-        public Task SendAsync(ICommand command) => _inner.SendAsync(command);
+        public Task SendAsync(ICommand command, CancellationToken cancellationToken = default) => _inner.SendAsync(command, cancellationToken);
 
         // No handler takes responses
         public IObservable<IResponse> GetResponses(IRequest request) => _inner.GetResponses(request).CompleteUnhandled(_ => false, _serviceName, _logger);

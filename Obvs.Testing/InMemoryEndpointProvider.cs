@@ -1,5 +1,6 @@
 using System;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Configuration;
 using Obvs.Types;
@@ -86,8 +87,9 @@ namespace Obvs.Testing
                 _destination = destination;
             }
 
-            public Task PublishAsync(TMessage message)
+            public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 _broker.Send(_serviceName, _destination, message);
                 return Task.CompletedTask;
             }

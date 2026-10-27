@@ -35,7 +35,7 @@ namespace Obvs.AzureSB.Tests.Hosting
 
             for (var i = 0; i < 3; i++)
             {
-                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" });
+                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" }, TestContext.Current.CancellationToken);
             }
 
             await WaitUntilAsync(() => running.Current == 3);
@@ -52,7 +52,7 @@ namespace Obvs.AzureSB.Tests.Hosting
 
             for (var i = 0; i < 3; i++)
             {
-                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" });
+                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" }, TestContext.Current.CancellationToken);
             }
 
             await WaitUntilAsync(() => running.Current == 1);
@@ -107,7 +107,7 @@ namespace Obvs.AzureSB.Tests.Hosting
                     await Task.Delay(TimeSpan.FromSeconds(12), ct);
                 }));
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await WaitUntilAsync(() => Volatile.Read(ref attempts) == 1);
             await Task.Delay(TimeSpan.FromSeconds(16), Ct);
@@ -132,7 +132,7 @@ namespace Obvs.AzureSB.Tests.Hosting
                     }
                 }));
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await WaitUntilAsync(() => Volatile.Read(ref attempts) >= 2);
         }

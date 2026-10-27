@@ -45,7 +45,7 @@ namespace Obvs.NATS.Tests
             var events = new List<IEvent>();
             bus.Events.Subscribe(events.Add);
 
-            await bus.SendAsync(new TestCommand {Id = 1});
+            await bus.SendAsync(new TestCommand {Id = 1}, TestContext.Current.CancellationToken);
 
             var response = await bus.GetResponse<TestResponse>(new TestRequest {Id = 2});
             Assert.Equal(2, response.Id);

@@ -59,7 +59,7 @@ namespace Obvs.RabbitMQ.Tests
 
             foreach (var message in messages)
             {
-                await messagePublisher.PublishAsync(message);
+                await messagePublisher.PublishAsync(message, TestContext.Current.CancellationToken);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);

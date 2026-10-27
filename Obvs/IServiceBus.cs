@@ -148,7 +148,7 @@ namespace Obvs
             var exceptions = new List<Exception>();
 
             var tasks = EndpointsThatCanHandle(ev)
-                .Select(endpoint => CatchUnlessCancelled(() => endpoint.PublishAsync(ev), exceptions, cancellationToken, EventErrorMessage(endpoint)))
+                .Select(endpoint => CatchUnlessCancelled(() => endpoint.PublishAsync(ev, cancellationToken), exceptions, cancellationToken, EventErrorMessage(endpoint)))
                 .Union(PublishLocal(ev, exceptions, cancellationToken))
                 .ToArray();
 
@@ -181,7 +181,7 @@ namespace Obvs
             var exceptions = new List<Exception>();
 
             var tasks = EndpointsThatCanHandle(response)
-                    .Select(endpoint => CatchUnlessCancelled(() => endpoint.ReplyAsync(request, response), exceptions, cancellationToken, ReplyErrorMessage(endpoint)))
+                    .Select(endpoint => CatchUnlessCancelled(() => endpoint.ReplyAsync(request, response, cancellationToken), exceptions, cancellationToken, ReplyErrorMessage(endpoint)))
                     .Union(ReplyLocal(request, response, exceptions, cancellationToken))
                     .ToArray();
 

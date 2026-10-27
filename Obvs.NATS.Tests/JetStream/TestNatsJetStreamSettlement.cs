@@ -38,7 +38,7 @@ namespace Obvs.NATS.Tests.JetStream
                     await finish.Task;
                 }));
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             await started.Task.WaitAsync(Timeout, Ct);
 
             Assert.Equal(1, await _services.MessagesOnStreamAsync($"{serviceName}_Commands"));
@@ -56,7 +56,7 @@ namespace Obvs.NATS.Tests.JetStream
                     ? throw new InvalidOperationException("Out of stock")
                     : Task.CompletedTask));
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await WaitUntilAsync(() => Task.FromResult(Volatile.Read(ref attempts) == 2));
             await WaitUntilAsync(async () => await _services.MessagesOnStreamAsync($"{serviceName}_Commands") == 0);
@@ -79,7 +79,7 @@ namespace Obvs.NATS.Tests.JetStream
             var deadLetters = await _services.JetStream.CreateOrUpdateConsumerAsync($"{serviceName}_DeadLetters",
                 new ConsumerConfig("test") { AckPolicy = ConsumerConfigAckPolicy.None }, Ct);
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             var deadLetter = await deadLetters.NextAsync<string>(opts: new NatsJSNextOpts { Expires = Timeout }, cancellationToken: Ct);
             Assert.NotNull(deadLetter);
@@ -102,7 +102,7 @@ namespace Obvs.NATS.Tests.JetStream
             var bus = host.Services.GetRequiredService<IServiceBus>();
             var received = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
 
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await received.WaitAsync(Timeout, Ct)).OrderId);
             await WaitUntilAsync(async () => await _services.MessagesOnStreamAsync($"{serviceName}_Commands") == 0);
@@ -120,7 +120,7 @@ namespace Obvs.NATS.Tests.JetStream
                     started.TrySetResult(true);
                     await finish.Task;
                 }));
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             await started.Task.WaitAsync(Timeout, Ct);
 
             var stopping = host.StopAsync(Ct);
@@ -174,7 +174,7 @@ namespace Obvs.NATS.Tests.JetStream
                 options.MaxConcurrentMessages = 2;
             });
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await WaitUntilAsync(async () => await _services.MessagesOnStreamAsync($"{serviceName}_Commands") == 0);
             Assert.Equal(1, Volatile.Read(ref attempts));
@@ -203,7 +203,7 @@ namespace Obvs.NATS.Tests.JetStream
                 options.MaxConcurrentMessages = 2;
             });
 
-            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.True(await redelivered.Task.WaitAsync(Timeout, Ct));
         }

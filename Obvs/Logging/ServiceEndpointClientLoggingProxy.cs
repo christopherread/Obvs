@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Types;
 
@@ -58,10 +59,10 @@ namespace Obvs.Logging
             get { return _endpoint.Events.Do(LogEventReceived, LogEventsException, LogEventsCompleted); }
         }
 
-        public Task SendAsync(TCommand command)
+        public Task SendAsync(TCommand command, CancellationToken cancellationToken = default)
         {
             LogSendCommand(command);
-            return _endpoint.SendAsync(command);
+            return _endpoint.SendAsync(command, cancellationToken);
         }
 
         public IObservable<TResponse> GetResponses(TRequest request)

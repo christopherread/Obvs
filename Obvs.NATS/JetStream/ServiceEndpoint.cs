@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using NATS.Client.Core;
 using NATS.Client.JetStream;
@@ -32,9 +33,9 @@ namespace Obvs.NATS.JetStream
 
         public bool CanHandle(IMessage message) => _endpoint.CanHandle(message);
 
-        public Task PublishAsync(IEvent ev) => _endpoint.PublishAsync(ev);
+        public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default) => _endpoint.PublishAsync(ev, cancellationToken);
 
-        public Task ReplyAsync(IRequest request, IResponse response)
+        public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default)
         {
             if (!ReplyAddresses.TryGet(request, out var replyTo))
             {
@@ -42,7 +43,7 @@ namespace Obvs.NATS.JetStream
                     $"Request {request.GetType().Name} {request.RequestId} didn't arrive over NATS JetStream with a reply subject, so there's nowhere to send its {response.GetType().Name}.");
             }
 
-            return MessagePublisher<IResponse>.PublishAsync(_jetStream, replyTo, response, _serializer);
+            return MessagePublisher<IResponse>.PublishAsync(_jetStream, replyTo, response, _serializer, cancellationToken: cancellationToken);
         }
 
         public void Dispose()

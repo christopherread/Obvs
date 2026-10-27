@@ -100,7 +100,7 @@ namespace Obvs.Kafka.Tests
                 {
                     // Not an Obvs message, so the consumer can't deserialize it
                     await producer.ProduceAsync(topic, new Message<Null, byte[]> { Value = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF } }, TestContext.Current.CancellationToken);
-                    await publisher.PublishAsync(new TestMessage { Data = "after the unreadable one" });
+                    await publisher.PublishAsync(new TestMessage { Data = "after the unreadable one" }, TestContext.Current.CancellationToken);
 
                     var deadline = DateTime.UtcNow.AddSeconds(10);
                     while (received.IsEmpty && error == null && DateTime.UtcNow < deadline)

@@ -164,7 +164,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                                               await TestBroker.QueueUrlAsync($"{serviceName}-responses-{instanceId}", Ct) != null &&
                                               (await TestAmazonSqsHosting.SubscriptionsAsync(await TestAmazonSqsHosting.TopicArnAsync($"{serviceName}-events"))).Count == 1,
                 "the bus to recreate its queues and subscription");
-            await bus.PublishAsync(new OrderPlaced { OrderId = "o-2" });
+            await bus.PublishAsync(new OrderPlaced { OrderId = "o-2" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-2", (await received.WaitAsync(Timeout, Ct)).OrderId);
             var quote = await host.Services.GetRequiredService<IServiceBusClient>().RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
@@ -215,7 +215,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                 Assert.Equal(3, (await TestAmazonSqsHosting.SubscriptionsAsync(topicArn)).Count);
 
                 var received = hosts.Select(host => host.Services.GetRequiredService<IServiceBus>().Events.OfType<OrderPlaced>().FirstAsync().ToTask()).ToList();
-                await hosts[0].Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" });
+                await hosts[0].Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
                 foreach (var placed in received)
                 {
                     Assert.Equal("o-1", (await placed.WaitAsync(Timeout, Ct)).OrderId);

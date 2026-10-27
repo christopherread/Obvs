@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using FakeItEasy;
 using Obvs.Types;
 using Xunit;
@@ -55,7 +56,7 @@ namespace Obvs.Tests
             bridge.Start();
             observer.OnNext(objFrom);
 
-            A.CallTo(() => publisher.PublishAsync(objTo)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => publisher.PublishAsync(objTo, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]

@@ -106,11 +106,11 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             var bus = host.Services.GetRequiredService<IServiceBus>();
 
             var command = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             Assert.Equal("o-1", (await command.WaitAsync(Timeout, Ct)).OrderId);
 
             var placed = bus.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
-            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             Assert.Equal("o-1", (await placed.WaitAsync(Timeout, Ct)).OrderId);
         }
 
@@ -176,7 +176,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
 
             for (var i = 0; i < 5; i++)
             {
-                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" });
+                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" }, TestContext.Current.CancellationToken);
             }
 
             await WaitForAsync(() => first.Count >= 5 && second.Count >= 5 ? first : null);
@@ -198,7 +198,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
 
             for (var i = 0; i < 10; i++)
             {
-                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" });
+                await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" }, TestContext.Current.CancellationToken);
             }
 
             await WaitForAsync(() => handled.Count >= 10 ? handled : null);
@@ -216,7 +216,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
 
             var receivedByA = clientA.Services.GetRequiredService<IServiceBusClient>().Events.OfType<OrderPlaced>().FirstAsync().ToTask();
             var receivedByB = clientB.Services.GetRequiredService<IServiceBusClient>().Events.OfType<OrderPlaced>().FirstAsync().ToTask();
-            await server.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await server.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await receivedByA.WaitAsync(Timeout, Ct)).OrderId);
             Assert.Equal("o-1", (await receivedByB.WaitAsync(Timeout, Ct)).OrderId);
@@ -234,8 +234,8 @@ namespace Obvs.AmazonSqs.Tests.Hosting
 
             var command = busA.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
             var placed = busA.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
-            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" });
-            await busA.PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+            await busA.PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await command.WaitAsync(Timeout, Ct)).OrderId);
             Assert.Equal("o-1", (await placed.WaitAsync(Timeout, Ct)).OrderId);
@@ -253,7 +253,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                 disposed.SetResult(true);
             });
 
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.True(await disposed.Task.WaitAsync(Timeout, Ct));
         }
@@ -289,7 +289,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                 QueueName = $"{serviceName}-commands",
                 Attributes = new Dictionary<string, string> { ["RedrivePolicy"] = commandsAttributes["RedrivePolicy"] },
             }, Ct);
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await command.WaitAsync(Timeout, Ct)).OrderId);
         }
@@ -303,7 +303,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                 .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
             using var sender = await StartHostAsync(serviceName, service => service.AsClient());
 
-            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             var send = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"send {serviceName}"));
             var process = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"process {serviceName}"));
@@ -320,7 +320,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                 .HandleEvent<OrderPlaced>((ev, context, ct) => Task.CompletedTask));
             using var publisher = await StartHostAsync(serviceName, service => service.AsServer());
 
-            await publisher.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await publisher.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             var publish = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"publish {serviceName}"));
             var process = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"process {serviceName}"));
@@ -346,7 +346,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             headers["x-tenant"] = "acme";
             ObvsMessageHeaders.Set(placeOrder, headers);
 
-            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(placeOrder);
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(placeOrder, TestContext.Current.CancellationToken);
 
             var arrived = await received.Task.WaitAsync(Timeout, Ct);
             Assert.Equal("acme", arrived["x-tenant"]);
@@ -363,7 +363,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             ObvsMessageHeaders.Set(placed, new Dictionary<string, string> { ["x-tenant"] = "acme" });
 
             var received = bus.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
-            await bus.PublishAsync(placed);
+            await bus.PublishAsync(placed, TestContext.Current.CancellationToken);
 
             Assert.Equal("acme", ObvsMessageHeaders.Get(await received.WaitAsync(Timeout, Ct))["x-tenant"]);
         }
@@ -374,7 +374,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             using var host = await StartHostAsync(_serviceNames.Create("too-large"));
             var bus = host.Services.GetRequiredService<IServiceBus>();
 
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => bus.SendAsync(new PlaceOrder { OrderId = new string('o', 300 * 1024) }));
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => bus.SendAsync(new PlaceOrder { OrderId = new string('o', 300 * 1024) }, TestContext.Current.CancellationToken));
 
             Assert.Contains("256 KiB", exception.Message);
         }

@@ -61,7 +61,7 @@ namespace Obvs.Tests.Hosting.Telemetry
                 .AddService<IOrderMessage>(_service, service => service.UseInMemory())), cancellationToken: Ct);
             var command = new PlaceOrder("o-1");
 
-            await harness.Client.SendAsync(command);
+            await harness.Client.SendAsync(command, TestContext.Current.CancellationToken);
 
             var send = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"send {_service}"));
             Assert.Equal($"00-{send.TraceId}-{send.SpanId}-01", ObvsMessageHeaders.Get(command)[ObvsMessageHeaders.TraceParent]);
@@ -76,7 +76,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             var command = new PlaceOrder("o-1");
             ObvsMessageHeaders.Set(command, new Dictionary<string, string> { ["x-tenant"] = "acme" });
 
-            await harness.Client.SendAsync(command);
+            await harness.Client.SendAsync(command, TestContext.Current.CancellationToken);
 
             var headers = ObvsMessageHeaders.Get(command);
             Assert.Equal("acme", headers["x-tenant"]);
@@ -92,7 +92,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             using var receiver = await StartHostAsync(service => service.UseInMemory(broker).AsServer()
                 .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
 
-            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder("o-1"));
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
 
             var send = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"send {_service}"));
             var process = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"process {_service}"));

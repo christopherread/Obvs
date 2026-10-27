@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
 using Microsoft.Reactive.Testing;
@@ -793,19 +794,19 @@ namespace Obvs.Tests
             
             serviceBus.SendAsync(command1, TestContext.Current.CancellationToken);
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command1)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient2.SendAsync(command1)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command1)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command1, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command1, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command1, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
             
             serviceBus.SendAsync(new[]{command2, command3}, TestContext.Current.CancellationToken);
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command2)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient2.SendAsync(command2)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command2)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command2, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command2, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command2, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command3)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient2.SendAsync(command3)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command3)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command3, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command3, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command3, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         } 
         
         [Fact]
@@ -891,9 +892,9 @@ namespace Obvs.Tests
             
             serviceBus.PublishAsync(ev, TestContext.Current.CancellationToken);
 
-            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint1.PublishAsync(ev, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint2.PublishAsync(ev, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpoint3.PublishAsync(ev, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]
@@ -916,9 +917,9 @@ namespace Obvs.Tests
 
             serviceBus.ReplyAsync(request, response, TestContext.Current.CancellationToken);
 
-            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]
@@ -984,9 +985,9 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpointClient3.CanHandle(A<ICommand>._)).Returns(true);
 
             Exception originalException = new Exception("Something went wrong");
-            A.CallTo(() => serviceEndpointClient1.SendAsync(A<ICommand>._)).Returns(Task.FromResult(true));
-            A.CallTo(() => serviceEndpointClient2.SendAsync(A<ICommand>._)).Throws(originalException);
-            A.CallTo(() => serviceEndpointClient3.SendAsync(A<ICommand>._)).Returns(Task.FromResult(true));
+            A.CallTo(() => serviceEndpointClient1.SendAsync(A<ICommand>._, A<CancellationToken>._)).Returns(Task.FromResult(true));
+            A.CallTo(() => serviceEndpointClient2.SendAsync(A<ICommand>._, A<CancellationToken>._)).Throws(originalException);
+            A.CallTo(() => serviceEndpointClient3.SendAsync(A<ICommand>._, A<CancellationToken>._)).Returns(Task.FromResult(true));
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2, serviceEndpointClient3 }, new[] { serviceEndpoint1, serviceEndpoint2 });
 
@@ -1004,9 +1005,9 @@ namespace Obvs.Tests
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
             Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient2.SendAsync(command)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]
@@ -1025,9 +1026,9 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpoint3.CanHandle(A<IEvent>._)).Returns(true);
 
             Exception originalException = new Exception("Something went wrong");
-            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).Returns(Task.FromResult(true));
-            A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).Throws(originalException);
-            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).Returns(Task.FromResult(true));
+            A.CallTo(() => serviceEndpoint1.PublishAsync(ev, A<CancellationToken>._)).Returns(Task.FromResult(true));
+            A.CallTo(() => serviceEndpoint2.PublishAsync(ev, A<CancellationToken>._)).Throws(originalException);
+            A.CallTo(() => serviceEndpoint3.PublishAsync(ev, A<CancellationToken>._)).Returns(Task.FromResult(true));
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2, serviceEndpoint3 });
 
@@ -1045,9 +1046,9 @@ namespace Obvs.Tests
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
             Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint1.PublishAsync(ev, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint2.PublishAsync(ev, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint3.PublishAsync(ev, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
         
         [Fact]
@@ -1067,7 +1068,7 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpoint3.CanHandle(A<IResponse>._)).Returns(true);
 
             Exception originalException = new Exception("Something went wrong");
-            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).Throws(originalException);
+            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response, A<CancellationToken>._)).Throws(originalException);
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2, serviceEndpoint3 });
 
@@ -1086,9 +1087,9 @@ namespace Obvs.Tests
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
             Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]

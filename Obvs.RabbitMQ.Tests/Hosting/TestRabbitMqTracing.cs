@@ -26,7 +26,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
                 .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
             using var sender = await StartHostAsync(serviceName, service => service.AsClient());
 
-            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             var send = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"send {serviceName}"));
             var process = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"process {serviceName}"));
@@ -49,7 +49,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
             var placeOrder = new PlaceOrder { OrderId = "o-1" };
             ObvsMessageHeaders.Set(placeOrder, new Dictionary<string, string> { ["x-tenant"] = "acme" });
 
-            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(placeOrder);
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(placeOrder, TestContext.Current.CancellationToken);
 
             var headers = await received.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
             Assert.Equal("acme", headers["x-tenant"]);

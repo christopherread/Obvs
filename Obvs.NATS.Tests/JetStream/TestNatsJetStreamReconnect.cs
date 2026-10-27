@@ -38,7 +38,7 @@ namespace Obvs.NATS.Tests.JetStream
             var errors = RecordErrors(worker.Services.GetRequiredService<IServiceBus>());
             using (var sender = await StartHostAsync(server, service => service.AsClient()))
             {
-                await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+                await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
                 await WaitUntilAsync(() => handled.Contains("o-1"));
             }
 
@@ -46,7 +46,7 @@ namespace Obvs.NATS.Tests.JetStream
             var restarted = Stopwatch.StartNew();
             using (var sender = await StartHostAsync(server, service => service.AsClient()))
             {
-                await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-2" });
+                await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-2" }, TestContext.Current.CancellationToken);
                 await WaitUntilAsync(() => handled.Contains("o-2"));
             }
 
@@ -69,7 +69,7 @@ namespace Obvs.NATS.Tests.JetStream
             await server.RestartAsync();
             var restarted = Stopwatch.StartNew();
             using var publisher = await StartHostAsync(server, service => service.AsServer());
-            await publisher.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await publisher.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await WaitUntilAsync(() => received.Contains("o-1"));
             Assert.True(restarted.Elapsed < Resumes, $"Received the event {restarted.Elapsed} after the restart.");
@@ -91,7 +91,7 @@ namespace Obvs.NATS.Tests.JetStream
                     started.TrySetResult(true);
                     await finish.Task;
                 }));
-            await worker.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" });
+            await worker.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
             await started.Task.WaitAsync(Timeout, Ct);
 
             await server.RestartAsync();
@@ -140,7 +140,7 @@ namespace Obvs.NATS.Tests.JetStream
             await jetStream.DeleteConsumerAsync($"{ServiceName}_Events", instanceId, Ct);
             await WaitUntilAsync(async () => await ConsumerExistsAsync(jetStream, $"{ServiceName}_Events", instanceId));
             using var publisher = await StartHostAsync(server, service => service.AsServer());
-            await publisher.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await publisher.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             await WaitUntilAsync(() => received.Contains("o-1"));
             Assert.Empty(errors);

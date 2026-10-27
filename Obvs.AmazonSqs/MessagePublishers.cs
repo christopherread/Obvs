@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
@@ -28,12 +29,13 @@ namespace Obvs.AmazonSqs
             _replyTo = replyTo;
         }
 
-        public Task PublishAsync(TMessage message)
+        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
         {
-            return SendAsync(_sqs, _queueUrl, message, _serializer, _replyTo);
+            return SendAsync(_sqs, _queueUrl, message, _serializer, _replyTo, cancellationToken);
         }
 
-        public static async Task SendAsync(IAmazonSQS sqs, string queueUrl, object message, IMessageSerializer serializer, string replyTo = null)
+        public static async Task SendAsync(IAmazonSQS sqs, string queueUrl, object message, IMessageSerializer serializer, string replyTo = null,
+            CancellationToken cancellationToken = default)
         {
             var encoded = MessageCodec.Encode(message, serializer, replyTo);
             await sqs.SendMessageAsync(new SendMessageRequest
@@ -43,7 +45,7 @@ namespace Obvs.AmazonSqs
                 MessageAttributes = encoded.Attributes.ToDictionary(
                     attribute => attribute.Key,
                     attribute => new Amazon.SQS.Model.MessageAttributeValue { DataType = MessageCodec.StringDataType, StringValue = attribute.Value }),
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
         }
 
         public void Dispose()
@@ -67,7 +69,7 @@ namespace Obvs.AmazonSqs
             _serializer = serializer;
         }
 
-        public async Task PublishAsync(TMessage message)
+        public async Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
         {
             var encoded = MessageCodec.Encode(message, _serializer);
             await _sns.PublishAsync(new PublishRequest
@@ -77,7 +79,7 @@ namespace Obvs.AmazonSqs
                 MessageAttributes = encoded.Attributes.ToDictionary(
                     attribute => attribute.Key,
                     attribute => new Amazon.SimpleNotificationService.Model.MessageAttributeValue { DataType = MessageCodec.StringDataType, StringValue = attribute.Value }),
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
         }
 
         public void Dispose()

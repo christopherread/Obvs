@@ -35,7 +35,7 @@ namespace Obvs.NATS.Tests
 
             for (var i = 0; i < 10; i++)
             {
-                await publisher.PublishAsync(new TestMessage {Id = i});
+                await publisher.PublishAsync(new TestMessage {Id = i}, TestContext.Current.CancellationToken);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);

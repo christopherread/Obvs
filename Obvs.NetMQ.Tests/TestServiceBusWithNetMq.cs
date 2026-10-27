@@ -129,13 +129,13 @@ namespace Obvs.NetMQ.Tests
             serviceBus.Requests.OfType<ITestService2>().ObserveOn(Scheduler.Default).Subscribe(fakeService2);
 
             // send some messages from client1
-            await serviceBusClient1.SendAsync(new TestCommand1 { Id = 1 });
-            await serviceBusClient1.SendAsync(new TestCommand2 { Id = 3 });
+            await serviceBusClient1.SendAsync(new TestCommand1 { Id = 1 }, TestContext.Current.CancellationToken);
+            await serviceBusClient1.SendAsync(new TestCommand2 { Id = 3 }, TestContext.Current.CancellationToken);
             serviceBusClient1.GetResponses(new TestRequest1 { Id = 2 }).Subscribe(fakeClient1);
             serviceBusClient1.GetResponses(new TestRequest2 { Id = 4 }).Subscribe(fakeClient1);
 
             // send some messages from client2
-            await serviceBusClient2.SendAsync(new TestCommand1 { Id = 5 });
+            await serviceBusClient2.SendAsync(new TestCommand1 { Id = 5 }, TestContext.Current.CancellationToken);
             serviceBusClient2.GetResponses(new TestRequest1 { Id = 6 }).Subscribe(fakeClient1);
 
             // wait some time until we think all messages have been sent and received

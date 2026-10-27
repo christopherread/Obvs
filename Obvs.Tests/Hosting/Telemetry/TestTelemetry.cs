@@ -28,7 +28,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             using var activities = new ActivityRecorder();
             await using var harness = await StartAsync(service => { });
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
 
             var span = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"send {_service}"));
             Assert.Equal(ActivityKind.Producer, span.Kind);
@@ -43,7 +43,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             using var activities = new ActivityRecorder();
             await using var harness = await StartAsync(service => { });
 
-            await harness.Bus.PublishAsync(new OrderPlaced("o-1"));
+            await harness.Bus.PublishAsync(new OrderPlaced("o-1"), TestContext.Current.CancellationToken);
 
             var span = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"publish {_service}"));
             Assert.Equal(ActivityKind.Producer, span.Kind);
@@ -73,7 +73,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             await using var harness = await StartAsync(service => service
                 .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
 
             var span = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"process {_service}"));
             Assert.Equal(ActivityKind.Consumer, span.Kind);
@@ -89,7 +89,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             await using var harness = await StartAsync(service => service
                 .HandleCommand<PlaceOrder>((command, context, ct) => throw new InvalidOperationException("boom")));
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
 
             var span = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"process {_service}"));
             Assert.Equal(ActivityStatusCode.Error, span.Status);
@@ -104,7 +104,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             await using var harness = await StartAsync(service => service
                 .HandleCommand<PlaceOrder>((command, context, ct) => context.PublishAsync(new OrderPlaced(command.OrderId), ct)));
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
 
             var process = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"process {_service}"));
             var publish = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"publish {_service}"));
@@ -118,9 +118,9 @@ namespace Obvs.Tests.Hosting.Telemetry
             using var metrics = new MetricRecorder();
             await using var harness = await StartAsync(service => { });
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
-            await harness.Client.SendAsync(new PlaceOrder("o-2"));
-            await harness.Bus.PublishAsync(new OrderPlaced("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
+            await harness.Client.SendAsync(new PlaceOrder("o-2"), TestContext.Current.CancellationToken);
+            await harness.Bus.PublishAsync(new OrderPlaced("o-1"), TestContext.Current.CancellationToken);
 
             var sent = await WaitForAsync(() =>
             {
@@ -141,8 +141,8 @@ namespace Obvs.Tests.Hosting.Telemetry
                     ? throw new InvalidOperationException("boom")
                     : Task.CompletedTask));
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
-            await harness.Client.SendAsync(new PlaceOrder("o-2"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
+            await harness.Client.SendAsync(new PlaceOrder("o-2"), TestContext.Current.CancellationToken);
 
             var durations = await WaitForAsync(() =>
             {
@@ -164,8 +164,8 @@ namespace Obvs.Tests.Hosting.Telemetry
             var seen = 0;
             using var subscription = harness.Bus.Commands.Subscribe(_ => Interlocked.Increment(ref seen));
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
-            await harness.Client.SendAsync(new PlaceOrder("o-2"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
+            await harness.Client.SendAsync(new PlaceOrder("o-2"), TestContext.Current.CancellationToken);
 
             await WaitForAsync(() => metrics.For(_service, "messaging.process.duration").Count == 2 && Volatile.Read(ref seen) == 2 ? new object() : null);
             var received = metrics.For(_service, "messaging.client.consumed.messages");
@@ -184,7 +184,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             var seen = 0;
             using var subscription = harness.Client.Events.Subscribe(_ => Interlocked.Increment(ref seen));
 
-            await harness.Bus.PublishAsync(new OrderPlaced("o-1"));
+            await harness.Bus.PublishAsync(new OrderPlaced("o-1"), TestContext.Current.CancellationToken);
 
             var received = await WaitForAsync(() =>
             {
@@ -218,8 +218,8 @@ namespace Obvs.Tests.Hosting.Telemetry
                     ? throw new InvalidOperationException("boom")
                     : Task.CompletedTask));
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
-            await harness.Client.SendAsync(new PlaceOrder("o-2"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
+            await harness.Client.SendAsync(new PlaceOrder("o-2"), TestContext.Current.CancellationToken);
 
             await WaitForAsync(() => metrics.For(_service, "messaging.process.duration").Count == 2 ? new object() : null);
             var failed = Assert.Single(metrics.For(_service, "obvs.process.failed.messages"));
@@ -239,7 +239,7 @@ namespace Obvs.Tests.Hosting.Telemetry
                 .AddObvs(obvs => obvs.AddService<IOrderMessage>(_service, service => service.UseInMemory())),
                 cancellationToken: Ct);
 
-            await harness.Client.SendAsync(new PlaceOrder("o-1"));
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
 
             var entry = await WaitForAsync(() => logs.Entries.FirstOrDefault(e => e.Message.Contains(_service) && e.Message.Contains(nameof(PlaceOrder))));
             Assert.Equal(LogLevel.Debug, entry.Level);

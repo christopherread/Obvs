@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using FakeItEasy;
 using Obvs.Types;
@@ -28,21 +29,21 @@ namespace Obvs.Tests
             ICommand command = A.Fake<ICommand>();
             IMessage message = A.Fake<IMessage>();
 
-            typeRoutingMessagePublisher.PublishAsync(ev);
-            typeRoutingMessagePublisher.PublishAsync(command);
-            typeRoutingMessagePublisher.PublishAsync(message);
+            typeRoutingMessagePublisher.PublishAsync(ev, TestContext.Current.CancellationToken);
+            typeRoutingMessagePublisher.PublishAsync(command, TestContext.Current.CancellationToken);
+            typeRoutingMessagePublisher.PublishAsync(message, TestContext.Current.CancellationToken);
 
-            A.CallTo(() => eventPublisher.PublishAsync(ev)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => eventPublisher.PublishAsync(message)).MustNotHaveHappened();
-            A.CallTo(() => eventPublisher.PublishAsync(command)).MustNotHaveHappened();
+            A.CallTo(() => eventPublisher.PublishAsync(ev, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => eventPublisher.PublishAsync(message, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => eventPublisher.PublishAsync(command, A<CancellationToken>._)).MustNotHaveHappened();
 
-            A.CallTo(() => commandPublisher.PublishAsync(ev)).MustNotHaveHappened();
-            A.CallTo(() => commandPublisher.PublishAsync(message)).MustNotHaveHappened();
-            A.CallTo(() => commandPublisher.PublishAsync(command)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => commandPublisher.PublishAsync(ev, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => commandPublisher.PublishAsync(message, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => commandPublisher.PublishAsync(command, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
 
-            A.CallTo(() => messagePublisher.PublishAsync(ev)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => messagePublisher.PublishAsync(command)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => messagePublisher.PublishAsync(message)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => messagePublisher.PublishAsync(ev, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => messagePublisher.PublishAsync(command, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => messagePublisher.PublishAsync(message, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
     }
 }

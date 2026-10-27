@@ -298,7 +298,7 @@ namespace Obvs.Tests.Hosting.Handlers
 
                 public Publisher(Action<T> publish) => _publish = publish;
 
-                public Task PublishAsync(T message)
+                public Task PublishAsync(T message, CancellationToken cancellationToken = default)
                 {
                     _publish(message);
                     return Task.CompletedTask;

@@ -45,8 +45,8 @@ namespace Obvs.AzureSB.Tests.Hosting
 
             var command = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
             var placed = bus.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
-            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" });
-            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" });
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+            await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await command.WaitAsync(Timeout, Ct)).OrderId);
             Assert.Equal("o-1", (await placed.WaitAsync(Timeout, Ct)).OrderId);

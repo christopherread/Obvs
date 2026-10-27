@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using NATS.Client.Core;
 using NATS.Client.JetStream;
@@ -26,14 +27,15 @@ namespace Obvs.NATS.JetStream
             _replyTo = replyTo;
         }
 
-        public Task PublishAsync(TMessage message)
+        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
         {
-            return PublishAsync(_jetStream, _subjectPrefix, message, _serializer, _replyTo);
+            return PublishAsync(_jetStream, _subjectPrefix, message, _serializer, _replyTo, cancellationToken);
         }
 
         // The subject ends in the type name, which tells the receiver which deserializer to use. Obvs headers (such as
         // trace context) become NATS headers. The stream acknowledges the message once it's stored.
-        public static async Task PublishAsync(INatsJSContext jetStream, string subjectPrefix, object message, IMessageSerializer serializer, string replyTo = null)
+        public static async Task PublishAsync(INatsJSContext jetStream, string subjectPrefix, object message, IMessageSerializer serializer, string replyTo = null,
+            CancellationToken cancellationToken = default)
         {
             byte[] data;
             using (var stream = new MemoryStream())
@@ -52,7 +54,7 @@ namespace Obvs.NATS.JetStream
                 headers[ReplyToHeader] = replyTo;
             }
 
-            var ack = await jetStream.PublishAsync($"{subjectPrefix}.{message.GetType().Name}", data, headers: headers).ConfigureAwait(false);
+            var ack = await jetStream.PublishAsync($"{subjectPrefix}.{message.GetType().Name}", data, headers: headers, cancellationToken: cancellationToken).ConfigureAwait(false);
             ack.EnsureSuccess();
         }
 

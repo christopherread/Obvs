@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Obvs.ActiveMQ.Configuration
@@ -35,14 +36,14 @@ namespace Obvs.ActiveMQ.Configuration
             get { return _endpoint.Name; }
         }
 
-        public Task PublishAsync(TEvent ev)
+        public Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default)
         {
-            return _endpoint.PublishAsync(ev);
+            return _endpoint.PublishAsync(ev, cancellationToken);
         }
 
-        public Task ReplyAsync(TRequest request, TResponse response)
+        public Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default)
         {
-            return _endpoint.ReplyAsync(request, response);
+            return _endpoint.ReplyAsync(request, response, cancellationToken);
         }
 
         public IObservable<TRequest> Requests

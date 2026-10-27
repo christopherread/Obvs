@@ -2,6 +2,7 @@ using System;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Extensions;
 
@@ -28,7 +29,7 @@ namespace Obvs
                         .AsObservable();
         }
 
-        public Task PublishAsync(TMessage message)
+        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
         {
             _subject.OnNext(message);
             return Task.FromResult(true);
