@@ -160,8 +160,7 @@ namespace Obvs
 
             if (tasks.Length == 0)
             {
-                throw new Exception(
-                    $"No endpoint or local bus configured for {ev}, please check your ServiceBus configuration.");
+                throw new InvalidOperationException(NoEndpointMessage(ev));
             }
 
             return Task.WhenAll(tasks);

@@ -118,6 +118,7 @@ namespace Obvs.Tests.Hosting
             Assert.Contains("'catalogue'", error);
             Assert.Contains("ShipProduct", error);
             Assert.Contains("ICatalogueMessage", error);
+            Assert.Contains("register it on the service it belongs to", error);
         }
 
         [Fact]
@@ -146,8 +147,8 @@ namespace Obvs.Tests.Hosting
             var errors = await StartupErrorsAsync(typeof(ProductCommand), typeof(ReindexProducts));
 
             Assert.Equal(2, errors.Count);
-            Assert.Contains(errors, error => error.Contains("ProductCommand") && error.Contains("abstract"));
-            Assert.Contains(errors, error => error.Contains("ReindexProducts") && error.Contains("public"));
+            Assert.Contains(errors, error => error.Contains("ProductCommand") && error.Contains("abstract") && error.Contains("Register the concrete message classes"));
+            Assert.Contains(errors, error => error.Contains("ReindexProducts") && error.Contains("Make it public"));
         }
 
         [Fact]

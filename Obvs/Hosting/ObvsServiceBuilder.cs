@@ -279,6 +279,20 @@ namespace Obvs.Hosting
                 {
                     yield return $"Service '{Name}' handles {messageName} with MaxConcurrency {handler.Options.MaxConcurrency}. It must be at least 1.";
                 }
+                if (_messages.Count > 0 && ServiceMessageType.IsAssignableFrom(handler.MessageType) && !_messages.Contains(handler.MessageType))
+                {
+                    yield return $"Service '{Name}' handles {messageName} but doesn't register it, and a service that registers its messages " +
+                                 $"receives only those, so the handler would never run. Register it with AddMessages(typeof({messageName})).";
+                }
+            }
+
+            // Several parts of an app can react to an event, but a command or request goes to one handler
+            foreach (var duplicates in _handlers.Where(handler => handler.Kind != HandlerKind.Event).GroupBy(handler => handler.MessageType).Where(group => group.Count() > 1))
+            {
+                var kind = duplicates.First().Kind == HandlerKind.Command ? "command" : "request";
+                yield return $"Service '{Name}' has {duplicates.Count()} handlers for {duplicates.Key.Name}, and each {kind} goes to one handler. " +
+                             "Merge them into one. If several parts of the app should react, have the handler publish an event, " +
+                             "and handle that with HandleEvent.";
             }
         }
 

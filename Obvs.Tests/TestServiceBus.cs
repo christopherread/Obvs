@@ -27,6 +27,28 @@ namespace Obvs.Tests
         }
 
         [Fact]
+        public async Task ShouldSayWhichServiceIsMissingWhenNoEndpointCanPublishAnEvent()
+        {
+            var serviceBus = new ServiceBus(new IServiceEndpointClient[0], new IServiceEndpoint[0]);
+
+            var exception = await Assert.ThrowsAnyAsync<Exception>(() => serviceBus.PublishAsync(new TestServiceEvent1(), TestContext.Current.CancellationToken));
+
+            Assert.Contains("TestServiceEvent1", exception.Message);
+            Assert.Contains("AddService", exception.Message);
+        }
+
+        [Fact]
+        public async Task ShouldSayWhichServiceIsMissingWhenNoEndpointCanSendACommand()
+        {
+            var serviceBus = new ServiceBus(new IServiceEndpointClient[0], new IServiceEndpoint[0]);
+
+            var exception = await Assert.ThrowsAnyAsync<Exception>(() => serviceBus.SendAsync(new TestServiceCommand1(), TestContext.Current.CancellationToken));
+
+            Assert.Contains("TestServiceCommand1", exception.Message);
+            Assert.Contains("AddService", exception.Message);
+        }
+
+        [Fact]
         public void ShouldDisposeEndpointsOnlyOnceWhenDisposedTwice()
         {
             IServiceEndpoint serviceEndpoint = A.Fake<IServiceEndpoint>();
