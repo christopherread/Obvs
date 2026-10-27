@@ -131,14 +131,14 @@ The analyzer ships inside the main package, so it's on by default. First rules:
 
 | Rule | Detects | Code fix |
 |---|---|---|
-| OBVS001 | A message type registered for a service doesn't implement that service's marker interface | Add the interface |
+| OBVS001 | A message type registered or handled on a service doesn't implement that service's marker interface | Add the interface |
 | OBVS002 | A type implements more than one of `ICommand`, `IEvent`, `IRequest` and `IResponse` | — |
 | OBVS003 | A request handler's response type doesn't implement `IResponse` for the same service | — |
-| OBVS004 | A service has no transport or no serializer configured | Add `Use<Transport>()` |
+| OBVS004 | A service has no transport (it always has a serializer, System.Text.Json by default) | Add `Use<Transport>()` |
 | OBVS005 | The result of `Subscribe` on a bus stream is discarded | Store the subscription, or suggest a handler |
-| OBVS006 | An `async` lambda passed to `Subscribe` on a bus stream (compiles to `async void`) | Convert to `HandleCommand`, `HandleEvent` or `HandleRequest` |
+| OBVS006 | An `async` lambda passed to `Subscribe` on a bus stream (compiles to `async void`) | Run it for each message in turn with `Select(m => Observable.FromAsync(...)).Concat()`. Moving it to a handler is in the bus's configuration, which a code fix can't reach, so the message suggests it |
 
-Each diagnostic says what's wrong, how to fix it, and links to a docs page.
+Each diagnostic says what's wrong, how to fix it, and links to a docs page: [analyzers.md](analyzers.md).
 
 ### 4. Handlers and awaitable requests
 

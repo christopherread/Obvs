@@ -40,6 +40,7 @@
 * Transports: ActiveMQ / RabbitMQ / NetMQ / NATS and NATS JetStream / Kafka / Azure Service Bus / [Amazon SQS and SNS](docs/transports/amazon-sqs.md)
 * Serialization: System.Text.Json (built in, and the default from v7) / JSON.Net (`Obvs.Serialization.Json`) / ProtoBuf / MessagePack (`Obvs.Serialization.MessagePack`, using MessagePack-CSharp). Any of them can be gzipped with `Compressed()` on the service.
 * Logging and monitoring: `Microsoft.Extensions.Logging` and OpenTelemetry, built in from v7
+* Analyzers: built into `Obvs`, they report common mistakes as you type, with code fixes ([rules](docs/analyzers.md))
 * Testing: `Obvs.Testing`, an in-memory broker and a test harness that waits for messages without fixed delays ([guide](docs/testing.md))
 
 The XML, NetJSON, YAML and MsgPack.Cli serializers, `Obvs.Monitoring.*` and `Obvs.Logging.NLog` stay on v6.

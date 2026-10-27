@@ -19,10 +19,15 @@
     <PackageReference Include="System.Text.Json" />
     <PackageReference Include="System.Threading.Channels" />
   </ItemGroup>
-  <!-- The [ObvsMessages] source generator ships in this package, so projects using Obvs get it -->
+  <!-- The [ObvsMessages] source generator, and the analyzers and their code fixes, ship in this package, so projects
+       using Obvs get them -->
   <ItemGroup>
     <ProjectReference Include="..\Obvs.Generators\Obvs.Generators.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\Obvs.Analyzers\Obvs.Analyzers.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\Obvs.Analyzers.CodeFixes\Obvs.Analyzers.CodeFixes.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
     <None Include="..\Obvs.Generators\bin\$(Configuration)\netstandard2.0\Obvs.Generators.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="..\Obvs.Analyzers\bin\$(Configuration)\netstandard2.0\Obvs.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="..\Obvs.Analyzers.CodeFixes\bin\$(Configuration)\netstandard2.0\Obvs.Analyzers.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
