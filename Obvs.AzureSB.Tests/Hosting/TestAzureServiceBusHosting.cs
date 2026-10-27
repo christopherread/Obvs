@@ -17,7 +17,7 @@ namespace Obvs.AzureSB.Tests.Hosting
 {
     // End to end through AddObvs and UseAzureServiceBus against the Service Bus emulator (see Emulator/docker-compose.yml).
     // Service names are unique to each run, so every run creates its entities, and the fixture deletes them afterwards.
-    public class TestAzureServiceBusHosting : IClassFixture<TestAzureServiceBusHosting.ServiceNames>
+    public class TestAzureServiceBusHosting : IClassFixture<TestAzureServiceBusHosting.ServiceNames>, IAsyncDisposable
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
         private readonly ServiceNames _serviceNames;
@@ -26,6 +26,8 @@ namespace Obvs.AzureSB.Tests.Hosting
         {
             _serviceNames = serviceNames;
         }
+
+        public ValueTask DisposeAsync() => _serviceNames.DeleteCreatedAsync();
 
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldCreateTheServicesEntitiesAndTheBusesOwn()
@@ -146,6 +148,24 @@ namespace Obvs.AzureSB.Tests.Hosting
         }
 
         [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldReceiveAgainOnceAQueueDeletedFromUnderTheBusIsBack()
+        {
+            // The bus reports the missing queue and subscribes again, which mustn't replay the error it just reported
+            var serviceName = _serviceNames.Create("queue-deleted");
+            using var host = await StartHostAsync(serviceName);
+            var bus = host.Services.GetRequiredService<IServiceBus>();
+            var command = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
+            var admin = TestBroker.CreateAdministrationClient();
+
+            await admin.DeleteQueueAsync($"{serviceName}.Commands", TestContext.Current.CancellationToken);
+            await Task.Delay(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
+            await admin.CreateQueueAsync($"{serviceName}.Commands", TestContext.Current.CancellationToken);
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+
+            Assert.Equal("o-1", (await command.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
         public async Task ShouldNotDeadlockWhenASubscriberDisposesTheBus()
         {
             var host = await StartHostAsync(_serviceNames.Create("dispose-in-callback"));
@@ -237,8 +257,45 @@ namespace Obvs.AzureSB.Tests.Hosting
         public sealed class ServiceNames : IAsyncDisposable
         {
             private readonly string _runId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            private readonly ConcurrentQueue<string> _created = new ConcurrentQueue<string>();
 
-            public string Create(string name) => $"obvs-asb-{name}-{_runId}";
+            public string Create(string name)
+            {
+                var serviceName = $"obvs-asb-{name}-{_runId}";
+                _created.Enqueue(serviceName);
+                return serviceName;
+            }
+
+            // The emulator allows 50 queues, and the test classes run at the same time, so each test's queues and
+            // topics are deleted as it finishes rather than with the rest of its class's
+            public async ValueTask DeleteCreatedAsync()
+            {
+                var prefixes = new List<string>();
+                while (_created.TryDequeue(out var serviceName))
+                {
+                    prefixes.Add(serviceName + ".");
+                }
+                if (prefixes.Count == 0)
+                {
+                    return;
+                }
+
+                var admin = TestBroker.CreateAdministrationClient();
+                await foreach (var queue in admin.GetQueuesAsync())
+                {
+                    if (prefixes.Any(prefix => queue.Name.StartsWith(prefix, StringComparison.Ordinal)))
+                    {
+                        await admin.DeleteQueueAsync(queue.Name);
+                    }
+                }
+                await foreach (var topic in admin.GetTopicsAsync())
+                {
+                    if (prefixes.Any(prefix => topic.Name.StartsWith(prefix, StringComparison.Ordinal)))
+                    {
+                        await admin.DeleteTopicAsync(topic.Name);
+                    }
+                }
+            }
 
             public async ValueTask DisposeAsync()
             {

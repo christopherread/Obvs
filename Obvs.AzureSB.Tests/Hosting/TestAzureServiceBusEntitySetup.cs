@@ -19,7 +19,7 @@ namespace Obvs.AzureSB.Tests.Hosting
     // What happens when Obvs can't set up a service's entities: on a Basic-tier namespace, which has no topics,
     // and with credentials that can send and listen but lack the Manage right. The emulator can't refuse either, so
     // a stand-in for the management client gives the answers Azure documents.
-    public class TestAzureServiceBusEntitySetup : IClassFixture<TestAzureServiceBusHosting.ServiceNames>
+    public class TestAzureServiceBusEntitySetup : IClassFixture<TestAzureServiceBusHosting.ServiceNames>, IAsyncDisposable
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
         private readonly TestAzureServiceBusHosting.ServiceNames _serviceNames;
@@ -28,6 +28,8 @@ namespace Obvs.AzureSB.Tests.Hosting
         {
             _serviceNames = serviceNames;
         }
+
+        public ValueTask DisposeAsync() => _serviceNames.DeleteCreatedAsync();
 
         private static CancellationToken Ct => TestContext.Current.CancellationToken;
 

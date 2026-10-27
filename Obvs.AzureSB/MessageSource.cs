@@ -16,23 +16,50 @@ namespace Obvs.AzureSB
     internal sealed class MessageSource<TMessage> : IMessageSource<TMessage>
         where TMessage : class
     {
+        // How long a processor waits before reporting an error it won't recover from
+        private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(1);
+
+        private readonly Func<ServiceBusProcessorOptions, ServiceBusProcessor> _createProcessor;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
+        private readonly AzureServiceBusOptions _options;
+        private readonly object _sharedLock = new object();
+        private IObservable<TMessage> _shared;
 
         /// <param name="createProcessor">Creates a processor for the queue or subscription, when <see cref="Messages"/> gets its first subscriber</param>
         /// <param name="options">How many messages to deliver at once, how long to renew their locks, and how many times to deliver a failing one</param>
         public MessageSource(Func<ServiceBusProcessorOptions, ServiceBusProcessor> createProcessor, IEnumerable<IMessageDeserializer<TMessage>> deserializers, AzureServiceBusOptions options)
         {
+            _createProcessor = createProcessor;
+            _options = options;
             _deserializers = deserializers.ToDictionary(deserializer => deserializer.GetTypeName());
+            Messages = Observable.Defer(() =>
+            {
+                lock (_sharedLock)
+                {
+                    return _shared ?? (_shared = CreateShared());
+                }
+            });
+        }
 
-            Messages = Observable.Create<TMessage>(observer =>
+        public IObservable<TMessage> Messages { get; }
+
+        // One processor per queue or subscription, shared by the source's subscribers while it has any. Processors of
+        // their own would take each other's messages: every request in flight subscribes to the reply queue, and a
+        // response one request's processor received would be lost to the request it belongs to. Once the processor
+        // reports an error, the next subscriber starts a new one: the bus subscribes again straight away, and would
+        // otherwise get the same error back, again and again until the stack overflows.
+        private IObservable<TMessage> CreateShared()
+        {
+            IObservable<TMessage> shared = null;
+            shared = Observable.Create<TMessage>(observer =>
                 {
                     // One message at a time (MaxConcurrentCalls 1, the default) keeps them in order. Each waits in its callback
                     // until it's settled, by its handler or as it arrives if no handler takes it, while its lock is renewed.
-                    var processor = createProcessor(new ServiceBusProcessorOptions
+                    var processor = _createProcessor(new ServiceBusProcessorOptions
                     {
                         AutoCompleteMessages = false,
-                        MaxConcurrentCalls = options.MaxConcurrentCalls,
-                        MaxAutoLockRenewalDuration = options.MaxLockRenewalDuration,
+                        MaxConcurrentCalls = _options.MaxConcurrentCalls,
+                        MaxAutoLockRenewalDuration = _options.MaxLockRenewalDuration,
                     });
                     var waiting = new ConcurrentDictionary<MessageSettlement, bool>();
                     var stopped = false;
@@ -55,7 +82,7 @@ namespace Obvs.AzureSB
                             return;
                         }
 
-                        var settlement = new MessageSettlement(args, options.MaxDeliveryAttempts);
+                        var settlement = new MessageSettlement(args, _options.MaxDeliveryAttempts);
                         ObvsMessageSettlement.Set(message, settlement);
                         waiting[settlement] = true;
                         try
@@ -78,7 +105,17 @@ namespace Obvs.AzureSB
                         if (!stopped && args.ErrorSource != ServiceBusErrorSource.ProcessMessageCallback &&
                             !(args.Exception is ServiceBusException serviceBusException && serviceBusException.IsTransient))
                         {
-                            observer.OnError(args.Exception);
+                            // Reported a moment later, outside the processor's callback, as reporting it stops this processor.
+                            // The bus subscribes again straight away, so an error that lasts, such as a deleted queue, is
+                            // reported once a second rather than in a tight loop.
+                            var exception = args.Exception;
+                            Task.Delay(RetryDelay).ContinueWith(_ =>
+                            {
+                                if (!stopped)
+                                {
+                                    observer.OnError(exception);
+                                }
+                            }, TaskScheduler.Default);
                         }
                         return Task.CompletedTask;
                     };
@@ -101,13 +138,22 @@ namespace Obvs.AzureSB
                 // With MaxConcurrentCalls above 1, callbacks deliver at the same time, but observers take one at a time
                 .Synchronize()
                 .ObserveOn(TaskPoolScheduler.Default)
-                // One processor per queue or subscription, however many subscribe, such as each pending request waiting
-                // for its response: processors of their own would take each other's messages
+                .Do(_ => { }, _ => Forget(shared), () => Forget(shared))
                 .Publish()
                 .RefCount();
+            return shared;
         }
 
-        public IObservable<TMessage> Messages { get; }
+        private void Forget(IObservable<TMessage> shared)
+        {
+            lock (_sharedLock)
+            {
+                if (_shared == shared)
+                {
+                    _shared = null;
+                }
+            }
+        }
 
         // Messages of a type this service doesn't know are skipped
         private TMessage Deserialize(ServiceBusReceivedMessage received)
