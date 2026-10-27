@@ -64,6 +64,9 @@ jobs:
     - name: Start Kafka SASL broker
       # A second Kafka broker, requiring SASL sign-in, on port 9094. It starts while the build runs.
       run: docker compose -f Obvs.Kafka.Tests/SaslBroker/docker-compose.yml up -d
+    - name: Start NATS JetStream server
+      # Service containers can't take a command, and the nats service above stays core NATS, without JetStream
+      run: docker run -d -p 4223:4222 nats:2.15 -js
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
@@ -100,6 +103,7 @@ jobs:
       env:
         RABBITMQ_URI: amqp://localhost:5672
         NATS_URL: nats://localhost:4222
+        NATS_JETSTREAM_URL: nats://localhost:4223
         KAFKA_BOOTSTRAP_SERVERS: localhost:9092
         KAFKA_SASL_BOOTSTRAP_SERVERS: 127.0.0.1:9094
         ACTIVEMQ_URI: activemq:tcp://localhost:61616
