@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -72,7 +73,7 @@ namespace Obvs.Hosting
             return service
                 .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetNamespace))
                 .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
-                    serviceProvider.GetService<IServiceBusAdministrationFactory>()));
+                    serviceProvider.GetService<IServiceBusAdministrationFactory>(), serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.AzureSB")));
         }
 
         private static AzureServiceBusOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
@@ -123,8 +124,12 @@ namespace Obvs.Hosting
 
         // The provider is generic in the service's message type, which the builder only knows at run time
         private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, AzureServiceBusOptions options,
-            IServiceBusAdministrationFactory administrationFactory)
+            IServiceBusAdministrationFactory administrationFactory, ILogger logger)
         {
+            if (logger != null)
+            {
+                options.Logger = logger;
+            }
             var admin = administrationFactory?.Create(options) ?? new ServiceBusAdministration(options);
             var providerType = typeof(AzureServiceBusEndpointProvider<>).MakeGenericType(service.ServiceMessageType);
             try

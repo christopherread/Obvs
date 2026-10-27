@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -123,12 +124,30 @@ namespace Obvs.NATS.JetStream
             }
         }
 
-        private void ResetRetryDelay()
+        // Returns whether it was retrying
+        private bool ResetRetryDelay()
         {
             lock (_gate)
             {
+                var retrying = _retryDelay != TimeSpan.Zero;
                 _retryDelay = TimeSpan.Zero;
+                return retrying;
             }
+        }
+
+        // Once when it starts retrying, not on every retry, and once when it's receiving again
+        private void LogRetrying(Exception exception, TimeSpan delay)
+        {
+            if (delay == FirstRetryDelay)
+            {
+                _options.Logger.LogWarning(exception, "NATS JetStream can't receive from consumer {Consumer} on stream {Stream}, and retries until it can: {Message}",
+                    _destination.Consumer, _destination.Stream, exception.Message);
+            }
+        }
+
+        private void LogReceivingAgain()
+        {
+            _options.Logger.LogInformation("NATS JetStream receives from consumer {Consumer} on stream {Stream} again", _destination.Consumer, _destination.Stream);
         }
 
         // Errors that can pass, such as a lost connection, which the client re-establishes by itself, or a cluster electing
@@ -268,7 +287,9 @@ namespace Obvs.NATS.JetStream
                             // Fetching the consumer again finds out whether it, or its stream, has gone
                             _slots.Release();
                             consumer = null;
-                            await Task.Delay(_source.NextRetryDelay(), token).ConfigureAwait(false);
+                            var delay = _source.NextRetryDelay();
+                            _source.LogRetrying(exception, delay);
+                            await Task.Delay(delay, token).ConfigureAwait(false);
                             continue;
                         }
                         catch
@@ -276,7 +297,10 @@ namespace Obvs.NATS.JetStream
                             _slots.Release();
                             throw;
                         }
-                        _source.ResetRetryDelay();
+                        if (_source.ResetRetryDelay())
+                        {
+                            _source.LogReceivingAgain();
+                        }
 
                         if (received == null)
                         {

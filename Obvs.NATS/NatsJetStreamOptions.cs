@@ -1,4 +1,6 @@
 using System;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Obvs.NATS
 {
@@ -34,5 +36,8 @@ namespace Obvs.NATS
         /// <see cref="AckWait"/>. 5 minutes by default; a handler that runs longer loses the message, and it's delivered again.
         /// </summary>
         public TimeSpan MaxInProgressDuration { get; set; } = TimeSpan.FromMinutes(5);
+
+        // Set by UseNatsJetStream from the app's logging
+        internal ILogger Logger { get; set; } = NullLogger.Instance;
     }
 }

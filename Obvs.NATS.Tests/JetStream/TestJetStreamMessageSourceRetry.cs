@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
+using Microsoft.Extensions.Logging;
 using NATS.Client.Core;
 using NATS.Client.JetStream;
 using NATS.Client.JetStream.Models;
@@ -31,6 +32,7 @@ namespace Obvs.NATS.Tests.JetStream
         private readonly INatsJSContext _jetStream = A.Fake<INatsJSContext>();
         private readonly INatsJSConsumer _consumer = A.Fake<INatsJSConsumer>();
         private readonly NatsJetStreamOptions _options = new NatsJetStreamOptions { Url = "nats://localhost:4222" };
+        private readonly RecordingLogger _logger = new RecordingLogger();
         private readonly JetStreamTopology _topology;
         private readonly ConcurrentQueue<DateTime> _pulls = new ConcurrentQueue<DateTime>();
         private readonly ConcurrentQueue<object> _received = new ConcurrentQueue<object>();
@@ -40,6 +42,7 @@ namespace Obvs.NATS.Tests.JetStream
 
         public TestJetStreamMessageSourceRetry()
         {
+            _options.Logger = _logger;
             _topology = new JetStreamTopology("orders", "orders-worker-1", _options);
             A.CallTo(() => _jetStream.GetConsumerAsync(A<string>._, A<string>._, A<CancellationToken>._))
                 .Returns(new ValueTask<INatsJSConsumer>(_consumer));
@@ -60,6 +63,24 @@ namespace Obvs.NATS.Tests.JetStream
             await WaitUntilAsync(() => _received.Count == 1);
             Assert.Equal("o-1", Assert.IsType<PlaceOrder>(_received.Single()).OrderId);
             Assert.Empty(_errors);
+        }
+
+        [Fact]
+        public async Task ShouldLogOnceWhenItLosesTheServerAndAgainWhenItsBack()
+        {
+            Pulls(Fail(new NatsException("Connection lost")), Fail(new NatsException("Connection lost")), Deliver("orders.Commands.PlaceOrder", "o-1"));
+
+            using var subscription = Subscribe(Commands());
+
+            await WaitUntilAsync(() => _received.Count == 1);
+            Assert.Collection(_logger.Entries,
+                entry =>
+                {
+                    Assert.Equal(LogLevel.Warning, entry.Level);
+                    Assert.Contains("Connection lost", entry.Message);
+                    Assert.Contains(_topology.Commands.Consumer, entry.Message);
+                },
+                entry => Assert.Equal(LogLevel.Information, entry.Level));
         }
 
         [Fact]
@@ -312,5 +333,18 @@ namespace Obvs.NATS.Tests.JetStream
             }
         }
 
+        private sealed class RecordingLogger : ILogger
+        {
+            public ConcurrentQueue<(LogLevel Level, string Message)> Entries { get; } = new ConcurrentQueue<(LogLevel, string)>();
+
+            public IDisposable BeginScope<TState>(TState state) where TState : notnull => null;
+
+            public bool IsEnabled(LogLevel logLevel) => true;
+
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+            {
+                Entries.Enqueue((logLevel, formatter(state, exception)));
+            }
+        }
     }
 }

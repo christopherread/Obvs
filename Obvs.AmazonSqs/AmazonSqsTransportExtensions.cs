@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -75,7 +76,8 @@ namespace Obvs.Hosting
         {
             return service
                 .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetRegion, whereToSetServiceUrl))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)));
+                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
+                    serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.AmazonSqs")));
         }
 
         private static AmazonSqsOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
@@ -175,8 +177,12 @@ namespace Obvs.Hosting
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, AmazonSqsOptions options)
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, AmazonSqsOptions options, ILogger logger)
         {
+            if (logger != null)
+            {
+                options.Logger = logger;
+            }
             var providerType = typeof(AmazonSqsEndpointProvider<>).MakeGenericType(service.ServiceMessageType);
             try
             {

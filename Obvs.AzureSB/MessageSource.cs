@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -101,9 +102,18 @@ namespace Obvs.AzureSB
                     };
                     processor.ProcessErrorAsync += args =>
                     {
-                        // The processor retries transient errors itself
-                        if (!stopped && args.ErrorSource != ServiceBusErrorSource.ProcessMessageCallback &&
-                            !(args.Exception is ServiceBusException serviceBusException && serviceBusException.IsTransient))
+                        if (stopped || args.ErrorSource == ServiceBusErrorSource.ProcessMessageCallback)
+                        {
+                            return Task.CompletedTask;
+                        }
+
+                        // The processor retries transient errors itself, so they're only logged
+                        if (args.Exception is ServiceBusException serviceBusException && serviceBusException.IsTransient)
+                        {
+                            _options.Logger.LogWarning(args.Exception, "Azure Service Bus couldn't receive from {EntityPath}, and retries: {Message}",
+                                args.EntityPath, args.Exception.Message);
+                        }
+                        else
                         {
                             // Reported a moment later, outside the processor's callback, as reporting it stops this processor.
                             // The bus subscribes again straight away, so an error that lasts, such as a deleted queue, is
