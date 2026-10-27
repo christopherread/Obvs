@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>What's new in Obvs v7</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Obvs</h1>
+      <h2 class="project-tagline">A .NET library for messaging between services: commands, events, requests and responses over RabbitMQ, Kafka, NATS, ActiveMQ, Azure Service Bus or Amazon SQS, with handlers, awaitable requests and Reactive Extensions streams.</h2>
+      <a href="https://github.com/christopherread/Obvs" class="btn">View on GitHub</a>
+      <a href="https://www.nuget.org/packages?q=obvs" class="btn">Packages on NuGet</a>
+      <a href="v7.html" class="btn">What's new in v7</a>
+    </section>
+
+    <section class="main-content">
+<h2 id="whats-new">What's new in v7</h2>
+
+<p>v7 makes Obvs a library you host, test and observe the way you do the rest of a modern .NET app. The Rx streams that were v6's whole API are still there; most of what's new is additive, and v6 and v7 apps work together on the same broker, so you can move one app at a time.</p>
+
+<ul>
+<li><strong>Hosting through dependency injection.</strong> <code>services.AddObvs(...)</code> configures the bus, and <code>IServiceBus</code> and <code>IServiceBusClient</code> come from the container. The bus starts and stops with the host. Its configuration is checked at startup, and every problem is reported in one <code>ObvsConfigurationException</code>, each saying how to fix it. Without a host, <code>ObvsBus.StartAsync(...)</code> does the same.</li>
+<li><strong>Every transport configured the same way</strong>: <code>UseRabbitMq</code>, <code>UseKafka</code>, <code>UseNats</code>, <code>UseNatsJetStream</code>, <code>UseActiveMq</code>, <code>UseAzureServiceBus</code> and <code>UseAmazonSqs</code>, each with an options class, from configuration or code.</li>
+<li><strong>New transports.</strong> Azure Service Bus and Amazon SQS and SNS, where a service's instances share its command and request queues, each bus has its own subscription to events, and messages are settled after their handler: completed, delivered again on failure, and dead-lettered after <code>MaxDeliveryAttempts</code>. NATS JetStream works the same way. Kafka supports Confluent Cloud, Amazon MSK and Azure Event Hubs.</li>
+<li><strong>Handlers and awaitable requests</strong>: <code>HandleCommand</code>, <code>HandleEvent</code> and <code>HandleRequest</code>, as lambdas or classes from the container, with <code>MaxConcurrency</code>; <code>RequestAsync</code>; and the streams as <code>IAsyncEnumerable</code> with <code>ReadEventsAsync</code>. Every send takes a <code>CancellationToken</code>, which reaches the broker.</li>
+<li><strong>System.Text.Json by default</strong>, reading and writing the same JSON as v6's Newtonsoft serializer. Any serializer can be gzipped with <code>Compressed()</code>.</li>
+<li><strong>Observability</strong>: OpenTelemetry traces and metrics, with trace context carried in each message's headers on every transport, and logging through <code>Microsoft.Extensions.Logging</code>.</li>
+<li><strong>Testing</strong>: <code>Obvs.Testing</code>'s in-memory transport and <code>ObvsTestHarness</code>, which waits for a message as soon as it's sent, with virtual time.</li>
+<li><strong>Analyzers</strong>, built into the <code>Obvs</code> package, report common mistakes as you type, with code fixes.</li>
+<li><strong>For agents</strong>: each service's contract as an AsyncAPI document, a test that catches breaking contract changes, an MCP server for development buses, <code>llms.txt</code>, and documentation whose every snippet is compiled and tested.</li>
+</ul>
+
+<h2 id="before-and-after">Before and after</h2>
+
+<p>v6:</p>
+
+<pre><code class="language-csharp">IServiceBus bus = ServiceBus.Configure()
+    .WithRabbitMQEndpoints&lt;IOrderMessage&gt;()
+        .Named(&quot;orders&quot;)
+        .ConnectToBroker(&quot;amqp://localhost:5672&quot;)
+        .SerializedAsJson()
+        .AsClientAndServer()
+    .UsingConsoleLogging()
+    .Create();</code></pre>
+
+<pre><code class="language-csharp">bus.Commands.OfType&lt;PlaceOrder&gt;().Subscribe(async command =&gt;
+{
+    await bus.PublishAsync(new OrderPlaced(command.OrderId));
+});</code></pre>
+
+<p>v7:</p>
+
+<pre><code class="language-csharp">builder.Services.AddObvs(obvs =&gt; obvs
+    .AddService&lt;IOrderMessage&gt;(&quot;orders&quot;, service =&gt; service
+        .UseRabbitMq(options =&gt; options.Uri = new Uri(&quot;amqp://localhost:5672&quot;))));
+
+// IServiceBus and IServiceBusClient are in the container. The bus starts with the host.</code></pre>
+
+<pre><code class="language-csharp">service.HandleCommand&lt;PlaceOrder&gt;(async (command, context, ct) =&gt;
+{
+    await context.PublishAsync(new OrderPlaced(command.OrderId), ct);
+});
+
+// Or a class from the container
+service.HandleCommand&lt;PlaceOrder, PlaceOrderHandler&gt;();</code></pre>
+
+<p>Requests, in v6 and v7:</p>
+
+<pre><code class="language-csharp">var quote = await bus.GetResponses(new GetQuote(&quot;sku-1&quot;))
+    .OfType&lt;Quote&gt;().Take(1).Timeout(TimeSpan.FromSeconds(5)).ToTask();</code></pre>
+
+<pre><code class="language-csharp">var quote = await client.RequestAsync&lt;GetQuote, Quote&gt;(new GetQuote(&quot;sku-1&quot;), TimeSpan.FromSeconds(5), ct);</code></pre>
+
+<h2 id="what-changed">What changed since v6</h2>
+
+<ul>
+<li><strong>Configuration.</strong> <code>ServiceBus.Configure()</code> still works for v6 apps, and is marked obsolete in favour of <code>AddObvs</code>.</li>
+<li><strong>Packages.</strong> The MsgPack.Cli, NetJSON, XML and YAML serializers, <code>Obvs.Monitoring.*</code> and <code>Obvs.Logging.NLog</code> stay on v6: use System.Text.Json, OpenTelemetry and <code>Microsoft.Extensions.Logging</code>. <code>Obvs.Serialization.MessagePack</code> is now MessagePack-CSharp.</li>
+<li><strong>Target frameworks</strong>: net472, netstandard2.0 and net10.0.</li>
+</ul>
+
+<p>The <a href="https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md">migration guide</a> has the details: before and after for each change, and what v6 and v7 apps on one broker share.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/christopherread/Obvs">Obvs</a> is maintained by <a href="https://github.com/christopherread">christopherread</a>.</span>
+      </footer>
+    </section>
+  </body>
+</html>
