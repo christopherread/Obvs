@@ -91,7 +91,7 @@ namespace Obvs.Hosting
             return service
                 .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSet))
                 .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
-                    serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.Kafka")));
+                    serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.Kafka")), "Kafka");
         }
 
         private static KafkaOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)

@@ -71,7 +71,7 @@ namespace Obvs.Hosting
             return service
                 .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetUrl))
                 .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
-                    serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.NATS.JetStream")));
+                    serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.NATS.JetStream")), "NATS JetStream");
         }
 
         private static NatsJetStreamOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)

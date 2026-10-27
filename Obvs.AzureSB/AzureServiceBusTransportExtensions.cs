@@ -73,7 +73,7 @@ namespace Obvs.Hosting
             return service
                 .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetNamespace))
                 .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
-                    serviceProvider.GetService<IServiceBusAdministrationFactory>(), serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.AzureSB")));
+                    serviceProvider.GetService<IServiceBusAdministrationFactory>(), serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.AzureSB")), "Azure Service Bus");
         }
 
         private static AzureServiceBusOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)

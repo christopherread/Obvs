@@ -57,7 +57,7 @@ namespace Obvs.Hosting
         {
             return service
                 .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetUri))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)));
+                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)), "RabbitMQ");
         }
 
         private static RabbitMqOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)

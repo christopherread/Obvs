@@ -77,7 +77,7 @@ namespace Obvs.Hosting
             return service
                 .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetRegion, whereToSetServiceUrl))
                 .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
-                    serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.AmazonSqs")));
+                    serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.AmazonSqs")), "Amazon SQS");
         }
 
         private static AmazonSqsOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)

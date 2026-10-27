@@ -145,14 +145,20 @@ namespace Obvs.Hosting
         public bool IsServer { get; private set; } = true;
 
         /// <summary>
-        /// Uses an existing transport's endpoint provider, created from the container when the bus starts.
-        /// Transports will get their own <c>Use&lt;Transport&gt;()</c> methods; this works with any of them meanwhile.
+        /// Uses a transport's endpoint provider, created from the container when the bus starts. Each transport's
+        /// <c>Use&lt;Transport&gt;()</c> calls this, naming itself in <paramref name="transportName"/>, which the
+        /// service's contract shows.
         /// </summary>
-        public ObvsServiceBuilder UseEndpointProvider(Func<IServiceProvider, IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>> factory)
+        public ObvsServiceBuilder UseEndpointProvider(Func<IServiceProvider, IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>> factory,
+            string transportName = null)
         {
             EndpointProviderFactory = factory ?? throw new ArgumentNullException(nameof(factory));
+            TransportName = transportName;
             return this;
         }
+
+        /// <summary>The service's transport, as it names itself, such as RabbitMQ, if it does.</summary>
+        public string TransportName { get; private set; }
 
         /// <summary>
         /// Handles the service's <typeparamref name="TCommand"/> commands with <paramref name="handler"/>, which runs

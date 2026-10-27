@@ -298,8 +298,8 @@ Tracking: #90
 Tracking: #91
 
 - Each service's contract is generated as an [AsyncAPI](https://www.asyncapi.com/) document: its channels and the commands, events, requests and responses on them, with a JSON Schema for each message.
-- **At build time:** the source generator or an MSBuild task writes the document, so it can be committed and diffed. A CI check can then flag breaking changes, such as a removed field or a changed type.
-- **At runtime:** `bus.DescribeAsync()` returns the same document. It feeds the MCP server (9).
+- **Committed and checked in CI:** a test writes the document with `ObvsContractSnapshot.Verify` (in Obvs.Testing), so it can be committed and diffed, and fails on a breaking change, such as a removed field or a changed type. A source generator can't write files, and an MSBuild task would have to run the app to build its bus, which a test already does. See [contracts.md](contracts.md).
+- **At runtime:** `ObvsContracts.Describe()`, from the container, returns the same document. It feeds the MCP server (9).
 
 ### 9. An MCP server for development
 
