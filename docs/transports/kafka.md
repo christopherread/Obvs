@@ -72,9 +72,51 @@ The bus checks the settings when it starts, and reports every problem together i
 
 When the brokers refuse to sign the bus in, or the TLS handshake fails, startup fails straight away with the broker's reason. It doesn't wait out the connection timeout.
 
+## Consumer groups
+
+Each topic is read in a consumer group of its own, named after the topic and not after the machine or process, so a restarted bus reuses its groups and carries on where they left off:
+
+| Messages | Consumer group | Received by |
+|---|---|---|
+| Commands | `<service>.Commands`, shared by the service's buses | One of the service's buses |
+| Requests | `<service>.Requests`, shared by the service's buses | One of the service's buses |
+| Events | `<service>.Events.<instance ID>`, one per bus | Every bus |
+| Responses | `<service>.Responses.<instance ID>`, one per bus | Every bus, which keeps the responses to its own requests |
+
+- Kafka gives each partition of a topic to one member of a group, so commands and requests are spread across the service's buses only as far as their topics have partitions. With one partition, one bus handles them all, and another takes over if it stops. Topics created at startup get the broker's default number of partitions; to spread the work over more buses, create the topics beforehand with more.
+- A group that's new starts at the end of its topic. After that, a bus carries on from the group's committed position, so commands and requests sent while none of the service's buses was running are handled when one starts.
+- Positions are committed every few seconds as messages are received, not after they're handled. A bus that crashes can receive the last few messages again, or lose one it was handling.
+
+The instance ID is the bus's `InstanceId`, a new GUID each time the bus starts unless it's set with `UseInstanceId(...)`. With a new one, a bus starts with new events and responses groups, at the end of the topics, so it doesn't receive events published while it was stopped. To keep its groups across restarts, give each bus a fixed instance ID of its own, such as the pod name in a Kubernetes StatefulSet:
+
+```csharp
+builder.Services.AddObvs(obvs => obvs
+    .UseInstanceId(Environment.GetEnvironmentVariable("POD_NAME"))
+    .AddService<IOrderMessage>("orders", service => service
+        .UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"))
+        .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>)))));
+```
+
+Two running buses mustn't share an instance ID: Kafka would split the events between them.
+
+### Groups left behind
+
+A bus without a fixed instance ID leaves its events and responses groups behind when it stops. Kafka removes a group once it's empty and its committed positions have expired, `offsets.retention.minutes` after its last member left: seven days by default. Until then the groups count towards any limit on consumer groups, such as [Event Hubs'](kafka-azure-event-hubs.md#consumer-groups). To remove them sooner, delete them with Kafka's `kafka-consumer-groups.sh --bootstrap-server <brokers> --delete --group <group>`.
+
+Services configured with v6's `WithKafkaEndpoints<...>()` keep v6's consumer groups, named after the machine and process, so every process receives every message, commands included.
+
+## Errors while running
+
+The Kafka client recovers by itself from most errors, such as brokers that are down, connections the platform closed, or a failed OAUTHBEARER token refresh, where it keeps the token it has and tries again. The bus logs those as warnings, in the `Obvs.Kafka` category, and carries on. A message the Kafka client can't deserialize, such as one another producer wrote to the topic in its own format, is logged and skipped.
+
+These end the subscription instead, with the client's error:
+
+- errors the client reports as fatal (`Error.IsFatal`), after which it stops consuming;
+- being refused access to a topic, a consumer group or the cluster, which won't fix itself.
+
 ## Permissions
 
-At startup the bus creates the service's topics if they don't exist. That needs permission to create topics; without it, create them beforehand. Each bus also uses consumer groups of its own, named after the machine and process, so on platforms with access control, grant read access to consumer groups by any name, not one fixed name.
+At startup the bus creates the service's topics if they don't exist. That needs permission to create topics; without it, create them beforehand. The service's consumer groups are all named after it, starting with `<service>.`, so on platforms with access control, grant read access to consumer groups with that prefix.
 
 ## Trying it locally
 

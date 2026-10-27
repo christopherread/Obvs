@@ -53,7 +53,7 @@ The role or user needs an IAM policy allowing, on the cluster, its topics and it
 - `kafka-cluster:Connect`
 - `kafka-cluster:DescribeTopic`, `kafka-cluster:CreateTopic` (or create the topics beforehand)
 - `kafka-cluster:WriteData`, `kafka-cluster:ReadData`
-- `kafka-cluster:DescribeGroup`, `kafka-cluster:AlterGroup` on `group/<cluster>/*`. Each bus names its own consumer groups after the machine and process, so allow any group name.
+- `kafka-cluster:DescribeGroup`, `kafka-cluster:AlterGroup` on `group/<cluster>/orders.*`, which covers all the service's [consumer groups](kafka.md#consumer-groups).
 
 The Java client's `AWS_MSK_IAM` mechanism isn't available in .NET. `OAUTHBEARER` with the signer is the .NET equivalent.
 
@@ -81,7 +81,7 @@ MSK keeps SCRAM credentials in AWS Secrets Manager, in a secret whose name start
 service.UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"));
 ```
 
-Read the password from Secrets Manager into configuration, for example with a configuration provider, rather than putting it in `appsettings.json`. With SCRAM, MSK authorises with Kafka ACLs, so the user needs `CREATE` (or topics created beforehand), `READ` and `WRITE` on the topics, and `READ` on any consumer group.
+Read the password from Secrets Manager into configuration, for example with a configuration provider, rather than putting it in `appsettings.json`. With SCRAM, MSK authorises with Kafka ACLs, so the user needs `CREATE` (or topics created beforehand), `READ` and `WRITE` on the topics, and `READ` on consumer groups with the prefix `orders.`.
 
 ## TLS
 
