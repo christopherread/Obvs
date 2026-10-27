@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using NATS.Client.Core;
 using NATS.Client.JetStream;
@@ -26,12 +27,12 @@ namespace Obvs.NATS.JetStream
         {
             _serviceName = serviceName;
             _options = options;
-            Commands = new Destination($"{serviceName}_Commands", $"{serviceName}.Commands", serviceName, StreamConfigRetention.Workqueue);
-            Requests = new Destination($"{serviceName}_Requests", $"{serviceName}.Requests", serviceName, StreamConfigRetention.Workqueue);
+            Commands = new Destination($"{serviceName}_Commands", $"{serviceName}.Commands", serviceName, StreamConfigRetention.Workqueue, ownedByBus: false);
+            Requests = new Destination($"{serviceName}_Requests", $"{serviceName}.Requests", serviceName, StreamConfigRetention.Workqueue, ownedByBus: false);
             // Messages on these stay only while a bus's consumer still has to take them
-            Events = new Destination($"{serviceName}_Events", $"{serviceName}.Events", instanceId, StreamConfigRetention.Interest);
+            Events = new Destination($"{serviceName}_Events", $"{serviceName}.Events", instanceId, StreamConfigRetention.Interest, ownedByBus: true);
             Responses = new Destination($"{serviceName}_Responses", $"{serviceName}.Responses.{instanceId}", instanceId, StreamConfigRetention.Interest,
-                streamSubject: $"{serviceName}.Responses.*.*");
+                ownedByBus: true, streamSubject: $"{serviceName}.Responses.*.*");
             DeadLetters = $"{serviceName}_DeadLetters";
         }
 
@@ -75,26 +76,31 @@ namespace Obvs.NATS.JetStream
 
             if (isServer)
             {
-                await CreateConsumerAsync(jetStream, Commands, ownedByBus: false).ConfigureAwait(false);
-                await CreateConsumerAsync(jetStream, Requests, ownedByBus: false).ConfigureAwait(false);
+                await CreateConsumerAsync(jetStream, Commands).ConfigureAwait(false);
+                await CreateConsumerAsync(jetStream, Requests).ConfigureAwait(false);
             }
             if (isClient)
             {
-                await CreateConsumerAsync(jetStream, Events, ownedByBus: true).ConfigureAwait(false);
-                await CreateConsumerAsync(jetStream, Responses, ownedByBus: true).ConfigureAwait(false);
+                await CreateConsumerAsync(jetStream, Events).ConfigureAwait(false);
+                await CreateConsumerAsync(jetStream, Responses).ConfigureAwait(false);
             }
         }
 
-        public async Task DeleteBusConsumersAsync(INatsJSContext jetStream)
+        // Best effort: a consumer that can't be deleted, as when the server can't be reached, deletes itself once idle
+        public async Task DeleteBusConsumersAsync(INatsJSContext jetStream, CancellationToken cancellationToken)
         {
             foreach (var destination in new[] { Events, Responses })
             {
                 try
                 {
-                    await jetStream.DeleteConsumerAsync(destination.Stream, destination.Consumer).ConfigureAwait(false);
+                    await jetStream.DeleteConsumerAsync(destination.Stream, destination.Consumer, cancellationToken).ConfigureAwait(false);
                 }
                 catch (NatsJSApiException exception) when (exception.Error.Code == NotFound)
                 {
+                }
+                catch (Exception exception) when (exception is NatsException || exception is OperationCanceledException)
+                {
+                    return;
                 }
             }
         }
@@ -129,8 +135,10 @@ namespace Obvs.NATS.JetStream
         }
 
         // Creating a consumer that exists updates it to these settings
-        private Task CreateConsumerAsync(INatsJSContext jetStream, Destination destination, bool ownedByBus)
+        public async Task<INatsJSConsumer> CreateConsumerAsync(INatsJSContext jetStream, Destination destination,
+            CancellationToken cancellationToken = default)
         {
+            var ownedByBus = destination.OwnedByBus;
             var consumer = new ConsumerConfig(destination.Consumer)
             {
                 DurableName = destination.Consumer,
@@ -148,7 +156,7 @@ namespace Obvs.NATS.JetStream
             {
                 consumer.InactiveThreshold = BusConsumerInactiveThreshold;
             }
-            return jetStream.CreateOrUpdateConsumerAsync(destination.Stream, consumer).AsTask();
+            return await jetStream.CreateOrUpdateConsumerAsync(destination.Stream, consumer, cancellationToken).ConfigureAwait(false);
         }
 
         public sealed class Destination
@@ -156,11 +164,13 @@ namespace Obvs.NATS.JetStream
             private readonly StreamConfigRetention _retention;
             private readonly string _streamSubject;
 
-            public Destination(string stream, string subjectPrefix, string consumer, StreamConfigRetention retention, string streamSubject = null)
+            public Destination(string stream, string subjectPrefix, string consumer, StreamConfigRetention retention, bool ownedByBus,
+                string streamSubject = null)
             {
                 Stream = stream;
                 SubjectPrefix = subjectPrefix;
                 Consumer = consumer;
+                OwnedByBus = ownedByBus;
                 _retention = retention;
                 _streamSubject = streamSubject ?? Subjects;
             }
@@ -168,6 +178,8 @@ namespace Obvs.NATS.JetStream
             public string Stream { get; }
             public string SubjectPrefix { get; }
             public string Consumer { get; }
+            // A bus's own consumer, rather than one the service's buses share
+            public bool OwnedByBus { get; }
             public string Subjects => $"{SubjectPrefix}.*";
 
             public StreamConfig StreamConfig() => new StreamConfig(Stream, new[] { _streamSubject }) { Retention = _retention };

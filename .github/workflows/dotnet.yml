@@ -67,6 +67,14 @@ jobs:
     - name: Start NATS JetStream server
       # Service containers can't take a command, and the nats service above stays core NATS, without JetStream
       run: docker run -d -p 4223:4222 nats:2.15 -js
+    - name: Install nats-server
+      # The JetStream reconnect tests start, stop and restart servers of their own, so they need the binary itself
+      run: |
+        docker create --name nats-server-binary nats:2.15
+        mkdir -p "$RUNNER_TEMP/nats-server"
+        docker cp nats-server-binary:/nats-server "$RUNNER_TEMP/nats-server/nats-server"
+        docker rm nats-server-binary
+        echo "$RUNNER_TEMP/nats-server" >> "$GITHUB_PATH"
     - name: Start LocalStack
       # SQS and SNS for the Amazon SQS tests, started like the Service Bus emulator from the test project's compose file
       run: docker compose -f Obvs.AmazonSqs.Tests/LocalStack/docker-compose.yml up -d

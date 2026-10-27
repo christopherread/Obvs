@@ -11,6 +11,9 @@ namespace Obvs.NATS.JetStream
     // through this bus's own consumers, which it deletes when disposed
     internal sealed class ServiceEndpointClient : IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>
     {
+        // How long stopping waits to delete the bus's own consumers, which delete themselves once idle anyway
+        private static readonly TimeSpan DeleteTimeout = TimeSpan.FromSeconds(2);
+
         private readonly NatsConnection _connection;
         private readonly INatsJSContext _jetStream;
         private readonly IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse> _endpointClient;
@@ -44,7 +47,10 @@ namespace Obvs.NATS.JetStream
             }
             _endpointClient.Dispose();
 #pragma warning disable VSTHRD002 // IDisposable.Dispose is synchronous
-            _topology.DeleteBusConsumersAsync(_jetStream).GetAwaiter().GetResult();
+            using (var deleting = new CancellationTokenSource(DeleteTimeout))
+            {
+                _topology.DeleteBusConsumersAsync(_jetStream, deleting.Token).GetAwaiter().GetResult();
+            }
             _connection.DisposeAsync().AsTask().GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002
         }
