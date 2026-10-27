@@ -2,11 +2,11 @@
 
 `Obvs.Kafka` carries a service's messages over Kafka. Each service gets four topics, `<service>.Commands`, `.Events`, `.Requests` and `.Responses`, created at startup if they don't exist.
 
+<!-- snippet: kafka-setup -->
 ```csharp
 builder.Services.AddObvs(obvs => obvs
     .AddService<IOrderMessage>("orders", service => service
-        .UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"))
-        .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>)))));
+        .UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"))));
 ```
 
 ```json
@@ -49,6 +49,7 @@ Keep secrets such as `SaslPassword` out of `appsettings.json`: use user secrets 
 
 `OAuthBearerTokenProvider` is called when each Kafka client starts, and again before each token expires. It returns a `KafkaOAuthBearerToken` with the token and its expiry. It can't come from configuration, so with the other settings in configuration, use the overload that takes both:
 
+<!-- snippet: kafka-oauth -->
 ```csharp
 service.UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"), options =>
     options.OAuthBearerTokenProvider = async cancellationToken =>
@@ -89,12 +90,12 @@ Each topic is read in a consumer group of its own, named after the topic and not
 
 The instance ID is the bus's `InstanceId`, a new GUID each time the bus starts unless it's set with `UseInstanceId(...)`. With a new one, a bus starts with new events and responses groups, at the end of the topics, so it doesn't receive events published while it was stopped. To keep its groups across restarts, give each bus a fixed instance ID of its own, such as the pod name in a Kubernetes StatefulSet:
 
+<!-- snippet: kafka-instance-id -->
 ```csharp
 builder.Services.AddObvs(obvs => obvs
     .UseInstanceId(Environment.GetEnvironmentVariable("POD_NAME"))
     .AddService<IOrderMessage>("orders", service => service
-        .UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"))
-        .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>)))));
+        .UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"))));
 ```
 
 Two running buses mustn't share an instance ID: Kafka would split the events between them.

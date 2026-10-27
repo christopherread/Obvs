@@ -16,6 +16,7 @@ namespace Obvs.Serialization.SystemTextJson
             _options = options ?? SystemTextJsonMessageDefaults.Options;
         }
 
+        /// <inheritdoc />
         public void Serialize(Stream stream, object message)
         {
             JsonSerializer.Serialize(stream, message, message.GetType(), _options);

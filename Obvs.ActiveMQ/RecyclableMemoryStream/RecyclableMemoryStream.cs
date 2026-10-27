@@ -4,6 +4,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 
+// A copy of Microsoft.IO.RecyclableMemoryStream: its public members are exempt from the rule that every one is documented
+#pragma warning disable CS1570, CS1572, CS1591
+
 namespace Obvs.ActiveMQ.RecyclableMemoryStream
 {
     /// <summary>

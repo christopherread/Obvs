@@ -50,6 +50,7 @@ namespace Obvs.Hosting
         /// Adds a service whose messages all implement <typeparamref name="TServiceMessage"/>.
         /// </summary>
         /// <param name="name">The service's name, unique on the bus. Transports use it to name destinations.</param>
+        /// <param name="configure">Configures the service: its transport, its messages and its handlers</param>
         public ObvsBuilder AddService<TServiceMessage>(string name, Action<ObvsServiceBuilder> configure)
             where TServiceMessage : class, IMessage
         {

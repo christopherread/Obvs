@@ -17,6 +17,8 @@ namespace Obvs.Serialization.Compression
         private readonly long _maxDecompressedBytes;
         private readonly string _serviceName;
 
+        /// <param name="inner">The factory whose deserializers read the decompressed message</param>
+        /// <param name="maxDecompressedBytes">The most a message may decompress to</param>
         /// <param name="serviceName">The service the messages belong to, for the error a message over the limit gets</param>
         public GzipMessageDeserializerFactory(IMessageDeserializerFactory inner, long maxDecompressedBytes, string serviceName)
         {
@@ -29,6 +31,7 @@ namespace Obvs.Serialization.Compression
             _serviceName = serviceName;
         }
 
+        /// <inheritdoc />
         public IEnumerable<IMessageDeserializer<TMessage>> Create<TMessage, TServiceMessage>(Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
             where TMessage : class
             where TServiceMessage : class
@@ -36,6 +39,7 @@ namespace Obvs.Serialization.Compression
             return _inner.Create<TMessage, TServiceMessage>(assemblyFilter, typeFilter).Select(Wrap).ToArray();
         }
 
+        /// <inheritdoc />
         public IMessageDeserializer<TMessage> Create<TMessage>(Type messageType) where TMessage : class
         {
             var deserializer = _inner is IMessageTypeDeserializerFactory typed

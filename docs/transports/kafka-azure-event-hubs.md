@@ -32,6 +32,7 @@ Copy a connection string from the namespace's **Shared access policies**. For th
 }
 ```
 
+<!-- snippet: kafka-from-configuration -->
 ```csharp
 service.UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"));
 ```
@@ -56,10 +57,8 @@ Sign in with a managed identity, or any other Azure credential, by getting token
 }
 ```
 
+<!-- snippet: kafka-event-hubs-oauth -->
 ```csharp
-using Azure.Core;
-using Azure.Identity;
-
 var credential = new DefaultAzureCredential();
 var scope = new TokenRequestContext(new[] { "https://contoso.servicebus.windows.net/.default" });
 

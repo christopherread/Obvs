@@ -51,6 +51,8 @@ namespace Obvs.Testing
     /// <summary>A bus's contract has changed in a way that would break apps built against its committed copy.</summary>
     public sealed class ObvsContractException : Exception
     {
+        /// <summary>The breaking changes, described.</summary>
+        /// <param name="message">Each change, and how to accept them</param>
         public ObvsContractException(string message) : base(message)
         {
         }

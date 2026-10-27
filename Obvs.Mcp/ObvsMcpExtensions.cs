@@ -7,6 +7,7 @@ using Obvs.Mcp;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
+    /// <summary>Adds the Obvs MCP server.</summary>
     public static class ObvsMcpServiceCollectionExtensions
     {
         /// <summary>
@@ -37,6 +38,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
 namespace Microsoft.AspNetCore.Builder
 {
+    /// <summary>Maps the Obvs MCP server.</summary>
     public static class ObvsMcpEndpointRouteBuilderExtensions
     {
         /// <summary>

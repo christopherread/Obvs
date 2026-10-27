@@ -11,6 +11,8 @@ namespace Obvs.Types
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public sealed class ObvsMessagesAttribute : Attribute
     {
+        /// <summary>Lists the messages that implement <paramref name="serviceMessageType"/>.</summary>
+        /// <param name="serviceMessageType">The service's message interface</param>
         public ObvsMessagesAttribute(Type serviceMessageType)
         {
             ServiceMessageType = serviceMessageType;

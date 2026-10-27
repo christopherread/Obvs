@@ -18,6 +18,7 @@ A v7 service talks to v6 apps on the same broker, with the same exchange, topic 
 
 **v6**
 
+<!-- snippet: v6-configuration -->
 ```csharp
 IServiceBus bus = ServiceBus.Configure()
     .WithRabbitMQEndpoints<IOrderMessage>()
@@ -31,6 +32,7 @@ IServiceBus bus = ServiceBus.Configure()
 
 **v7**
 
+<!-- snippet: v7-configuration -->
 ```csharp
 builder.Services.AddObvs(obvs => obvs
     .AddService<IOrderMessage>("orders", service => service
@@ -41,9 +43,11 @@ builder.Services.AddObvs(obvs => obvs
 
 Options can come from configuration: `service.UseRabbitMq(builder.Configuration.GetSection("Obvs:Orders:RabbitMq"))`. Without a host, in a script or a console tool:
 
+<!-- snippet: v7-without-a-host -->
 ```csharp
 await using var bus = await ObvsBus.StartAsync(obvs => obvs
-    .AddService<IOrderMessage>("orders", service => service.UseRabbitMq(...)));
+    .AddService<IOrderMessage>("orders", service => service
+        .UseRabbitMq(options => options.Uri = new Uri("amqp://localhost:5672"))));
 ```
 
 | v6 | v7 |
@@ -69,19 +73,21 @@ Configuration errors fail startup, all at once, each with its fix. See [configur
 
 **v6**
 
+<!-- snippet: v6-handling -->
 ```csharp
 bus.Commands.OfType<PlaceOrder>().Subscribe(async command =>
 {
-    await bus.PublishAsync(new OrderPlaced { OrderId = command.OrderId });
+    await bus.PublishAsync(new OrderPlaced(command.OrderId));
 });
 ```
 
 **v7**
 
+<!-- snippet: v7-handling -->
 ```csharp
 service.HandleCommand<PlaceOrder>(async (command, context, ct) =>
 {
-    await context.PublishAsync(new OrderPlaced { OrderId = command.OrderId }, ct);
+    await context.PublishAsync(new OrderPlaced(command.OrderId), ct);
 });
 
 // Or a class from the container
@@ -103,15 +109,17 @@ The streams are still there for what Rx does best: `bus.Events.OfType<OrderPlace
 
 **v6**
 
+<!-- snippet: v6-request -->
 ```csharp
-var quote = await bus.GetResponses(new GetQuote { Sku = "sku-1" })
+var quote = await bus.GetResponses(new GetQuote("sku-1"))
     .OfType<Quote>().Take(1).Timeout(TimeSpan.FromSeconds(5)).ToTask();
 ```
 
 **v7**
 
+<!-- snippet: v7-request -->
 ```csharp
-var quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, TimeSpan.FromSeconds(5), ct);
+var quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
 ```
 
 ## Cancellation

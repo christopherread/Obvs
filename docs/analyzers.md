@@ -14,6 +14,7 @@ The bus checks its configuration again when it starts (see [configuration errors
 <a id="obvs001"></a>
 ## OBVS001: a message registered or handled on a service doesn't implement its message interface
 
+<!-- not compiled: the mistake this rule reports -->
 ```csharp
 obvs.AddService<IOrderMessage>("orders", service => service
     .UseRabbitMq(...)
@@ -28,6 +29,7 @@ A service sends and receives only messages that implement its message interface,
 <a id="obvs002"></a>
 ## OBVS002: a message is more than one kind of message
 
+<!-- not compiled: the mistake this rule reports -->
 ```csharp
 public class PlaceAndAnnounce : IOrderMessage, ICommand, IEvent { } // OBVS002
 ```
@@ -41,6 +43,7 @@ This includes a kind inherited from a base class: `class PlacedCommand : OrderPl
 <a id="obvs003"></a>
 ## OBVS003: a request handler's response doesn't belong to the service
 
+<!-- not compiled: the mistake this rule reports -->
 ```csharp
 obvs.AddService<IOrderMessage>("orders", service => service
     .UseRabbitMq(...)
@@ -54,6 +57,7 @@ Responses go back over the service the request came in on. A response that doesn
 <a id="obvs004"></a>
 ## OBVS004: a service has no transport
 
+<!-- not compiled: the mistake this rule reports -->
 ```csharp
 obvs.AddService<IOrderMessage>("orders", service => service
     .HandleCommand<PlaceOrder, PlaceOrderHandler>()); // OBVS004
@@ -66,6 +70,7 @@ A service needs a transport to send and receive its messages. Without one, the b
 <a id="obvs005"></a>
 ## OBVS005: the subscription to a bus stream is discarded
 
+<!-- not compiled: the mistake this rule reports -->
 ```csharp
 bus.Events.OfType<OrderPlaced>().Subscribe(placed => Ship(placed)); // OBVS005
 ```
@@ -77,6 +82,7 @@ bus.Events.OfType<OrderPlaced>().Subscribe(placed => Ship(placed)); // OBVS005
 <a id="obvs006"></a>
 ## OBVS006: an async lambda subscribes to a bus stream
 
+<!-- not compiled: the mistake this rule reports -->
 ```csharp
 var subscription = bus.Events.OfType<OrderPlaced>()
     .Subscribe(async placed => await ShipAsync(placed)); // OBVS006
@@ -86,6 +92,7 @@ var subscription = bus.Events.OfType<OrderPlaced>()
 
 **Fix:** use a handler (`HandleCommand`, `HandleEvent` or `HandleRequest`). It awaits each message, takes `MaxConcurrency` for how many at once, and logs and traces failures. Or the code fix runs the lambda for each message in turn, so an exception ends the subscription through `OnError`:
 
+<!-- snippet: obvs006-fixed -->
 ```csharp
 var subscription = bus.Events.OfType<OrderPlaced>()
     .Select(placed => Observable.FromAsync(async () => await ShipAsync(placed)))

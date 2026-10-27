@@ -1,5 +1,6 @@
 namespace Obvs.Mcp
 {
+    /// <summary>What the Obvs MCP server allows, and how much it remembers.</summary>
     public sealed class ObvsMcpOptions
     {
         /// <summary>

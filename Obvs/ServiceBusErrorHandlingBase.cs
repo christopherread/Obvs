@@ -5,6 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Extensions;
 
+// The bus's error-handling base, an implementation detail of ServiceBus and ServiceBusClient: its public members are exempt from the rule that every one is documented
+#pragma warning disable CS1570, CS1572, CS1591
+
 namespace Obvs
 {
     public abstract class ServiceBusErrorHandlingBase<TMessage, TCommand, TEvent, TRequest, TResponse> : IDisposable

@@ -6,6 +6,7 @@ using Obvs.Testing;
 // In the builder's namespace, so UseInMemory() is found without an extra using
 namespace Obvs.Hosting
 {
+    /// <summary>Carries services over an in-memory broker, for tests: <c>service.UseInMemory()</c> inside <c>AddService</c>.</summary>
     public static class InMemoryTransportExtensions
     {
         /// <summary>

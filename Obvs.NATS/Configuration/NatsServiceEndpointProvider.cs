@@ -6,6 +6,9 @@ using NATS.Client.Core;
 using Obvs.Configuration;
 using Obvs.Serialization;
 
+// v6's NATS transport building blocks, public for v6's fluent configuration; v7 apps use UseNats(...): its public members are exempt from the rule that every one is documented
+#pragma warning disable CS1570, CS1572, CS1591
+
 namespace Obvs.NATS.Configuration
 {
     public class NatsServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>

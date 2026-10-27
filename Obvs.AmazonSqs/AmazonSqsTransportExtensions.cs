@@ -15,6 +15,7 @@ using Obvs.Types;
 // In the builder's namespace, so UseAmazonSqs() is found without an extra using
 namespace Obvs.Hosting
 {
+    /// <summary>Carries services over Amazon SQS and SNS: <c>service.UseAmazonSqs(...)</c> inside <c>AddService</c>.</summary>
     public static class AmazonSqsTransportExtensions
     {
         // SQS limits queue names to 80 letters, digits, hyphens and underscores; SNS topic names allow the same characters

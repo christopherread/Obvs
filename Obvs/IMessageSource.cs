@@ -15,10 +15,12 @@ namespace Obvs
     public class DefaultMessageSource<TMessage> : IMessageSource<TMessage>
         where TMessage : class
     {
+        /// <inheritdoc />
         public void Dispose()
         {
         }
 
+        /// <inheritdoc />
         public IObservable<TMessage> Messages
         {
             get { return Observable.Empty<TMessage>(); }

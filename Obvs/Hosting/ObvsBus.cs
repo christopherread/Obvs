@@ -78,26 +78,37 @@ namespace Obvs.Hosting
         /// <summary>The bus's container, with the services given to <c>StartAsync</c>.</summary>
         public IServiceProvider Services => _services;
 
+        /// <inheritdoc />
         public IObservable<IEvent> Events => _bus.Events;
 
+        /// <inheritdoc />
         public IObservable<IRequest> Requests => _bus.Requests;
 
+        /// <inheritdoc />
         public IObservable<ICommand> Commands => _bus.Commands;
 
+        /// <inheritdoc />
         public IObservable<Exception> Exceptions => _bus.Exceptions;
 
+        /// <inheritdoc />
         public Task SendAsync(ICommand command, CancellationToken cancellationToken = default) => _bus.SendAsync(command, cancellationToken);
 
+        /// <inheritdoc />
         public Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default) => _bus.SendAsync(commands, cancellationToken);
 
+        /// <inheritdoc />
         public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default) => _bus.PublishAsync(ev, cancellationToken);
 
+        /// <inheritdoc />
         public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default) => _bus.ReplyAsync(request, response, cancellationToken);
 
+        /// <inheritdoc />
         public IObservable<IResponse> GetResponses(IRequest request) => _bus.GetResponses(request);
 
+        /// <inheritdoc />
         public IObservable<T> GetResponses<T>(IRequest request) where T : IResponse => _bus.GetResponses<T>(request);
 
+        /// <inheritdoc />
         public IObservable<T> GetResponse<T>(IRequest request) where T : IResponse => _bus.GetResponse<T>(request);
 
         /// <summary>Waits for running handlers to finish, then disposes the bus and its container.</summary>
@@ -117,6 +128,7 @@ namespace Obvs.Hosting
             }
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             DisposeAsync().AsTask().GetAwaiter().GetResult();

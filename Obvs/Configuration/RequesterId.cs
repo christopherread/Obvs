@@ -3,8 +3,10 @@ using System.Net;
 
 namespace Obvs.Configuration
 {
+    /// <summary>Identifies this process as the sender of requests, so responses find their way back to it.</summary>
     public static class RequesterId
     {
+        /// <summary>An ID made of the process's name and ID, the host's name and, on .NET Framework, the user's name.</summary>
         public static string Create()
         {
     #if NETFRAMEWORK

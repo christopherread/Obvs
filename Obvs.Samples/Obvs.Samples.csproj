@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The code in the README and docs: TestSnippets checks each snippet there matches its region here, and the
+       recipes run as tests, so the docs can't drift from what compiles and works -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <!-- Samples show v6's obsolete configuration, for the migration guide -->
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.Reactive.Testing" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs\Obvs.csproj" />
+    <ProjectReference Include="..\Obvs.AmazonSqs\Obvs.AmazonSqs.csproj" />
+    <ProjectReference Include="..\Obvs.Kafka\Obvs.Kafka.csproj" />
+    <ProjectReference Include="..\Obvs.Mcp\Obvs.Mcp.csproj" />
+    <ProjectReference Include="..\Obvs.RabbitMQ\Obvs.RabbitMQ.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.Json\Obvs.Serialization.Json.csproj" />
+    <ProjectReference Include="..\Obvs.Testing\Obvs.Testing.csproj" />
+    <ProjectReference Include="..\Obvs.AzureSB\Obvs.AzureSB.csproj" />
+    <!-- As a project that uses the Obvs package gets them -->
+    <ProjectReference Include="..\Obvs.Generators\Obvs.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Obvs.Analyzers\Obvs.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

@@ -8,6 +8,13 @@
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
     </PropertyGroup>
+    <!-- The packages ship their XML docs, and every public member in them is documented: a missing one fails the build -->
+    <PropertyGroup Condition="$([System.String]::Copy(';Obvs;Obvs.ActiveMQ;Obvs.AmazonSqs;Obvs.AzureSB;Obvs.Kafka;Obvs.Mcp;Obvs.NATS;Obvs.NetMQ;Obvs.RabbitMQ;Obvs.Serialization.Json;Obvs.Serialization.MessagePack;Obvs.Serialization.ProtoBuf;Obvs.Testing;').Contains(';$(MSBuildProjectName);'))">
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
+        <!-- Comments document the parameters that need it, not always all of them -->
+        <NoWarn>$(NoWarn);CS1573</NoWarn>
+    </PropertyGroup>
     <!-- License -->
     <PropertyGroup>
         <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
