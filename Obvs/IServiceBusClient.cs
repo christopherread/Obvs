@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Configuration;
 using Obvs.Extensions;
@@ -22,8 +23,8 @@ namespace Obvs
     {
         IObservable<TEvent> Events { get; }
 
-        Task SendAsync(TCommand command);
-        Task SendAsync(IEnumerable<TCommand> commands);
+        Task SendAsync(TCommand command, CancellationToken cancellationToken = default);
+        Task SendAsync(IEnumerable<TCommand> commands, CancellationToken cancellationToken = default);
 
         IObservable<TResponse> GetResponses(TRequest request);
         IObservable<T> GetResponses<T>(TRequest request) where T : TResponse;
@@ -43,14 +44,14 @@ namespace Obvs
 
         public IObservable<IEvent> Events => _serviceBusClient.Events;
 
-        public Task SendAsync(ICommand command)
+        public Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
         {
-            return _serviceBusClient.SendAsync(command);
+            return _serviceBusClient.SendAsync(command, cancellationToken);
         }
 
-        public Task SendAsync(IEnumerable<ICommand> commands)
+        public Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default)
         {
-            return _serviceBusClient.SendAsync(commands);
+            return _serviceBusClient.SendAsync(commands, cancellationToken);
         }
 
         public IObservable<IResponse> GetResponses(IRequest request)
@@ -114,17 +115,20 @@ namespace Obvs
 
         public IObservable<TEvent> Events { get; }
 
-        public Task SendAsync(TCommand command)
+        public Task SendAsync(TCommand command, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var exceptions = new List<Exception>();
 
             var tasks = EndpointClientsThatCanHandle(command)
-                .Select(endpoint => Catch(() => endpoint.SendAsync(command), exceptions, CommandErrorMessage(endpoint)))
-                .Union(SendLocal(command, exceptions))
+                .Select(endpoint => CatchUnlessCancelled(() => endpoint.SendAsync(command), exceptions, cancellationToken, CommandErrorMessage(endpoint)))
+                .Union(SendLocal(command, exceptions, cancellationToken))
                 .ToArray();
 
             if (exceptions.Any())
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 throw new AggregateException(CommandErrorMessage(command), exceptions);
             }
 
@@ -152,24 +156,24 @@ namespace Obvs
             return _localBus == null ? Observable.Empty<TRequest>() : _localBus.Requests;
         }
 
-        protected IEnumerable<Task> PublishLocal(TEvent ev, List<Exception> exceptions)
+        protected IEnumerable<Task> PublishLocal(TEvent ev, List<Exception> exceptions, CancellationToken cancellationToken)
         {
             return ShouldPublishLocally(ev)
-                ? new[] {Catch(() => _localBus.PublishAsync(ev), exceptions)} 
+                ? new[] {Catch(() => _localBus.PublishAsync(ev, cancellationToken), exceptions)} 
                 : Enumerable.Empty<Task>();
         }
 
-        private IEnumerable<Task> SendLocal(TCommand command, List<Exception> exceptions)
+        private IEnumerable<Task> SendLocal(TCommand command, List<Exception> exceptions, CancellationToken cancellationToken)
         {
             return ShouldPublishLocally(command) 
-                ? new[] { Catch(() => _localBus.SendAsync(command), exceptions) } 
+                ? new[] { Catch(() => _localBus.SendAsync(command, cancellationToken), exceptions) } 
                 : Enumerable.Empty<Task>();
         }
 
-        protected IEnumerable<Task> ReplyLocal(TRequest request, TResponse response, List<Exception> exceptions)
+        protected IEnumerable<Task> ReplyLocal(TRequest request, TResponse response, List<Exception> exceptions, CancellationToken cancellationToken)
         {
             return ShouldPublishLocally(response)
-                ? new[] { Catch(() => _localBus.ReplyAsync(request, response), exceptions) }
+                ? new[] { Catch(() => _localBus.ReplyAsync(request, response, cancellationToken), exceptions) }
                 : Enumerable.Empty<Task>();
         }
 
@@ -201,8 +205,10 @@ namespace Obvs
             return false;
         }
 
-        public Task SendAsync(IEnumerable<TCommand> commands)
+        public Task SendAsync(IEnumerable<TCommand> commands, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var commandsResolved = commands.ToArray();
 
             if (commandsResolved.Length == 0)
@@ -210,10 +216,12 @@ namespace Obvs
 
             var exceptions = new List<Exception>();
             
-            var tasks = commandsResolved.Select(command => Catch(() => SendAsync(command), exceptions)).ToArray();
+            var tasks = commandsResolved.Select(command => CatchUnlessCancelled(() => SendAsync(command, cancellationToken), exceptions, cancellationToken)).ToArray();
 
             if (exceptions.Any())
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 Exception[] GetInnerExceptions(Exception e) =>
                     e is AggregateException aggregateException
                         ? aggregateException.InnerExceptions.ToArray()

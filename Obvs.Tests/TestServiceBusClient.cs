@@ -21,7 +21,7 @@ namespace Obvs.Tests
 
             var commands = new ICommand[0];
 
-            await sut.SendAsync(commands);
+            await sut.SendAsync(commands, TestContext.Current.CancellationToken);
         }
 
         [Fact]
@@ -65,7 +65,7 @@ namespace Obvs.Tests
             var cmd = new TestServiceCommand1();
             var commands = new[] { cmd };
 
-            await sut.SendAsync(commands);
+            await sut.SendAsync(commands, TestContext.Current.CancellationToken);
 
             signal.OnNext(Unit.Default);
 
@@ -92,7 +92,7 @@ namespace Obvs.Tests
             var cmd = new TestServiceCommand1();
             var commands = new[] { cmd };
 
-            await sut.SendAsync(commands);
+            await sut.SendAsync(commands, TestContext.Current.CancellationToken);
 
             signal.OnNext(Unit.Default);
 

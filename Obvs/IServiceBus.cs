@@ -24,8 +24,8 @@ namespace Obvs
         IObservable<TRequest> Requests { get; }
         IObservable<TCommand> Commands { get; }
 
-        Task PublishAsync(TEvent ev);
-        Task ReplyAsync(TRequest request, TResponse response);
+        Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default);
+        Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default);
     }
 
     public class ServiceBus : IServiceBus, IDisposable
@@ -54,14 +54,14 @@ namespace Obvs
 
         public IObservable<IEvent> Events => _serviceBus.Events;
 
-        public Task SendAsync(ICommand command)
+        public Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
         {
-            return _serviceBus.SendAsync(command);
+            return _serviceBus.SendAsync(command, cancellationToken);
         }
 
-        public Task SendAsync(IEnumerable<ICommand> commands)
+        public Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default)
         {
-            return _serviceBus.SendAsync(commands);
+            return _serviceBus.SendAsync(commands, cancellationToken);
         }
 
         public IObservable<IResponse> GetResponses(IRequest request)
@@ -85,14 +85,14 @@ namespace Obvs
 
         public IObservable<ICommand> Commands => _serviceBus.Commands;
 
-        public Task PublishAsync(IEvent ev)
+        public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default)
         {
-            return _serviceBus.PublishAsync(ev);
+            return _serviceBus.PublishAsync(ev, cancellationToken);
         }
 
-        public Task ReplyAsync(IRequest request, IResponse response)
+        public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default)
         {
-            return _serviceBus.ReplyAsync(request, response);
+            return _serviceBus.ReplyAsync(request, response, cancellationToken);
         }
 
         public void Dispose()
@@ -141,17 +141,20 @@ namespace Obvs
 
         public IObservable<TCommand> Commands { get; }
 
-        public Task PublishAsync(TEvent ev)
+        public Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var exceptions = new List<Exception>();
 
             var tasks = EndpointsThatCanHandle(ev)
-                .Select(endpoint => Catch(() => endpoint.PublishAsync(ev), exceptions, EventErrorMessage(endpoint)))
-                .Union(PublishLocal(ev, exceptions))
+                .Select(endpoint => CatchUnlessCancelled(() => endpoint.PublishAsync(ev), exceptions, cancellationToken, EventErrorMessage(endpoint)))
+                .Union(PublishLocal(ev, exceptions, cancellationToken))
                 .ToArray();
 
             if (exceptions.Any())
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 throw new AggregateException(EventErrorMessage(ev), exceptions);
             }
 
@@ -164,24 +167,27 @@ namespace Obvs
             return Task.WhenAll(tasks);
         }
 
-        public Task ReplyAsync(TRequest request, TResponse response)
+        public Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default)
         {
             if (_requestCorrelationProvider == null)
             {
                 throw new InvalidOperationException("Please configure the ServiceBus with a IRequestCorrelationProvider using the fluent configuration extension method .CorrelatesRequestWith()");
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             _requestCorrelationProvider.SetCorrelationIds(request, response);
 
             var exceptions = new List<Exception>();
 
             var tasks = EndpointsThatCanHandle(response)
-                    .Select(endpoint => Catch(() => endpoint.ReplyAsync(request, response), exceptions, ReplyErrorMessage(endpoint)))
-                    .Union(ReplyLocal(request, response, exceptions))
+                    .Select(endpoint => CatchUnlessCancelled(() => endpoint.ReplyAsync(request, response), exceptions, cancellationToken, ReplyErrorMessage(endpoint)))
+                    .Union(ReplyLocal(request, response, exceptions, cancellationToken))
                     .ToArray();
 
             if (exceptions.Any())
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 throw new AggregateException(ReplyErrorMessage(request, response), exceptions);
             }
 

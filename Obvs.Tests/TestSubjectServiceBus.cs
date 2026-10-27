@@ -25,7 +25,7 @@ namespace Obvs.Tests
 
             var threadId = Thread.CurrentThread.ManagedThreadId;
 
-            var task = _testObj.PublishAsync(new TestServiceEvent1());
+            var task = _testObj.PublishAsync(new TestServiceEvent1(), TestContext.Current.CancellationToken);
 
             Assert.NotEqual(-1, subscriberThreadId);
             Assert.Equal(threadId, subscriberThreadId);
@@ -41,7 +41,7 @@ namespace Obvs.Tests
 
             var threadId = Thread.CurrentThread.ManagedThreadId;
 
-            var task = _testObj.SendAsync(new TestServiceCommand1());
+            var task = _testObj.SendAsync(new TestServiceCommand1(), TestContext.Current.CancellationToken);
 
             Assert.NotEqual(-1, subscriberThreadId);
             Assert.Equal(threadId, subscriberThreadId);
@@ -79,13 +79,13 @@ namespace Obvs.Tests
         [Fact]
         public void PublishReturnsWithNoObservers()
         {
-            Assert.True(_testObj.PublishAsync(new TestServiceEvent1()).IsCompleted);
+            Assert.True(_testObj.PublishAsync(new TestServiceEvent1(), TestContext.Current.CancellationToken).IsCompleted);
         }
 
         [Fact]
         public void SendReturnsWithNoObservers()
         {
-            Assert.True(_testObj.SendAsync(new TestServiceCommand1()).IsCompleted);
+            Assert.True(_testObj.SendAsync(new TestServiceCommand1(), TestContext.Current.CancellationToken).IsCompleted);
         }
     }
 }
