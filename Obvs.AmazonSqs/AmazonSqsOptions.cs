@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging;
 using System;
 using Amazon.Runtime;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Obvs.AmazonSqs
 {
@@ -74,7 +74,9 @@ namespace Obvs.AmazonSqs
         /// </summary>
         public TimeSpan AbandonedAfter { get; set; } = TimeSpan.FromHours(1);
 
-        // Set by UseAmazonSqs from the app's logging
+        // Set by UseAmazonSqs from the app's logging, and the service's name, for metrics
         internal ILogger Logger { get; set; } = NullLogger.Instance;
+
+        internal string ServiceName { get; set; }
     }
 }

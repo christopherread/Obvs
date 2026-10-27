@@ -67,9 +67,9 @@ namespace Obvs.Hosting
             return Telemetry.SendAsync("send", _serviceName, command, _logger, () => _inner.SendAsync(command, cancellationToken));
         }
 
-        // The inner endpoint sends the request when subscribed to, so the span covers the subscription. Responses
-        // aren't counted as received: each request's stream can see every response on the service, as the bus
-        // only picks out the request's own after this.
+        // The inner endpoint sends the request when subscribed to, so the span covers the subscription. Each request's
+        // stream can see every response on the service, as the bus only picks out the request's own after this, so
+        // a request counts only its own responses as received.
         public IObservable<IResponse> GetResponses(IRequest request)
         {
             return Observable.Create<IResponse>(observer =>
@@ -80,7 +80,15 @@ namespace Obvs.Hosting
                     Telemetry.LogAndCount("request", _serviceName, request, _logger);
                     try
                     {
-                        return _inner.GetResponses(request).Subscribe(observer);
+                        return _inner.GetResponses(request)
+                            .Do(response =>
+                            {
+                                if (response.RequestId == request.RequestId && response.RequesterId == request.RequesterId)
+                                {
+                                    ObvsDiagnostics.RecordReceived(_serviceName, response.GetType());
+                                }
+                            })
+                            .Subscribe(observer);
                     }
                     catch (Exception exception)
                     {
@@ -105,7 +113,8 @@ namespace Obvs.Hosting
             using (var activity = ObvsDiagnostics.StartProducer(operation, serviceName, message.GetType()))
             {
                 ObvsDiagnostics.InjectTraceContext(activity, message);
-                LogAndCount(operation, serviceName, message, logger);
+                Log(operation, serviceName, message, logger);
+                // Counted once it's sent, or failed to send, as OpenTelemetry's messaging conventions ask
                 try
                 {
                     await send().ConfigureAwait(false);
@@ -113,14 +122,21 @@ namespace Obvs.Hosting
                 catch (Exception exception)
                 {
                     ObvsDiagnostics.RecordFailure(activity, exception);
+                    ObvsDiagnostics.RecordSent(operation, serviceName, message.GetType(), exception);
                     throw;
                 }
+                ObvsDiagnostics.RecordSent(operation, serviceName, message.GetType());
             }
         }
 
         public static void LogAndCount(string operation, string serviceName, IMessage message, ILogger logger)
         {
             ObvsDiagnostics.RecordSent(operation, serviceName, message.GetType());
+            Log(operation, serviceName, message, logger);
+        }
+
+        private static void Log(string operation, string serviceName, IMessage message, ILogger logger)
+        {
             logger.LogDebug("Obvs {Operation} {MessageType} on service '{ServiceName}'.", operation, message.GetType().Name, serviceName);
         }
 

@@ -4,11 +4,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FakeItEasy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Obvs.Configuration;
 using Obvs.Hosting;
 using Obvs.Testing;
 using Obvs.Tests.Hosting.Handlers;
+using Obvs.Types;
 using Xunit;
 
 namespace Obvs.Tests.Hosting.Telemetry
@@ -186,17 +189,17 @@ namespace Obvs.Tests.Hosting.Telemetry
 
             await harness.Bus.PublishAsync(new OrderPlaced("o-1"), TestContext.Current.CancellationToken);
 
+            // Counted as it arrives, just before it's delivered, so wait for both
             var received = await WaitForAsync(() =>
             {
                 var measurements = metrics.For(_service, "messaging.client.consumed.messages");
-                return measurements.Count == 1 ? measurements : null;
+                return measurements.Count == 1 && Volatile.Read(ref seen) == 1 ? measurements : null;
             });
             Assert.Equal(nameof(OrderPlaced), received.Single().Tags["obvs.message.type"]);
-            Assert.Equal(1, Volatile.Read(ref seen));
         }
 
         [Fact]
-        public async Task ShouldCountReceivedRequestsButNotResponses()
+        public async Task ShouldCountReceivedRequestsAndTheirResponses()
         {
             using var metrics = new MetricRecorder();
             await using var harness = await StartAsync(service => service
@@ -204,9 +207,75 @@ namespace Obvs.Tests.Hosting.Telemetry
 
             await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), Timeout, Ct);
 
-            await WaitForAsync(() => metrics.For(_service, "messaging.process.duration").Count == 1 ? new object() : null);
-            var received = metrics.For(_service, "messaging.client.consumed.messages");
-            Assert.Equal(nameof(GetQuote), Assert.Single(received).Tags["obvs.message.type"]);
+            var received = await WaitForAsync(() =>
+            {
+                var measurements = metrics.For(_service, "messaging.client.consumed.messages");
+                return measurements.Count == 2 ? measurements : null;
+            });
+            Assert.Equal(new[] { nameof(GetQuote), nameof(Quote) }, received.Select(m => (string)m.Tags["obvs.message.type"]).OrderBy(name => name));
+        }
+
+        [Fact]
+        public async Task ShouldCountAResponseOnceWhenSeveralRequestsAreWaiting()
+        {
+            // Each request in flight sees every response on the service, but counts only its own
+            using var metrics = new MetricRecorder();
+            await using var harness = await StartAsync(service => service
+                .HandleRequest<GetQuote, Quote>(async (request, context, ct) =>
+                {
+                    await Task.Delay(50, ct);
+                    return new Quote(request.Sku, 9.99m);
+                }));
+
+            await Task.WhenAll(Enumerable.Range(1, 3).Select(i => harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote($"sku-{i}"), Timeout, Ct)));
+
+            await WaitForAsync(() => metrics.For(_service, "messaging.process.duration").Count == 3 ? new object() : null);
+            await Task.Delay(100, Ct);
+            Assert.Equal(3, metrics.For(_service, "messaging.client.consumed.messages").Count(m => (string)m.Tags["obvs.message.type"] == nameof(Quote)));
+        }
+
+        [Fact]
+        public async Task ShouldCountFailedSendsWithTheErrorType()
+        {
+            using var metrics = new MetricRecorder();
+            var endpointClient = A.Fake<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            A.CallTo(() => endpointClient.CanHandle(A<IMessage>._)).Returns(true);
+            A.CallTo(() => endpointClient.Events).Returns(System.Reactive.Linq.Observable.Never<IEvent>());
+            A.CallTo(() => endpointClient.SendAsync(A<ICommand>._, A<CancellationToken>._)).ThrowsAsync(new TimeoutException("The broker didn't answer"));
+            var provider = A.Fake<IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            A.CallTo(() => provider.CreateEndpointClient()).Returns(endpointClient);
+            await using var harness = await StartAsync(service => service.AsClient().UseEndpointProvider(_ => provider));
+
+            await Assert.ThrowsAnyAsync<Exception>(() => harness.Client.SendAsync(new PlaceOrder("o-1"), Ct));
+
+            var sent = Assert.Single(metrics.For(_service, "messaging.client.sent.messages"));
+            Assert.Equal(typeof(TimeoutException).FullName, sent.Tags["error.type"]);
+            Assert.Equal("send", sent.Tags["messaging.operation.name"]);
+        }
+
+        [Fact]
+        public async Task ShouldCountSuccessfulSendsWithoutAnErrorType()
+        {
+            using var metrics = new MetricRecorder();
+            await using var harness = await StartAsync(service => { });
+
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), Ct);
+
+            var sent = await WaitForAsync(() => metrics.For(_service, "messaging.client.sent.messages").SingleOrDefault());
+            Assert.False(sent.Tags.ContainsKey("error.type"));
+        }
+
+        [Fact]
+        public void ShouldCountMessagesATransportCantDeserialize()
+        {
+            using var metrics = new MetricRecorder();
+
+            ObvsTransportTelemetry.RecordUndeserializable(_service, nameof(PlaceOrder), new FormatException("Not JSON"));
+
+            var received = Assert.Single(metrics.For(_service, "messaging.client.consumed.messages"));
+            Assert.Equal(typeof(FormatException).FullName, received.Tags["error.type"]);
+            Assert.Equal(nameof(PlaceOrder), received.Tags["obvs.message.type"]);
+            Assert.Equal("receive", received.Tags["messaging.operation.name"]);
         }
 
         [Fact]

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,6 +7,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
+using Microsoft.Extensions.Logging;
 using Obvs.Hosting;
 using Obvs.MessageProperties;
 using Obvs.Serialization;
@@ -174,7 +174,16 @@ namespace Obvs.AzureSB
                 return null;
             }
 
-            var message = deserializer.Deserialize(received.Body.ToStream());
+            TMessage message;
+            try
+            {
+                message = deserializer.Deserialize(received.Body.ToStream());
+            }
+            catch (Exception exception)
+            {
+                ObvsTransportTelemetry.RecordUndeserializable(_options.ServiceName, name, exception);
+                throw;
+            }
             var headers = received.ApplicationProperties
                 .Where(property => property.Key != MessagePropertyNames.TypeName && property.Value is string)
                 .ToDictionary(property => property.Key, property => (string)property.Value);

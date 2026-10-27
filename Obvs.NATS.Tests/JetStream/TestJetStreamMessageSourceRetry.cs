@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
@@ -81,6 +82,24 @@ namespace Obvs.NATS.Tests.JetStream
                     Assert.Contains(_topology.Commands.Consumer, entry.Message);
                 },
                 entry => Assert.Equal(LogLevel.Information, entry.Level));
+        }
+
+        [Fact]
+        public async Task ShouldCountAMessageItCantDeserialize()
+        {
+            var counted = new ConcurrentQueue<(string Type, object ErrorType)>();
+            using var listener = ConsumedMessagesListener(counted);
+            var corrupt = A.Fake<INatsJSMsg<byte[]>>();
+            A.CallTo(() => corrupt.Subject).Returns("orders.Commands.PlaceOrder");
+            A.CallTo(() => corrupt.Data).Returns(Encoding.UTF8.GetBytes("not json"));
+            Pulls((opts, cancellationToken) => Task.FromResult(corrupt));
+
+            using var subscription = Subscribe(Commands());
+
+            await WaitUntilAsync(() => counted.Count > 0);
+            var (type, errorType) = counted.First();
+            Assert.Equal(nameof(PlaceOrder), type);
+            Assert.NotNull(errorType);
         }
 
         [Fact]
@@ -331,6 +350,35 @@ namespace Obvs.NATS.Tests.JetStream
                 }
                 await Task.Delay(10, Ct);
             }
+        }
+
+        // Measurements for the "orders" service, which only these tests use
+        private static System.Diagnostics.Metrics.MeterListener ConsumedMessagesListener(ConcurrentQueue<(string Type, object ErrorType)> counted)
+        {
+            var listener = new System.Diagnostics.Metrics.MeterListener
+            {
+                InstrumentPublished = (instrument, l) =>
+                {
+                    if (instrument.Meter.Name == Obvs.Hosting.ObvsTelemetry.MeterName && instrument.Name == "messaging.client.consumed.messages")
+                    {
+                        l.EnableMeasurementEvents(instrument);
+                    }
+                },
+            };
+            listener.SetMeasurementEventCallback<long>((instrument, value, tags, state) =>
+            {
+                var tagged = new Dictionary<string, object>();
+                foreach (var tag in tags)
+                {
+                    tagged[tag.Key] = tag.Value;
+                }
+                if ((string)tagged["messaging.destination.name"] == "orders")
+                {
+                    counted.Enqueue(((string)tagged["obvs.message.type"], tagged.TryGetValue("error.type", out var errorType) ? errorType : null));
+                }
+            });
+            listener.Start();
+            return listener;
         }
 
         private sealed class RecordingLogger : ILogger

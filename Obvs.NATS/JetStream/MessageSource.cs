@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,8 +9,10 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NATS.Client.Core;
 using NATS.Client.JetStream;
+using Obvs.Hosting;
 using Obvs.Serialization;
 
 namespace Obvs.NATS.JetStream
@@ -180,7 +181,16 @@ namespace Obvs.NATS.JetStream
                 return null;
             }
 
-            var message = deserializer.Deserialize(new MemoryStream(received.Data ?? new byte[0]));
+            TMessage message;
+            try
+            {
+                message = deserializer.Deserialize(new MemoryStream(received.Data ?? new byte[0]));
+            }
+            catch (Exception exception)
+            {
+                ObvsTransportTelemetry.RecordUndeserializable(_serviceName, typeName, exception);
+                throw;
+            }
             if (received.Headers != null)
             {
                 var headers = new Dictionary<string, string>();
