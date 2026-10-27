@@ -143,6 +143,7 @@ jobs:
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.AmazonSqs
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.AzureSB
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Kafka
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Mcp
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.NATS
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.NetMQ
         dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.RabbitMQ

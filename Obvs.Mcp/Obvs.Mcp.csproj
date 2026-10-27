@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Serves MCP over HTTP from the app's own ASP.NET Core pipeline, so an agent can attach to it while it runs -->
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>A Model Context Protocol server for development buses: agents list services and their contracts, send messages, and watch what happens.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs\Obvs.csproj" />
+  </ItemGroup>
+</Project>
