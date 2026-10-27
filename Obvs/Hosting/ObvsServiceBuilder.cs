@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Obvs.Configuration;
 using Obvs.Serialization;
+using Obvs.Serialization.SystemTextJson;
 using Obvs.Types;
 
 namespace Obvs.Hosting
@@ -20,7 +21,7 @@ namespace Obvs.Hosting
         private readonly List<Func<IServiceProvider, IEnumerable<string>>> _validators = new List<Func<IServiceProvider, IEnumerable<string>>>();
         private readonly List<HandlerRegistration> _handlers = new List<HandlerRegistration>();
         private readonly List<Type> _messages = new List<Type>();
-        private IMessageDeserializerFactory _deserializerFactory;
+        private IMessageDeserializerFactory _deserializerFactory = new SystemTextJsonMessageDeserializerFactory();
 
         internal ObvsServiceBuilder(string name, Type serviceMessageType, IServiceCollection services, ObvsBuilder bus)
         {
@@ -45,11 +46,11 @@ namespace Obvs.Hosting
         /// </summary>
         public string InstanceId => _bus.InstanceId;
 
-        /// <summary>The serializer set with <see cref="SerializedWith"/>, if any.</summary>
-        public IMessageSerializer Serializer { get; private set; }
+        /// <summary>The serializer set with <see cref="SerializedWith"/>, or System.Text.Json by default.</summary>
+        public IMessageSerializer Serializer { get; private set; } = new SystemTextJsonMessageSerializer();
 
         /// <summary>
-        /// The deserializer factory set with <see cref="SerializedWith"/>, if any. If the service registers its messages
+        /// The deserializer factory set with <see cref="SerializedWith"/>, or System.Text.Json by default. If the service registers its messages
         /// with <see cref="AddMessages"/>, it creates deserializers for those types only.
         /// </summary>
         public IMessageDeserializerFactory DeserializerFactory => _deserializerFactory == null || _messages.Count == 0

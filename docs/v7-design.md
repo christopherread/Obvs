@@ -331,10 +331,10 @@ Tracking: #93
 | `Obvs.RabbitMQ`, `Obvs.Kafka`, `Obvs.NATS`, `Obvs.ActiveMQ` | Transports, all configured the same way |
 | `Obvs.AzureSB`, `Obvs.AmazonSqs` | New transports (see 13) |
 | `Obvs.NetMQ` | Proposed to stay on v6 (see open question 4) |
-| `Obvs.Serialization.MessagePack` (MessagePack-CSharp), `Obvs.Serialization.ProtoBuf` | Optional serializers |
+| `Obvs.Serialization.MessagePack` (MessagePack-CSharp), `Obvs.Serialization.ProtoBuf` | Optional serializers. The MessagePack-CSharp package takes over the `Obvs.Serialization.MessagePack` name, which was MsgPack.Cli's on v6. |
 | `Obvs.Testing`, `Obvs.Mcp` | New |
 | `Obvs.Serialization.Json` (Newtonsoft) | Kept for v6 wire compatibility; not the default |
-| MsgPack.Cli, NetJSON, XML, `Obvs.Monitoring.*`, `Obvs.Logging.NLog` | Stay on v6, deprecated on NuGet with named replacements |
+| MsgPack.Cli, NetJSON, XML, YAML, `Obvs.Monitoring.*`, `Obvs.Logging.NLog` | Stay on v6, deprecated on NuGet with named replacements. Removed from the `v7` branch. |
 
 Every transport is configured the same way: an options class, `Use<Transport>(IConfiguration)` and `Use<Transport>(Action<Options>)`.
 

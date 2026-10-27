@@ -202,20 +202,6 @@ namespace Obvs.AzureSB.Tests.Hosting
         }
 
         [Fact]
-        public async Task ShouldFailToStartWithoutASerializer()
-        {
-            using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service
-                    .UseAzureServiceBus(options => options.FullyQualifiedNamespace = "contoso.servicebus.windows.net"))));
-
-            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
-
-            var error = Assert.Single(exception.Errors);
-            Assert.Contains("'orders'", error);
-            Assert.Contains("SerializedWith", error);
-        }
-
-        [Fact]
         public async Task ShouldFailToStartWhenTheInstanceIdIsTooLongForASubscriptionName()
         {
             // This bus's event subscription is named after its instance ID, and Service Bus allows 50 characters

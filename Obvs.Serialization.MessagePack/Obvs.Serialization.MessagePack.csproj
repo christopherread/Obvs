@@ -2,19 +2,15 @@
 
   <PropertyGroup>
     <TargetFrameworks>net472;netstandard2.0;net10.0</TargetFrameworks>
-    <!-- Deprecated (MsgPack.Cli is unmaintained): no longer published; use Obvs.Serialization.MessagePack-CSharp -->
-    <IsPackable>false</IsPackable>
-    <Company>Christopher Read</Company>
-    <Copyright>Copyright © Christopher Read 2017</Copyright>
+    <Description>MessagePack-CSharp (https://github.com/neuecc/MessagePack-CSharp) serialization for Obvs</Description>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
     <Version>1.0.0</Version>
-    <Authors />
-    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
-    <PackageReleaseNotes>Deprecated: MsgPack.Cli is no longer maintained. Use Obvs.Serialization.MessagePack-CSharp instead.</PackageReleaseNotes>
-    <Description>Deprecated: use Obvs.Serialization.MessagePack-CSharp. MessagePack serialization for Obvs using MsgPack.Cli, which is no longer maintained.</Description>
+    <PackageReleaseNotes>Minor dependency update</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MsgPack.Cli" />
+    <PackageReference Include="MessagePack" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,4 +18,3 @@
   </ItemGroup>
 
 </Project>
-

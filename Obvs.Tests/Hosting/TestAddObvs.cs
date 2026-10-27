@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Obvs.Configuration;
 using Obvs.Hosting;
 using Obvs.Serialization;
+using Obvs.Serialization.SystemTextJson;
 using Obvs.Types;
 using Xunit;
 
@@ -313,6 +314,23 @@ namespace Obvs.Tests.Hosting
             Assert.Equal(2, exception.Errors.Count);
             Assert.Contains("Service 'shipping' needs a broker address.", exception.Errors);
             Assert.NotNull(validatedWith);
+        }
+
+        [Fact]
+        public void ShouldSerializeWithSystemTextJsonUnlessToldOtherwise()
+        {
+            ObvsServiceBuilder orders = null;
+            ObvsServiceBuilder shipping = null;
+            var serializer = A.Fake<IMessageSerializer>();
+            var deserializerFactory = A.Fake<IMessageDeserializerFactory>();
+            BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => orders = service)
+                .AddService<IShippingMessage>("shipping", service => shipping = service.SerializedWith(serializer, deserializerFactory))));
+
+            Assert.IsType<SystemTextJsonMessageSerializer>(orders.Serializer);
+            Assert.IsType<SystemTextJsonMessageDeserializerFactory>(orders.DeserializerFactory);
+            Assert.Same(serializer, shipping.Serializer);
+            Assert.Same(deserializerFactory, shipping.DeserializerFactory);
         }
 
         [Fact]

@@ -68,19 +68,6 @@ namespace Obvs.NATS.Tests.Hosting
             Assert.Contains("Url", error);
         }
 
-        [Fact]
-        public async Task ShouldFailToStartWithoutASerializer()
-        {
-            using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseNats(options => options.Url = "nats://nats.example:4222"))));
-
-            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
-
-            var error = Assert.Single(exception.Errors);
-            Assert.Contains("'orders'", error);
-            Assert.Contains("SerializedWith", error);
-        }
-
         private static IConfiguration Configuration(IDictionary<string, string> values)
         {
             return new ConfigurationBuilder().AddInMemoryCollection(values).Build();
