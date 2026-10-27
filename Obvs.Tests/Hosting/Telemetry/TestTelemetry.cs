@@ -254,6 +254,41 @@ namespace Obvs.Tests.Hosting.Telemetry
         }
 
         [Fact]
+        public async Task ShouldMarkARequestThatFailedToSendAsFailed()
+        {
+            using var activities = new ActivityRecorder();
+            using var metrics = new MetricRecorder();
+            var transport = new RequestTransport { SendFailure = new TimeoutException("The broker didn't answer") };
+            await using var harness = await StartAsync(service => service.AsClient().UseEndpointProvider(_ => transport));
+
+            await Assert.ThrowsAsync<TimeoutException>(() => harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct))
+                .WaitAsync(Timeout, Ct);
+
+            var span = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"request {_service}"));
+            Assert.Equal(ActivityStatusCode.Error, span.Status);
+            Assert.Equal(typeof(TimeoutException).FullName, span.GetTagItem("error.type"));
+            var sent = Assert.Single(metrics.For(_service, "messaging.client.sent.messages"));
+            Assert.Equal(typeof(TimeoutException).FullName, sent.Tags["error.type"]);
+            Assert.Equal("request", sent.Tags["messaging.operation.name"]);
+        }
+
+        [Fact]
+        public async Task ShouldCountARequestAsSentOnceItsSendSucceeds()
+        {
+            using var activities = new ActivityRecorder();
+            using var metrics = new MetricRecorder();
+            var transport = new RequestTransport();
+            await using var harness = await StartAsync(service => service.AsClient().UseEndpointProvider(_ => transport));
+
+            await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), Timeout, Ct);
+
+            var span = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"request {_service}"));
+            Assert.NotEqual(ActivityStatusCode.Error, span.Status);
+            var sent = await WaitForAsync(() => metrics.For(_service, "messaging.client.sent.messages").SingleOrDefault());
+            Assert.False(sent.Tags.ContainsKey("error.type"));
+        }
+
+        [Fact]
         public async Task ShouldCountSuccessfulSendsWithoutAnErrorType()
         {
             using var metrics = new MetricRecorder();

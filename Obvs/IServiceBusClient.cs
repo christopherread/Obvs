@@ -38,7 +38,7 @@ namespace Obvs
         /// <param name="cancellationToken">Stops sending, and waiting for the broker</param>
         Task SendAsync(IEnumerable<TCommand> commands, CancellationToken cancellationToken = default);
 
-        /// <summary>Sends <paramref name="request"/> when subscribed to, and returns its responses.</summary>
+        /// <summary>Sends <paramref name="request"/> when subscribed to, and returns its responses. If the send fails, the stream ends with its error.</summary>
         IObservable<TResponse> GetResponses(TRequest request);
         /// <summary>Sends <paramref name="request"/> when subscribed to, and returns its responses of type <typeparamref name="T"/>.</summary>
         IObservable<T> GetResponses<T>(TRequest request) where T : TResponse;

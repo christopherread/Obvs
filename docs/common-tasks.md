@@ -135,7 +135,7 @@ service.HandleRequest<GetQuote, Quote>(async (request, context, ct) =>
 var quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
 ```
 
-`RequestAsync` throws a `TimeoutException` if no response arrives in time.
+`RequestAsync` throws a `TimeoutException` if no response arrives in time. If the request can't be sent, it throws the transport's error straight away.
 
 ## Read events at your own pace
 

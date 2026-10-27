@@ -14,6 +14,7 @@ namespace Obvs
         /// Sends a request and returns the first response of type <typeparamref name="TResponse"/>.
         /// Throws <see cref="TimeoutException"/> if none arrives within <paramref name="timeout"/>, measured on
         /// <paramref name="timeProvider"/> (the system clock by default; pass a fake one to test timeouts).
+        /// If the request can't be sent, throws the transport's error straight away.
         /// </summary>
         public static async Task<TResponse> RequestAsync<TRequest, TResponse>(this IServiceBusClient client, TRequest request, TimeSpan timeout,
             CancellationToken cancellationToken = default, TimeProvider timeProvider = null)
