@@ -40,6 +40,7 @@ The build has no warnings. Keep it that way.
 | `Obvs.Generators/`, `Obvs.Analyzers/`, `Obvs.Analyzers.CodeFixes/` | The `[ObvsMessages]` source generator, and the analyzers and their code fixes, all shipped in the `Obvs` package |
 | `Obvs.Testing/` | The in-memory transport and `ObvsTestHarness` |
 | `Obvs.Mcp/` | The MCP server for development buses |
+| `Obvs.V6InteropApp/` | A v6 app on the published 6.x packages, which `TestV6Interop` runs in its own process |
 | `Obvs.Samples/` | Every C# snippet in the README and `docs/`, compiled, with the recipes run as tests |
 | `*.Tests/` | Tests, one project per package |
 | `docs/` | Guides; `v7-design.md` is the design for v7 |
@@ -58,7 +59,7 @@ The build has no warnings. Keep it that way.
 
   `TestSnippets` fails when a doc and its sample differ. A block that can't compile gets `<!-- not compiled: why -->`.
 - **XML docs** on every public member, which ship in the packages. A missing one fails the build (CS1591 is an error). The exceptions are code kept for v6 apps, such as the fluent configuration, v6's logging and monitoring abstractions, and the v6 transports' building blocks, and code copied into the repo. Each of those files says so above its `#pragma warning disable`. Implementations of a documented interface use `/// <inheritdoc />`.
-- **Wire compatibility.** v6 and v7 apps share brokers. Don't change routing names or JSON shapes without a test that a v6 app still understands them (see `Obvs.RabbitMQ.Tests/Hosting/TestV6Interop.cs`).
+- **Wire compatibility.** v6 and v7 apps share brokers. Don't change routing names or JSON shapes without a test that a v6 app still understands them (see `Obvs.RabbitMQ.Tests/Hosting/TestV6Interop.cs`, which runs `Obvs.V6InteropApp`).
 
 ## Pull requests
 

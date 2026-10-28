@@ -10,6 +10,11 @@
     <ProjectReference Include="..\Obvs.Serialization.Json\Obvs.Serialization.Json.csproj" />
     <ProjectReference Include="..\Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj" />
   </ItemGroup>
+  <!-- TestV6Interop runs the v6 app from its own output folder, where its 6.x assemblies don't meet v7's -->
+  <ItemGroup>
+    <ProjectReference Include="..\Obvs.V6InteropApp\Obvs.V6InteropApp.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <AssemblyMetadata Include="V6InteropApp" Value="$(MSBuildThisFileDirectory)../Obvs.V6InteropApp/bin/$(Configuration)/net10.0/Obvs.V6InteropApp.dll" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FakeItEasy" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />

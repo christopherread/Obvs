@@ -8,6 +8,10 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # Obvs.V6InteropApp is a v6 app on the published packages, so it stays on Obvs 6.x
+      - dependency-name: "Obvs*"
+        update-types: ["version-update:semver-major"]
 
   # The examples pin published Obvs packages, so keep them on the latest release
   - package-ecosystem: nuget
