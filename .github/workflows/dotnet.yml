@@ -13,6 +13,12 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    # A run takes about eight minutes. A hung test fails its suite within HANG_DUMP's timeout; this is the backstop.
+    timeout-minutes: 30
+    env:
+      # Test arguments: a test run that hasn't finished after ten minutes writes a dump, and a log naming the tests still running, then fails.
+      # The directory goes after '=': once it exists, dotnet test would take it alone for a project to test.
+      HANG_DUMP: --hangdump --hangdump-timeout 10m --hangdump-type Mini --results-directory=${{ github.workspace }}/TestResults
     permissions:
       contents: read
       id-token: write # NuGet Trusted Publishing
@@ -124,17 +130,32 @@ jobs:
         KAFKA_SASL_BOOTSTRAP_SERVERS: 127.0.0.1:9094
         ACTIVEMQ_URI: activemq:tcp://localhost:61616
       run: |
-        dotnet test --project Obvs.RabbitMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
-        dotnet test --project Obvs.NATS.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
-        dotnet test --project Obvs.Kafka.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
-        dotnet test --project Obvs.NetMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
-        dotnet test --project Obvs.ActiveMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
-        dotnet test --project Obvs.AzureSB.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
-        dotnet test --project Obvs.AmazonSqs.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.RabbitMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.NATS.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.Kafka.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.NetMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.ActiveMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.AzureSB.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.AmazonSqs.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
     - name: Test
       # xUnit v3 runs on Microsoft.Testing.Platform (global.json). Exit code 8 means a project ran no tests,
       # as the transport test projects only contain Explicit tests.
-      run: dotnet test --solution Obvs.sln --no-build --configuration Release -- --filter-not-trait "Category=Explicit" --ignore-exit-code 8
+      run: dotnet test --solution Obvs.sln --no-build --configuration Release -- --filter-not-trait "Category=Explicit" --ignore-exit-code 8 $HANG_DUMP
+    - name: Show hung tests
+      if: failure()
+      run: |
+        for log in TestResults/*_hang.log; do
+          [ -e "$log" ] || continue
+          echo "::error title=Hung tests::$(basename "$log"): $(tr '\n' ' ' < "$log")"
+          cat "$log"
+        done
+    - name: Upload hang dumps
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: hang-dumps
+        path: TestResults/*_hang.*
+        if-no-files-found: ignore
     - name: Pack
       if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
       run: |
