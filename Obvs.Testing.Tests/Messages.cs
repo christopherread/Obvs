@@ -10,7 +10,7 @@ namespace Obvs.Testing.Tests
 
     public record OrderPlaced(string OrderId) : IOrderMessage, IEvent;
 
-    public record GetQuote(string Sku) : IOrderMessage, IRequest
+    public record GetQuote(string Sku) : IOrderMessage, IRequest<Quote>
     {
         public string RequestId { get; set; }
         public string RequesterId { get; set; }

@@ -75,6 +75,7 @@ namespace Obvs.Hosting
             foreach (var service in services)
             {
                 var serviceMessages = MessagesOf(service);
+                var responsesId = Id(service.Name) + ".responses";
                 foreach (var (kind, channelName, serverReceives) in Kinds)
                 {
                     var ofKind = serviceMessages.Where(kind.IsAssignableFrom).OrderBy(type => type.Name, StringComparer.Ordinal).ToArray();
@@ -86,10 +87,11 @@ namespace Obvs.Hosting
                     var channelId = Id(service.Name) + "." + channelName;
                     var channelMessages = new JsonObject();
                     var operationMessages = new JsonArray();
+                    var replyMessages = new JsonArray();
                     foreach (var type in ofKind)
                     {
                         var messageId = Id(type.FullName ?? type.Name);
-                        messages[messageId] = new JsonObject
+                        var message = messages[messageId] = new JsonObject
                         {
                             ["name"] = type.Name,
                             ["title"] = type.Name,
@@ -98,6 +100,19 @@ namespace Obvs.Hosting
                         };
                         channelMessages[type.Name] = new JsonObject { ["$ref"] = "#/components/messages/" + messageId };
                         operationMessages.Add(new JsonObject { ["$ref"] = $"#/channels/{channelId}/messages/{type.Name}" });
+
+                        // A typed request names its response, and the request operations reply with it if it's one of
+                        // this service's responses
+                        var response = ResponseOf(type);
+                        if (response != null)
+                        {
+                            message["x-obvs-response"] = response.Name;
+                            var reply = $"#/channels/{responsesId}/messages/{response.Name}";
+                            if (serviceMessages.Contains(response) && !replyMessages.Any(m => (string)m["$ref"] == reply))
+                            {
+                                replyMessages.Add(new JsonObject { ["$ref"] = reply });
+                            }
+                        }
                     }
 
                     channels[channelId] = new JsonObject
@@ -119,12 +134,20 @@ namespace Obvs.Hosting
                             continue;
                         }
                         var action = receives ? "receive" : "send";
-                        operations[$"{channelId}.{action}"] = new JsonObject
+                        var operation = operations[$"{channelId}.{action}"] = new JsonObject
                         {
                             ["action"] = action,
                             ["channel"] = new JsonObject { ["$ref"] = "#/channels/" + channelId },
                             ["messages"] = operationMessages.DeepClone(),
                         };
+                        if (replyMessages.Count > 0)
+                        {
+                            operation["reply"] = new JsonObject
+                            {
+                                ["channel"] = new JsonObject { ["$ref"] = "#/channels/" + responsesId },
+                                ["messages"] = replyMessages.DeepClone(),
+                            };
+                        }
                     }
                 }
             }
@@ -157,6 +180,16 @@ namespace Obvs.Hosting
                 // Scanning failed, as it does on a type that isn't public: the bus reports that when it starts
                 return Array.Empty<Type>();
             }
+        }
+
+        // The response a request declares with IRequest<TResponse>, or null
+        private static Type ResponseOf(Type request)
+        {
+            return request.GetInterfaces()
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequest<>))
+                .Select(i => i.GetGenericArguments()[0])
+                .OrderBy(type => type.Name, StringComparer.Ordinal)
+                .FirstOrDefault();
         }
 
         private string ApplicationName()

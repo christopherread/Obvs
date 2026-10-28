@@ -35,7 +35,7 @@ namespace Obvs.Hosting
     /// <c>HandleRequest&lt;TRequest, TResponse, THandler&gt;()</c>; a new instance is resolved from its own DI scope for each request.
     /// </summary>
     public interface IRequestHandler<in TRequest, TResponse>
-        where TRequest : class, IRequest
+        where TRequest : class, IRequest<TResponse>
         where TResponse : class, IResponse
     {
         /// <summary>Answers <paramref name="request"/> with the response returned, which is sent back to the requester.</summary>

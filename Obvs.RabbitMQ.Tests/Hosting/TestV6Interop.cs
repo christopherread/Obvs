@@ -50,7 +50,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
             using var v7Client = await StartV7Async(service, configure => configure.AsClient());
 
             var quote = await v7Client.Services.GetRequiredService<IServiceBusClient>()
-                .RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
+                .RequestAsync(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
 
             Assert.Equal(9.99m, quote.Price);
         }

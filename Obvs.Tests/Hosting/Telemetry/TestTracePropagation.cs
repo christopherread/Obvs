@@ -109,7 +109,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             using var server = await StartHostAsync(service => service.UseInMemory(broker).AsServer()
                 .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote(request.Sku, 9.99m))));
 
-            await client.Services.GetRequiredService<IServiceBusClient>().RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), Timeout, Ct);
+            await client.Services.GetRequiredService<IServiceBusClient>().RequestAsync(new GetQuote("sku-1"), Timeout, Ct);
 
             var request = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"request {_service}"));
             var process = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"process {_service}"));

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Reactive.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+using Obvs;
 using Obvs.Hosting;
 using Obvs.Testing;
 using Obvs.Types;
@@ -25,13 +27,26 @@ namespace Obvs.Mcp.Tests
 
     public record OrderPlaced(string OrderId) : IOrderMessage, IEvent;
 
-    public record GetQuote(string Sku) : IOrderMessage, IRequest
+    public record GetQuote(string Sku) : IOrderMessage, IRequest<Quote>
     {
         public string RequestId { get; set; }
         public string RequesterId { get; set; }
     }
 
     public record Quote(string Sku, decimal Price) : IOrderMessage, IResponse
+    {
+        public string RequestId { get; set; }
+        public string RequesterId { get; set; }
+    }
+
+    // A request that declares no response type, answered from the Rx streams
+    public record GetStock(string Sku) : IOrderMessage, IRequest
+    {
+        public string RequestId { get; set; }
+        public string RequesterId { get; set; }
+    }
+
+    public record Stock(string Sku, int Count) : IOrderMessage, IResponse
     {
         public string RequestId { get; set; }
         public string RequesterId { get; set; }
@@ -111,6 +126,30 @@ namespace Obvs.Mcp.Tests
 
             Assert.Equal("Quote", (string)response["type"]);
             Assert.Equal(9.99m, (decimal)response["message"]["Price"]);
+        }
+
+        [Fact]
+        public async Task ShouldReturnTheResponseATypedRequestDeclares()
+        {
+            await using var app = await StartAsync();
+
+            // The server sends a Stock before the Quote that GetQuote declares
+            var response = JsonNode.Parse(await CallAsync(app, "request", ("messageType", "GetQuote"), ("message", Json(@"{ ""Sku"": ""stock-first"" }"))));
+
+            Assert.Equal("Quote", (string)response["type"]);
+        }
+
+        [Fact]
+        public async Task ShouldReturnTheFirstResponseToAnUntypedRequest()
+        {
+            await using var app = await StartAsync();
+            var bus = app.Services.GetRequiredService<IServiceBus>();
+            using var server = bus.Requests.OfType<GetStock>().Subscribe(request => _ = bus.ReplyAsync(request, new Stock(request.Sku, 3)));
+
+            var response = JsonNode.Parse(await CallAsync(app, "request", ("messageType", "GetStock"), ("message", Json(@"{ ""Sku"": ""sku-1"" }"))));
+
+            Assert.Equal("Stock", (string)response["type"]);
+            Assert.Equal(3, (int)response["message"]["Count"]);
         }
 
         [Fact]
@@ -209,11 +248,18 @@ namespace Obvs.Mcp.Tests
             builder.WebHost.UseTestServer();
             builder.Services.AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service
                 .UseInMemory()
-                .AddMessages(typeof(PlaceOrder), typeof(OrderPlaced), typeof(GetQuote), typeof(Quote))
+                .AddMessages(typeof(PlaceOrder), typeof(OrderPlaced), typeof(GetQuote), typeof(Quote), typeof(GetStock), typeof(Stock))
                 .HandleCommand<PlaceOrder>((command, context, ct) => command.OrderId == "fail"
                     ? throw new InvalidOperationException("Out of stock")
                     : context.PublishAsync(new OrderPlaced(command.OrderId), ct))
-                .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote(request.Sku, 9.99m)))));
+                .HandleRequest<GetQuote, Quote>(async (request, context, ct) =>
+                {
+                    if (request.Sku == "stock-first")
+                    {
+                        await context.Services.GetRequiredService<IServiceBus>().ReplyAsync(request, new Stock(request.Sku, 3), ct);
+                    }
+                    return new Quote(request.Sku, 9.99m);
+                })));
             builder.Services.AddObvsMcp(configure);
             var app = builder.Build();
             app.MapObvsMcp();
@@ -242,6 +288,8 @@ namespace Obvs.Mcp.Tests
             }
 
             public McpClient Client { get; }
+
+            public IServiceProvider Services => _app.Services;
 
             public async ValueTask DisposeAsync()
             {

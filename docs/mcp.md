@@ -37,7 +37,7 @@ claude mcp add --transport http obvs http://localhost:5000/obvs/mcp
 | `describe_service` | A service's contract: an AsyncAPI document with a JSON Schema for each message (see [contracts](contracts.md)) |
 | `send_command` | Sends a command, given as JSON |
 | `publish_event` | Publishes an event, given as JSON |
-| `request` | Sends a request, given as JSON, and returns the first response |
+| `request` | Sends a request, given as JSON, and returns its response: the one the request declares, or else the first |
 | `watch` | The bus's recent messages that match a service or message type, waiting for the first if none has arrived yet |
 | `recent_errors` | Recent errors, newest first: failed handlers, and errors transports reported, with trace IDs |
 

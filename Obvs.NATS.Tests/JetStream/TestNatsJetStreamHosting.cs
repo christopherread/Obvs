@@ -180,7 +180,7 @@ namespace Obvs.NATS.Tests.JetStream
             using var client = await StartHostAsync(serviceName, service => service.AsClient());
 
             var quote = await client.Services.GetRequiredService<IServiceBusClient>()
-                .RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
+                .RequestAsync(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
 
             Assert.Equal(9.99m, quote.Price);
         }
@@ -200,7 +200,7 @@ namespace Obvs.NATS.Tests.JetStream
             var bus = client.Services.GetRequiredService<IServiceBusClient>();
 
             var quotes = await Task.WhenAll(Enumerable.Range(1, 5).Select(i =>
-                bus.RequestAsync<GetQuote, Quote>(new GetQuote { Sku = i.ToString() }, Timeout, Ct)));
+                bus.RequestAsync(new GetQuote { Sku = i.ToString() }, Timeout, Ct)));
 
             Assert.Equal(new[] { 1m, 2m, 3m, 4m, 5m }, quotes.Select(quote => quote.Price));
         }
@@ -217,7 +217,7 @@ namespace Obvs.NATS.Tests.JetStream
             var watcher = await _services.JetStream.CreateOrUpdateConsumerAsync($"{serviceName}_Responses",
                 new ConsumerConfig("watcher") { FilterSubject = $"{serviceName}.Responses.>", AckPolicy = ConsumerConfigAckPolicy.None }, Ct);
 
-            await clientA.Services.GetRequiredService<IServiceBusClient>().RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
+            await clientA.Services.GetRequiredService<IServiceBusClient>().RequestAsync(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
 
             var response = await watcher.NextAsync<byte[]>(cancellationToken: Ct);
             Assert.NotNull(response);

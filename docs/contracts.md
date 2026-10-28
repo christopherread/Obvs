@@ -13,6 +13,8 @@ Operations say what this app does on each channel:
 - a server receives commands and requests, and sends events and responses;
 - a client does the opposite.
 
+A request that declares its response, as `GetQuote : IRequest<Quote>` does, names it in `x-obvs-response`. Its operations on the requests channel have a `reply` naming the response's channel and message.
+
 The messages are those the service registers with `AddMessages`, or else those Obvs finds by scanning for its message interface, as the bus does.
 
 The schemas describe the messages' JSON shape. A service that serializes with MessagePack or ProtoBuf sends the same fields, in another format.

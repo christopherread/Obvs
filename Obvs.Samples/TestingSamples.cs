@@ -40,7 +40,7 @@ namespace Obvs.Samples
                     .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote(request.Sku, 9.99m))))));
 
             // snippet: test-a-request
-            var quote = await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5));
+            var quote = await harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5));
             // end-snippet
 
             Assert.Equal(9.99m, quote.Price);

@@ -34,7 +34,7 @@ namespace Obvs.Tests.Hosting.Handlers
             await using var harness = await StartOrdersAsync(service => service
                 .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote(request.Sku, 9.99m))));
 
-            var quote = await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), Timeout, Ct);
+            var quote = await harness.Client.RequestAsync(new GetQuote("sku-1"), Timeout, Ct);
 
             Assert.Equal(new Quote("sku-1", 9.99m), quote with { RequestId = null, RequesterId = null });
         }

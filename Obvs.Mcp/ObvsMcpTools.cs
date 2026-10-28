@@ -139,7 +139,7 @@ namespace Obvs.Mcp
             return $"Published {messageType} on service '{service}'.";
         }
 
-        [McpServerTool(Name = "request", Destructive = true), Description("Sends a request, given as JSON matching its schema from describe_service, and returns the first response.")]
+        [McpServerTool(Name = "request", Destructive = true), Description("Sends a request, given as JSON matching its schema from describe_service, and returns its response: the one the request names in x-obvs-response, or else the first.")]
         public async Task<string> RequestAsync(
             [Description("The request's type, such as GetQuote")] string messageType,
             [Description("The request as JSON")] JsonElement message,
@@ -147,10 +147,14 @@ namespace Obvs.Mcp
             CancellationToken cancellationToken = default)
         {
             var (request, service) = Create<IRequest>(messageType, message);
+            // A typed request waits for the response it declares, as RequestAsync does
+            var declared = request.GetType().GetInterfaces()
+                .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequest<>))?.GetGenericArguments()[0];
             IResponse response;
             try
             {
-                response = await _bus.GetResponses(request).Timeout(TimeSpan.FromSeconds(timeoutSeconds)).FirstAsync().ToTask(cancellationToken);
+                response = await _bus.GetResponses(request).Where(r => declared == null || declared.IsInstanceOfType(r))
+                    .Timeout(TimeSpan.FromSeconds(timeoutSeconds)).FirstAsync().ToTask(cancellationToken);
             }
             catch (TimeoutException)
             {

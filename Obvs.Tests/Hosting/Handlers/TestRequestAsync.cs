@@ -22,9 +22,22 @@ namespace Obvs.Tests.Hosting.Handlers
             using var server = harness.Bus.Requests.OfType<GetQuote>()
                 .Subscribe(request => _ = harness.Bus.ReplyAsync(request, new Quote(request.Sku, 9.99m)));
 
-            var quote = await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), Ct);
+            var quote = await harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), Ct);
 
             Assert.Equal(9.99m, quote.Price);
+        }
+
+        [Fact]
+        public async Task ShouldReturnTheResponseTypeTheRequestDeclares()
+        {
+            await using var harness = await StartOrdersAsync();
+            using var server = harness.Bus.Requests.OfType<GetQuote>()
+                .Subscribe(request => _ = harness.Bus.ReplyAsync(request, new Quote(request.Sku, 9.99m)));
+
+            // GetQuote is an IRequest<Quote>, so the compiler infers Quote
+            Quote quote = await harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), Ct);
+
+            Assert.Equal("sku-1", quote.Sku);
         }
 
         [Fact]
@@ -33,7 +46,7 @@ namespace Obvs.Tests.Hosting.Handlers
             var time = new FakeTimeProvider();
             await using var harness = await StartOrdersAsync();
 
-            var pending = harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct, time);
+            var pending = harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct, time);
             time.Advance(TimeSpan.FromMinutes(6));
 
             // Completes because virtual time passed, long before five real minutes
@@ -47,7 +60,7 @@ namespace Obvs.Tests.Hosting.Handlers
             await using var harness = await StartOrdersAsync();
             using var cancellation = new CancellationTokenSource();
 
-            var pending = harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), cancellation.Token);
+            var pending = harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), cancellation.Token);
             cancellation.Cancel();
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending).WaitAsync(TimeSpan.FromSeconds(2), Ct);
@@ -59,7 +72,7 @@ namespace Obvs.Tests.Hosting.Handlers
             var transport = new RequestTransport { SendFailure = new InvalidOperationException("The broker refused the request") };
             await using var harness = await StartClientAsync(transport);
 
-            var pending = harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct);
+            var pending = harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct);
 
             // Long before the five-minute timeout
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => pending).WaitAsync(TimeSpan.FromSeconds(2), Ct);
@@ -71,11 +84,11 @@ namespace Obvs.Tests.Hosting.Handlers
         {
             var transport = new RequestTransport { SendFailure = new InvalidOperationException("The broker refused the request") };
             await using var harness = await StartClientAsync(transport);
-            await Assert.ThrowsAsync<InvalidOperationException>(() => harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct))
+            await Assert.ThrowsAsync<InvalidOperationException>(() => harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct))
                 .WaitAsync(TimeSpan.FromSeconds(2), Ct);
 
             transport.SendFailure = null;
-            var quote = await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-2"), TimeSpan.FromSeconds(5), Ct);
+            var quote = await harness.Client.RequestAsync(new GetQuote("sku-2"), TimeSpan.FromSeconds(5), Ct);
 
             Assert.Equal("sku-2", quote.Sku);
         }
@@ -85,7 +98,7 @@ namespace Obvs.Tests.Hosting.Handlers
         {
             await using var harness = await StartClientAsync(new RequestTransport());
 
-            var quote = await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), Ct);
+            var quote = await harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), Ct);
 
             Assert.Equal("sku-1", quote.Sku);
         }

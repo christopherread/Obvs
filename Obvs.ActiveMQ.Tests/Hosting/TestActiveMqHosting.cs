@@ -42,7 +42,7 @@ namespace Obvs.ActiveMQ.Tests.Hosting
                 .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote { Price = 9.99m })));
 
             var quote = await host.Services.GetRequiredService<IServiceBusClient>()
-                .RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, Timeout, TestContext.Current.CancellationToken);
+                .RequestAsync(new GetQuote { Sku = "sku-1" }, Timeout, TestContext.Current.CancellationToken);
 
             Assert.Equal(9.99m, quote.Price);
         }

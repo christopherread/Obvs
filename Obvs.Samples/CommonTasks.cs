@@ -148,7 +148,7 @@ namespace Obvs.Samples
             var ct = Ct;
 
             // snippet: make-a-request
-            var quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
+            var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
             // end-snippet
 
             Assert.Equal(9.99m, quote.Price);

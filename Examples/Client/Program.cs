@@ -41,7 +41,7 @@ while (!string.IsNullOrEmpty(line = Console.ReadLine()))
 {
     if (line.StartsWith('?'))
     {
-        var response = await client.RequestAsync<Request1, Response1>(new Request1 { Question = line.Substring(1).Trim() }, TimeSpan.FromSeconds(10));
+        var response = await client.RequestAsync(new Request1 { Question = line.Substring(1).Trim() }, TimeSpan.FromSeconds(10));
         Console.WriteLine($"Received response: {response.Answer}");
     }
     else

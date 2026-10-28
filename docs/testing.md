@@ -57,7 +57,7 @@ No matching OrderPlaced was published within 00:00:05. Messages that passed thro
 
 <!-- snippet: test-a-request -->
 ```csharp
-var quote = await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5));
+var quote = await harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5));
 ```
 
 ## Time

@@ -201,10 +201,11 @@ namespace Obvs.Hosting
 
         /// <summary>
         /// Answers the service's <typeparamref name="TRequest"/> requests with the response <paramref name="handler"/> returns,
-        /// in its own DI scope per request. Requires this app to be the service's server.
+        /// in its own DI scope per request. <typeparamref name="TResponse"/> is the response the request declares with
+        /// <see cref="IRequest{TResponse}"/>. Requires this app to be the service's server.
         /// </summary>
         public ObvsServiceBuilder HandleRequest<TRequest, TResponse>(Func<TRequest, MessageContext, CancellationToken, Task<TResponse>> handler, Action<HandlerOptions> configure = null)
-            where TRequest : class, IRequest
+            where TRequest : class, IRequest<TResponse>
             where TResponse : class, IResponse
         {
             if (handler == null)
@@ -224,7 +225,7 @@ namespace Obvs.Hosting
 
         /// <summary>Answers the service's <typeparamref name="TRequest"/> requests with a <typeparamref name="THandler"/> resolved per request.</summary>
         public ObvsServiceBuilder HandleRequest<TRequest, TResponse, THandler>(Action<HandlerOptions> configure = null)
-            where TRequest : class, IRequest
+            where TRequest : class, IRequest<TResponse>
             where TResponse : class, IResponse
             where THandler : class, IRequestHandler<TRequest, TResponse>
         {

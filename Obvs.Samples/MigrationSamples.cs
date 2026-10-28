@@ -86,7 +86,7 @@ namespace Obvs.Samples
         public static async Task<Quote> V7Request(IServiceBusClient client, CancellationToken ct)
         {
             // snippet: v7-request
-            var quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
+            var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
             // end-snippet
             return quote;
         }
