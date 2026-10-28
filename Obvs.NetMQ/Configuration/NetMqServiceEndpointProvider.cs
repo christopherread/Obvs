@@ -25,12 +25,22 @@ namespace Obvs.NetMQ.Configuration
         private readonly string _responseAddress;
         private readonly string _commandAddress;
         private readonly string _eventAddress;
+        private readonly bool _sendHeaders;
         
         public NetMqServiceEndpointProvider(string serviceName, string address, int port, 
             IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, 
             Func<Assembly, bool> assemblyFilter, Func<Type, bool> typeFilter)
+            : this(serviceName, address, port, serializer, deserializerFactory, assemblyFilter, typeFilter, sendHeaders: false)
+        {
+        }
+
+        // sendHeaders adds a fifth frame with the message's headers, which v6 receivers can't read
+        public NetMqServiceEndpointProvider(string serviceName, string address, int port, 
+            IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, 
+            Func<Assembly, bool> assemblyFilter, Func<Type, bool> typeFilter, bool sendHeaders)
             : base(serviceName)
         {
+            _sendHeaders = sendHeaders;
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
             _assemblyFilter = assemblyFilter;
@@ -47,8 +57,8 @@ namespace Obvs.NetMQ.Configuration
             return new ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
                new MessageSource<TRequest>(_requestAddress, _deserializerFactory.Create<TRequest, TServiceMessage>(_assemblyFilter, _typeFilter), RequestsDestination, socketType),
                new MessageSource<TCommand>(_commandAddress, _deserializerFactory.Create<TCommand, TServiceMessage>(_assemblyFilter, _typeFilter), CommandsDestination, socketType),
-               new MessagePublisher<TEvent>(_eventAddress, _serializer, EventsDestination, socketType),
-               new MessagePublisher<TResponse>(_responseAddress, _serializer, ResponsesDestination, socketType), 
+               new MessagePublisher<TEvent>(_eventAddress, _serializer, EventsDestination, socketType, _sendHeaders),
+               new MessagePublisher<TResponse>(_responseAddress, _serializer, ResponsesDestination, socketType, _sendHeaders), 
                typeof(TServiceMessage));
         }
 
@@ -58,8 +68,8 @@ namespace Obvs.NetMQ.Configuration
             return new ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
                new MessageSource<TEvent>(_eventAddress, _deserializerFactory.Create<TEvent, TServiceMessage>(_assemblyFilter, _typeFilter), EventsDestination, socketType),
                new MessageSource<TResponse>(_responseAddress, _deserializerFactory.Create<TResponse, TServiceMessage>(_assemblyFilter, _typeFilter), ResponsesDestination, socketType),
-               new MessagePublisher<TRequest>(_requestAddress, _serializer, RequestsDestination, socketType),
-               new MessagePublisher<TCommand>(_commandAddress, _serializer, CommandsDestination, socketType), 
+               new MessagePublisher<TRequest>(_requestAddress, _serializer, RequestsDestination, socketType, _sendHeaders),
+               new MessagePublisher<TCommand>(_commandAddress, _serializer, CommandsDestination, socketType, _sendHeaders), 
                typeof(TServiceMessage));
         }
     }

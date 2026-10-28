@@ -19,6 +19,7 @@ Key types: `IServiceBus` and `IServiceBusClient` (the bus), `ObvsServiceBuilder`
 
 - [Kafka](https://github.com/christopherread/Obvs/blob/master/docs/transports/kafka.md), on [Confluent Cloud](https://github.com/christopherread/Obvs/blob/master/docs/transports/kafka-confluent-cloud.md), [Amazon MSK](https://github.com/christopherread/Obvs/blob/master/docs/transports/kafka-amazon-msk.md) and [Azure Event Hubs](https://github.com/christopherread/Obvs/blob/master/docs/transports/kafka-azure-event-hubs.md)
 - [Amazon SQS and SNS](https://github.com/christopherread/Obvs/blob/master/docs/transports/amazon-sqs.md)
+- [NetMQ](https://github.com/christopherread/Obvs/blob/master/docs/transports/netmq.md), with no broker
 
 ## Optional
 

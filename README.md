@@ -76,7 +76,7 @@ var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSecond
 
 - [Common tasks](docs/common-tasks.md): add a service, handle and send messages, requests, errors, tests, tracing.
 - [Testing](docs/testing.md) with an in-memory broker.
-- Transports: [Kafka](docs/transports/kafka.md) (and [Confluent Cloud](docs/transports/kafka-confluent-cloud.md), [Amazon MSK](docs/transports/kafka-amazon-msk.md), [Azure Event Hubs](docs/transports/kafka-azure-event-hubs.md)), [Amazon SQS and SNS](docs/transports/amazon-sqs.md).
+- Transports: [Kafka](docs/transports/kafka.md) (and [Confluent Cloud](docs/transports/kafka-confluent-cloud.md), [Amazon MSK](docs/transports/kafka-amazon-msk.md), [Azure Event Hubs](docs/transports/kafka-azure-event-hubs.md)), [Amazon SQS and SNS](docs/transports/amazon-sqs.md), [NetMQ](docs/transports/netmq.md).
 - [Configuration errors](docs/configuration-errors.md) and [analyzers](docs/analyzers.md).
 - [Service contracts](docs/contracts.md) as AsyncAPI, and an [MCP server](docs/mcp.md) for agents.
 - [Migrating from v6](docs/migrating-from-v6.md).

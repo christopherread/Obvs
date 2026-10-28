@@ -334,7 +334,7 @@ Tracking: #93
 | `Obvs` (core, including System.Text.Json serialization, the analyzers and the generator) | Core |
 | `Obvs.RabbitMQ`, `Obvs.Kafka`, `Obvs.NATS`, `Obvs.ActiveMQ` | Transports, all configured the same way |
 | `Obvs.AzureSB`, `Obvs.AmazonSqs` | New transports (see 13) |
-| `Obvs.NetMQ` | Proposed to stay on v6 (see open question 4) |
+| `Obvs.NetMQ` | Kept, with `UseNetMq`. It sends headers only when asked, as v6 apps can't read them (see open question 4) |
 | `Obvs.Serialization.MessagePack` (MessagePack-CSharp), `Obvs.Serialization.ProtoBuf` | Optional serializers. The MessagePack-CSharp package takes over the `Obvs.Serialization.MessagePack` name, which was MsgPack.Cli's on v6. |
 | `Obvs.Testing`, `Obvs.Mcp` | New |
 | `Obvs.Serialization.Json` (Newtonsoft) | Kept for v6 wire compatibility; not the default |
@@ -495,9 +495,7 @@ The same tasks double as onboarding material for people.
    Still open: whether Obvs should offer a redrive API, or leave that to each broker's tools.
 4. **Which transports to keep.** Is there enough use of ActiveMQ and NetMQ to justify porting them to the new model?
 
-   **Proposed: keep ActiveMQ, and leave NetMQ on v6.**
+   **Decided: keep both.**
    - **ActiveMQ** is still sold as a managed service (Amazon MQ), its `UsingQueueFor<ICommand>` already matches the delivery model of the new transports (see 13), and the port to the new options model is under way.
-   - **NetMQ** has no broker, so there's no managed offering, no durability and no dead-lettering, and its tests have needed repeated fixes for flakiness and port clashes. Its main use, low-latency messaging inside one network, is better served by core NATS. It would stay on 6.x, deprecated on NuGet with NATS named as the replacement (see 10).
-
-   Still open: the NetMQ proposal needs a check with users (a GitHub discussion, NuGet download trends) before 7.0.
+   - **NetMQ** has no broker, so there's no managed offering, no durability and no dead-lettering, and its tests have needed repeated fixes for flakiness and port clashes. The proposal was to leave it on 6.x, with core NATS as its replacement. It's kept instead, as NetMQ is still maintained and suits low-latency messaging inside one network without running a server. `UseNetMq` configures it like the other transports. Headers need a fifth frame, which v6 apps can't read, so they're sent only when `SendHeaders` is on.
 5. **The MCP server's scope.** Should it ever support read-only use against production, for incident debugging?

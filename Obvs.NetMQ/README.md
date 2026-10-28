@@ -21,3 +21,7 @@ There also lots of sample code in the UnitTest projects.
 [![NuGet](https://img.shields.io/nuget/v/Obvs.NetMQ.svg)](https://www.nuget.org/packages/Obvs.NetMQ/)
 
 See the [NuGet Package Obvs.NetMQ](https://www.nuget.org/packages/Obvs.NetMQ/).
+
+## v7
+
+Configure it with `UseNetMq`, like the other transports: see [NetMQ](../docs/transports/netmq.md).

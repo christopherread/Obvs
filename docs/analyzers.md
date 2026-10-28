@@ -67,7 +67,7 @@ obvs.AddService<IOrderMessage>("orders", service => service
 
 A service needs a transport to send and receive its messages. Without one, the bus fails to start.
 
-**Fix:** call one on the service: `UseRabbitMq`, `UseKafka`, `UseNats`, `UseNatsJetStream`, `UseActiveMq`, `UseAzureServiceBus` or `UseAmazonSqs`, or `UseInMemory` in tests. The code fix offers each transport your project references, and adds it with empty options: the bus's startup checks then say which options it needs.
+**Fix:** call one on the service: `UseRabbitMq`, `UseKafka`, `UseNats`, `UseNatsJetStream`, `UseActiveMq`, `UseAzureServiceBus`, `UseAmazonSqs` or `UseNetMq`, or `UseInMemory` in tests. The code fix offers each transport your project references, and adds it with empty options: the bus's startup checks then say which options it needs.
 
 <a id="obvs005"></a>
 ## OBVS005: the subscription to a bus stream is discarded

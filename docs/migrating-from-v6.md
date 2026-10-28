@@ -54,7 +54,8 @@ await using var bus = await ObvsBus.StartAsync(obvs => obvs
 |---|---|
 | `ServiceBus.Configure()` (obsolete) | `services.AddObvs(obvs => ...)`, or `ObvsBus.StartAsync(obvs => ...)` |
 | `.WithRabbitMQEndpoints<T>().Named("orders")` | `.AddService<T>("orders", service => service.UseRabbitMq(...))` |
-| `.WithKafkaEndpoints<T>()`, `.WithNatsEndpoints<T>()`, `.WithActiveMQEndpoints<T>()` | `UseKafka`, `UseNats` or `UseNatsJetStream`, `UseActiveMq` |
+| `.WithKafkaEndpoints<T>()`, `.WithNatsEndpoints<T>()`, `.WithActiveMQEndpoints<T>()`, `.WithNetMqEndpoints<T>()` | `UseKafka`, `UseNats` or `UseNatsJetStream`, `UseActiveMq`, `UseNetMq` |
+| `.BindToAddress("tcp://localhost").OnPort(5555)` (NetMQ) | `options.Address` and `options.Port`. v7 sends without headers by default, so v6 apps can read its messages ([NetMQ](transports/netmq.md)) |
 | `.ConnectToBroker(uri)`, `.WithCredentials(user, password)` | The transport's options: `options.Uri`, `options.BrokerUri`, `options.UserName`... |
 | `.UsingQueueFor<ICommand>()` (ActiveMQ) | Not in v7 yet: v7's ActiveMQ transport sends commands over topics, as v6 does by default. A v6 app that sends commands to a queue can't reach a v7 server, so move both apps together |
 | `.AsClient()`, `.AsServer()`, `.AsClientAndServer()` | The same, on the service. Client and server is the default |

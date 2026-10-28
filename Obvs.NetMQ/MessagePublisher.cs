@@ -20,14 +20,17 @@ namespace Obvs.NetMQ
         private readonly string _topic;
         private readonly Lazy<XPublisherSocket> _socket;
         private readonly SocketType _socketType;
+        private readonly bool _sendHeaders;
 
         // The first publish gives subscribers at least MinimumSubscriberWait to join, and if none has
         // subscribed to the topic by then, keeps waiting for one up to SubscriberWaitTimeout
         private static readonly TimeSpan MinimumSubscriberWait = TimeSpan.FromSeconds(1);
         private static readonly TimeSpan SubscriberWaitTimeout = TimeSpan.FromSeconds(5);
 
-        public MessagePublisher(string address, IMessageSerializer serializer, string topic, SocketType socketType = SocketType.Server)
+        // sendHeaders adds a fifth frame with the message's headers, which v6 receivers can't read
+        public MessagePublisher(string address, IMessageSerializer serializer, string topic, SocketType socketType = SocketType.Server, bool sendHeaders = false)
         {
+            _sendHeaders = sendHeaders;
             _address = address;
             _serializer = serializer;
             _topic = topic;
@@ -79,7 +82,7 @@ namespace Obvs.NetMQ
             {
             }
 
-            socket.SendToTopic(_topic, message.GetType().Name, _serializer.Serialize(message));
+            socket.SendToTopic(_topic, message.GetType().Name, _serializer.Serialize(message), _sendHeaders ? ObvsMessageHeaders.Get(message) : null);
         }
 
         public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
