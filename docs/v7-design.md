@@ -178,7 +178,7 @@ Agents reproduce common patterns well and rare ones badly, and there is far more
              ┌──────────────────────────────────────────┐
   Handlers   │ HandleCommand<T>(async (cmd, ctx, ct) =>)│  react to a message
              ├──────────────────────────────────────────┤
-  Await      │ RequestAsync<TReq, TResp>(..., ct)       │  ask, get one answer
+  Await      │ RequestAsync(request, timeout, ct)       │  ask, get one answer
              │ ReadEventsAsync<T>(ct) → IAsyncEnumerable│  pull at your own pace
              ├──────────────────────────────────────────┤
   Rx (core)  │ IObservable<T> Commands / Events / ...   │  reason about streams
@@ -195,6 +195,9 @@ obvs.AddService<IOrderMessage>("orders", service => service
     })
     .HandleRequest<GetQuote, Quote>(async (req, ctx, ct) => new Quote(req.Sku, 9.99m)));
 
+// A request names its response, so RequestAsync infers it and HandleRequest must answer with it
+public record GetQuote(string Sku) : IOrderMessage, IRequest<Quote>;
+
 // Or as classes
 public sealed class PlaceOrderHandler(IOrderRepository orders) : ICommandHandler<PlaceOrder>
 {
@@ -202,7 +205,7 @@ public sealed class PlaceOrderHandler(IOrderRepository orders) : ICommandHandler
 }
 
 // Awaitable request/response
-Quote quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
+Quote quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
 
 // Pull-based consumption with backpressure
 await foreach (var placed in client.ReadEventsAsync<OrderPlaced>(ct)) { ... }

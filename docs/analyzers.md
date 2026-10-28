@@ -45,9 +45,11 @@ This includes a kind inherited from a base class: `class PlacedCommand : OrderPl
 
 <!-- not compiled: the mistake this rule reports -->
 ```csharp
+public record GetShippingQuote(string OrderId) : IOrderMessage, IRequest<ShippingQuote>;
+
 obvs.AddService<IOrderMessage>("orders", service => service
     .UseRabbitMq(...)
-    .HandleRequest<GetQuote, ShippingQuote>(...)); // OBVS003: ShippingQuote is an IShippingMessage
+    .HandleRequest<GetShippingQuote, ShippingQuote>(...)); // OBVS003: ShippingQuote is an IShippingMessage
 ```
 
 Responses go back over the service the request came in on. A response that doesn't implement the service's message interface is sent where no client of this service listens, so the request times out.

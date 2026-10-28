@@ -53,7 +53,7 @@ namespace Obvs.Tests.Hosting.Handlers
                     return Task.FromResult(new Quote(request.Sku, 9.99m));
                 }));
 
-            await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), Timeout, Ct);
+            await harness.Client.RequestAsync(new GetQuote("sku-1"), Timeout, Ct);
 
             var token = await handlerToken.Task.WaitAsync(Timeout, Ct);
             Assert.Equal(token, recording.Single(r => r.Operation == "reply").Token);

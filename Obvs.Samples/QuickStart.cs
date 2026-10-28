@@ -37,7 +37,7 @@ namespace Obvs.Samples
 
             await client.SendAsync(new PlaceOrder("o-1"), ct);
 
-            var quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
+            var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
             // end-snippet
         }
     }

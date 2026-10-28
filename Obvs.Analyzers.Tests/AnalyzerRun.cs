@@ -35,10 +35,11 @@ namespace Contoso.Orders
     public interface IShippingMessage : IMessage { }
     public class PlaceOrder : IOrderMessage, ICommand { }
     public class OrderPlaced : IOrderMessage, IEvent { }
-    public class GetQuote : IOrderMessage, IRequest { public string RequestId { get; set; } public string RequesterId { get; set; } }
+    public class GetQuote : IOrderMessage, IRequest<Quote> { public string RequestId { get; set; } public string RequesterId { get; set; } }
     public class Quote : IOrderMessage, IResponse { public string RequestId { get; set; } public string RequesterId { get; set; } }
     public class ShipOrder : IShippingMessage, ICommand { }
     public class ShippingQuote : IShippingMessage, IResponse { public string RequestId { get; set; } public string RequesterId { get; set; } }
+    public class GetShippingQuote : IOrderMessage, IRequest<ShippingQuote> { public string RequestId { get; set; } public string RequesterId { get; set; } }
     public class FakeOptions { }
     public static class FakeTransport
     {
@@ -77,6 +78,13 @@ namespace Contoso.Orders
             var operations = await chosen.GetOperationsAsync(CancellationToken.None);
             var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
             return (await solution.GetDocument(document.Id).GetTextAsync()).ToString();
+        }
+
+        // The compiler's errors, for source that's meant not to compile
+        public static async Task<Diagnostic[]> CompilerErrorsAsync(string source)
+        {
+            var compilation = await Document(source).Project.GetCompilationAsync();
+            return compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
         }
 
         // The titles of the code fixes offered for the first diagnostic with id

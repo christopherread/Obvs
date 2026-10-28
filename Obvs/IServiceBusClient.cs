@@ -17,7 +17,7 @@ namespace Obvs
 
     /// <summary>
     /// The bus as a client of its services: it sends commands and requests, and receives events and responses. Use
-    /// <see cref="ServiceBusClientRequestExtensions.RequestAsync{TRequest, TResponse}"/> to await a response.
+    /// <see cref="ServiceBusClientRequestExtensions.RequestAsync{TResponse}"/> to await a response.
     /// </summary>
     public interface IServiceBusClient<TMessage, in TCommand, out TEvent, in TRequest, TResponse>
         where TMessage : class

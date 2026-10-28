@@ -123,7 +123,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             using var client = await StartHostAsync(serviceName, service => service.AsClient());
 
             var quote = await client.Services.GetRequiredService<IServiceBusClient>()
-                .RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
+                .RequestAsync(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
 
             Assert.Equal(9.99m, quote.Price);
         }
@@ -137,8 +137,8 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             using var clientA = await StartHostAsync(serviceName, service => service.AsClient());
             using var clientB = await StartHostAsync(serviceName, service => service.AsClient());
 
-            var quoteA = clientA.Services.GetRequiredService<IServiceBusClient>().RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-a" }, Timeout, Ct);
-            var quoteB = clientB.Services.GetRequiredService<IServiceBusClient>().RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-b" }, Timeout, Ct);
+            var quoteA = clientA.Services.GetRequiredService<IServiceBusClient>().RequestAsync(new GetQuote { Sku = "sku-a" }, Timeout, Ct);
+            var quoteB = clientB.Services.GetRequiredService<IServiceBusClient>().RequestAsync(new GetQuote { Sku = "sku-b" }, Timeout, Ct);
 
             Assert.Equal(1m, (await quoteA).Price);
             Assert.Equal(2m, (await quoteB).Price);
@@ -158,7 +158,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             using var client = await StartHostAsync(serviceName, service => service.AsClient());
             var bus = client.Services.GetRequiredService<IServiceBusClient>();
 
-            var quotes = await Task.WhenAll(Enumerable.Range(1, 10).Select(i => bus.RequestAsync<GetQuote, Quote>(new GetQuote { Sku = $"{i}" }, Timeout, Ct)));
+            var quotes = await Task.WhenAll(Enumerable.Range(1, 10).Select(i => bus.RequestAsync(new GetQuote { Sku = $"{i}" }, Timeout, Ct)));
 
             Assert.Equal(Enumerable.Range(1, 10).Select(i => (decimal)i), quotes.Select(quote => quote.Price));
         }

@@ -8,14 +8,15 @@ A service is a set of messages that share an interface. Each message is a comman
 
 <!-- snippet: messages -->
 ```csharp
-// Every message of a service implements its interface, and is one of ICommand, IEvent, IRequest or IResponse
+// Every message of a service implements its interface, and is one of ICommand, IEvent, IRequest or IResponse.
+// A request names the response that answers it.
 public interface IOrderMessage : IMessage { }
 
 public record PlaceOrder(string OrderId) : IOrderMessage, ICommand;
 
 public record OrderPlaced(string OrderId) : IOrderMessage, IEvent;
 
-public record GetQuote(string Sku) : IOrderMessage, IRequest
+public record GetQuote(string Sku) : IOrderMessage, IRequest<Quote>
 {
     public string RequestId { get; set; }
     public string RequesterId { get; set; }
@@ -132,7 +133,7 @@ service.HandleRequest<GetQuote, Quote>(async (request, context, ct) =>
 
 <!-- snippet: make-a-request -->
 ```csharp
-var quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
+var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
 ```
 
 `RequestAsync` throws a `TimeoutException` if no response arrives in time. If the request can't be sent, it throws the transport's error straight away.

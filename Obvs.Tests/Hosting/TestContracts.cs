@@ -52,6 +52,23 @@ namespace Obvs.Tests.Hosting
         }
 
         [Fact]
+        public async Task ShouldNameATypedRequestsReply()
+        {
+            await using var harness = await StartAsync(service => service
+                .AddMessages(typeof(PlaceOrder), typeof(OrderPlaced), typeof(GetQuote), typeof(Quote)));
+
+            var document = JsonNode.Parse(harness.Services.GetRequiredService<ObvsContracts>().Describe());
+
+            Assert.Equal("Quote", (string)Message(document, "orders.requests", "GetQuote")["x-obvs-response"]);
+            foreach (var action in new[] { "send", "receive" })
+            {
+                var reply = document["operations"][$"orders.requests.{action}"]["reply"];
+                Assert.Equal("#/channels/orders.responses", (string)reply["channel"]["$ref"]);
+                Assert.Equal(new[] { "#/channels/orders.responses/messages/Quote" }, reply["messages"].AsArray().Select(message => (string)message["$ref"]));
+            }
+        }
+
+        [Fact]
         public async Task ShouldFindAServicesMessagesWhenItDoesntRegisterThem()
         {
             await using var harness = await StartAsync(service => { });

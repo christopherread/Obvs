@@ -117,9 +117,11 @@ var quote = await bus.GetResponses(new GetQuote("sku-1"))
 
 **v7**
 
+A request names its response, as `GetQuote : IOrderMessage, IRequest<Quote>` does. That doesn't change its JSON or where it's sent, so v6 apps still understand it. `RequestAsync` infers the response type from it, and `HandleRequest` must answer with it.
+
 <!-- snippet: v7-request -->
 ```csharp
-var quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
+var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
 ```
 
 ## Cancellation

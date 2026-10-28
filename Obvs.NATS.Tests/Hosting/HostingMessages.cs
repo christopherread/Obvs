@@ -14,7 +14,7 @@ namespace Obvs.NATS.Tests.Hosting
         public string OrderId { get; set; }
     }
 
-    public class GetQuote : IOrderMessage, IRequest
+    public class GetQuote : IOrderMessage, IRequest<Quote>
     {
         public string Sku { get; set; }
         public string RequestId { get; set; }

@@ -11,14 +11,14 @@ namespace Obvs
     public static class ServiceBusClientRequestExtensions
     {
         /// <summary>
-        /// Sends a request and returns the first response of type <typeparamref name="TResponse"/>.
-        /// Throws <see cref="TimeoutException"/> if none arrives within <paramref name="timeout"/>, measured on
-        /// <paramref name="timeProvider"/> (the system clock by default; pass a fake one to test timeouts).
+        /// Sends a request and returns the first response of type <typeparamref name="TResponse"/>, the response the
+        /// request declares with <see cref="IRequest{TResponse}"/>. Throws <see cref="TimeoutException"/> if none arrives
+        /// within <paramref name="timeout"/>, measured on <paramref name="timeProvider"/> (the system clock by default;
+        /// pass a fake one to test timeouts).
         /// If the request can't be sent, throws the transport's error straight away.
         /// </summary>
-        public static async Task<TResponse> RequestAsync<TRequest, TResponse>(this IServiceBusClient client, TRequest request, TimeSpan timeout,
+        public static async Task<TResponse> RequestAsync<TResponse>(this IServiceBusClient client, IRequest<TResponse> request, TimeSpan timeout,
             CancellationToken cancellationToken = default, TimeProvider timeProvider = null)
-            where TRequest : class, IRequest
             where TResponse : class, IResponse
         {
             if (client == null)
@@ -46,7 +46,7 @@ namespace Obvs
                 }
             }
 
-            throw new TimeoutException($"No {typeof(TResponse).Name} response to {typeof(TRequest).Name} within {timeout}.");
+            throw new TimeoutException($"No {typeof(TResponse).Name} response to {request.GetType().Name} within {timeout}.");
         }
 
         private static Task Delay(TimeSpan delay, TimeProvider timeProvider, CancellationToken cancellationToken)

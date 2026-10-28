@@ -167,7 +167,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             await bus.PublishAsync(new OrderPlaced { OrderId = "o-2" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-2", (await received.WaitAsync(Timeout, Ct)).OrderId);
-            var quote = await host.Services.GetRequiredService<IServiceBusClient>().RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
+            var quote = await host.Services.GetRequiredService<IServiceBusClient>().RequestAsync(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
             Assert.Equal(9.99m, quote.Price);
         }
 

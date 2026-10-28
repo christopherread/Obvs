@@ -87,7 +87,7 @@ namespace Obvs.AzureSB.Tests.Hosting
             using var client = await StartHostAsync(serviceName, service => service.AsClient());
 
             var quote = await client.Services.GetRequiredService<IServiceBusClient>()
-                .RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, Timeout, TestContext.Current.CancellationToken);
+                .RequestAsync(new GetQuote { Sku = "sku-1" }, Timeout, TestContext.Current.CancellationToken);
 
             Assert.Equal(9.99m, quote.Price);
         }

@@ -27,7 +27,7 @@ namespace Obvs.Example.Messages
         }
     }
 
-    public class Request1 : IServiceMessage1, IRequest
+    public class Request1 : IServiceMessage1, IRequest<Response1>
     {
         public string Question { get; set; }
         public string RequestId { get; set; }

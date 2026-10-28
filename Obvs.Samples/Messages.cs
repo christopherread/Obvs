@@ -3,14 +3,15 @@ using Obvs.Types;
 namespace Obvs.Samples
 {
     // snippet: messages
-    // Every message of a service implements its interface, and is one of ICommand, IEvent, IRequest or IResponse
+    // Every message of a service implements its interface, and is one of ICommand, IEvent, IRequest or IResponse.
+    // A request names the response that answers it.
     public interface IOrderMessage : IMessage { }
 
     public record PlaceOrder(string OrderId) : IOrderMessage, ICommand;
 
     public record OrderPlaced(string OrderId) : IOrderMessage, IEvent;
 
-    public record GetQuote(string Sku) : IOrderMessage, IRequest
+    public record GetQuote(string Sku) : IOrderMessage, IRequest<Quote>
     {
         public string RequestId { get; set; }
         public string RequesterId { get; set; }

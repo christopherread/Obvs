@@ -61,7 +61,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             await using var harness = await StartAsync(service => service
                 .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote(request.Sku, 9.99m))));
 
-            await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), Timeout, Ct);
+            await harness.Client.RequestAsync(new GetQuote("sku-1"), Timeout, Ct);
 
             var request = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"request {_service}"));
             var reply = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"reply {_service}"));
@@ -205,7 +205,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             await using var harness = await StartAsync(service => service
                 .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote(request.Sku, 9.99m))));
 
-            await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), Timeout, Ct);
+            await harness.Client.RequestAsync(new GetQuote("sku-1"), Timeout, Ct);
 
             var received = await WaitForAsync(() =>
             {
@@ -227,7 +227,7 @@ namespace Obvs.Tests.Hosting.Telemetry
                     return new Quote(request.Sku, 9.99m);
                 }));
 
-            await Task.WhenAll(Enumerable.Range(1, 3).Select(i => harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote($"sku-{i}"), Timeout, Ct)));
+            await Task.WhenAll(Enumerable.Range(1, 3).Select(i => harness.Client.RequestAsync(new GetQuote($"sku-{i}"), Timeout, Ct)));
 
             await WaitForAsync(() => metrics.For(_service, "messaging.process.duration").Count == 3 ? new object() : null);
             await Task.Delay(100, Ct);
@@ -261,7 +261,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             var transport = new RequestTransport { SendFailure = new TimeoutException("The broker didn't answer") };
             await using var harness = await StartAsync(service => service.AsClient().UseEndpointProvider(_ => transport));
 
-            await Assert.ThrowsAsync<TimeoutException>(() => harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct))
+            await Assert.ThrowsAsync<TimeoutException>(() => harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct))
                 .WaitAsync(Timeout, Ct);
 
             var span = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"request {_service}"));
@@ -280,7 +280,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             var transport = new RequestTransport();
             await using var harness = await StartAsync(service => service.AsClient().UseEndpointProvider(_ => transport));
 
-            await harness.Client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), Timeout, Ct);
+            await harness.Client.RequestAsync(new GetQuote("sku-1"), Timeout, Ct);
 
             var span = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"request {_service}"));
             Assert.NotEqual(ActivityStatusCode.Error, span.Status);

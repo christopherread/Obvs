@@ -20,14 +20,15 @@ Define your service's messages:
 
 <!-- snippet: messages -->
 ```csharp
-// Every message of a service implements its interface, and is one of ICommand, IEvent, IRequest or IResponse
+// Every message of a service implements its interface, and is one of ICommand, IEvent, IRequest or IResponse.
+// A request names the response that answers it.
 public interface IOrderMessage : IMessage { }
 
 public record PlaceOrder(string OrderId) : IOrderMessage, ICommand;
 
 public record OrderPlaced(string OrderId) : IOrderMessage, IEvent;
 
-public record GetQuote(string Sku) : IOrderMessage, IRequest
+public record GetQuote(string Sku) : IOrderMessage, IRequest<Quote>
 {
     public string RequestId { get; set; }
     public string RequesterId { get; set; }
@@ -68,7 +69,7 @@ var client = app.Services.GetRequiredService<IServiceBusClient>();
 
 await client.SendAsync(new PlaceOrder("o-1"), ct);
 
-var quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
+var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
 ```
 
 ## Next steps

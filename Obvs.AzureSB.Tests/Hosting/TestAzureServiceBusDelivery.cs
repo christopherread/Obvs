@@ -75,7 +75,7 @@ namespace Obvs.AzureSB.Tests.Hosting
             using var client = await StartHostAsync(serviceName, options => { }, service => service.AsClient());
             var bus = client.Services.GetRequiredService<IServiceBusClient>();
 
-            var quotes = await Task.WhenAll(Enumerable.Range(1, 10).Select(i => bus.RequestAsync<GetQuote, Quote>(new GetQuote { Sku = $"{i}" }, Timeout, Ct)));
+            var quotes = await Task.WhenAll(Enumerable.Range(1, 10).Select(i => bus.RequestAsync(new GetQuote { Sku = $"{i}" }, Timeout, Ct)));
 
             Assert.Equal(Enumerable.Range(1, 10).Select(i => (decimal)i), quotes.Select(quote => quote.Price));
         }

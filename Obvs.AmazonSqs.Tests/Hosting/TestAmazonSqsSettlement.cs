@@ -141,7 +141,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             var placed = bus.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
 
             await bus.PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
-            await bus.RequestAsync<GetQuote, Quote>(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
+            await bus.RequestAsync(new GetQuote { Sku = "sku-1" }, Timeout, Ct);
             await placed.WaitAsync(Timeout, Ct);
 
             await WaitUntilAsync(async () => await TestBroker.MessagesOnQueueAsync($"{serviceName}-events-{instanceId}", Ct) == 0);

@@ -111,11 +111,43 @@ namespace Contoso.Orders
         public async Task ShouldReportAResponseOfAnotherService()
         {
             var diagnostic = Assert.Single(await DiagnosticsAsync(Configure(
-                "service => service.UseFake(o => { }).HandleRequest<GetQuote, ShippingQuote>((request, context, ct) => Task.FromResult(new ShippingQuote()))")));
+                "service => service.UseFake(o => { }).HandleRequest<GetShippingQuote, ShippingQuote>((request, context, ct) => Task.FromResult(new ShippingQuote()))")));
 
             Assert.Equal("OBVS003", diagnostic.Id);
             Assert.Contains("ShippingQuote", diagnostic.GetMessage());
             Assert.Contains("IOrderMessage", diagnostic.GetMessage());
+        }
+
+        // Typed requests: a request handler answers with the response its request declares
+
+        [Fact]
+        public async Task ShouldNotCompileAHandlerAnsweringWithAnotherResponse()
+        {
+            var errors = await AnalyzerRun.CompilerErrorsAsync(Configure(
+                "service => service.UseFake(o => { }).HandleRequest<GetQuote, ShippingQuote>((request, context, ct) => Task.FromResult(new ShippingQuote()))"));
+
+            var error = Assert.Single(errors);
+            Assert.Equal("CS0311", error.Id);
+            Assert.Contains("IRequest<Contoso.Orders.ShippingQuote>", error.GetMessage());
+        }
+
+        [Fact]
+        public async Task ShouldNotCompileAHandlerForARequestThatDeclaresNoResponse()
+        {
+            var errors = await AnalyzerRun.CompilerErrorsAsync(@"
+namespace Contoso.Orders
+{
+    public class GetStock : IOrderMessage, IRequest { public string RequestId { get; set; } public string RequesterId { get; set; } }
+}" + Configure("service => service.UseFake(o => { }).HandleRequest<GetStock, Quote>((request, context, ct) => Task.FromResult(new Quote()))"));
+
+            Assert.Equal("CS0311", Assert.Single(errors).Id);
+        }
+
+        [Fact]
+        public async Task ShouldInferTheResponseTypeOfARequest()
+        {
+            Assert.Empty(await DiagnosticsAsync(UsingBus(
+                "Task<Quote> quote = bus.RequestAsync(new GetQuote(), TimeSpan.FromSeconds(5));")));
         }
 
         // OBVS004: no transport
