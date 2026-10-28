@@ -15,6 +15,10 @@
         <!-- Comments document the parameters that need it, not always all of them -->
         <NoWarn>$(NoWarn);CS1573</NoWarn>
     </PropertyGroup>
+    <!-- Every test project can dump a hung test run, as CI asks it to. The log names the tests still running. -->
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'Obvs.Samples' Or $(MSBuildProjectName.EndsWith('.Tests'))">
+        <PackageReference Include="Microsoft.Testing.Extensions.HangDump"/>
+    </ItemGroup>
     <!-- License -->
     <PropertyGroup>
         <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
