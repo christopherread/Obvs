@@ -5,10 +5,10 @@
     <StartupObject>Obvs.Example.Service.ActiveMQ.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
-    <PackageReference Include="Obvs" Version="6.0.19" />
-    <PackageReference Include="Obvs.ActiveMQ" Version="6.0.19" />
-    <PackageReference Include="Obvs.Serialization.Json" Version="6.0.19" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
+    <PackageReference Include="Obvs" Version="6.0.31" />
+    <PackageReference Include="Obvs.ActiveMQ" Version="6.0.31" />
+    <PackageReference Include="Obvs.Serialization.Json" Version="6.0.31" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Messages\Obvs.Example.Messages.csproj" />

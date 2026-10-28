@@ -5,9 +5,9 @@
     <StartupObject>Obvs.Example.Client.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Obvs" Version="6.0.19" />
-    <PackageReference Include="Obvs.ActiveMQ" Version="6.0.19" />
-    <PackageReference Include="Obvs.Serialization.Json" Version="6.0.19" />
+    <PackageReference Include="Obvs" Version="6.0.31" />
+    <PackageReference Include="Obvs.ActiveMQ" Version="6.0.31" />
+    <PackageReference Include="Obvs.Serialization.Json" Version="6.0.31" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Messages\Obvs.Example.Messages.csproj" />
