@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
-using Obvs.Configuration;
 using Obvs.Types;
 using Xunit;
 
@@ -131,39 +130,15 @@ namespace Obvs.Tests
         [Fact]
         public async Task ShouldReportCancellationRatherThanTheErrorsItCaused()
         {
-            // The local bus is cancelled while sending and fails with it, so the caller sees the cancellation,
+            // The endpoint client is cancelled while sending and fails with it, so the caller sees the cancellation,
             // not an AggregateException of it
             var command = A.Fake<ICommand>();
-            var localBus = A.Fake<IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            var endpointClient = EndpointClientFor(command);
             using var cancellation = new CancellationTokenSource();
-            A.CallTo(() => localBus.SendAsync(command, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Throws(() => new OperationCanceledException(cancellation.Token));
-            var serviceBus = new ServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse>(NoEndpointClients, NoEndpoints,
-                new DefaultRequestCorrelationProvider(), localBus, LocalBusOptions.AllMessages);
+            A.CallTo(() => endpointClient.SendAsync(command, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Throws(() => new OperationCanceledException(cancellation.Token));
+            var serviceBus = new ServiceBus(new[] { endpointClient }, NoEndpoints);
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.SendAsync(command, cancellation.Token));
-        }
-
-        [Fact]
-        public async Task ShouldPassTheTokenToTheLocalBus()
-        {
-            var ev = A.Fake<IEvent>();
-            var command = A.Fake<ICommand>();
-            var request = A.Fake<IRequest>();
-            var response = A.Fake<IResponse>();
-            var localBus = A.Fake<IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var serviceBus = new ServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse>(NoEndpointClients, NoEndpoints,
-                new DefaultRequestCorrelationProvider(), localBus, LocalBusOptions.AllMessages);
-            using var cancellation = new CancellationTokenSource();
-            var token = cancellation.Token;
-
-            await serviceBus.PublishAsync(ev, token);
-            await serviceBus.SendAsync(command, token);
-            await serviceBus.SendAsync(new[] { command }, token);
-            await serviceBus.ReplyAsync(request, response, token);
-
-            A.CallTo(() => localBus.PublishAsync(ev, token)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => localBus.SendAsync(command, token)).MustHaveHappenedTwiceExactly();
-            A.CallTo(() => localBus.ReplyAsync(request, response, token)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]
@@ -267,44 +242,6 @@ namespace Obvs.Tests
             await publisher.PublishAsync(ev, token);
 
             A.CallTo(() => eventPublisher.PublishAsync(ev, token)).MustHaveHappenedOnceExactly();
-        }
-
-        [Fact]
-        public async Task SubjectServiceBusShouldNotDeliverWhenAlreadyCancelled()
-        {
-            var serviceBus = new SubjectServiceBus(new DefaultRequestCorrelationProvider());
-            var delivered = new List<IMessage>();
-            serviceBus.Events.Subscribe(delivered.Add);
-            serviceBus.Commands.Subscribe(delivered.Add);
-            var request = new TestServiceRequest1();
-            serviceBus.GetResponses(request).Subscribe(delivered.Add);
-            delivered.Clear();
-
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.PublishAsync(new TestServiceEvent1(), Cancelled()));
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.SendAsync(new TestServiceCommand1(), Cancelled()));
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.SendAsync(new ICommand[] { new TestServiceCommand1() }, Cancelled()));
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.ReplyAsync(request, new TestServiceResponse1(), Cancelled()));
-
-            Assert.Empty(delivered);
-        }
-
-        [Fact]
-        public async Task SubjectServiceBusShouldStopSendingFurtherCommandsWhenCancelled()
-        {
-            var serviceBus = new SubjectServiceBus(new DefaultRequestCorrelationProvider());
-            var first = new TestServiceCommand1();
-            var second = new TestServiceCommand2();
-            using var cancellation = new CancellationTokenSource();
-            var delivered = new List<ICommand>();
-            serviceBus.Commands.Subscribe(command =>
-            {
-                delivered.Add(command);
-                cancellation.Cancel();
-            });
-
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.SendAsync(new ICommand[] { first, second }, cancellation.Token));
-
-            Assert.Equal(new ICommand[] { first }, delivered);
         }
 
         private static CancellationToken Cancelled() => new CancellationToken(true);

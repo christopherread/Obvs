@@ -48,12 +48,11 @@ namespace Obvs
         private readonly IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse> _serviceBus;
         private int _disposed;
 
-        // ReSharper disable once UnusedMember.Global
         /// <summary>A bus over these endpoints.</summary>
         /// <param name="endpointClients">The client endpoints of the services the bus uses</param>
         /// <param name="endpoints">The server endpoints of the services the bus serves</param>
         /// <param name="requestCorrelationProvider">How responses are matched to requests, by request ID by default</param>
-        public ServiceBus(IEnumerable<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>> endpointClients, 
+        internal ServiceBus(IEnumerable<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>> endpointClients, 
             IEnumerable<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>> endpoints, 
             IRequestCorrelationProvider<IRequest, IResponse> requestCorrelationProvider = null) :
             this(new ServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse>(endpointClients, endpoints, requestCorrelationProvider ?? new DefaultRequestCorrelationProvider()))
@@ -62,17 +61,9 @@ namespace Obvs
 
         /// <summary>Wraps a generic bus.</summary>
         /// <param name="serviceBus">The bus</param>
-        public ServiceBus(IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse> serviceBus)
+        internal ServiceBus(IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse> serviceBus)
         {
             _serviceBus = serviceBus;
-        }
-
-        // ReSharper disable once UnusedMember.Global
-        /// <summary>Starts v6's fluent configuration.</summary>
-        [Obsolete("Configure buses with services.AddObvs(obvs => obvs.AddService<TServiceMessage>(name, service => service.Use<Transport>(...))) instead, or ObvsBus.StartAsync(...) without a host. See https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md.")]
-        public static ICanAddEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse> Configure()
-        {
-            return new ServiceBusFluentCreator<IMessage, ICommand, IEvent, IRequest, IResponse>(new DefaultRequestCorrelationProvider());
         }
 
         /// <inheritdoc />
@@ -141,7 +132,7 @@ namespace Obvs
         }
     }
 
-    /// <summary>The bus, over the services' endpoints and an optional local bus.</summary>
+    /// <summary>The bus, over the services' endpoints.</summary>
     public class ServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> : 
         ServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse>, IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
@@ -156,26 +147,21 @@ namespace Obvs
         /// <param name="endpointClients">The client endpoints of the services the bus uses</param>
         /// <param name="endpoints">The server endpoints of the services the bus serves</param>
         /// <param name="requestCorrelationProvider">How responses are matched to requests</param>
-        /// <param name="localBus">An in-process bus that also carries messages, or null</param>
-        /// <param name="localBusOption">Which messages go to the local bus</param>
-        public ServiceBus(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, 
+        internal ServiceBus(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, 
                           IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> endpoints, 
-                          IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider, 
-                          IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> localBus = null, LocalBusOptions localBusOption = LocalBusOptions.MessagesWithNoEndpointClients)
-            : base(endpointClients, endpoints, requestCorrelationProvider, localBus, localBusOption)
+                          IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider)
+            : base(endpointClients, endpoints, requestCorrelationProvider)
         {
             _requestCorrelationProvider = requestCorrelationProvider;
 
             Requests = Endpoints
                 .Select(endpoint => endpoint.RequestsWithErrorHandling(_exceptions))
                 .Merge()
-                .Merge(GetLocalRequests())
                 .PublishRefCountRetriable();
 
             Commands = Endpoints
                 .Select(endpoint => endpoint.CommandsWithErrorHandling(_exceptions))
                 .Merge()
-                .Merge(GetLocalCommands())
                 .PublishRefCountRetriable();
         }
 
@@ -194,7 +180,6 @@ namespace Obvs
 
             var tasks = EndpointsThatCanHandle(ev)
                 .Select(endpoint => CatchUnlessCancelled(() => endpoint.PublishAsync(ev, cancellationToken), exceptions, cancellationToken, EventErrorMessage(endpoint)))
-                .Union(PublishLocal(ev, exceptions, cancellationToken))
                 .ToArray();
 
             if (exceptions.Any())
@@ -214,11 +199,6 @@ namespace Obvs
         /// <inheritdoc />
         public Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default)
         {
-            if (_requestCorrelationProvider == null)
-            {
-                throw new InvalidOperationException("Please configure the ServiceBus with a IRequestCorrelationProvider using the fluent configuration extension method .CorrelatesRequestWith()");
-            }
-
             cancellationToken.ThrowIfCancellationRequested();
 
             _requestCorrelationProvider.SetCorrelationIds(request, response);
@@ -227,7 +207,6 @@ namespace Obvs
 
             var tasks = EndpointsThatCanHandle(response)
                     .Select(endpoint => CatchUnlessCancelled(() => endpoint.ReplyAsync(request, response, cancellationToken), exceptions, cancellationToken, ReplyErrorMessage(endpoint)))
-                    .Union(ReplyLocal(request, response, exceptions, cancellationToken))
                     .ToArray();
 
             if (exceptions.Any())
@@ -237,14 +216,6 @@ namespace Obvs
             }
 
             return Task.WhenAll(tasks);
-        }
-
-        // ReSharper disable once UnusedMember.Global
-        /// <summary>Starts v6's fluent configuration.</summary>
-        [Obsolete("Configure buses with services.AddObvs(obvs => obvs.AddService<TServiceMessage>(name, service => service.Use<Transport>(...))) instead, or ObvsBus.StartAsync(...) without a host. See https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md.")]
-        public static ICanAddEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> Configure()
-        {
-            return new ServiceBusFluentCreator<TMessage, TCommand, TEvent, TRequest, TResponse>();
         }
 
         private IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> EndpointsThatCanHandle(TMessage message)

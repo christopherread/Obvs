@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Obvs.Types;
 
-// v6's message property providers, kept for v6's fluent configuration: its public members are exempt from the rule that every one is documented
+// v6's message property providers, which the transports use: its public members are exempt from the rule that every one is documented
 #pragma warning disable CS1570, CS1572, CS1591
 
 namespace Obvs.MessageProperties

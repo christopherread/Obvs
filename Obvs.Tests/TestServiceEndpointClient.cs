@@ -6,7 +6,6 @@ using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
-using Obvs.Logging;
 using Obvs.Types;
 using Xunit;
 
@@ -98,15 +97,5 @@ namespace Obvs.Tests
             return source;
         }
 
-        [Fact]
-        public void ShouldDisposeEndpointClientIfWrappedInLoggingProxy()
-        {
-            IServiceEndpointClient endpointClient = A.Fake<IServiceEndpointClient>();
-            IServiceEndpointClient loggingProxy = new ServiceEndpointClientLoggingProxy(A.Fake<ILoggerFactory>(), endpointClient, message => LogLevel.Info, message => LogLevel.Info);
-
-            loggingProxy.Dispose();
-
-            A.CallTo(() => endpointClient.Dispose()).MustHaveHappenedOnceExactly();
-        }
     }
 }

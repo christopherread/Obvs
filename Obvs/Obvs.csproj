@@ -8,7 +8,7 @@
     <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
     <PackageTags>obvs messaging microservice bus messagebus rx reactive servicebus</PackageTags>
     <PackageReleaseNotes>New csproj format</PackageReleaseNotes>
-    <Description>An observable microservice bus .NET library, based on Reactive Extensions. Search 'Obvs' for other transport, serialization, and logging extensions.</Description>
+    <Description>An observable microservice bus .NET library, based on Reactive Extensions. Search 'Obvs' for other transport and serialization extensions.</Description>
   </PropertyGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'net472' ">
     <PackageReference Include="Microsoft.Extensions.DependencyModel" />
@@ -28,6 +28,9 @@
     <None Include="..\Obvs.Generators\bin\$(Configuration)\netstandard2.0\Obvs.Generators.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="..\Obvs.Analyzers\bin\$(Configuration)\netstandard2.0\Obvs.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="..\Obvs.Analyzers.CodeFixes\bin\$(Configuration)\netstandard2.0\Obvs.Analyzers.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Obvs.Tests" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />

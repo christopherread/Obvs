@@ -1,6 +1,6 @@
 # Migrating from v6 to v7
 
-v7 configures the bus through dependency injection, handles messages with handlers, and awaits requests. The Rx streams are still there. Most changes are additive, and v6 and v7 apps work together on the same broker, so you can move one app at a time.
+v7 configures the bus through dependency injection, handles messages with handlers, and awaits requests. The Rx streams are still there. v6's configuration API is gone, so each app's configuration is rewritten, but its messages and the code that uses the streams mostly aren't. v6 and v7 apps work together on the same broker, so you can move one app at a time.
 
 ## v6 and v7 apps together
 
@@ -18,7 +18,7 @@ A v7 service talks to v6 apps on the same broker, with the same exchange, topic 
 
 **v6**
 
-<!-- snippet: v6-configuration -->
+<!-- not compiled: v6's API, which v7 removed -->
 ```csharp
 IServiceBus bus = ServiceBus.Configure()
     .WithRabbitMQEndpoints<IOrderMessage>()
@@ -52,7 +52,7 @@ await using var bus = await ObvsBus.StartAsync(obvs => obvs
 
 | v6 | v7 |
 |---|---|
-| `ServiceBus.Configure()` (obsolete) | `services.AddObvs(obvs => ...)`, or `ObvsBus.StartAsync(obvs => ...)` |
+| `ServiceBus.Configure()` | `services.AddObvs(obvs => ...)`, or `ObvsBus.StartAsync(obvs => ...)` |
 | `.WithRabbitMQEndpoints<T>().Named("orders")` | `.AddService<T>("orders", service => service.UseRabbitMq(...))` |
 | `.WithKafkaEndpoints<T>()`, `.WithNatsEndpoints<T>()`, `.WithActiveMQEndpoints<T>()`, `.WithNetMqEndpoints<T>()` | `UseKafka`, `UseNats` or `UseNatsJetStream`, `UseActiveMq`, `UseNetMq` |
 | `.BindToAddress("tcp://localhost").OnPort(5555)` (NetMQ) | `options.Address` and `options.Port`. v7 sends without headers by default, so v6 apps can read its messages ([NetMQ](transports/netmq.md)) |
@@ -69,6 +69,20 @@ await using var bus = await ObvsBus.StartAsync(obvs => obvs
 | `.CreateClient()` | Resolve `IServiceBusClient` |
 
 Configuration errors fail startup, all at once, each with its fix. See [configuration errors](configuration-errors.md).
+
+### Removed from v7
+
+| v6 | v7 |
+|---|---|
+| `ServiceBus.Configure()`, `ServiceBusFluentCreator` and the `ICanAddEndpoint...` interfaces | `AddObvs`, or `ObvsBus.StartAsync` |
+| Each transport's fluent configuration: `With<Transport>Endpoints`, `<Transport>FluentConfig`, `WithActiveMQSharedConnectionScope` | `Use<Transport>(...)` and its options |
+| `SerializedAsJson()`, `SerializedAsProtoBuf()`, `SerializedAsMessagePackCSharp()` | `SerializedWith(serializer, deserializerFactory)`, or nothing for System.Text.Json |
+| `GzippedJsonMessageSerializer` and `GzippedJsonMessageDeserializer` | `Compressed()`, which writes and reads the same bytes |
+| `new ServiceBus(...)`, `new ServiceBusClient(...)` | Resolve `IServiceBus` or `IServiceBusClient` |
+| `Obvs.Logging`: `ILogger`, `ILoggerFactory`, `LogLevel`, the console and debug loggers | `Microsoft.Extensions.Logging` |
+| `Obvs.Monitoring`: `IMonitor`, `IMonitorFactory`, the console monitor | OpenTelemetry, through `ObvsTelemetry` |
+| `SubjectServiceBus`, `SubjectMessageBus`, `IMessageBus`, `PublishLocally()` and `LocalBusOptions` | `UseInMemory()` from `Obvs.Testing` |
+| `MessageBridge`, `MessageSourceConverter` and `IMessageConverter` | A handler that sends what it receives on to another service |
 
 ## Handling messages
 

@@ -7,9 +7,7 @@ using FakeItEasy;
 
 using MessagePack.Resolvers;
 
-using Obvs.Configuration;
 using Obvs.Serialization.MessagePack;
-using Obvs.Serialization.MessagePack.Configuration;
 using Obvs.Types;
 
 using Xunit;
@@ -124,17 +122,6 @@ namespace Obvs.Serialization.Tests {
         // A NestedMessage nested 'depth' times: each level is a one-element array holding its child
         private static byte[] CreateNestedPayload(int depth) {
             return Enumerable.Repeat((byte)0x91, depth).Append((byte)0xC0).ToArray();
-        }
-
-        [Fact]
-        public void ShouldPassInCorrectFluentConfig() {
-            var fakeConfigurator = A.Fake<ICanSpecifyEndpointSerializers<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            fakeConfigurator.SerializedAsMessagePackCSharp();
-
-            A.CallTo(() => fakeConfigurator.SerializedWith(
-                    A<IMessageSerializer>.That.IsInstanceOf(typeof(MessagePackCSharpMessageSerializer)),
-                    A<IMessageDeserializerFactory>.That.IsInstanceOf(typeof(MessagePackCSharpMessageDeserializerFactory))))
-                .MustHaveHappened(1, Times.Exactly);
         }
     }
 

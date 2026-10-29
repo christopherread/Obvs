@@ -38,7 +38,7 @@ namespace Obvs.Kafka.Tests
         [Fact]
         public void ShouldKeepV6sGroupNamedAfterTheProcessWithoutAnInstanceId()
         {
-            // v6's fluent configuration, where every source in the process receives every message
+            // As v6 apps do, where every source in the process receives every message
             var provider = Provider(null);
 
             foreach (var topic in new[] { "orders.Commands", "orders.Events", "orders.Requests", "orders.Responses" })
