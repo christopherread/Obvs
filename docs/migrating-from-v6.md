@@ -12,7 +12,7 @@ A v7 service talks to v6 apps on the same broker, with the same exchange, topic 
 - **ActiveMQ commands over queues:** v7's ActiveMQ transport sends commands over topics, v6's default. A v6 app configured with `UsingQueueFor<ICommand>()` and a v7 app don't reach each other's commands.
 - **Retired packages:** NetJSON, XML, YAML and MsgPack.Cli serializers stay on v6. A v7 app can't read what they write. Move those services to JSON, MessagePack (MessagePack-CSharp) or ProtoBuf first, from v6.
 
-`TestV6Interop` in `Obvs.RabbitMQ.Tests` runs a v6 app and a v7 app on one broker, in both directions.
+`TestV6Interop` in `Obvs.RabbitMQ.Tests` runs a v6 app, on the published 6.x packages in its own process, and a v7 app on one broker, in both directions.
 
 ## Configuration
 
