@@ -103,7 +103,7 @@ namespace Obvs.Hosting
             errors.AddRange(_services
                 .Where(service => service.EndpointProviderFactory == null)
                 .Select(service => $"Service '{service.Name}' has no transport. Call one on it inside AddService(\"{service.Name}\", ...): " +
-                                   "UseRabbitMq, UseKafka, UseNats, UseNatsJetStream, UseActiveMq, UseAzureServiceBus or UseAmazonSqs, each from its " +
+                                   "UseRabbitMq, UseKafka, UseNats, UseNatsJetStream, UseActiveMq, UseAzureServiceBus, UseAmazonSqs or UseNetMq, each from its " +
                                    "Obvs package, UseInMemory from Obvs.Testing for tests, or UseEndpointProvider(...) for your own."));
 
             errors.AddRange(_services.SelectMany(service => service.Validate(serviceProvider)));

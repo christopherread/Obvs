@@ -40,18 +40,27 @@ namespace Obvs.NetMQ
                     var tokenSource = new CancellationTokenSource();
                     var token = tokenSource.Token;
                     var subscribedEvent = new ManualResetEventSlim(false);
+                    var receiveThreadId = 0;
 
                     // The receive loop blocks for as long as the subscription lasts, so it gets a thread of its
                     // own: on the thread pool, a busy pool delays it and publishers drop messages meanwhile
-                    var task = Task.Factory.StartNew(() => Subscriber(token, observer, subscribedEvent),
-                        CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                    var task = Task.Factory.StartNew(() =>
+                    {
+                        Volatile.Write(ref receiveThreadId, Environment.CurrentManagedThreadId);
+                        Subscriber(token, observer, subscribedEvent);
+                    }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
                     subscribedEvent.Wait();
 
                     return Disposable.Create(() =>
                     {
                         tokenSource.Cancel();
-                        task.Wait();
+                        // A subscriber can unsubscribe as it receives, as FirstAsync does, on the receive thread. That
+                        // can't wait for itself: the loop stops once the subscriber returns.
+                        if (Environment.CurrentManagedThreadId != Volatile.Read(ref receiveThreadId))
+                        {
+                            task.Wait();
+                        }
                     });
                 });
             }
@@ -92,13 +101,18 @@ namespace Obvs.NetMQ
                 string topic;
                 byte[] rawMessage;
                 string typeName;
+                IReadOnlyDictionary<string, string> headers;
 
-                if (socket.TryReceive(_receiveTimeout, out topic, out typeName, out rawMessage) && MatchesTopic(topic))
+                if (socket.TryReceive(_receiveTimeout, out topic, out typeName, out rawMessage, out headers) && MatchesTopic(topic))
                 {
                     var message = typeName == null
                         ? _deserializers.Values.Single().Deserialize(rawMessage)
                         : _deserializers[typeName].Deserialize(rawMessage);
 
+                    if (headers != null)
+                    {
+                        ObvsMessageHeaders.Set(message, headers);
+                    }
                     observer.OnNext(message);
                 }
             }

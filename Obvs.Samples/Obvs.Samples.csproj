@@ -26,6 +26,7 @@
     <ProjectReference Include="..\Obvs.AmazonSqs\Obvs.AmazonSqs.csproj" />
     <ProjectReference Include="..\Obvs.Kafka\Obvs.Kafka.csproj" />
     <ProjectReference Include="..\Obvs.Mcp\Obvs.Mcp.csproj" />
+    <ProjectReference Include="..\Obvs.NetMQ\Obvs.NetMQ.csproj" />
     <ProjectReference Include="..\Obvs.RabbitMQ\Obvs.RabbitMQ.csproj" />
     <ProjectReference Include="..\Obvs.Serialization.Json\Obvs.Serialization.Json.csproj" />
     <ProjectReference Include="..\Obvs.Testing\Obvs.Testing.csproj" />

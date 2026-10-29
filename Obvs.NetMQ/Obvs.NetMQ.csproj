@@ -10,6 +10,7 @@
     <Description>NetMQ transport support for Obvs</Description>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="NetMQ" />
   </ItemGroup>
   <ItemGroup>

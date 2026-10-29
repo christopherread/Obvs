@@ -119,6 +119,26 @@ namespace Obvs.Samples
             }));
         }
 
+        public static void NetMq(HostApplicationBuilder builder)
+        {
+            // snippet: netmq-setup
+            builder.Services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseNetMq(builder.Configuration.GetSection("Obvs:Orders:NetMq"))));
+            // end-snippet
+
+            builder.Services.AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service =>
+            {
+                // snippet: netmq-in-code
+                service.UseNetMq(options =>
+                {
+                    options.Address = "tcp://orders-host";
+                    options.Port = 5555;
+                });
+                // end-snippet
+            }));
+        }
+
         private static Task PlaceOrderAsync(PlaceOrder command, MessageContext context, CancellationToken ct) => Task.CompletedTask;
 
         // Stands for however you get a token
