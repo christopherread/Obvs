@@ -98,6 +98,31 @@ namespace Obvs.ActiveMQ.Tests.Hosting
         }
 
         [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldNotDeadlockWhenCodeAfterAwaitingAMessageDisposesTheBus()
+        {
+            // Code after awaiting a message may shut the app down. If messages arrived on the NMS session's
+            // dispatch thread, that code would run there too, and stopping the connection would wait for that
+            // same thread, forever. (NMS only skips the wait for code in the dispatch's own execution context,
+            // which code after an await is not.)
+            var host = await StartHostAsync("obvs-activemq-dispose-after-await");
+            var bus = host.Services.GetRequiredService<IServiceBus>();
+            // Continuations run inline, wherever the message is received
+            var received = new TaskCompletionSource<PlaceOrder>();
+            using var subscription = bus.Commands.OfType<PlaceOrder>().Subscribe(command => received.TrySetResult(command));
+
+            async Task DisposeOnReceiving()
+            {
+                await received.Task.ConfigureAwait(false);
+                host.Dispose();
+            }
+
+            var disposed = DisposeOnReceiving();
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+
+            await disposed.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
         public async Task ShouldContinueTheSendersTraceAcrossActiveMq()
         {
             const string serviceName = "obvs-activemq-tracing";

@@ -56,7 +56,7 @@ namespace Obvs
 
         /// <summary>Wraps a generic client.</summary>
         /// <param name="serviceBusClient">The client</param>
-        public ServiceBusClient(IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse> serviceBusClient)
+        internal ServiceBusClient(IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse> serviceBusClient)
         {
             _serviceBusClient = serviceBusClient;
         }
@@ -117,23 +117,15 @@ namespace Obvs
         protected readonly IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> Endpoints;
         private readonly IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> _endpointClients;
         private readonly IRequestCorrelationProvider<TRequest, TResponse> _requestCorrelationProvider;
-        private readonly IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> _localBus;
-        private readonly LocalBusOptions _localBusOption;
 
         /// <summary>A client over these endpoints.</summary>
         /// <param name="endpointClients">The client endpoints of the services the bus uses</param>
         /// <param name="endpoints">The server endpoints of the services the bus serves</param>
         /// <param name="requestCorrelationProvider">How responses are matched to requests</param>
-        /// <param name="localBus">An in-process bus that also carries messages, or null</param>
-        /// <param name="localBusOption">Which messages go to the local bus</param>
-        public ServiceBusClient(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, 
+        internal ServiceBusClient(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, 
                                 IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> endpoints, 
-                                IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider,
-                                IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> localBus = null, LocalBusOptions localBusOption = LocalBusOptions.MessagesWithNoEndpointClients)
+                                IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider)
         {
-            _localBus = localBus;
-            _localBusOption = localBusOption;
-
             Endpoints = endpoints.ToList();
 
             _endpointClients = endpointClients.ToArray();
@@ -141,10 +133,9 @@ namespace Obvs
             Events = _endpointClients
                 .Select(endpointClient => endpointClient.EventsWithErrorHandling(_exceptions))
                 .Merge()
-                .Merge(GetLocalEvents())
                 .PublishRefCountRetriable();
 
-            _requestCorrelationProvider = requestCorrelationProvider;
+            _requestCorrelationProvider = requestCorrelationProvider ?? throw new ArgumentNullException(nameof(requestCorrelationProvider));
         }
 
         /// <inheritdoc />
@@ -159,7 +150,6 @@ namespace Obvs
 
             var tasks = EndpointClientsThatCanHandle(command)
                 .Select(endpoint => CatchUnlessCancelled(() => endpoint.SendAsync(command, cancellationToken), exceptions, cancellationToken, CommandErrorMessage(endpoint)))
-                .Union(SendLocal(command, exceptions, cancellationToken))
                 .ToArray();
 
             if (exceptions.Any())
@@ -174,74 +164,6 @@ namespace Obvs
             }
 
             return Task.WhenAll(tasks);
-        }
-
-        private IObservable<TEvent> GetLocalEvents()
-        {
-            return _localBus == null ? Observable.Empty<TEvent>() : _localBus.Events;
-        }
-
-        /// <summary>The local bus's commands, if there is one.</summary>
-        protected IObservable<TCommand> GetLocalCommands()
-        {
-            return _localBus == null ? Observable.Empty<TCommand>() : _localBus.Commands;
-        }
-
-        /// <summary>The local bus's requests, if there is one.</summary>
-        protected IObservable<TRequest> GetLocalRequests()
-        {
-            return _localBus == null ? Observable.Empty<TRequest>() : _localBus.Requests;
-        }
-
-        /// <summary>Publishes <paramref name="ev"/> on the local bus, if it takes it, collecting errors in <paramref name="exceptions"/>.</summary>
-        protected IEnumerable<Task> PublishLocal(TEvent ev, List<Exception> exceptions, CancellationToken cancellationToken)
-        {
-            return ShouldPublishLocally(ev)
-                ? new[] {Catch(() => _localBus.PublishAsync(ev, cancellationToken), exceptions)} 
-                : Enumerable.Empty<Task>();
-        }
-
-        private IEnumerable<Task> SendLocal(TCommand command, List<Exception> exceptions, CancellationToken cancellationToken)
-        {
-            return ShouldPublishLocally(command) 
-                ? new[] { Catch(() => _localBus.SendAsync(command, cancellationToken), exceptions) } 
-                : Enumerable.Empty<Task>();
-        }
-
-        /// <summary>Replies on the local bus, if it takes the response, collecting errors in <paramref name="exceptions"/>.</summary>
-        protected IEnumerable<Task> ReplyLocal(TRequest request, TResponse response, List<Exception> exceptions, CancellationToken cancellationToken)
-        {
-            return ShouldPublishLocally(response)
-                ? new[] { Catch(() => _localBus.ReplyAsync(request, response, cancellationToken), exceptions) }
-                : Enumerable.Empty<Task>();
-        }
-
-        private bool ShouldPublishLocally(TMessage message)
-        {
-            if (_localBus == null)
-            {
-                return false;
-            }
-
-            if  (_localBusOption == LocalBusOptions.AllMessages)
-            {
-                return true;
-            }
-
-            if (_localBusOption == LocalBusOptions.MessagesWithNoEndpointClients &&
-                !_endpointClients.Any(e => e.CanHandle(message)))
-            {
-                return true;
-            }
-
-            if (_localBusOption == LocalBusOptions.MessagesWithNoEndpoints && 
-                !Endpoints.Any(e => e.CanHandle(message)) &&
-                !_endpointClients.Any(e => e.CanHandle(message)))
-            {
-                return true;
-            }
-
-            return false;
         }
 
         /// <inheritdoc />
@@ -272,7 +194,7 @@ namespace Obvs
 
             if (tasks.Length == 0)
             {
-                throw new Exception("No endpoint or local bus configured for any of these commands, please check your ServiceBus configuration.");
+                throw new Exception("No endpoint configured for any of these commands, please check your ServiceBus configuration.");
             }
 
             return Task.WhenAll(tasks);
@@ -281,26 +203,13 @@ namespace Obvs
         /// <inheritdoc />
         public IObservable<TResponse> GetResponses(TRequest request)
         {
-            if (_requestCorrelationProvider == null)
-            {
-                throw new InvalidOperationException("Please configure the ServiceBus with a IRequestCorrelationProvider using the fluent configuration extension method .CorrelatesRequestWith()");
-            }
-
             _requestCorrelationProvider.SetRequestCorrelationIds(request);
 
             return EndpointClientsThatCanHandle(request)
                 .Select(endpoint => endpoint.GetResponses(request)
                 .Where(response => _requestCorrelationProvider.AreCorrelated(request, response)))
                 .Merge()
-                .Merge(GetLocalResponses(request))
                 .PublishRefCountRetriable();
-        }
-
-        private IObservable<TResponse> GetLocalResponses(TRequest request)
-        {
-            return ShouldPublishLocally(request)
-                ? _localBus.GetResponses(request)
-                : Observable.Empty<TResponse>();
         }
 
         /// <inheritdoc />

@@ -58,7 +58,7 @@ The build has no warnings. Keep it that way.
   - run `OBVS_UPDATE_SNIPPETS=1 dotnet test --project Obvs.Samples` to copy the regions in.
 
   `TestSnippets` fails when a doc and its sample differ. A block that can't compile gets `<!-- not compiled: why -->`.
-- **XML docs** on every public member, which ship in the packages. A missing one fails the build (CS1591 is an error). The exceptions are code kept for v6 apps, such as the fluent configuration, v6's logging and monitoring abstractions, and the v6 transports' building blocks, and code copied into the repo. Each of those files says so above its `#pragma warning disable`. Implementations of a documented interface use `/// <inheritdoc />`.
+- **XML docs** on every public member, which ship in the packages. A missing one fails the build (CS1591 is an error). The exceptions are v6's transport building blocks, which the `Use*` transports are built on, and code copied into the repo. Each of those files says so above its `#pragma warning disable`. Implementations of a documented interface use `/// <inheritdoc />`.
 - **Wire compatibility.** v6 and v7 apps share brokers. Don't change routing names or JSON shapes without a test that a v6 app still understands them (see `Obvs.RabbitMQ.Tests/Hosting/TestV6Interop.cs`, which runs `Obvs.V6InteropApp`).
 
 ## Pull requests

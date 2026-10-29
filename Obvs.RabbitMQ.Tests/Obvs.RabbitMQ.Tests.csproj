@@ -1,7 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- Tests v6's fluent configuration, which is obsolete in v7 -->
-    <NoWarn>$(NoWarn);CS0618</NoWarn>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>

@@ -86,14 +86,13 @@ namespace Obvs.Serialization.Tests
             Assert.Equal(message, deserializer.Deserialize(bytes));
         }
 
-        // v6 services compress JSON with Obvs.Serialization.Json's GzippedJson serializers
-#pragma warning disable CS0618 // They're obsolete, and kept for this
+        // v6 services compress JSON with Obvs.Serialization.Json's GzippedJson serializers, copied below
         [Fact]
         public void ShouldWriteTheSameBytesAsV6sGzippedJson()
         {
             var message = new TestMessage { Id = 123, Name = "SomeName", Date = FixedDate };
 
-            var v6 = new GzippedJsonMessageSerializer(null).Serialize(message);
+            var v6 = new V6GzippedJsonMessageSerializer().Serialize(message);
             var v7 = new GzipMessageSerializer(new JsonMessageSerializer(), CompressionLevel.Fastest).Serialize(message);
 
             Assert.Equal(v6, v7);
@@ -103,7 +102,7 @@ namespace Obvs.Serialization.Tests
         public void ShouldReadV6sGzippedJson()
         {
             var message = new TestMessage { Id = 123, Name = "SomeName", Date = FixedDate };
-            var v6 = new GzippedJsonMessageSerializer(null).Serialize(message);
+            var v6 = new V6GzippedJsonMessageSerializer().Serialize(message);
             var deserializer = new GzipMessageDeserializerFactory(new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>)), Limit, "orders")
                 .Create<IMessage>(typeof(TestMessage));
 
@@ -116,9 +115,32 @@ namespace Obvs.Serialization.Tests
             var message = new TestMessage { Id = 123, Name = "SomeName", Date = FixedDate };
             var v7 = new GzipMessageSerializer(new JsonMessageSerializer(), CompressionLevel.Optimal).Serialize(message);
 
-            Assert.Equal(message, new GzippedJsonMessageDeserializer<TestMessage>(null).Deserialize(v7));
+            Assert.Equal(message, new V6GzippedJsonMessageDeserializer<TestMessage>().Deserialize(v7));
         }
-#pragma warning restore CS0618
+
+        // Obvs 6's GzippedJsonMessageSerializer and GzippedJsonMessageDeserializer, as they were
+        private class V6GzippedJsonMessageSerializer : JsonMessageSerializer
+        {
+            public override void Serialize(Stream stream, object message)
+            {
+                using (var gs = new GZipStream(stream, CompressionLevel.Fastest, true))
+                {
+                    base.Serialize(gs, message);
+                }
+            }
+        }
+
+        private class V6GzippedJsonMessageDeserializer<TMessage> : JsonMessageDeserializer<TMessage>
+            where TMessage : class
+        {
+            public override TMessage Deserialize(Stream stream)
+            {
+                using (var gs = new GZipStream(stream, CompressionMode.Decompress, true))
+                {
+                    return base.Deserialize(gs);
+                }
+            }
+        }
 
         // A UTC date, which every serializer keeps as is
         private static readonly DateTime FixedDate = new DateTime(2026, 10, 27, 9, 30, 0, DateTimeKind.Utc);

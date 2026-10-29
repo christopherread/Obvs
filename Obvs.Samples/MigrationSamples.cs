@@ -5,10 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Obvs.Configuration;
 using Obvs.Hosting;
-using Obvs.RabbitMQ.Configuration;
-using Obvs.Serialization.Json.Configuration;
 
 namespace Obvs.Samples
 {
@@ -16,21 +13,6 @@ namespace Obvs.Samples
 #pragma warning disable OBVS005, OBVS006
     public static class MigrationSamples
     {
-        public static IServiceBus V6Configuration()
-        {
-            // snippet: v6-configuration
-            IServiceBus bus = ServiceBus.Configure()
-                .WithRabbitMQEndpoints<IOrderMessage>()
-                    .Named("orders")
-                    .ConnectToBroker("amqp://localhost:5672")
-                    .SerializedAsJson()
-                    .AsClientAndServer()
-                .UsingConsoleLogging()
-                .Create();
-            // end-snippet
-            return bus;
-        }
-
         public static void V7Configuration(HostApplicationBuilder builder)
         {
             // snippet: v7-configuration

@@ -2,9 +2,7 @@
 using System.Reflection;
 using FakeItEasy;
 using Xunit;
-using Obvs.Configuration;
 using Obvs.Serialization.Json;
-using Obvs.Serialization.Json.Configuration;
 using Obvs.Types;
 
 namespace Obvs.Serialization.Tests
@@ -74,18 +72,6 @@ namespace Obvs.Serialization.Tests
             var deserialize = deserializer.Deserialize(serialize);
 
             Assert.Equal(message, deserialize);
-        }
-
-        [Fact]
-        public void ShouldPassInCorrectFluentConfig()
-        {
-            var fakeConfigurator = A.Fake<ICanSpecifyEndpointSerializers<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            fakeConfigurator.SerializedAsJson();
-
-            A.CallTo(() => fakeConfigurator.SerializedWith(
-                A<IMessageSerializer>.That.IsInstanceOf(typeof(JsonMessageSerializer)),
-                A<IMessageDeserializerFactory>.That.IsInstanceOf(typeof(JsonMessageDeserializerFactory))))
-                .MustHaveHappened(1, Times.Exactly);
         }
     }
 }
