@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,15 +44,88 @@ namespace Obvs.Tests.Hosting.Handlers
         [Fact]
         public async Task ShouldTimeOutOnTheTimeProviderWhenNoResponseArrives()
         {
+            // The bus measures time on the container's TimeProvider, so a test can pass a fake one
             var time = new FakeTimeProvider();
-            await using var harness = await StartOrdersAsync();
+            await using var harness = await StartOrdersAsync(time: time);
 
-            var pending = harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct, time);
+            var pending = harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct);
             time.Advance(TimeSpan.FromMinutes(6));
 
             // Completes because virtual time passed, long before five real minutes
             var exception = await Assert.ThrowsAsync<TimeoutException>(() => pending).WaitAsync(TimeSpan.FromSeconds(2), Ct);
             Assert.Contains("No Quote response to GetQuote", exception.Message);
+        }
+
+        [Fact]
+        public async Task ShouldWaitThirtySecondsForAResponseByDefault()
+        {
+            var time = new FakeTimeProvider();
+            await using var harness = await StartOrdersAsync(time: time);
+
+            var pending = harness.Client.RequestAsync(new GetQuote("sku-1"), Ct);
+            time.Advance(TimeSpan.FromSeconds(29));
+            await Task.Delay(100, Ct);
+
+            Assert.False(pending.IsCompleted);
+            time.Advance(TimeSpan.FromSeconds(2));
+            var exception = await Assert.ThrowsAsync<TimeoutException>(() => pending).WaitAsync(TimeSpan.FromSeconds(2), Ct);
+            Assert.Contains("00:00:30", exception.Message);
+        }
+
+        [Fact]
+        public async Task ShouldWaitForTheBusesRequestTimeoutByDefault()
+        {
+            var time = new FakeTimeProvider();
+            await using var harness = await StartOrdersAsync(obvs => obvs.UseRequestTimeout(TimeSpan.FromMinutes(2)), time);
+
+            var pending = harness.Client.RequestAsync(new GetQuote("sku-1"), Ct);
+            time.Advance(TimeSpan.FromSeconds(90));
+            await Task.Delay(100, Ct);
+
+            Assert.False(pending.IsCompleted);
+            time.Advance(TimeSpan.FromSeconds(31));
+            await Assert.ThrowsAsync<TimeoutException>(() => pending).WaitAsync(TimeSpan.FromSeconds(2), Ct);
+        }
+
+        [Fact]
+        public async Task ShouldSendHeadersWithARequestThatWaitsTheDefaultTime()
+        {
+            await using var harness = await StartOrdersAsync();
+            using var server = harness.Bus.Requests.OfType<GetQuote>()
+                .Subscribe(request => _ = harness.Bus.ReplyAsync(request, new Quote(ObvsMessageHeaders.Get(request)["x-tenant"], 9.99m)));
+
+            var quote = await harness.Client.RequestAsync(new GetQuote("sku-1"), new Dictionary<string, string> { ["x-tenant"] = "acme" }, Ct);
+
+            Assert.Equal("acme", quote.Sku);
+        }
+
+        [Fact]
+        public async Task ShouldWaitTheBusesRequestTimeoutFromAHandler()
+        {
+            await using var harness = await ObvsTestHarness.StartAsync(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseInMemory()
+                    .HandleRequest<GetQuote, Quote>((request, context, ct) => Task.FromResult(new Quote(request.Sku, 9.99m)))
+                    .HandleCommand<PlaceOrder>(async (command, context, ct) =>
+                    {
+                        var quote = await context.RequestAsync(new GetQuote(command.OrderId), ct);
+                        await context.PublishAsync(new OrderPlaced(quote.Sku), ct);
+                    }))),
+                cancellationToken: Ct);
+
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), Ct);
+
+            Assert.Equal("o-1", (await harness.Published<OrderPlaced>(placed => placed.OrderId == "o-1")).OrderId);
+        }
+
+        [Fact]
+        public void ShouldRejectARequestTimeoutThatIsntPositive()
+        {
+            ArgumentOutOfRangeException error = null;
+            new ServiceCollection().AddObvs(obvs => error = Assert.Throws<ArgumentOutOfRangeException>(() => obvs.UseRequestTimeout(TimeSpan.Zero)));
+
+            Assert.Equal("timeout", error.ParamName);
+            Assert.Contains("positive", error.Message);
         }
 
         [Fact]
@@ -110,10 +184,20 @@ namespace Obvs.Tests.Hosting.Handlers
                 cancellationToken: Ct);
         }
 
-        private static Task<ObvsTestHarness> StartOrdersAsync()
+        private static Task<ObvsTestHarness> StartOrdersAsync(Action<ObvsBuilder> configure = null, TimeProvider time = null)
         {
-            return ObvsTestHarness.StartAsync(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseInMemory())),
+            return ObvsTestHarness.StartAsync(services =>
+                {
+                    if (time != null)
+                    {
+                        services.AddSingleton(time);
+                    }
+                    services.AddObvs(obvs =>
+                    {
+                        configure?.Invoke(obvs);
+                        obvs.AddService<IOrderMessage>("orders", service => service.UseInMemory());
+                    });
+                },
                 cancellationToken: Ct);
         }
     }

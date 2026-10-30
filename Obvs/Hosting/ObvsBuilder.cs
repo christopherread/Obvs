@@ -17,6 +17,7 @@ namespace Obvs.Hosting
     {
         private readonly List<ObvsServiceBuilder> _services = new List<ObvsServiceBuilder>();
         private string _instanceId = Guid.NewGuid().ToString("N");
+        private TimeSpan _requestTimeout = TimeSpan.FromSeconds(30);
 
         internal ObvsBuilder(IServiceCollection services)
         {
@@ -44,6 +45,24 @@ namespace Obvs.Hosting
             }
 
             _instanceId = instanceId;
+            return this;
+        }
+
+        /// <summary>
+        /// How long <c>RequestAsync</c> waits for a response when the call doesn't say. 30 seconds unless set with
+        /// <see cref="UseRequestTimeout"/>.
+        /// </summary>
+        public TimeSpan RequestTimeout => _requestTimeout;
+
+        /// <summary>Sets how long <c>RequestAsync</c> waits for a response when the call doesn't say.</summary>
+        public ObvsBuilder UseRequestTimeout(TimeSpan timeout)
+        {
+            if (timeout <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(timeout), timeout, "A request timeout must be positive. Pass how long a request should wait for its response.");
+            }
+
+            _requestTimeout = timeout;
             return this;
         }
 
@@ -88,7 +107,7 @@ namespace Obvs.Hosting
                 }
             }
 
-            return new ServiceBus(endpointClients, endpoints);
+            return new ServiceBus(endpointClients, endpoints, requestTimeout: _requestTimeout, timeProvider: serviceProvider.GetService<TimeProvider>());
         }
 
         private void Validate(IServiceProvider serviceProvider)

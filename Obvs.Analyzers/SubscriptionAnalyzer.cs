@@ -22,7 +22,7 @@ namespace Obvs.Analyzers
             context.EnableConcurrentExecution();
             context.RegisterCompilationStartAction(start =>
             {
-                var busClient = start.Compilation.GetTypeByMetadataName("Obvs.IServiceBusClient`5");
+                var busClient = start.Compilation.GetTypeByMetadataName("Obvs.IServiceBusClient");
                 if (busClient == null)
                 {
                     return;
@@ -83,8 +83,8 @@ namespace Obvs.Analyzers
 
         private static bool IsBus(INamedTypeSymbol? type, INamedTypeSymbol busClient)
         {
-            return type != null && (SymbolEqualityComparer.Default.Equals(type.OriginalDefinition, busClient) ||
-                                    type.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i.OriginalDefinition, busClient)));
+            return type != null && (SymbolEqualityComparer.Default.Equals(type, busClient) ||
+                                    type.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, busClient)));
         }
     }
 }

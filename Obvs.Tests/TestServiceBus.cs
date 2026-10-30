@@ -854,7 +854,7 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpointClient2.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustNotHaveHappened();
             A.CallTo(() => serviceEndpointClient3.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustHaveHappenedOnceExactly();
 
-            IDisposable sub2 = serviceBus.GetResponses<IResponse>(request).Subscribe(A.Fake<IObserver<IResponse>>());
+            IDisposable sub2 = serviceBus.GetResponses(request).Subscribe(A.Fake<IObserver<IResponse>>());
 
             A.CallTo(() => serviceEndpointClient1.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustHaveHappenedTwiceExactly();
             A.CallTo(() => serviceEndpointClient2.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustNotHaveHappened();
@@ -864,36 +864,6 @@ namespace Obvs.Tests
             sub2.Dispose();
         }
 
-        [Fact]
-        public void ShouldCompleteGetResponseWhenOneResponseReturned()
-        {
-            IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
-            IServiceEndpointClient serviceEndpointClient1 = A.Fake<IServiceEndpointClient>();
-            
-            IRequest request = A.Fake<IRequest>();
-            var response = A.Fake<IResponse>();
-            var subject = new Subject<IResponse>();
-            var requestCorrelationProvider = new AlwaysCorrelated();
-
-            A.CallTo(() => serviceEndpointClient1.CanHandle(request)).Returns(true);
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).Returns(subject);
-
-            IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1 }, new[] { serviceEndpoint1  }, requestCorrelationProvider);
-
-            var observer = A.Fake<IObserver<IResponse>>();
-            IDisposable sub1 = serviceBus.GetResponse<IResponse>(request).Subscribe(observer);
-
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustHaveHappenedOnceExactly();
-
-            subject.OnNext(response);
-
-            A.CallTo(() => observer.OnNext(response)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => observer.OnCompleted()).MustHaveHappenedOnceExactly();
-            A.CallTo(() => observer.OnError(A<Exception>._)).MustNotHaveHappened();
-            
-            sub1.Dispose();
-        }
-        
         [Fact]
         public void ShouldPublishEventsToCorrectEndpoints()
         {
@@ -1162,19 +1132,6 @@ namespace Obvs.Tests
             Assert.Equal(exceptions.Count, 2);
             Assert.True(messages.Contains(message1), "message1 not received");
             Assert.True(messages.Contains(message2), "message2 not received");
-        }
-
-        private sealed class AlwaysCorrelated : IRequestCorrelationProvider
-        {
-            public void SetRequestCorrelationIds(IRequest request)
-            {
-            }
-
-            public void SetCorrelationIds(IRequest request, IResponse response)
-            {
-            }
-
-            public bool AreCorrelated(IRequest request, IResponse response) => true;
         }
     }
     

@@ -18,7 +18,7 @@ namespace Obvs.Tests
         {
             var serviceEndpointClients = Enumerable.Empty<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             var serviceEndpoints = Enumerable.Empty<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var sut = new ServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>(serviceEndpointClients, serviceEndpoints, new DefaultRequestCorrelationProvider());
+            var sut = new ServiceBus(serviceEndpointClients, serviceEndpoints);
 
             var commands = new ICommand[0];
 
@@ -30,7 +30,7 @@ namespace Obvs.Tests
         {
             var serviceEndpointClients = Enumerable.Empty<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             var serviceEndpoints = Enumerable.Empty<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var sut = new ServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>(serviceEndpointClients, serviceEndpoints, new DefaultRequestCorrelationProvider());
+            var sut = new ServiceBus(serviceEndpointClients, serviceEndpoints);
 
             var commands = new[]{new TestServiceCommand1()};
             
@@ -42,7 +42,7 @@ namespace Obvs.Tests
         {
             var serviceEndpointClients = new IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>[]{new FakeServiceEndpoint(typeof(TestServiceCommand2))};
             var serviceEndpoints = Enumerable.Empty<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var sut = new ServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>(serviceEndpointClients, serviceEndpoints, new DefaultRequestCorrelationProvider());
+            var sut = new ServiceBus(serviceEndpointClients, serviceEndpoints);
 
             var commands = new[] { new TestServiceCommand1() };
 
@@ -61,7 +61,7 @@ namespace Obvs.Tests
 
             var serviceEndpointClients = new [] { wrongEndpoint, correctEndpoint };
             var serviceEndpoints = Enumerable.Empty<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var sut = new ServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>(serviceEndpointClients, serviceEndpoints, new DefaultRequestCorrelationProvider());
+            var sut = new ServiceBus(serviceEndpointClients, serviceEndpoints);
 
             var cmd = new TestServiceCommand1();
             var commands = new[] { cmd };
@@ -88,7 +88,7 @@ namespace Obvs.Tests
 
             var serviceEndpointClients = new[] { wrongEndpoint, correctEndpoint };
             var serviceEndpoints = Enumerable.Empty<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var sut = new ServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>(serviceEndpointClients, serviceEndpoints, new DefaultRequestCorrelationProvider());
+            var sut = new ServiceBus(serviceEndpointClients, serviceEndpoints);
 
             var cmd = new TestServiceCommand1();
             var commands = new[] { cmd };
