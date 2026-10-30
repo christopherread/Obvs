@@ -79,6 +79,9 @@ Configuration errors fail startup, all at once, each with its fix. See [configur
 | `SerializedAsJson()`, `SerializedAsProtoBuf()`, `SerializedAsMessagePackCSharp()` | `SerializedWith(serializer, deserializerFactory)`, or nothing for System.Text.Json |
 | `GzippedJsonMessageSerializer` and `GzippedJsonMessageDeserializer` | `Compressed()`, which writes and reads the same bytes |
 | `new ServiceBus(...)`, `new ServiceBusClient(...)` | Resolve `IServiceBus` or `IServiceBusClient` |
+| `IServiceBus<TMessage, ...>` and `IServiceBusClient<TMessage, ...>` | `IServiceBus` and `IServiceBusClient`, over `IMessage` |
+| `GetResponse<T>(request)` | `RequestAsync(request, ct)` for a request that names its response, or `GetResponses(request).OfType<T>().Take(1)` |
+| `GetResponses<T>(request)` | `GetResponses(request).OfType<T>()` |
 | `IRequestCorrelationProvider` and `DefaultRequestCorrelationProvider` | Nothing: the bus matches responses to requests by request ID and requester ID, as v6's default did |
 | `Obvs.Logging`: `ILogger`, `ILoggerFactory`, `LogLevel`, the console and debug loggers | `Microsoft.Extensions.Logging` |
 | `Obvs.Monitoring`: `IMonitor`, `IMonitorFactory`, the console monitor | OpenTelemetry, through `ObvsTelemetry` |

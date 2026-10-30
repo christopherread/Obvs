@@ -4,6 +4,7 @@ using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -16,12 +17,15 @@ namespace Obvs.Tests
 
         private readonly Subject<IEvent> _events = new Subject<IEvent>();
         private readonly Subject<ICommand> _commands = new Subject<ICommand>();
-        private readonly IServiceBus _bus = A.Fake<IServiceBus>();
+        private readonly IServiceBus _bus;
 
         public TestAsyncEnumerableStreams()
         {
-            A.CallTo(() => _bus.Events).Returns(_events);
-            A.CallTo(() => _bus.Commands).Returns(_commands);
+            var endpointClient = A.Fake<IServiceEndpointClient>();
+            var endpoint = A.Fake<IServiceEndpoint>();
+            A.CallTo(() => endpointClient.Events).Returns(_events);
+            A.CallTo(() => endpoint.Commands).Returns(_commands);
+            _bus = new ServiceBus(new[] { endpointClient }, new[] { endpoint });
         }
 
         private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -117,7 +121,8 @@ namespace Obvs.Tests
         [Fact]
         public async Task ShouldEndWithTheStreamsError()
         {
-            await using var events = _bus.ReadEventsAsync<TestServiceEvent1>(Ct).GetAsyncEnumerator(Ct);
+            // The bus's own streams survive their endpoints' errors, so this reads a stream that doesn't
+            await using var events = new ObservableAsyncEnumerable<IEvent>(_events, 1024, Ct).GetAsyncEnumerator(Ct);
 
             _events.OnError(new InvalidOperationException("The orders topic was deleted"));
 

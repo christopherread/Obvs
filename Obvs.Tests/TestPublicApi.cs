@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Xunit;
 
@@ -17,14 +18,39 @@ namespace Obvs.Tests
             Assert.Equal(new[]
             {
                 "IServiceBus",
-                "IServiceBus`5",
                 "IServiceBusClient",
-                "IServiceBusClient`5",
                 "ObservableSubscribeAsyncExtensions",
                 "ObvsMessageHeaders",
-                "ServiceBusAsyncEnumerableExtensions",
-                "ServiceBusClientRequestExtensions",
             }, root);
+        }
+
+        [Fact]
+        public void ShouldNotBuildTheBusOnGenericInterfaces()
+        {
+            Assert.Equal(new[] { typeof(IServiceBusClient) }, typeof(IServiceBus).GetInterfaces());
+            Assert.Empty(typeof(IServiceBusClient).GetInterfaces());
+        }
+
+        // Members, not extension methods, which an agent reading the interface misses
+        [Theory]
+        [InlineData(typeof(IServiceBusClient), "RequestAsync", 4)]
+        [InlineData(typeof(IServiceBusClient), "ReadEventsAsync", 1)]
+        [InlineData(typeof(IServiceBusClient), "SendAsync", 3)]
+        [InlineData(typeof(IServiceBus), "ReadCommandsAsync", 1)]
+        [InlineData(typeof(IServiceBus), "PublishAsync", 2)]
+        public void ShouldOfferWhatAppsCallAsMembersOfTheBus(Type bus, string name, int overloads)
+        {
+            Assert.Equal(overloads, bus.GetMethods().Count(method => method.Name == name));
+        }
+
+        [Fact]
+        public void ShouldOfferOneWayEachToAwaitAResponseAndToStreamThem()
+        {
+            // RequestAsync for the response, GetResponses(request) for a stream of them
+            var methods = typeof(IServiceBusClient).GetMethods();
+
+            Assert.DoesNotContain(methods, method => method.Name == "GetResponse");
+            Assert.All(methods.Where(method => method.Name == "GetResponses"), method => Assert.False(method.IsGenericMethod));
         }
 
         [Theory]

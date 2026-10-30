@@ -66,6 +66,17 @@ namespace Obvs.Hosting
 
         /// <summary>
         /// Sends a request and returns its response, the one the request declares with <see cref="IRequest{TResponse}"/>.
+        /// Throws <see cref="TimeoutException"/> if none arrives within the bus's request timeout: 30 seconds, unless set
+        /// with <c>UseRequestTimeout</c>.
+        /// </summary>
+        public Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+            where TResponse : class, IResponse
+        {
+            return _bus.RequestAsync(request, cancellationToken);
+        }
+
+        /// <summary>
+        /// Sends a request and returns its response, the one the request declares with <see cref="IRequest{TResponse}"/>.
         /// Throws <see cref="TimeoutException"/> if none arrives within <paramref name="timeout"/>.
         /// </summary>
         public Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, TimeSpan timeout, CancellationToken cancellationToken = default)

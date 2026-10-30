@@ -74,7 +74,7 @@ await using var harness = await ObvsTestHarness.StartAsync(
     });
 ```
 
-- **`TimeProvider`:** with a `FakeTimeProvider`, a test advances time to make a `Published<T>` time out, instead of waiting for it.
+- **`TimeProvider`:** with a `FakeTimeProvider`, a test advances time to make a `Published<T>` or a `RequestAsync` time out, instead of waiting for it. Outside the harness, the bus uses the `TimeProvider` in the container, if there is one.
 - **`Scheduler`:** with Rx's `TestScheduler`, the broker delivers only when the test advances the scheduler.
 
 ## Without the harness
