@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using NATS.Client.Core;
 using NATS.Client.JetStream;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 namespace Obvs.NATS.JetStream
 {
@@ -27,14 +29,14 @@ namespace Obvs.NATS.JetStream
             _replyTo = replyTo;
         }
 
-        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
+        public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
-            return PublishAsync(_jetStream, _subjectPrefix, message, _serializer, _replyTo, cancellationToken);
+            return PublishAsync(_jetStream, _subjectPrefix, message, headers, _serializer, _replyTo, cancellationToken);
         }
 
         // The subject ends in the type name, which tells the receiver which deserializer to use. Obvs headers (such as
         // trace context) become NATS headers. The stream acknowledges the message once it's stored.
-        public static async Task PublishAsync(INatsJSContext jetStream, string subjectPrefix, object message, IMessageSerializer serializer, string replyTo = null,
+        public static async Task PublishAsync(INatsJSContext jetStream, string subjectPrefix, object message, IReadOnlyDictionary<string, string> headers, IMessageSerializer serializer, string replyTo = null,
             CancellationToken cancellationToken = default)
         {
             byte[] data;
@@ -44,17 +46,17 @@ namespace Obvs.NATS.JetStream
                 data = stream.ToArray();
             }
 
-            var headers = new NatsHeaders();
-            foreach (var header in ObvsMessageHeaders.Get(message))
+            var natsHeaders = new NatsHeaders();
+            foreach (var header in headers)
             {
-                headers[header.Key] = header.Value;
+                natsHeaders[header.Key] = header.Value;
             }
             if (replyTo != null)
             {
-                headers[ReplyToHeader] = replyTo;
+                natsHeaders[ReplyToHeader] = replyTo;
             }
 
-            var ack = await jetStream.PublishAsync($"{subjectPrefix}.{message.GetType().Name}", data, headers: headers, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var ack = await jetStream.PublishAsync($"{subjectPrefix}.{message.GetType().Name}", data, headers: natsHeaders, cancellationToken: cancellationToken).ConfigureAwait(false);
             ack.EnsureSuccess();
         }
 

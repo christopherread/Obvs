@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -152,6 +155,34 @@ namespace Obvs.Samples
             // end-snippet
 
             Assert.Equal(9.99m, quote.Price);
+        }
+
+        [Fact]
+        public async Task SendHeaders()
+        {
+            var ct = Ct;
+            await using var harness = await ObvsTestHarness.StartAsync(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service =>
+                {
+                    service.UseInMemory();
+                    // snippet: read-headers
+                    service.HandleCommand<PlaceOrder>(async (command, context, ct) =>
+                    {
+                        Console.WriteLine($"Order {command.OrderId} for {context.Headers["x-tenant"]}");
+                        // Pass them on to what the handler sends
+                        await context.PublishAsync(new OrderPlaced(command.OrderId), context.Headers, ct);
+                    });
+                    // end-snippet
+                })), cancellationToken: ct);
+            var client = harness.Client;
+            var published = harness.Broker.Messages.FirstAsync(message => message.Message is OrderPlaced).ToTask();
+
+            // snippet: send-headers
+            var headers = new Dictionary<string, string> { ["x-tenant"] = "acme" };
+            await client.SendAsync(new PlaceOrder("o-1"), headers, ct);
+            // end-snippet
+
+            Assert.Equal("acme", (await published.WaitAsync(TimeSpan.FromSeconds(5), ct)).Headers["x-tenant"]);
         }
 
         [Fact]

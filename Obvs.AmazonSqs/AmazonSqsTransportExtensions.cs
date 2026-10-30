@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Obvs.AmazonSqs;
 using Obvs.Configuration;
+using Obvs.Transports;
 using Obvs.Types;
 
 // In the builder's namespace, so UseAmazonSqs() is found without an extra using

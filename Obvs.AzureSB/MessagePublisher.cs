@@ -1,10 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Obvs.Hosting;
-using Obvs.MessageProperties;
+using Obvs.Transports;
 using Obvs.Serialization;
 
 namespace Obvs.AzureSB
@@ -24,22 +25,22 @@ namespace Obvs.AzureSB
             _replyTo = replyTo;
         }
 
-        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
+        public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
-            var serviceBusMessage = ToServiceBusMessage(message, _serializer);
+            var serviceBusMessage = ToServiceBusMessage(message, headers, _serializer);
             serviceBusMessage.ReplyTo = _replyTo;
             return _sender.SendMessageAsync(serviceBusMessage, cancellationToken);
         }
 
         // The type name tells the receiver which deserializer to use. Obvs headers (such as trace context) become
         // application properties, apart from the type name.
-        public static ServiceBusMessage ToServiceBusMessage(object message, IMessageSerializer serializer)
+        public static ServiceBusMessage ToServiceBusMessage(object message, IReadOnlyDictionary<string, string> headers, IMessageSerializer serializer)
         {
             using (var stream = new MemoryStream())
             {
                 serializer.Serialize(stream, message);
                 var serviceBusMessage = new ServiceBusMessage(stream.ToArray());
-                foreach (var header in ObvsMessageHeaders.Get(message))
+                foreach (var header in headers)
                 {
                     if (header.Key != MessagePropertyNames.TypeName)
                     {

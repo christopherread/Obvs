@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Obvs.RabbitMQ.Extensions;
 using Obvs.Serialization;
+using Obvs.Transports;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -148,7 +149,7 @@ namespace Obvs.RabbitMQ
                     headers[header.Key] = value;
                 }
             }
-            ObvsMessageHeaders.Set(message, headers);
+            ObvsReceivedMessage.Attach(message, headers);
         }
 
         private IMessageDeserializer<TMessage> GetDeserializer(BasicDeliverEventArgs deliverEventArgs)

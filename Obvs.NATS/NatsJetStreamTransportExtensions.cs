@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Obvs.Configuration;
 using Obvs.NATS;
 using Obvs.NATS.JetStream;
+using Obvs.Transports;
 using Obvs.Types;
 
 // In the builder's namespace, so UseNatsJetStream() is found without an extra using

@@ -106,6 +106,12 @@ namespace Obvs.Tests.Hosting.Handlers
                 return _inner.SendAsync(command, cancellationToken);
             }
 
+            public Task SendAsync(ICommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
+            {
+                _recording.Enqueue(("send", command, cancellationToken));
+                return _inner.SendAsync(command, headers, cancellationToken);
+            }
+
             public Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default)
             {
                 return _inner.SendAsync(commands, cancellationToken);
@@ -117,6 +123,12 @@ namespace Obvs.Tests.Hosting.Handlers
                 return _inner.PublishAsync(ev, cancellationToken);
             }
 
+            public Task PublishAsync(IEvent ev, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
+            {
+                _recording.Enqueue(("publish", ev, cancellationToken));
+                return _inner.PublishAsync(ev, headers, cancellationToken);
+            }
+
             public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default)
             {
                 _recording.Enqueue(("reply", response, cancellationToken));
@@ -124,6 +136,7 @@ namespace Obvs.Tests.Hosting.Handlers
             }
 
             public IObservable<IResponse> GetResponses(IRequest request) => _inner.GetResponses(request);
+            public IObservable<IResponse> GetResponses(IRequest request, IReadOnlyDictionary<string, string> headers) => _inner.GetResponses(request, headers);
             public IObservable<T> GetResponses<T>(IRequest request) where T : IResponse => _inner.GetResponses<T>(request);
             public IObservable<T> GetResponse<T>(IRequest request) where T : IResponse => _inner.GetResponse<T>(request);
 

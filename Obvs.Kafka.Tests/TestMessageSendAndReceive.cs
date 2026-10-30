@@ -8,6 +8,7 @@ using System.Xml.Serialization;
 using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
 using Obvs.Serialization.Json;
+using Obvs.Transports;
 using Xunit;
 using IMessage = Obvs.Types.IMessage;
 
@@ -81,9 +82,9 @@ namespace Obvs.Kafka.Tests
             Console.WriteLine($"Waiting {delay1}...");
             await Task.Delay(delay1, TestContext.Current.CancellationToken);
 
-            await _publisher.PublishAsync(new TestMessage($"hello world {DateTime.Now}"), TestContext.Current.CancellationToken);
-            await _publisher.PublishAsync(new TestMessage($"hello world {DateTime.Now}"), TestContext.Current.CancellationToken);
-            await _publisher.PublishAsync(new TestMessage($"hello world {DateTime.Now}"), TestContext.Current.CancellationToken);
+            await _publisher.PublishAsync(new TestMessage($"hello world {DateTime.Now}"), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await _publisher.PublishAsync(new TestMessage($"hello world {DateTime.Now}"), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await _publisher.PublishAsync(new TestMessage($"hello world {DateTime.Now}"), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
             var delay2 = TimeSpan.FromSeconds(2);
             Console.WriteLine($"Waiting {delay2}...");
@@ -108,7 +109,7 @@ namespace Obvs.Kafka.Tests
             using (_source.Messages.OfType<TestMessage>().Subscribe(messages.Enqueue))
             {
                 // No delay: once Subscribe returns, a published message must not be missed
-                await _publisher.PublishAsync(new TestMessage(data), TestContext.Current.CancellationToken);
+                await _publisher.PublishAsync(new TestMessage(data), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
                 var deadline = DateTime.UtcNow.AddSeconds(10);
                 while (!messages.Any(message => message.Data == data) && DateTime.UtcNow < deadline)
@@ -136,7 +137,7 @@ namespace Obvs.Kafka.Tests
                 disposed.TrySetResult(true);
             });
 
-            await _publisher.PublishAsync(new TestMessage($"dispose in callback {Guid.NewGuid()}"), TestContext.Current.CancellationToken);
+            await _publisher.PublishAsync(new TestMessage($"dispose in callback {Guid.NewGuid()}"), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
             Assert.True(await received.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
             Assert.True(await disposed.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));

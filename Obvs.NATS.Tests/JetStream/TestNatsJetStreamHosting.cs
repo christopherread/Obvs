@@ -320,17 +320,16 @@ namespace Obvs.NATS.Tests.JetStream
             using var receiver = await StartHostAsync(serviceName, service => service.AsServer()
                 .HandleCommand<PlaceOrder>((command, context, ct) =>
                 {
-                    received.TrySetResult(ObvsMessageHeaders.Get(command));
+                    received.TrySetResult(context.Headers);
                     return Task.CompletedTask;
                 }));
             using var sender = await StartHostAsync(serviceName, service => service.AsClient());
-            var placeOrder = new PlaceOrder { OrderId = "o-1" };
-            ObvsMessageHeaders.Set(placeOrder, new Dictionary<string, string> { ["x-tenant"] = "acme" });
+            var headers = new Dictionary<string, string> { ["x-tenant"] = "acme" };
 
-            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(placeOrder, TestContext.Current.CancellationToken);
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, headers, TestContext.Current.CancellationToken);
 
-            var headers = await received.Task.WaitAsync(Timeout, Ct);
-            Assert.Equal("acme", headers["x-tenant"]);
+            var arrived = await received.Task.WaitAsync(Timeout, Ct);
+            Assert.Equal("acme", arrived["x-tenant"]);
         }
 
         private static async Task<T> WaitForAsync<T>(Func<T> find) where T : class

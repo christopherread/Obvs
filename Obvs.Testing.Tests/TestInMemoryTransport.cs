@@ -142,6 +142,32 @@ namespace Obvs.Testing.Tests
             Assert.Equal("o-1", received?.OrderId);
         }
 
+        [Fact]
+        public async Task ShouldRecordTheHeadersEachMessageWasSentWith()
+        {
+            var broker = new InMemoryBroker();
+            using var host = await StartHostAsync(obvs => obvs.AddService<IOrderMessage>("orders", service => service.UseInMemory(broker)));
+            var sent = broker.Messages.FirstAsync().ToTask();
+
+            await host.Services.GetRequiredService<IServiceBus>()
+                .SendAsync(new PlaceOrder("o-1"), new Dictionary<string, string> { ["x-tenant"] = "acme" }, TestContext.Current.CancellationToken);
+
+            Assert.Equal("acme", (await sent.WaitAsync(Timeout, TestContext.Current.CancellationToken)).Headers["x-tenant"]);
+        }
+
+        [Fact]
+        public async Task ShouldDeliverTheHeadersAMessageWasSentWith()
+        {
+            // As a broker would, so tests on the in-memory transport see what handlers see in production
+            using var host = await StartHostAsync(obvs => obvs.AddService<IOrderMessage>("orders", service => service.UseInMemory()));
+            var bus = host.Services.GetRequiredService<IServiceBus>();
+            var received = bus.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
+
+            await bus.PublishAsync(new OrderPlaced("o-1"), new Dictionary<string, string> { ["x-tenant"] = "acme" }, TestContext.Current.CancellationToken);
+
+            Assert.Equal("acme", ObvsMessageHeaders.Get(await received.WaitAsync(Timeout, TestContext.Current.CancellationToken))["x-tenant"]);
+        }
+
         private static async Task<IHost> StartHostAsync(Action<ObvsBuilder> configure)
         {
             var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });

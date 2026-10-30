@@ -7,6 +7,7 @@ using Obvs.RabbitMQ.Tests.Messages;
 using Obvs.Serialization;
 using Obvs.Serialization.Json;
 using Obvs.Serialization.ProtoBuf;
+using Obvs.Transports;
 using Obvs.Types;
 using RabbitMQ.Client;
 using Xunit;
@@ -59,7 +60,7 @@ namespace Obvs.RabbitMQ.Tests
 
             foreach (var message in messages)
             {
-                await messagePublisher.PublishAsync(message, TestContext.Current.CancellationToken);
+                await messagePublisher.PublishAsync(message, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);

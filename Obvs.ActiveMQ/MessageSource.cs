@@ -11,7 +11,7 @@ using Apache.NMS;
 using Obvs.ActiveMQ.Extensions;
 using Obvs.ActiveMQ.Utils;
 using Obvs.Hosting;
-using Obvs.MessageProperties;
+using Obvs.Transports;
 using Obvs.Serialization;
 
 // v6's ActiveMQ transport building blocks, which UseActiveMq(...) is built on: its public members are exempt from the rule that every one is documented
@@ -114,7 +114,7 @@ namespace Obvs.ActiveMQ
             }
             if (headers.Count > 0)
             {
-                ObvsMessageHeaders.Set(deserializedMessage, headers);
+                ObvsReceivedMessage.Attach(deserializedMessage, headers);
             }
         }
 

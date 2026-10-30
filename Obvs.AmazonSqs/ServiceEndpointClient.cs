@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SQS;
+using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs.AmazonSqs
@@ -33,9 +35,9 @@ namespace Obvs.AmazonSqs
 
         public bool CanHandle(IMessage message) => _endpointClient.CanHandle(message);
 
-        public Task SendAsync(ICommand command, CancellationToken cancellationToken = default) => _endpointClient.SendAsync(command, cancellationToken);
+        public Task SendAsync(ICommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) => _endpointClient.SendAsync(command, headers, cancellationToken);
 
-        public IObservable<IResponse> GetResponses(IRequest request) => _endpointClient.GetResponses(request);
+        public IObservable<IResponse> GetResponses(IRequest request, IReadOnlyDictionary<string, string> headers) => _endpointClient.GetResponses(request, headers);
 
         public void Dispose()
         {

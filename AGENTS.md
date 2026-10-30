@@ -34,7 +34,7 @@ The build has no warnings. Keep it that way.
 
 | Path | What |
 |---|---|
-| `Obvs/` | The core: `IServiceBus`, endpoints, serialization, and `Hosting/`, where `AddObvs`, handlers, telemetry, contracts and `ObvsBus` live |
+| `Obvs/` | The core: `IServiceBus`, serialization, `Transports/`, what transports are built from (endpoints, publishers, sources and settlement), and `Hosting/`, where `AddObvs`, handlers, telemetry, contracts and `ObvsBus` live |
 | `Obvs.<Transport>/` | A transport. Its `<Transport>TransportExtensions.cs` has `Use<Transport>(...)`, its options and its startup checks |
 | `Obvs.Serialization.*/` | Serializers besides the built-in System.Text.Json |
 | `Obvs.Generators/`, `Obvs.Analyzers/`, `Obvs.Analyzers.CodeFixes/` | The `[ObvsMessages]` source generator, and the analyzers and their code fixes, all shipped in the `Obvs` package |

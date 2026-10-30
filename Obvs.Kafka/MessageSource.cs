@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Obvs.Hosting;
 using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
+using Obvs.Transports;
 using ProtoBuf;
 using SerializationContext = Confluent.Kafka.SerializationContext;
 
@@ -258,7 +259,7 @@ namespace Obvs.Kafka
             {
                 headers[header.Key] = Encoding.UTF8.GetString(header.GetValueBytes());
             }
-            ObvsMessageHeaders.Set(message, headers);
+            ObvsReceivedMessage.Attach(message, headers);
         }
 
         public void Dispose()

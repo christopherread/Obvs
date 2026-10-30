@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Reactive;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using Obvs.Serialization;
 using Obvs.Serialization.Json;
 using Obvs.Serialization.ProtoBuf;
+using Obvs.Transports;
 using Obvs.Types;
 using ProtoBuf;
 using Xunit;
@@ -44,12 +46,12 @@ namespace Obvs.NetMQ.Tests
             IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5560",
                 new JsonMessageSerializer(), topic);
 
-            await publisher.PublishAsync(new TestMessage1 { Id = 1 }, TestContext.Current.CancellationToken);
-            await publisher.PublishAsync(new TestMessage1 { Id = 2 }, TestContext.Current.CancellationToken);
-            await publisher.PublishAsync(new TestMessage2 { Id = 1 }, TestContext.Current.CancellationToken);
-            await publisher.PublishAsync(new TestMessage2 { Id = 2 }, TestContext.Current.CancellationToken);
-            await publisher.PublishAsync(new TestMessage1 { Id = 3 }, TestContext.Current.CancellationToken);
-            await publisher.PublishAsync(new TestMessage2 { Id = 3 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage1 { Id = 1 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage1 { Id = 2 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 1 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 2 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage1 { Id = 3 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 3 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
             await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
             sub.Dispose();
@@ -92,12 +94,12 @@ namespace Obvs.NetMQ.Tests
             IMessagePublisher<IMessage> publisher = new MessagePublisher<IMessage>("tcp://localhost:5561",
                 new ProtoBufMessageSerializer(), topic);
 
-            await publisher.PublishAsync(new TestMessage1 { Id = 1 }, TestContext.Current.CancellationToken);
-            await publisher.PublishAsync(new TestMessage1 { Id = 2 }, TestContext.Current.CancellationToken);
-            await publisher.PublishAsync(new TestMessage2 { Id = 1 }, TestContext.Current.CancellationToken);
-            await publisher.PublishAsync(new TestMessage2 { Id = 2 }, TestContext.Current.CancellationToken);
-            await publisher.PublishAsync(new TestMessage1 { Id = 3 }, TestContext.Current.CancellationToken);
-            await publisher.PublishAsync(new TestMessage2 { Id = 3 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage1 { Id = 1 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage1 { Id = 2 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 1 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 2 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage1 { Id = 3 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new TestMessage2 { Id = 3 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
             await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
             sub.Dispose();
@@ -149,7 +151,7 @@ namespace Obvs.NetMQ.Tests
 				    await publisher.PublishAsync(new TestMessageWhereTypeIsVeryMuchDefinitionLongerThen32Characters()
 				    {
 					    Id = i
-				    }, TestContext.Current.CancellationToken);
+				    }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 			    }
 		    }
 

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NATS.Client.Core;
 using NATS.Client.JetStream;
+using Obvs.Transports;
 
 namespace Obvs.NATS.JetStream
 {

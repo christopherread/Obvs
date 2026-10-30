@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
@@ -20,7 +21,7 @@ namespace Obvs.RabbitMQ.Tests
             var publisher = new MessagePublisher<IOrderMessage>(new Lazy<IConnection>(() => connection), new JsonMessageSerializer(), "orders", "orders.Commands");
             using var cancellation = new CancellationTokenSource();
 
-            await publisher.PublishAsync(new PlaceOrder { OrderId = "o-1" }, cancellation.Token);
+            await publisher.PublishAsync(new PlaceOrder { OrderId = "o-1" }, new Dictionary<string, string>(), cancellation.Token);
 
             A.CallTo(() => channel.BasicPublishAsync(A<string>._, A<string>._, A<bool>._, A<BasicProperties>._, A<ReadOnlyMemory<byte>>._,
                 cancellation.Token)).MustHaveHappenedOnceExactly();

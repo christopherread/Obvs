@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SimpleNotificationService;
@@ -20,7 +21,7 @@ namespace Obvs.AmazonSqs.Tests
             var publisher = new QueueMessagePublisher<IOrderMessage>(sqs, "https://sqs.local/orders-Commands", new JsonMessageSerializer());
             using var cancellation = new CancellationTokenSource();
 
-            await publisher.PublishAsync(new PlaceOrder { OrderId = "o-1" }, cancellation.Token);
+            await publisher.PublishAsync(new PlaceOrder { OrderId = "o-1" }, new Dictionary<string, string>(), cancellation.Token);
 
             A.CallTo(() => sqs.SendMessageAsync(A<SendMessageRequest>._, cancellation.Token)).MustHaveHappenedOnceExactly();
         }
@@ -32,7 +33,7 @@ namespace Obvs.AmazonSqs.Tests
             var publisher = new TopicMessagePublisher<IOrderMessage>(sns, "arn:aws:sns:us-east-1:000000000000:orders-Events", new JsonMessageSerializer());
             using var cancellation = new CancellationTokenSource();
 
-            await publisher.PublishAsync(new OrderPlaced { OrderId = "o-1" }, cancellation.Token);
+            await publisher.PublishAsync(new OrderPlaced { OrderId = "o-1" }, new Dictionary<string, string>(), cancellation.Token);
 
             A.CallTo(() => sns.PublishAsync(A<PublishRequest>._, cancellation.Token)).MustHaveHappenedOnceExactly();
         }

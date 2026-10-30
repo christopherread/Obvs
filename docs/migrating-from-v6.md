@@ -79,6 +79,7 @@ Configuration errors fail startup, all at once, each with its fix. See [configur
 | `SerializedAsJson()`, `SerializedAsProtoBuf()`, `SerializedAsMessagePackCSharp()` | `SerializedWith(serializer, deserializerFactory)`, or nothing for System.Text.Json |
 | `GzippedJsonMessageSerializer` and `GzippedJsonMessageDeserializer` | `Compressed()`, which writes and reads the same bytes |
 | `new ServiceBus(...)`, `new ServiceBusClient(...)` | Resolve `IServiceBus` or `IServiceBusClient` |
+| `IRequestCorrelationProvider` and `DefaultRequestCorrelationProvider` | Nothing: the bus matches responses to requests by request ID and requester ID, as v6's default did |
 | `Obvs.Logging`: `ILogger`, `ILoggerFactory`, `LogLevel`, the console and debug loggers | `Microsoft.Extensions.Logging` |
 | `Obvs.Monitoring`: `IMonitor`, `IMonitorFactory`, the console monitor | OpenTelemetry, through `ObvsTelemetry` |
 | `SubjectServiceBus`, `SubjectMessageBus`, `IMessageBus`, `PublishLocally()` and `LocalBusOptions` | `UseInMemory()` from `Obvs.Testing` |
@@ -145,10 +146,14 @@ var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSecond
 
 ## Custom transports and endpoints
 
-These interfaces gained a `CancellationToken` parameter. Callers compile unchanged, but implementations need the new parameter:
-- `IMessagePublisher<T>.PublishAsync`;
+What transports are built from is in the `Obvs.Transports` namespace: the endpoints, publishers and sources, `IServiceEndpointProvider` (in v6, `Obvs.Configuration`), the message property providers (in v6, `Obvs.MessageProperties`), and settlement.
+
+Every send takes the message's headers, which include its trace context, and a `CancellationToken`:
+- `IMessagePublisher<T>.PublishAsync(message, headers, cancellationToken)`;
 - `IServiceEndpoint`'s `PublishAsync` and `ReplyAsync`;
-- `IServiceEndpointClient.SendAsync`.
+- `IServiceEndpointClient`'s `SendAsync` and `GetResponses`.
+
+A transport sends the headers with the message. When it receives one, it attaches the headers it arrived with by calling `ObvsReceivedMessage.Attach(message, headers)`, so handlers and `ObvsMessageHeaders.Get` see them.
 
 Register a custom transport with `UseEndpointProvider(factory, "MyTransport")`; the name shows in the service's contract. A transport that can't deserialize a message can count it with `ObvsTransportTelemetry.RecordUndeserializable`.
 

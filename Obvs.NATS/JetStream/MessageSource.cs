@@ -14,6 +14,7 @@ using NATS.Client.Core;
 using NATS.Client.JetStream;
 using Obvs.Hosting;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 namespace Obvs.NATS.JetStream
 {
@@ -172,8 +173,8 @@ namespace Obvs.NATS.JetStream
             }
         }
 
-        // Messages of a type this service doesn't know are skipped
-        private TMessage Deserialize(INatsJSMsg<byte[]> received)
+        // Messages of a type this service doesn't know are skipped. The rest carry their headers and settlement
+        private TMessage Deserialize(INatsJSMsg<byte[]> received, IMessageSettlement settlement)
         {
             var typeName = received.Subject.Substring(received.Subject.LastIndexOf('.') + 1);
             if (!_deserializers.TryGetValue(typeName, out var deserializer))
@@ -191,9 +192,9 @@ namespace Obvs.NATS.JetStream
                 ObvsTransportTelemetry.RecordUndeserializable(_serviceName, typeName, exception);
                 throw;
             }
+            var headers = new Dictionary<string, string>();
             if (received.Headers != null)
             {
-                var headers = new Dictionary<string, string>();
                 foreach (var header in received.Headers)
                 {
                     if (header.Key == MessagePublisher<TMessage>.ReplyToHeader)
@@ -205,11 +206,8 @@ namespace Obvs.NATS.JetStream
                         headers[header.Key] = header.Value.ToString();
                     }
                 }
-                if (headers.Count > 0)
-                {
-                    ObvsMessageHeaders.Set(message, headers);
-                }
             }
+            ObvsReceivedMessage.Attach(message, headers, settlement);
             return message;
         }
 
@@ -391,7 +389,7 @@ namespace Obvs.NATS.JetStream
                 TMessage message;
                 try
                 {
-                    message = _source.Deserialize(received);
+                    message = _source.Deserialize(received, settlement);
                 }
                 catch (Exception exception)
                 {
@@ -405,7 +403,6 @@ namespace Obvs.NATS.JetStream
                     return;
                 }
 
-                ObvsMessageSettlement.Set(message, settlement);
                 _waiting[settlement] = true;
                 try
                 {

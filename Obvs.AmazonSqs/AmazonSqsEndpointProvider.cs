@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Obvs.Configuration;
 using Obvs.Serialization;
+using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs.AmazonSqs

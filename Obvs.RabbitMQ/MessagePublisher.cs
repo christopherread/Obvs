@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Serialization;
+using Obvs.Transports;
 using RabbitMQ.Client;
 
 // v6's RabbitMQ transport building blocks, which UseRabbitMq(...) is built on: its public members are exempt from the rule that every one is documented
@@ -33,19 +34,18 @@ namespace Obvs.RabbitMQ
             }, LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
-        public async Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
+        public async Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             var body = _serializer.Serialize(message);
-            var properties = new BasicProperties {ContentType = "bytes", Headers = GetHeaders(message)};
+            var properties = new BasicProperties {ContentType = "bytes", Headers = ToAmqpHeaders(headers)};
             var routingKey = GetRoutingKey(message);
             var channel = await _channel.Value.ConfigureAwait(false);
             await channel.BasicPublishAsync(_exchange, routingKey, false, properties, body, cancellationToken).ConfigureAwait(false);
         }
 
-        // The message's Obvs headers (such as trace context) as AMQP headers
-        private static IDictionary<string, object> GetHeaders(TMessage message)
+        // The Obvs headers (such as trace context) as AMQP headers
+        private static IDictionary<string, object> ToAmqpHeaders(IReadOnlyDictionary<string, string> headers)
         {
-            var headers = ObvsMessageHeaders.Get(message);
             return headers.Count == 0 ? null : headers.ToDictionary(header => header.Key, header => (object)header.Value);
         }
 

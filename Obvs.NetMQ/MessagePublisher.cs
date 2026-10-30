@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using NetMQ.Sockets;
 using Obvs.NetMQ.Configuration;
 using Obvs.NetMQ.Extensions;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 // v6's NetMQ transport building blocks, which UseNetMq(...) is built on: its public members are exempt from the rule that every one is documented
 #pragma warning disable CS1570, CS1572, CS1591
@@ -72,7 +74,7 @@ namespace Obvs.NetMQ
                    topic.StartsWith(Encoding.UTF8.GetString(frame, 1, frame.Length - 1), StringComparison.Ordinal);
         }
 
-        private void Publish(TMessage message)
+        private void Publish(TMessage message, IReadOnlyDictionary<string, string> headers)
         {
             var socket = _socket.Value;
 
@@ -82,13 +84,13 @@ namespace Obvs.NetMQ
             {
             }
 
-            socket.SendToTopic(_topic, message.GetType().Name, _serializer.Serialize(message), _sendHeaders ? ObvsMessageHeaders.Get(message) : null);
+            socket.SendToTopic(_topic, message.GetType().Name, _serializer.Serialize(message), _sendHeaders ? headers : null);
         }
 
-        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
+        public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Publish(message);
+            Publish(message, headers);
             return Task.FromResult(true);
         }
 

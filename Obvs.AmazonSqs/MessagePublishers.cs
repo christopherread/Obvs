@@ -7,6 +7,7 @@ using Amazon.SimpleNotificationService.Model;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 namespace Obvs.AmazonSqs
 {
@@ -29,15 +30,15 @@ namespace Obvs.AmazonSqs
             _replyTo = replyTo;
         }
 
-        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
+        public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
-            return SendAsync(_sqs, _queueUrl, message, _serializer, _replyTo, cancellationToken);
+            return SendAsync(_sqs, _queueUrl, message, headers, _serializer, _replyTo, cancellationToken);
         }
 
-        public static async Task SendAsync(IAmazonSQS sqs, string queueUrl, object message, IMessageSerializer serializer, string replyTo = null,
+        public static async Task SendAsync(IAmazonSQS sqs, string queueUrl, object message, IReadOnlyDictionary<string, string> headers, IMessageSerializer serializer, string replyTo = null,
             CancellationToken cancellationToken = default)
         {
-            var encoded = MessageCodec.Encode(message, serializer, replyTo);
+            var encoded = MessageCodec.Encode(message, headers, serializer, replyTo);
             await sqs.SendMessageAsync(new SendMessageRequest
             {
                 QueueUrl = queueUrl,
@@ -69,9 +70,9 @@ namespace Obvs.AmazonSqs
             _serializer = serializer;
         }
 
-        public async Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
+        public async Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
-            var encoded = MessageCodec.Encode(message, _serializer);
+            var encoded = MessageCodec.Encode(message, headers, _serializer);
             await _sns.PublishAsync(new PublishRequest
             {
                 TopicArn = _topicArn,

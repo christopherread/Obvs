@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Apache.NMS;
 using Obvs.ActiveMQ.Extensions;
 using Obvs.Hosting;
-using Obvs.MessageProperties;
+using Obvs.Transports;
 using Obvs.Serialization;
 
 // v6's ActiveMQ transport building blocks, which UseActiveMq(...) is built on: its public members are exempt from the rule that every one is documented
@@ -27,7 +27,7 @@ namespace Obvs.ActiveMQ
         private readonly Func<TMessage, MsgDeliveryMode> _deliveryMode;
         private readonly Func<TMessage, MsgPriority> _priority;
         private readonly Func<TMessage, TimeSpan> _timeToLive;
-        private readonly Func<TMessage, CancellationToken, Task> _publishMethod;
+        private readonly Func<TMessage, IReadOnlyDictionary<string, string>, CancellationToken, Task> _publishMethod;
         private readonly Func<Task> _drainMethod;
         private readonly object _gate = new object();
 
@@ -64,7 +64,7 @@ namespace Obvs.ActiveMQ
             Func<TMessage, TimeSpan> timeToLive = null)
             : this(lazyConnection, destination, serializer, propertyProvider, deliveryMode, priority, timeToLive)
         {
-            _publishMethod = (message, cancellationToken) => scheduler.ScheduleAsync(() => Publish(message, cancellationToken));
+            _publishMethod = (message, headers, cancellationToken) => scheduler.ScheduleAsync(() => Publish(message, headers, cancellationToken));
             _drainMethod = () => scheduler.ScheduleAsync(() => { });
         }
 
@@ -80,28 +80,28 @@ namespace Obvs.ActiveMQ
             : this(lazyConnection, destination, serializer, propertyProvider, deliveryMode, priority, timeToLive)
         {
             var taskFactory = new TaskFactory(taskScheduler);
-            _publishMethod = (message, cancellationToken) => taskFactory.StartNew(() => Publish(message, cancellationToken), cancellationToken);
+            _publishMethod = (message, headers, cancellationToken) => taskFactory.StartNew(() => Publish(message, headers, cancellationToken), cancellationToken);
             _drainMethod = () => taskFactory.StartNew(() => { });
         }
 
-        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
+        public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             if (_disposed)
             {
                 throw new InvalidOperationException("MessagePublisher has been disposed already.");
             }
 
-            return _publishMethod(message, cancellationToken);
+            return _publishMethod(message, headers, cancellationToken);
         }
 
         // A publish still waiting its turn is dropped if it's cancelled by then
-        private void Publish(TMessage message, CancellationToken cancellationToken)
+        private void Publish(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Publish(message, _propertyProvider(message) ?? new Dictionary<string, object>());
+            Publish(message, _propertyProvider(message) ?? new Dictionary<string, object>(), headers);
         }
 
-        private void Publish(TMessage message, Dictionary<string, object> properties)
+        private void Publish(TMessage message, Dictionary<string, object> properties, IReadOnlyDictionary<string, string> headers)
         {
             if (_disposed)
             {
@@ -115,7 +115,7 @@ namespace Obvs.ActiveMQ
             var msg = GenerateMessage(message, _producer, _serializer);
 
             msg.Properties.AddProperties(properties);
-            SetHeaders(msg, message);
+            SetHeaders(msg, headers);
 
             _producer.Send(msg, _deliveryMode(message), _priority(message), _timeToLive(message));
         }
@@ -136,11 +136,11 @@ namespace Obvs.ActiveMQ
             return bytesMessage;
         }
 
-        // The message's Obvs headers (such as trace context) as message properties, which v6 receivers ignore.
+        // The Obvs headers (such as trace context) as message properties, which v6 receivers ignore.
         // The type name property Obvs relies on is never overwritten.
-        private static void SetHeaders(IMessage msg, TMessage message)
+        private static void SetHeaders(IMessage msg, IReadOnlyDictionary<string, string> headers)
         {
-            foreach (var header in ObvsMessageHeaders.Get(message))
+            foreach (var header in headers)
             {
                 if (header.Key != MessagePropertyNames.TypeName)
                 {

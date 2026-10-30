@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Configuration;
 using Obvs.Extensions;
+using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs
@@ -35,6 +36,11 @@ namespace Obvs
         /// <param name="ev">The event</param>
         /// <param name="cancellationToken">Stops waiting for the broker</param>
         Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default);
+        /// <summary>Publishes <paramref name="ev"/> to every client of its service, with <paramref name="headers"/>.</summary>
+        /// <param name="ev">The event</param>
+        /// <param name="headers">Headers to send with it, which its handlers read from <c>MessageContext.Headers</c>. Obvs sets the trace-context headers itself</param>
+        /// <param name="cancellationToken">Stops waiting for the broker</param>
+        Task PublishAsync(TEvent ev, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default);
         /// <summary>Sends <paramref name="response"/> to whoever sent <paramref name="request"/>.</summary>
         /// <param name="request">The request being answered</param>
         /// <param name="response">The answer</param>
@@ -43,7 +49,7 @@ namespace Obvs
     }
 
     /// <summary>The bus, for the bus's standard message interfaces.</summary>
-    public class ServiceBus : IServiceBus, IDisposable
+    internal class ServiceBus : IServiceBus, IDisposable
     {
         private readonly IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse> _serviceBus;
         private int _disposed;
@@ -76,6 +82,12 @@ namespace Obvs
         }
 
         /// <inheritdoc />
+        public Task SendAsync(ICommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
+        {
+            return _serviceBus.SendAsync(command, headers, cancellationToken);
+        }
+
+        /// <inheritdoc />
         public Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default)
         {
             return _serviceBus.SendAsync(commands, cancellationToken);
@@ -85,6 +97,12 @@ namespace Obvs
         public IObservable<IResponse> GetResponses(IRequest request)
         {
             return _serviceBus.GetResponses(request);
+        }
+
+        /// <inheritdoc />
+        public IObservable<IResponse> GetResponses(IRequest request, IReadOnlyDictionary<string, string> headers)
+        {
+            return _serviceBus.GetResponses(request, headers);
         }
 
         /// <inheritdoc />
@@ -115,6 +133,12 @@ namespace Obvs
         }
 
         /// <inheritdoc />
+        public Task PublishAsync(IEvent ev, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
+        {
+            return _serviceBus.PublishAsync(ev, headers, cancellationToken);
+        }
+
+        /// <inheritdoc />
         public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default)
         {
             return _serviceBus.ReplyAsync(request, response, cancellationToken);
@@ -133,7 +157,7 @@ namespace Obvs
     }
 
     /// <summary>The bus, over the services' endpoints.</summary>
-    public class ServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> : 
+    internal class ServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse> : 
         ServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse>, IServiceBus<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TCommand : class, TMessage
@@ -174,12 +198,22 @@ namespace Obvs
         /// <inheritdoc />
         public Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default)
         {
+            return PublishAsync(ev, ObvsReceivedMessage.NoHeaders, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public Task PublishAsync(TEvent ev, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
+        {
+            if (headers == null)
+            {
+                throw new ArgumentNullException(nameof(headers));
+            }
             cancellationToken.ThrowIfCancellationRequested();
 
             var exceptions = new List<Exception>();
 
             var tasks = EndpointsThatCanHandle(ev)
-                .Select(endpoint => CatchUnlessCancelled(() => endpoint.PublishAsync(ev, cancellationToken), exceptions, cancellationToken, EventErrorMessage(endpoint)))
+                .Select(endpoint => CatchUnlessCancelled(() => endpoint.PublishAsync(ev, headers, cancellationToken), exceptions, cancellationToken, EventErrorMessage(endpoint)))
                 .ToArray();
 
             if (exceptions.Any())
@@ -206,7 +240,7 @@ namespace Obvs
             var exceptions = new List<Exception>();
 
             var tasks = EndpointsThatCanHandle(response)
-                    .Select(endpoint => CatchUnlessCancelled(() => endpoint.ReplyAsync(request, response, cancellationToken), exceptions, cancellationToken, ReplyErrorMessage(endpoint)))
+                    .Select(endpoint => CatchUnlessCancelled(() => endpoint.ReplyAsync(request, response, ObvsReceivedMessage.NoHeaders, cancellationToken), exceptions, cancellationToken, ReplyErrorMessage(endpoint)))
                     .ToArray();
 
             if (exceptions.Any())

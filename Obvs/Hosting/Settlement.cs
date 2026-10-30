@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Obvs.Transports;
 
 namespace Obvs.Hosting
 {
@@ -25,7 +26,7 @@ namespace Obvs.Hosting
 
         private static async Task SettleAsync(object message, Func<IMessageSettlement, Task> settle, string serviceName, ILogger logger)
         {
-            var settlement = ObvsMessageSettlement.Get(message);
+            var settlement = ObvsReceivedMessage.GetSettlement(message);
             if (settlement == null)
             {
                 return;

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SQS;
 using Amazon.SQS.Model;
+using Obvs.Transports;
 
 namespace Obvs.AmazonSqs
 {

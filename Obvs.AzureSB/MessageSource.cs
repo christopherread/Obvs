@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Obvs.Hosting;
-using Obvs.MessageProperties;
+using Obvs.Transports;
 using Obvs.Serialization;
 
 namespace Obvs.AzureSB
@@ -67,9 +67,10 @@ namespace Obvs.AzureSB
                     processor.ProcessMessageAsync += async args =>
                     {
                         TMessage message;
+                        IReadOnlyDictionary<string, string> headers;
                         try
                         {
-                            message = Deserialize(args.Message);
+                            message = Deserialize(args.Message, out headers);
                         }
                         catch (Exception)
                         {
@@ -84,7 +85,7 @@ namespace Obvs.AzureSB
                         }
 
                         var settlement = new MessageSettlement(args, _options.MaxDeliveryAttempts);
-                        ObvsMessageSettlement.Set(message, settlement);
+                        ObvsReceivedMessage.Attach(message, headers, settlement);
                         waiting[settlement] = true;
                         try
                         {
@@ -166,8 +167,9 @@ namespace Obvs.AzureSB
         }
 
         // Messages of a type this service doesn't know are skipped
-        private TMessage Deserialize(ServiceBusReceivedMessage received)
+        private TMessage Deserialize(ServiceBusReceivedMessage received, out IReadOnlyDictionary<string, string> headers)
         {
+            headers = null;
             if (!(received.ApplicationProperties.TryGetValue(MessagePropertyNames.TypeName, out var typeName) && typeName is string name) ||
                 !_deserializers.TryGetValue(name, out var deserializer))
             {
@@ -184,13 +186,9 @@ namespace Obvs.AzureSB
                 ObvsTransportTelemetry.RecordUndeserializable(_options.ServiceName, name, exception);
                 throw;
             }
-            var headers = received.ApplicationProperties
+            headers = received.ApplicationProperties
                 .Where(property => property.Key != MessagePropertyNames.TypeName && property.Value is string)
                 .ToDictionary(property => property.Key, property => (string)property.Value);
-            if (headers.Count > 0)
-            {
-                ObvsMessageHeaders.Set(message, headers);
-            }
             if (!string.IsNullOrEmpty(received.ReplyTo))
             {
                 ReplyAddresses.Set(message, received.ReplyTo);

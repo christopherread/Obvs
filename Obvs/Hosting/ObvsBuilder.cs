@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Obvs.Configuration;
+using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs.Hosting

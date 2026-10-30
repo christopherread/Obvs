@@ -5,12 +5,12 @@ using Obvs.Types;
 namespace Obvs
 {
     /// <summary>Correlates responses with requests, for the bus's standard message interfaces.</summary>
-    public interface IRequestCorrelationProvider : IRequestCorrelationProvider<IRequest, IResponse>
+    internal interface IRequestCorrelationProvider : IRequestCorrelationProvider<IRequest, IResponse>
     {
     }
 
     /// <summary>Correlates responses with the requests they answer.</summary>
-    public interface IRequestCorrelationProvider<in TRequest, in TResponse>
+    internal interface IRequestCorrelationProvider<in TRequest, in TResponse>
         where TRequest : class
         where TResponse : class
     {
@@ -23,7 +23,7 @@ namespace Obvs
     }
 
     /// <summary>Correlates by <see cref="Types.IRequest.RequestId"/> and <see cref="Types.IRequest.RequesterId"/>: a new GUID and this process's <see cref="Configuration.RequesterId"/>.</summary>
-    public class DefaultRequestCorrelationProvider : IRequestCorrelationProvider
+    internal class DefaultRequestCorrelationProvider : IRequestCorrelationProvider
     {
         /// <inheritdoc />
         public void SetRequestCorrelationIds(IRequest request)

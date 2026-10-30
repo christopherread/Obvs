@@ -7,7 +7,7 @@ Key types: `IServiceBus` and `IServiceBusClient` (the bus), `ObvsServiceBuilder`
 ## Docs
 
 - [README](https://github.com/christopherread/Obvs/blob/master/README.md): what Obvs is, and a quick start
-- [Common tasks](https://github.com/christopherread/Obvs/blob/master/docs/common-tasks.md): define messages, add a service, handle and send commands, events, requests, errors, tests, tracing, without a host
+- [Common tasks](https://github.com/christopherread/Obvs/blob/master/docs/common-tasks.md): define messages, add a service, handle and send commands, events, requests, headers, errors, tests, tracing, without a host
 - [Testing](https://github.com/christopherread/Obvs/blob/master/docs/testing.md): the in-memory transport and test harness
 - [Configuration errors](https://github.com/christopherread/Obvs/blob/master/docs/configuration-errors.md): every startup check, and its fix
 - [Analyzers](https://github.com/christopherread/Obvs/blob/master/docs/analyzers.md): OBVS001 to OBVS006

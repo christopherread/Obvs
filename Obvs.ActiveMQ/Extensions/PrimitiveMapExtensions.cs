@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Apache.NMS;
-using Obvs.MessageProperties;
+using Obvs.Transports;
 
 namespace Obvs.ActiveMQ.Extensions
 {

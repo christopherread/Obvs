@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading;
 using Obvs.Configuration;
 using Obvs.Serialization;
+using Obvs.Transports;
 using RabbitMQ.Client;
 
 // v6's RabbitMQ transport building blocks, which UseRabbitMq(...) is built on: its public members are exempt from the rule that every one is documented

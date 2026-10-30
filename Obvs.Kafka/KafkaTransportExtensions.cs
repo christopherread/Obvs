@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Obvs.Configuration;
 using Obvs.Kafka;
 using Obvs.Kafka.Configuration;
+using Obvs.Transports;
 using Obvs.Types;
 
 // In the builder's namespace, so UseKafka() is found without an extra using

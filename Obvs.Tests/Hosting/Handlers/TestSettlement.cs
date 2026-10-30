@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Obvs.Configuration;
 using Obvs.Hosting;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -199,7 +201,7 @@ namespace Obvs.Tests.Hosting.Handlers
             public void Deliver(IMessage message)
             {
                 var id = Id(message);
-                ObvsMessageSettlement.Set(message, new Settlement(this, id));
+                ObvsReceivedMessage.Attach(message, new Dictionary<string, string>(), new Settlement(this, id));
                 switch (message)
                 {
                     case ICommand command:
@@ -298,7 +300,7 @@ namespace Obvs.Tests.Hosting.Handlers
 
                 public Publisher(Action<T> publish) => _publish = publish;
 
-                public Task PublishAsync(T message, CancellationToken cancellationToken = default)
+                public Task PublishAsync(T message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
                 {
                     _publish(message);
                     return Task.CompletedTask;

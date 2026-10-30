@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using FakeItEasy;
-using Obvs.MessageProperties;
+using Obvs.Transports;
 using Xunit;
 
 namespace Obvs.AmazonSqs.Tests
