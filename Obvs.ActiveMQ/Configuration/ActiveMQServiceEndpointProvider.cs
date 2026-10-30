@@ -6,6 +6,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reflection;
 using Apache.NMS;
+using Obvs.ActiveMQ.Utils;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using Obvs.Configuration;
@@ -208,9 +209,13 @@ namespace Obvs.ActiveMQ.Configuration
                 if (lazyConnection.IsValueCreated &&
                     lazyConnection.Value.IsStarted)
                 {
-                    lazyConnection.Value.Stop();
-                    lazyConnection.Value.Close();
-                    lazyConnection.Value.Dispose();
+                    var connection = lazyConnection.Value;
+                    ConnectionClosing.Close(connection, () =>
+                    {
+                        connection.Stop();
+                        connection.Close();
+                        connection.Dispose();
+                    });
                 }
             });
         }

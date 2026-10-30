@@ -17,4 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Obvs\Obvs.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Obvs.ActiveMQ.Tests" />
+  </ItemGroup>
 </Project>
