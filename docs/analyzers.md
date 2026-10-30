@@ -77,7 +77,7 @@ A service needs a transport to send and receive its messages. Without one, the b
 bus.Events.OfType<OrderPlaced>().Subscribe(placed => Ship(placed)); // OBVS005
 ```
 
-`Subscribe` returns the subscription. Without it, the subscription can't be stopped, and it keeps receiving until the app ends.
+`Subscribe` and `SubscribeAsync` return the subscription. Without it, the subscription can't be stopped, and it keeps receiving until the app ends.
 
 **Fix:** keep the subscription, and dispose it when you're done. The code fix stores it in a local. Better still, for work the app does as long as it runs, use a handler: `HandleCommand`, `HandleEvent` or `HandleRequest`. Handlers start and stop with the host, and settle each message once it's handled.
 
@@ -92,12 +92,12 @@ var subscription = bus.Events.OfType<OrderPlaced>()
 
 `Subscribe` takes an `Action<T>`, so an async lambda compiles to `async void`. Each message starts its own run without waiting for the last, so messages are handled at the same time and out of order. An exception can't reach the subscription, so it crashes the app.
 
-**Fix:** use a handler (`HandleCommand`, `HandleEvent` or `HandleRequest`). It awaits each message, takes `MaxConcurrency` for how many at once, and logs and traces failures. Or the code fix runs the lambda for each message in turn, so an exception ends the subscription through `OnError`:
+**Fix:** the code fix changes `Subscribe` to `SubscribeAsync`. It awaits each message in turn, or up to `maxConcurrency` at once, carries on after a failure, which it logs and traces, and settles each message once it's processed (see [process a stream with Rx](common-tasks.md#process-a-stream-with-rx)):
 
 <!-- snippet: obvs006-fixed -->
 ```csharp
 var subscription = bus.Events.OfType<OrderPlaced>()
-    .Select(placed => Observable.FromAsync(async () => await ShipAsync(placed)))
-    .Concat()
-    .Subscribe();
+    .SubscribeAsync(async placed => await ShipAsync(placed));
 ```
+
+For work the app does as long as it runs, a handler (`HandleCommand`, `HandleEvent` or `HandleRequest`) is better still: it starts and stops with the host, and runs each message in a DI scope.

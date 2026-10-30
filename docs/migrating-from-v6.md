@@ -119,7 +119,7 @@ The v6 code runs as `async void`. Commands are handled at the same time, out of 
 
 `HandleEvent` and `HandleRequest` work the same way. A request handler returns its response.
 
-The streams are still there for what Rx does best: `bus.Events.OfType<OrderPlaced>().Buffer(...)`. To read one at your own pace: `await foreach (var placed in client.ReadEventsAsync<OrderPlaced>(ct))`.
+The streams are still there for what Rx does best: `bus.Events.OfType<OrderPlaced>().Buffer(...)`. To process one with async code, use `SubscribeAsync(async (placed, ct) => ...)`, which awaits and settles each message as a handler does. To read one at your own pace: `await foreach (var placed in client.ReadEventsAsync<OrderPlaced>(ct))`.
 
 ## Requests
 

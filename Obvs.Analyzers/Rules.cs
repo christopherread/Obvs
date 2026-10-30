@@ -38,7 +38,7 @@ namespace Obvs.Analyzers
         public static readonly DiagnosticDescriptor AsyncVoidSubscriber = Create(
             "OBVS006",
             "An async lambda subscribes to a bus stream",
-            "This async lambda runs as async void: messages are handled at the same time and out of order, and an exception crashes the app. Use HandleCommand, HandleEvent or HandleRequest, or run each in turn with Select(m => Observable.FromAsync(...)).Concat().");
+            "This async lambda runs as async void: messages are handled at the same time and out of order, and an exception crashes the app. Use SubscribeAsync, which awaits each message in turn and settles it, or HandleCommand, HandleEvent or HandleRequest.");
 
         private static DiagnosticDescriptor Create(string id, string title, string message)
         {

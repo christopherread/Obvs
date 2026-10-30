@@ -7,8 +7,8 @@ namespace Obvs.Transports
 {
     /// <summary>
     /// How a transport settles a message it delivered, for transports whose broker keeps a message until
-    /// it's settled. A message's handler settles it once it has run; messages no handler handles are
-    /// completed when they arrive.
+    /// it's settled. The handlers and <c>SubscribeAsync</c> subscriptions a message reaches settle it once
+    /// they've all processed it; a message none of them processes is completed when it arrives.
     /// </summary>
     public interface IMessageSettlement
     {

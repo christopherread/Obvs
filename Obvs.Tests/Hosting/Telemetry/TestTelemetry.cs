@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
@@ -99,6 +100,43 @@ namespace Obvs.Tests.Hosting.Telemetry
             Assert.Equal(ActivityStatusCode.Error, span.Status);
             Assert.Equal(typeof(InvalidOperationException).FullName, span.GetTagItem("error.type"));
             Assert.Contains(span.Events, activityEvent => activityEvent.Name == "exception");
+        }
+
+        [Fact]
+        public async Task ShouldTraceProcessingAMessageWithSubscribeAsync()
+        {
+            using var activities = new ActivityRecorder();
+            await using var harness = await StartAsync(service => { });
+            using var subscription = harness.Bus.Commands.OfType<PlaceOrder>().SubscribeAsync((command, ct) => Task.CompletedTask);
+
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
+
+            var span = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"process {_service}"));
+            Assert.Equal(ActivityKind.Consumer, span.Kind);
+            Assert.Equal(nameof(PlaceOrder), span.GetTagItem("obvs.message.type"));
+            Assert.NotEqual(ActivityStatusCode.Error, span.Status);
+        }
+
+        [Fact]
+        public async Task ShouldRecordAFailureInSubscribeAsyncOnItsSpanAndInMetrics()
+        {
+            using var activities = new ActivityRecorder();
+            using var metrics = new MetricRecorder();
+            await using var harness = await StartAsync(service => { });
+            using var subscription = harness.Bus.Commands.OfType<PlaceOrder>()
+                .SubscribeAsync((command, ct) => throw new InvalidOperationException("boom"));
+
+            await harness.Client.SendAsync(new PlaceOrder("o-1"), TestContext.Current.CancellationToken);
+
+            var span = await WaitForAsync(() => activities.For(_service).SingleOrDefault(activity => activity.DisplayName == $"process {_service}"));
+            Assert.Equal(ActivityStatusCode.Error, span.Status);
+            Assert.Equal(typeof(InvalidOperationException).FullName, span.GetTagItem("error.type"));
+            var failed = await WaitForAsync(() =>
+            {
+                var measurements = metrics.For(_service, "obvs.process.failed.messages");
+                return measurements.Count == 1 ? measurements : null;
+            });
+            Assert.Equal(nameof(PlaceOrder), failed.Single().Tags["obvs.message.type"]);
         }
 
         [Fact]

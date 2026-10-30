@@ -186,6 +186,29 @@ namespace Obvs.Samples
         }
 
         [Fact]
+        public async Task ProcessAStreamWithRx()
+        {
+            await using var harness = await ObvsTestHarness.StartAsync(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseInMemory())), cancellationToken: Ct);
+            var bus = harness.Bus;
+            var shipped = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Task ShipAsync(OrderPlaced placed, CancellationToken ct)
+            {
+                shipped.TrySetResult(placed.OrderId);
+                return Task.CompletedTask;
+            }
+
+            // snippet: subscribe-async
+            using var subscription = bus.Events.OfType<OrderPlaced>()
+                .Where(placed => placed.OrderId.StartsWith("o-"))
+                .SubscribeAsync(async (placed, ct) => await ShipAsync(placed, ct));
+            // end-snippet
+
+            await bus.PublishAsync(new OrderPlaced("o-1"), Ct);
+            Assert.Equal("o-1", await shipped.Task.WaitAsync(TimeSpan.FromSeconds(5), Ct));
+        }
+
+        [Fact]
         public async Task ReadEventsAtYourOwnPace()
         {
             await using var harness = await ObvsTestHarness.StartAsync(services => services.AddObvs(obvs => obvs

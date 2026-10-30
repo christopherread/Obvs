@@ -7,8 +7,8 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Obvs.Analyzers
 {
     /// <summary>
-    /// Checks each <c>Subscribe</c> to one of the bus's streams, directly or through Rx operators: OBVS005, the
-    /// subscription is kept; OBVS006, it isn't an async lambda, which would run as async void.
+    /// Checks each <c>Subscribe</c> or <c>SubscribeAsync</c> to one of the bus's streams, directly or through Rx operators:
+    /// OBVS005, the subscription is kept; OBVS006, <c>Subscribe</c> isn't given an async lambda, which would run as async void.
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class SubscriptionAnalyzer : DiagnosticAnalyzer
@@ -34,7 +34,7 @@ namespace Obvs.Analyzers
         private static void Analyze(OperationAnalysisContext context, INamedTypeSymbol busClient)
         {
             var subscribe = (IInvocationOperation)context.Operation;
-            if (subscribe.TargetMethod.Name != "Subscribe" || !FromBus(Source(subscribe), busClient))
+            if ((subscribe.TargetMethod.Name != "Subscribe" && subscribe.TargetMethod.Name != "SubscribeAsync") || !FromBus(Source(subscribe), busClient))
             {
                 return;
             }

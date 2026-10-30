@@ -162,6 +162,21 @@ service.HandleCommand<PlaceOrder>(async (command, context, ct) =>
 
 Obvs sets the trace-context headers, `traceparent` and `tracestate`, on every message itself, replacing any the app passes, so a message passed on continues the current trace. Rx subscribers read the headers a message arrived with from `ObvsMessageHeaders.Get(message)`.
 
+## Process a stream with Rx
+
+Handlers are the usual way to process messages. To process one of the bus's Rx streams with async code, after Rx operators, use `SubscribeAsync`, not `Subscribe(async ...)`:
+
+<!-- snippet: subscribe-async -->
+```csharp
+using var subscription = bus.Events.OfType<OrderPlaced>()
+    .Where(placed => placed.OrderId.StartsWith("o-"))
+    .SubscribeAsync(async (placed, ct) => await ShipAsync(placed, ct));
+```
+
+It awaits each message in turn, or up to `maxConcurrency` at once, and carries on after a failure, which it logs, traces and passes to `onError`. Like a handler, it settles each message once it's processed, so Azure Service Bus, Amazon SQS and NATS JetStream deliver a failed message again. When handlers and subscriptions all process one message, it's settled once they all have. Dispose the subscription to stop: messages it hadn't finished go back to the broker.
+
+Plain `Subscribe` only observes: a message nothing processes is completed when it arrives. So is one that reaches `SubscribeAsync` through an operator that passes it on later, such as `ObserveOn`, or replaces it, such as `Select`.
+
 ## Read events at your own pace
 
 <!-- snippet: read-events -->
@@ -175,7 +190,7 @@ await foreach (var placed in client.ReadEventsAsync<OrderPlaced>(ct))
 
 ## Handle errors
 
-When a handler throws, Obvs logs the exception with the service and message, traces it, and settles the message as the transport allows:
+When a handler or a `SubscribeAsync` throws, Obvs logs the exception with the service and message, traces it, and settles the message as the transport allows:
 - **Azure Service Bus, Amazon SQS and NATS JetStream** deliver it again, then dead-letter it after `MaxDeliveryAttempts`.
 - **The other transports** have already removed it from the broker by then.
 

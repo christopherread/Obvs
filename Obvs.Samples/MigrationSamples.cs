@@ -81,9 +81,7 @@ namespace Obvs.Samples
         {
             // snippet: obvs006-fixed
             var subscription = bus.Events.OfType<OrderPlaced>()
-                .Select(placed => Observable.FromAsync(async () => await ShipAsync(placed)))
-                .Concat()
-                .Subscribe();
+                .SubscribeAsync(async placed => await ShipAsync(placed));
             // end-snippet
             return subscription;
         }
