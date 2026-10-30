@@ -136,7 +136,7 @@ The analyzer ships inside the main package, so it's on by default. First rules:
 | OBVS003 | A request handler's response type doesn't implement `IResponse` for the same service | — |
 | OBVS004 | A service has no transport (it always has a serializer, System.Text.Json by default) | Add `Use<Transport>()` |
 | OBVS005 | The result of `Subscribe` on a bus stream is discarded | Store the subscription, or suggest a handler |
-| OBVS006 | An `async` lambda passed to `Subscribe` on a bus stream (compiles to `async void`) | Run it for each message in turn with `Select(m => Observable.FromAsync(...)).Concat()`. Moving it to a handler is in the bus's configuration, which a code fix can't reach, so the message suggests it |
+| OBVS006 | An `async` lambda passed to `Subscribe` on a bus stream (compiles to `async void`) | Change `Subscribe` to `SubscribeAsync`, which awaits each message in turn and settles it. Moving it to a handler is in the bus's configuration, which a code fix can't reach, so the message suggests it |
 
 Each diagnostic says what's wrong, how to fix it, and links to a docs page: [analyzers.md](analyzers.md).
 
@@ -246,7 +246,7 @@ var unpaid = bus.Events.OfType<OrderPlaced>()
 - **Cancellation:** every async method takes a `CancellationToken`.
 - **Replies:** `MessageContext` carries the message's headers and correlation ID, and lets a handler publish, send or reply, so replies can't go to the wrong place.
 - **Errors:** handler exceptions are logged, traced, and either retried or dead-lettered according to transport options. They don't vanish, and they never end the underlying stream.
-- **One obvious way:** two ways to consume messages is a cost. Analyzer OBVS006 (see 3) flags `Subscribe(async ...)` on a bus stream and offers a code fix that turns it into a handler, so the guidance is enforced by the compiler, not a style guide.
+- **One obvious way:** two ways to consume messages is a cost. Analyzer OBVS006 (see 3) flags `Subscribe(async ...)` on a bus stream and offers a code fix that turns it into `SubscribeAsync`, which processes messages as a handler does, so the guidance is enforced by the compiler, not a style guide.
 
 #### The name
 

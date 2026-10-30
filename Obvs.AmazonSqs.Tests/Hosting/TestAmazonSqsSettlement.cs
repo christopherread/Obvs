@@ -69,6 +69,26 @@ namespace Obvs.AmazonSqs.Tests.Hosting
         }
 
         [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldRedeliverACommandWhoseSubscribeAsyncFails()
+        {
+            var serviceName = _serviceNames.Create("redeliver-rx");
+            var attempts = 0;
+            using var host = await TestAmazonSqsHosting.StartHostAsync(serviceName,
+                configureOptions: options => options.VisibilityTimeout = TimeSpan.FromMinutes(5));
+            var bus = host.Services.GetRequiredService<IServiceBus>();
+            using var subscription = bus.Commands.OfType<PlaceOrder>().SubscribeAsync((command, ct) => Interlocked.Increment(ref attempts) == 1
+                ? throw new InvalidOperationException("Out of stock")
+                : Task.CompletedTask);
+
+            await bus.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+
+            await WaitUntilAsync(() => Task.FromResult(Volatile.Read(ref attempts) == 2));
+            await WaitUntilAsync(async () => await TestBroker.MessagesOnQueueAsync($"{serviceName}-commands", Ct) == 0);
+            await Task.Delay(TimeSpan.FromSeconds(2), Ct);
+            Assert.Equal(2, Volatile.Read(ref attempts));
+        }
+
+        [Fact, Trait("Category", "Explicit")]
         public async Task ShouldDeadLetterACommandAfterMaxDeliveryAttempts()
         {
             var serviceName = _serviceNames.Create("dead-letter");

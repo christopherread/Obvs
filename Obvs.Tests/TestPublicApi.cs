@@ -20,6 +20,7 @@ namespace Obvs.Tests
                 "IServiceBus`5",
                 "IServiceBusClient",
                 "IServiceBusClient`5",
+                "ObservableSubscribeAsyncExtensions",
                 "ObvsMessageHeaders",
                 "ServiceBusAsyncEnumerableExtensions",
                 "ServiceBusClientRequestExtensions",

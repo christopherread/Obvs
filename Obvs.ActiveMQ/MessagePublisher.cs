@@ -5,6 +5,7 @@ using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
 using Apache.NMS;
+using Obvs.ActiveMQ.Utils;
 using Obvs.ActiveMQ.Extensions;
 using Obvs.Hosting;
 using Obvs.Transports;
@@ -178,10 +179,13 @@ namespace Obvs.ActiveMQ
 
                             DrainScheduler();
 
-                            _producer.Close();
-                            _producer.Dispose();
-                            _session.Close();
-                            _session.Dispose();
+                            ConnectionClosing.Close(_connection.Value, () =>
+                            {
+                                _producer.Close();
+                                _producer.Dispose();
+                                _session.Close();
+                                _session.Dispose();
+                            });
                         });
                     }
                 }

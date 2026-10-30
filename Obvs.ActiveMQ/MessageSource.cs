@@ -48,7 +48,8 @@ namespace Obvs.ActiveMQ
 
             var messages = Observable.Create<TMessage>(observer =>
                 {
-                    var session = _lazyConnection.Value.CreateSession(_mode);
+                    var connection = _lazyConnection.Value;
+                    var session = connection.CreateSession(_mode);
 
                     var subscription = session
                         .ToObservable(_destination, _selector, _noLocal)
@@ -65,8 +66,11 @@ namespace Obvs.ActiveMQ
                     return Disposable.Create(() =>
                     {
                         subscription.Dispose();
-                        session.Close();
-                        session.Dispose();
+                        ConnectionClosing.Close(connection, () =>
+                        {
+                            session.Close();
+                            session.Dispose();
+                        });
                     });
                 });
 

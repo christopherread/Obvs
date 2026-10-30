@@ -223,6 +223,28 @@ namespace Contoso.Orders
             Assert.Contains("var subscription = bus.Commands.Subscribe(command => { });", Normalize(fixedSource));
         }
 
+        [Fact]
+        public async Task ShouldReportADiscardedSubscribeAsync()
+        {
+            var diagnostic = Assert.Single(await DiagnosticsAsync(UsingBus("bus.Events.OfType<OrderPlaced>().SubscribeAsync(async placed => await Task.Delay(1));")));
+
+            Assert.Equal("OBVS005", diagnostic.Id);
+        }
+
+        [Fact]
+        public async Task ShouldFixADiscardedSubscribeAsyncByKeepingIt()
+        {
+            var fixedSource = await FixAsync(UsingBus("bus.Commands.SubscribeAsync(async command => await Task.Delay(1));"), "OBVS005");
+
+            Assert.Contains("var subscription = bus.Commands.SubscribeAsync(async command => await Task.Delay(1));", Normalize(fixedSource));
+        }
+
+        [Fact]
+        public async Task ShouldAcceptAKeptSubscribeAsync()
+        {
+            Assert.Empty(await DiagnosticsAsync(UsingBus("var subscription = bus.Events.SubscribeAsync(async (ev, ct) => await Task.Delay(1, ct));")));
+        }
+
         // OBVS006: async void
 
         [Fact]
@@ -231,16 +253,26 @@ namespace Contoso.Orders
             var diagnostic = Assert.Single(await DiagnosticsAsync(UsingBus("var subscription = bus.Events.Subscribe(async ev => await Task.Delay(1));")));
 
             Assert.Equal("OBVS006", diagnostic.Id);
+            Assert.Contains("SubscribeAsync", diagnostic.GetMessage());
             Assert.Contains("HandleEvent", diagnostic.GetMessage());
         }
 
         [Fact]
-        public async Task ShouldFixAnAsyncLambdaByRunningItInOrder()
+        public async Task ShouldFixAnAsyncLambdaBySubscribingAsync()
         {
             var fixedSource = await FixAsync(UsingBus("var subscription = bus.Events.Subscribe(async ev => await Task.Delay(1));"), "OBVS006");
 
-            Assert.Contains("var subscription = bus.Events.Select(ev => Observable.FromAsync(async () => await Task.Delay(1))).Concat().Subscribe();", Normalize(fixedSource));
-            Assert.Empty((await DiagnosticsAsync(fixedSource.Substring(Prelude.Length))).Where(d => d.Id == "OBVS006"));
+            Assert.Contains("var subscription = bus.Events.SubscribeAsync(async ev => await Task.Delay(1));", Normalize(fixedSource));
+            Assert.Empty(await DiagnosticsAsync(fixedSource.Substring(Prelude.Length)));
+        }
+
+        [Fact]
+        public async Task ShouldFixAnAsyncLambdaWithABlockBySubscribingAsync()
+        {
+            var fixedSource = await FixAsync(UsingBus("var subscription = bus.Commands.OfType<PlaceOrder>().Subscribe(async command => { await Task.Delay(1); });"), "OBVS006");
+
+            Assert.Contains("var subscription = bus.Commands.OfType<PlaceOrder>().SubscribeAsync(async command => { await Task.Delay(1); });", Normalize(fixedSource));
+            Assert.Empty(await DiagnosticsAsync(fixedSource.Substring(Prelude.Length)));
         }
     }
 }
