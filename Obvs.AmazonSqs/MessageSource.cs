@@ -15,6 +15,7 @@ using Amazon.SQS.Model;
 using Microsoft.Extensions.Logging;
 using Obvs.Hosting;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 namespace Obvs.AmazonSqs
 {
@@ -95,8 +96,9 @@ namespace Obvs.AmazonSqs
         }
 
         // Messages of a type this service doesn't know are skipped
-        private TMessage Deserialize(Message received)
+        private TMessage Deserialize(Message received, out IReadOnlyDictionary<string, string> headers)
         {
+            headers = null;
             var attributes = (received.MessageAttributes ?? new Dictionary<string, MessageAttributeValue>())
                 .Where(attribute => attribute.Value?.StringValue != null)
                 .ToDictionary(attribute => attribute.Key, attribute => attribute.Value.StringValue);
@@ -116,10 +118,7 @@ namespace Obvs.AmazonSqs
                 ObvsTransportTelemetry.RecordUndeserializable(_options.ServiceName, decoded.TypeName, exception);
                 throw;
             }
-            if (decoded.Headers.Count > 0)
-            {
-                ObvsMessageHeaders.Set(message, decoded.Headers);
-            }
+            headers = decoded.Headers;
             if (!string.IsNullOrEmpty(decoded.ReplyTo))
             {
                 ReplyAddresses.Set(message, decoded.ReplyTo);
@@ -272,9 +271,10 @@ namespace Obvs.AmazonSqs
             private void Deliver(Message received)
             {
                 TMessage message;
+                IReadOnlyDictionary<string, string> headers;
                 try
                 {
-                    message = _source.Deserialize(received);
+                    message = _source.Deserialize(received, out headers);
                 }
                 catch (Exception)
                 {
@@ -301,7 +301,7 @@ namespace Obvs.AmazonSqs
                     _places.Release();
                 });
                 _inHand[settlement] = true;
-                ObvsMessageSettlement.Set(message, settlement);
+                ObvsReceivedMessage.Attach(message, headers, settlement);
                 _observer.OnNext(message);
                 if (Volatile.Read(ref _stopped) == 1)
                 {

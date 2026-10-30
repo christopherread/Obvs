@@ -8,7 +8,7 @@ using System.Xml.Serialization;
 using Apache.NMS;
 using Apache.NMS.Util;
 using FakeItEasy;
-using Obvs.MessageProperties;
+using Obvs.Transports;
 using Obvs.Serialization;
 using Xunit;
 using IMessage = Obvs.Types.IMessage;

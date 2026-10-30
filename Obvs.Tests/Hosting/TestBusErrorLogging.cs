@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Obvs.Configuration;
 using Obvs.Hosting;
 using Obvs.Tests.Hosting.Handlers;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NATS.Client.Core;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 // v6's NATS transport building blocks, which UseNats(...) is built on: its public members are exempt from the rule that every one is documented
 #pragma warning disable CS1570, CS1572, CS1591
@@ -29,7 +30,7 @@ namespace Obvs.NATS
             _properties = properties ?? (message => null);
         }
 
-        public async Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
+        public async Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             byte[] body;
             using (var stream = new MemoryStream())
@@ -44,14 +45,13 @@ namespace Obvs.NATS
             using (var stream = new MemoryStream())
             {
                 ProtoBuf.Serializer.Serialize(stream, wrapper);
-                await _connection.PublishAsync(subject, stream.ToArray(), GetHeaders(message), cancellationToken: cancellationToken).ConfigureAwait(false);
+                await _connection.PublishAsync(subject, stream.ToArray(), ToNatsHeaders(headers), cancellationToken: cancellationToken).ConfigureAwait(false);
             }
         }
 
-        // The message's Obvs headers (such as trace context) as NATS headers, which v6 receivers ignore
-        private static NatsHeaders GetHeaders(TMessage message)
+        // The Obvs headers (such as trace context) as NATS headers, which v6 receivers ignore
+        private static NatsHeaders ToNatsHeaders(IReadOnlyDictionary<string, string> headers)
         {
-            var headers = ObvsMessageHeaders.Get(message);
             if (headers.Count == 0)
             {
                 return null;

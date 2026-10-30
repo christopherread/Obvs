@@ -138,6 +138,30 @@ var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSecond
 
 `RequestAsync` throws a `TimeoutException` if no response arrives in time. If the request can't be sent, it throws the transport's error straight away.
 
+## Send headers
+
+Headers travel with a message without being part of it: a tenant, a user, a correlation ID. Pass them when sending:
+
+<!-- snippet: send-headers -->
+```csharp
+var headers = new Dictionary<string, string> { ["x-tenant"] = "acme" };
+await client.SendAsync(new PlaceOrder("o-1"), headers, ct);
+```
+
+`PublishAsync` and `RequestAsync` take headers the same way. A handler reads them from its context, and can pass them on:
+
+<!-- snippet: read-headers -->
+```csharp
+service.HandleCommand<PlaceOrder>(async (command, context, ct) =>
+{
+    Console.WriteLine($"Order {command.OrderId} for {context.Headers["x-tenant"]}");
+    // Pass them on to what the handler sends
+    await context.PublishAsync(new OrderPlaced(command.OrderId), context.Headers, ct);
+});
+```
+
+Obvs sets the trace-context headers, `traceparent` and `tracestate`, on every message itself, replacing any the app passes, so a message passed on continues the current trace. Rx subscribers read the headers a message arrived with from `ObvsMessageHeaders.Get(message)`.
+
 ## Read events at your own pace
 
 <!-- snippet: read-events -->

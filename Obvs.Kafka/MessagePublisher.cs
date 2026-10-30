@@ -9,6 +9,7 @@ using Confluent.Kafka;
 using Obvs.Hosting;
 using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 // v6's Kafka transport building blocks, which UseKafka(...) is built on: its public members are exempt from the rule that every one is documented
 #pragma warning disable CS1570, CS1572, CS1591
@@ -44,24 +45,24 @@ namespace Obvs.Kafka
 
         internal ProducerConfig ProducerConfig => _producerConfig;
 
-        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
+        public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             if (_disposed)
             {
                 throw new InvalidOperationException("Publisher has been disposed already.");
             }
 
-            return Publish(message, cancellationToken);
+            return Publish(message, headers, cancellationToken);
         }
 
-        private Task Publish(TMessage message, CancellationToken cancellationToken)
+        private Task Publish(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken)
         {
             var properties = _propertyProvider?.Invoke(message);
 
-            return Publish(message, properties, cancellationToken);
+            return Publish(message, properties, headers, cancellationToken);
         }
 
-        private async Task Publish(TMessage message, Dictionary<string, string> properties, CancellationToken cancellationToken)
+        private async Task Publish(TMessage message, Dictionary<string, string> properties, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken)
         {
             if (_disposed)
             {
@@ -71,7 +72,7 @@ namespace Obvs.Kafka
             CreateProducer();
 
             var wrapperMessage = ToWrapperMessage(message, properties);
-            var msg = new Message<Null, WrapperMessage> {Value = wrapperMessage, Headers = GetHeaders(message)};
+            var msg = new Message<Null, WrapperMessage> {Value = wrapperMessage, Headers = ToKafkaHeaders(headers)};
 
             await _producer.ProduceAsync(_topic, msg, cancellationToken);
         }
@@ -90,10 +91,9 @@ namespace Obvs.Kafka
             }
         }
 
-        // The message's Obvs headers (such as trace context) as Kafka headers, which v6 receivers ignore
-        private static Headers GetHeaders(TMessage message)
+        // The Obvs headers (such as trace context) as Kafka headers, which v6 receivers ignore
+        private static Headers ToKafkaHeaders(IReadOnlyDictionary<string, string> headers)
         {
-            var headers = ObvsMessageHeaders.Get(message);
             if (headers.Count == 0)
             {
                 return null;

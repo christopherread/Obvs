@@ -1,7 +1,7 @@
 using System;
 using System.Reactive.Linq;
 
-namespace Obvs
+namespace Obvs.Transports
 {
     /// <inheritdoc cref="Messages"/>
     public interface IMessageSource<out TMessage> : IDisposable

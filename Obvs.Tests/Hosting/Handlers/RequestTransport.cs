@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Configuration;
+using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs.Tests.Hosting.Handlers
@@ -33,7 +35,7 @@ namespace Obvs.Tests.Hosting.Handlers
 
             public RequestPublisher(RequestTransport transport) => _transport = transport;
 
-            public async Task PublishAsync(IRequest request, CancellationToken cancellationToken = default)
+            public async Task PublishAsync(IRequest request, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
             {
                 await Task.Yield(); // Fails asynchronously, as a broker does
                 if (_transport.SendFailure != null)

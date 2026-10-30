@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reflection;
 using System.Threading;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 using Obvs.Extensions;
 using Obvs.Types;
 
-namespace Obvs
+namespace Obvs.Transports
 {
     /// <summary>A service's client endpoint, for the bus's standard message interfaces.</summary>
     public interface IServiceEndpointClient : IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>
@@ -25,11 +26,14 @@ namespace Obvs
         IObservable<TEvent> Events { get; }
         /// <summary>Sends <paramref name="command"/> to the service.</summary>
         /// <param name="command">The command</param>
+        /// <param name="headers">The headers to send with it, which include the trace context</param>
         /// <param name="cancellationToken">Stops waiting for the broker</param>
-        Task SendAsync(TCommand command, CancellationToken cancellationToken = default);
+        Task SendAsync(TCommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default);
 
         /// <summary>Sends <paramref name="request"/> when subscribed to, and returns the service's responses. If the send fails, the stream ends with its error.</summary>
-        IObservable<TResponse> GetResponses(TRequest request);
+        /// <param name="request">The request</param>
+        /// <param name="headers">The headers to send with it, which include the trace context</param>
+        IObservable<TResponse> GetResponses(TRequest request, IReadOnlyDictionary<string, string> headers);
     }
 
     /// <summary>A service's client endpoint, for the bus's standard message interfaces.</summary>
@@ -89,13 +93,13 @@ namespace Obvs
         }
 
         /// <inheritdoc />
-        public Task SendAsync(TCommand command, CancellationToken cancellationToken = default)
+        public Task SendAsync(TCommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
-            return _commandPublisher.PublishAsync(command, cancellationToken);
+            return _commandPublisher.PublishAsync(command, headers, cancellationToken);
         }
 
         /// <inheritdoc />
-        public IObservable<TResponse> GetResponses(TRequest request)
+        public IObservable<TResponse> GetResponses(TRequest request, IReadOnlyDictionary<string, string> headers)
         {
             return Observable.Create<TResponse>(observer =>
             {
@@ -105,7 +109,7 @@ namespace Obvs
                 Task send;
                 try
                 {
-                    send = _requestPublisher.PublishAsync(request);
+                    send = _requestPublisher.PublishAsync(request, headers);
                 }
                 catch (Exception exception)
                 {

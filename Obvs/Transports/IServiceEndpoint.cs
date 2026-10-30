@@ -1,18 +1,19 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Extensions;
 using Obvs.Types;
 
-namespace Obvs
+namespace Obvs.Transports
 {
     /// <summary>A service's server endpoint, for the bus's standard message interfaces.</summary>
     public interface IServiceEndpoint : IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>
     {
     }
 
-    /// <summary> Groups as service’s sources and publishers together; aggregated into a <see cref="ServiceBus"/> </summary>
+    /// <summary>A service's server endpoint: it receives commands and requests, and publishes events and replies.</summary>
     public interface IServiceEndpoint<in TMessage, out TCommand, in TEvent, TRequest, in TResponse> : IEndpoint<TMessage>
         where TMessage : class
         where TCommand : TMessage
@@ -20,17 +21,24 @@ namespace Obvs
         where TRequest : TMessage
         where TResponse : TMessage
     {
-        /// <summary> Requests awaiting a <see cref="ReplyAsync(TRequest, TResponse, CancellationToken)"/> </summary>
+        /// <summary>Requests awaiting a <see cref="ReplyAsync"/>.</summary>
         IObservable<TRequest> Requests { get; }
 
-        /// <summary> Fire-and-Forget Commands from <see cref="PublishAsync(TEvent, CancellationToken)"/> </summary>
+        /// <summary>The commands the service receives.</summary>
         IObservable<TCommand> Commands { get; }
 
-        /// <summary> Publishing <paramref name="tEvent"/>s yields corresponding <see cref="Commands"/> </summary>
-        Task PublishAsync(TEvent tEvent, CancellationToken cancellationToken = default);
+        /// <summary>Publishes <paramref name="tEvent"/> to the service's clients.</summary>
+        /// <param name="tEvent">The event</param>
+        /// <param name="headers">The headers to send with it, which include the trace context</param>
+        /// <param name="cancellationToken">Stops waiting for the broker</param>
+        Task PublishAsync(TEvent tEvent, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default);
 
-        /// <summary> Used for <paramref name="response"/>s to <paramref name="request"/>s from <see cref="Requests"/> </summary>
-        Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default);
+        /// <summary>Sends <paramref name="response"/> to whoever sent <paramref name="request"/>, one of <see cref="Requests"/>.</summary>
+        /// <param name="request">The request being answered</param>
+        /// <param name="response">The answer</param>
+        /// <param name="headers">The headers to send with it, which include the trace context</param>
+        /// <param name="cancellationToken">Stops waiting for the broker</param>
+        Task ReplyAsync(TRequest request, TResponse response, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default);
     }
 
     /// <summary>A service's server endpoint, for the bus's standard message interfaces.</summary>
@@ -95,15 +103,15 @@ namespace Obvs
         }
 
         /// <inheritdoc />
-        public Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default)
+        public Task PublishAsync(TEvent ev, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
-            return _eventPublisher.PublishAsync(ev, cancellationToken);
+            return _eventPublisher.PublishAsync(ev, headers, cancellationToken);
         }
 
         /// <inheritdoc />
-        public Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default)
+        public Task ReplyAsync(TRequest request, TResponse response, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
-            return _responsePublisher.PublishAsync(response, cancellationToken);
+            return _responsePublisher.PublishAsync(response, headers, cancellationToken);
         }
 
         /// <inheritdoc />

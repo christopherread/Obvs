@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Obvs.Configuration;
 using Obvs.RabbitMQ;
 using Obvs.RabbitMQ.Configuration;
+using Obvs.Transports;
 using Obvs.Types;
 
 // In the builder's namespace, so UseRabbitMq() is found without an extra using

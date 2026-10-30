@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Obvs.Configuration;
 using Obvs.NetMQ;
 using Obvs.NetMQ.Configuration;
+using Obvs.Transports;
 using Obvs.Types;
 
 // In the builder's namespace, so UseNetMq() is found without an extra using

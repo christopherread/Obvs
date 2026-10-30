@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ namespace Obvs.NetMQ.Tests
                 return source.Messages.Subscribe(received.Enqueue);
             }, TestContext.Current.CancellationToken);
 
-            await publisher.PublishAsync(new SlowJoinerMessage { Id = 1 }, TestContext.Current.CancellationToken);
+            await publisher.PublishAsync(new SlowJoinerMessage { Id = 1 }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
             using (await subscribeLate)
             {

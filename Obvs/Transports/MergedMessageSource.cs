@@ -7,7 +7,7 @@ using Obvs.Extensions;
 // v6's message merging, which the ActiveMQ transport uses: its public members are exempt from the rule that every one is documented
 #pragma warning disable CS1570, CS1572, CS1591
 
-namespace Obvs
+namespace Obvs.Transports
 {
     public class MergedMessageSource<TMessage> : IMessageSource<TMessage> 
         where TMessage : class

@@ -17,6 +17,7 @@ using Obvs.NATS.JetStream;
 using Obvs.NATS.Tests.Hosting;
 using Obvs.Serialization;
 using Obvs.Serialization.Json;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -260,7 +261,7 @@ namespace Obvs.NATS.Tests.JetStream
                 message =>
                 {
                     _received.Enqueue(message);
-                    ObvsMessageSettlement.Get(message).CompleteAsync();
+                    ObvsReceivedMessage.GetSettlement(message).CompleteAsync();
                 },
                 _errors.Enqueue);
             return new CompositeDisposable(subscription, source);
@@ -278,7 +279,7 @@ namespace Obvs.NATS.Tests.JetStream
                 .Subscribe(message =>
                 {
                     _received.Enqueue(message);
-                    ObvsMessageSettlement.Get(message).CompleteAsync();
+                    ObvsReceivedMessage.GetSettlement(message).CompleteAsync();
                 });
             return new CompositeDisposable(subscription, source);
         }

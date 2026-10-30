@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
@@ -19,7 +20,7 @@ namespace Obvs.NATS.Tests
             var publisher = new MessagePublisher<IOrderMessage>(connection, "orders.Commands", new JsonMessageSerializer());
             using var cancellation = new CancellationTokenSource();
 
-            await publisher.PublishAsync(new PlaceOrder { OrderId = "o-1" }, cancellation.Token);
+            await publisher.PublishAsync(new PlaceOrder { OrderId = "o-1" }, new Dictionary<string, string>(), cancellation.Token);
 
             A.CallTo(() => connection.PublishAsync(A<string>._, A<byte[]>._, A<NatsHeaders>._, A<string>._, A<INatsSerialize<byte[]>>._,
                 A<NatsPubOpts>._, cancellation.Token)).MustHaveHappenedOnceExactly();
@@ -34,7 +35,7 @@ namespace Obvs.NATS.Tests
             var publisher = new Obvs.NATS.JetStream.MessagePublisher<IOrderMessage>(jetStream, "orders.Commands", new JsonMessageSerializer());
             using var cancellation = new CancellationTokenSource();
 
-            await publisher.PublishAsync(new PlaceOrder { OrderId = "o-1" }, cancellation.Token);
+            await publisher.PublishAsync(new PlaceOrder { OrderId = "o-1" }, new Dictionary<string, string>(), cancellation.Token);
 
             A.CallTo(() => jetStream.PublishAsync(A<string>._, A<byte[]>._, A<INatsSerialize<byte[]>>._, A<NatsJSPubOpts>._, A<NatsHeaders>._,
                 cancellation.Token)).MustHaveHappenedOnceExactly();

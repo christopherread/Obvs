@@ -9,7 +9,7 @@ using Amazon.SQS.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Obvs.Hosting;
-using Obvs.MessageProperties;
+using Obvs.Transports;
 using Xunit;
 
 namespace Obvs.AmazonSqs.Tests.Hosting

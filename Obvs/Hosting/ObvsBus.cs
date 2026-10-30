@@ -94,16 +94,25 @@ namespace Obvs.Hosting
         public Task SendAsync(ICommand command, CancellationToken cancellationToken = default) => _bus.SendAsync(command, cancellationToken);
 
         /// <inheritdoc />
+        public Task SendAsync(ICommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) => _bus.SendAsync(command, headers, cancellationToken);
+
+        /// <inheritdoc />
         public Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default) => _bus.SendAsync(commands, cancellationToken);
 
         /// <inheritdoc />
         public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default) => _bus.PublishAsync(ev, cancellationToken);
 
         /// <inheritdoc />
+        public Task PublishAsync(IEvent ev, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) => _bus.PublishAsync(ev, headers, cancellationToken);
+
+        /// <inheritdoc />
         public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default) => _bus.ReplyAsync(request, response, cancellationToken);
 
         /// <inheritdoc />
         public IObservable<IResponse> GetResponses(IRequest request) => _bus.GetResponses(request);
+
+        /// <inheritdoc />
+        public IObservable<IResponse> GetResponses(IRequest request, IReadOnlyDictionary<string, string> headers) => _bus.GetResponses(request, headers);
 
         /// <inheritdoc />
         public IObservable<T> GetResponses<T>(IRequest request) where T : IResponse => _bus.GetResponses<T>(request);

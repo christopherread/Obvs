@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
+using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs.Tests
@@ -28,13 +30,13 @@ namespace Obvs.Tests
             get { return GetType().FullName; }
         }
 
-        public Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
+        public Task SendAsync(ICommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             Messages.OnNext(command);
             return Task.FromResult(true);
         }
 
-        public IObservable<IResponse> GetResponses(IRequest request)
+        public IObservable<IResponse> GetResponses(IRequest request, IReadOnlyDictionary<string, string> headers)
         {
             return Observable.Create<IResponse>(observer =>
             {
@@ -104,13 +106,13 @@ namespace Obvs.Tests
             }
         }
 
-        public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default)
+        public Task PublishAsync(IEvent ev, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             Messages.OnNext(ev);
             return Task.FromResult(true);
         }
 
-        public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default)
+        public Task ReplyAsync(IRequest request, IResponse response, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             response.RequestId = request.RequestId;
             response.RequesterId = request.RequesterId;

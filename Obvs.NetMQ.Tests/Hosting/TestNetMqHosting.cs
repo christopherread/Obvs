@@ -78,10 +78,9 @@ namespace Obvs.NetMQ.Tests.Hosting
             using var v6Subscriber = new SubscriberSocket();
             v6Subscriber.Connect($"{Address}:5723");
             v6Subscriber.Subscribe($"{serviceName}.Events");
-            var placed = new OrderPlaced { OrderId = "o-1" };
-            ObvsMessageHeaders.Set(placed, new Dictionary<string, string> { ["x-tenant"] = "acme" });
+            var headers = new Dictionary<string, string> { ["x-tenant"] = "acme" };
 
-            await server.Services.GetRequiredService<IServiceBus>().PublishAsync(placed, TestContext.Current.CancellationToken);
+            await server.Services.GetRequiredService<IServiceBus>().PublishAsync(new OrderPlaced { OrderId = "o-1" }, headers, TestContext.Current.CancellationToken);
 
             var message = new NetMQMessage();
             Assert.True(v6Subscriber.TryReceiveMultipartMessage(Timeout, ref message));
@@ -125,17 +124,16 @@ namespace Obvs.NetMQ.Tests.Hosting
             using var server = await StartHostAsync(serviceName, 5740, service => service.AsServer()
                 .HandleCommand<PlaceOrder>((command, context, ct) =>
                 {
-                    received.TrySetResult(ObvsMessageHeaders.Get(command));
+                    received.TrySetResult(context.Headers);
                     return Task.CompletedTask;
                 }), sendHeaders: true);
             using var client = await StartHostAsync(serviceName, 5740, service => service.AsClient(), sendHeaders: true);
-            var placeOrder = new PlaceOrder { OrderId = "o-1" };
-            ObvsMessageHeaders.Set(placeOrder, new Dictionary<string, string> { ["x-tenant"] = "acme" });
+            var headers = new Dictionary<string, string> { ["x-tenant"] = "acme" };
 
-            await client.Services.GetRequiredService<IServiceBusClient>().SendAsync(placeOrder, TestContext.Current.CancellationToken);
+            await client.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, headers, TestContext.Current.CancellationToken);
 
-            var headers = await received.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
-            Assert.Equal("acme", headers["x-tenant"]);
+            var arrived = await received.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+            Assert.Equal("acme", arrived["x-tenant"]);
         }
 
         [Fact, Trait("Category", "Explicit")]

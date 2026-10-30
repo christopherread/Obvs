@@ -60,7 +60,7 @@ namespace Obvs.AmazonSqs.Tests
             var counted = new ConcurrentQueue<(string Type, object ErrorType)>();
             var serviceName = "orders-" + Guid.NewGuid().ToString("N");
             using var listener = ConsumedMessagesListener(serviceName, counted);
-            var encoded = MessageCodec.Encode(new PlaceOrder { OrderId = "o-1" }, new NotJsonSerializer());
+            var encoded = MessageCodec.Encode(new PlaceOrder { OrderId = "o-1" }, new Dictionary<string, string>(), new NotJsonSerializer());
             var corrupt = new Message
             {
                 Body = encoded.Body,

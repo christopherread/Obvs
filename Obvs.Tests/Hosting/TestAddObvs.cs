@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading;
@@ -10,6 +11,7 @@ using Obvs.Configuration;
 using Obvs.Hosting;
 using Obvs.Serialization;
 using Obvs.Serialization.SystemTextJson;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -378,8 +380,8 @@ namespace Obvs.Tests.Hosting
             await bus.SendAsync(command, token);
             await bus.PublishAsync(ev, token);
 
-            A.CallTo(() => endpointClient.SendAsync(command, token)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => endpoint.PublishAsync(ev, token)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => endpointClient.SendAsync(command, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => endpoint.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
         }
 
         private static IHost BuildHost(Action<IServiceCollection> configure)

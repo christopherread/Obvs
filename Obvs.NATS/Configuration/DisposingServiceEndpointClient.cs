@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Obvs.Transports;
 
 namespace Obvs.NATS.Configuration
 {
@@ -36,14 +38,14 @@ namespace Obvs.NATS.Configuration
             get { return _endpointClient.Name; }
         }
 
-        public Task SendAsync(TCommand command, CancellationToken cancellationToken = default)
+        public Task SendAsync(TCommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
-            return _endpointClient.SendAsync(command, cancellationToken);
+            return _endpointClient.SendAsync(command, headers, cancellationToken);
         }
 
-        public IObservable<TResponse> GetResponses(TRequest request)
+        public IObservable<TResponse> GetResponses(TRequest request, IReadOnlyDictionary<string, string> headers)
         {
-            return _endpointClient.GetResponses(request);
+            return _endpointClient.GetResponses(request, headers);
         }
 
         public IObservable<TEvent> Events

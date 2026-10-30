@@ -9,6 +9,7 @@ using Obvs.Configuration;
 using Obvs.Hosting;
 using Obvs.Testing;
 using Obvs.Tests.Hosting.Handlers;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 

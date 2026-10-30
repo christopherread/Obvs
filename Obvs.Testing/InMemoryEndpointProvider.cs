@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Configuration;
+using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs.Testing
@@ -87,10 +89,10 @@ namespace Obvs.Testing
                 _destination = destination;
             }
 
-            public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
+            public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                _broker.Send(_serviceName, _destination, message);
+                _broker.Send(_serviceName, _destination, message, headers);
                 return Task.CompletedTask;
             }
 

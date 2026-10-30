@@ -61,24 +61,33 @@ namespace Obvs.Hosting
             return activity;
         }
 
-        // Adds the span's trace context to the message's headers, keeping any the app set. Falls back to the
-        // ambient span (an incoming web request, say) when nobody listens to Obvs's own spans.
-        public static void InjectTraceContext(Activity activity, object message)
+        // The headers to send: the app's, with the span's trace context in place of any the app passed, as when a
+        // handler passes on the headers it received, so the message continues the trace it's sent in. Falls back to
+        // the ambient span (an incoming web request, say) when nobody listens to Obvs's own spans.
+        public static IReadOnlyDictionary<string, string> WithTraceContext(Activity activity, IReadOnlyDictionary<string, string> headers)
         {
-            activity = activity ?? Activity.Current;
-            if (activity == null)
+            var sent = new Dictionary<string, string>();
+            foreach (var header in headers)
             {
-                return;
+                if (!IsTraceContext(header.Key))
+                {
+                    sent[header.Key] = header.Value;
+                }
             }
 
-            var headers = new Dictionary<string, string>();
-            foreach (var header in ObvsMessageHeaders.Get(message))
+            activity = activity ?? Activity.Current;
+            if (activity != null)
             {
-                headers[header.Key] = header.Value;
+                DistributedContextPropagator.Current.Inject(activity, sent,
+                    (carrier, name, value) => ((Dictionary<string, string>)carrier)[name] = value);
             }
-            DistributedContextPropagator.Current.Inject(activity, headers,
-                (carrier, name, value) => ((Dictionary<string, string>)carrier)[name] = value);
-            ObvsMessageHeaders.Set(message, headers);
+            return sent;
+        }
+
+        private static bool IsTraceContext(string header)
+        {
+            return string.Equals(header, ObvsMessageHeaders.TraceParent, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(header, ObvsMessageHeaders.TraceState, StringComparison.OrdinalIgnoreCase);
         }
 
         // The sender's span from the message's headers, if it has trace context

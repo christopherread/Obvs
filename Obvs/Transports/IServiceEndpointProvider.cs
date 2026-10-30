@@ -1,6 +1,6 @@
 ﻿using Obvs.Types;
 
-namespace Obvs.Configuration
+namespace Obvs.Transports
 {
     /// <summary>Creates a service's endpoints, for the bus's standard message interfaces.</summary>
     public interface IServiceEndpointProvider : IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>

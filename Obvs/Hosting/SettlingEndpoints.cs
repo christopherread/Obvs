@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs.Hosting
@@ -24,9 +26,9 @@ namespace Obvs.Hosting
 
         public IObservable<ICommand> Commands { get; }
 
-        public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default) => _inner.PublishAsync(ev, cancellationToken);
+        public Task PublishAsync(IEvent ev, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) => _inner.PublishAsync(ev, headers, cancellationToken);
 
-        public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default) => _inner.ReplyAsync(request, response, cancellationToken);
+        public Task ReplyAsync(IRequest request, IResponse response, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) => _inner.ReplyAsync(request, response, headers, cancellationToken);
 
         public bool CanHandle(IMessage message) => _inner.CanHandle(message);
 
@@ -51,10 +53,10 @@ namespace Obvs.Hosting
 
         public IObservable<IEvent> Events { get; }
 
-        public Task SendAsync(ICommand command, CancellationToken cancellationToken = default) => _inner.SendAsync(command, cancellationToken);
+        public Task SendAsync(ICommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) => _inner.SendAsync(command, headers, cancellationToken);
 
         // No handler takes responses
-        public IObservable<IResponse> GetResponses(IRequest request) => _inner.GetResponses(request).CompleteUnhandled(_ => false, _serviceName, _logger);
+        public IObservable<IResponse> GetResponses(IRequest request, IReadOnlyDictionary<string, string> headers) => _inner.GetResponses(request, headers).CompleteUnhandled(_ => false, _serviceName, _logger);
 
         public bool CanHandle(IMessage message) => _inner.CanHandle(message);
 

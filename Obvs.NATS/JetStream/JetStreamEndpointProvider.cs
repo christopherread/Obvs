@@ -3,6 +3,7 @@ using NATS.Client.Core;
 using NATS.Client.JetStream;
 using Obvs.Configuration;
 using Obvs.Serialization;
+using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs.NATS.JetStream

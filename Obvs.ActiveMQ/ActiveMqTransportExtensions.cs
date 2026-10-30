@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Obvs.ActiveMQ;
 using Obvs.ActiveMQ.Configuration;
 using Obvs.Configuration;
+using Obvs.Transports;
 using Obvs.Types;
 using AcknowledgementMode = Obvs.ActiveMQ.AcknowledgementMode;
 

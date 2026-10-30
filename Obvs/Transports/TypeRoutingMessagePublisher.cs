@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Obvs
+namespace Obvs.Transports
 {
     /// <summary>Publishes each message with the publishers registered for its type.</summary>
     public class TypeRoutingMessagePublisher<TMessage> : IMessagePublisher<TMessage> where TMessage : class
@@ -20,11 +20,11 @@ namespace Obvs
         }
 
         /// <inheritdoc />
-        public Task PublishAsync(TMessage message, CancellationToken cancellationToken = default)
+        public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             return Task.WhenAll(_publishers.Where(pair => pair.Key.GetTypeInfo().IsInstanceOfType(message))
                 .Select(pair => pair.Value)
-                .Select(publisher => publisher.PublishAsync(message, cancellationToken)));
+                .Select(publisher => publisher.PublishAsync(message, headers, cancellationToken)));
         }
 
         /// <inheritdoc />

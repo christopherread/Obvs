@@ -11,6 +11,7 @@ using Obvs.Configuration;
 using Obvs.Hosting;
 using Obvs.Testing;
 using Obvs.Tests.Hosting.Handlers;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -241,7 +242,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             var endpointClient = A.Fake<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             A.CallTo(() => endpointClient.CanHandle(A<IMessage>._)).Returns(true);
             A.CallTo(() => endpointClient.Events).Returns(System.Reactive.Linq.Observable.Never<IEvent>());
-            A.CallTo(() => endpointClient.SendAsync(A<ICommand>._, A<CancellationToken>._)).ThrowsAsync(new TimeoutException("The broker didn't answer"));
+            A.CallTo(() => endpointClient.SendAsync(A<ICommand>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).ThrowsAsync(new TimeoutException("The broker didn't answer"));
             var provider = A.Fake<IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             A.CallTo(() => provider.CreateEndpointClient()).Returns(endpointClient);
             await using var harness = await StartAsync(service => service.AsClient().UseEndpointProvider(_ => provider));

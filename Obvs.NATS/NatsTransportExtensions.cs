@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Obvs.Configuration;
 using Obvs.NATS;
 using Obvs.NATS.Configuration;
+using Obvs.Transports;
 using Obvs.Types;
 
 // In the builder's namespace, so UseNats() is found without an extra using

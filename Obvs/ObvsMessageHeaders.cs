@@ -1,27 +1,23 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using Obvs.Transports;
 
 namespace Obvs
 {
     /// <summary>
-    /// Headers that travel with a message without being part of it, such as trace context.
-    /// Transports read a message's headers when sending it and set them on each message they receive.
+    /// Headers that travel with a message without being part of it, such as trace context. Pass them to
+    /// <c>SendAsync</c>, <c>PublishAsync</c> or <c>RequestAsync</c>, and read the ones a message arrived with here,
+    /// or in a handler from <c>MessageContext.Headers</c>.
     /// </summary>
     public static class ObvsMessageHeaders
     {
-        /// <summary>The W3C trace-context header holding the sender's trace and span IDs.</summary>
+        /// <summary>The W3C trace-context header holding the sender's trace and span IDs. Obvs sets it on every message it sends.</summary>
         public const string TraceParent = "traceparent";
 
-        /// <summary>The W3C trace-context header holding vendor-specific trace state.</summary>
+        /// <summary>The W3C trace-context header holding vendor-specific trace state. Obvs sets it on every message it sends.</summary>
         public const string TraceState = "tracestate";
 
-        private static readonly IReadOnlyDictionary<string, string> None = new Dictionary<string, string>();
-
-        // Keyed by the message instance, not its value, and weak, so headers go when their message does
-        private static readonly ConditionalWeakTable<object, Holder> Headers = new ConditionalWeakTable<object, Holder>();
-
-        /// <summary>The headers attached to <paramref name="message"/>, or an empty set if none are.</summary>
+        /// <summary>The headers <paramref name="message"/> arrived with, or an empty set if it wasn't received from a transport.</summary>
         public static IReadOnlyDictionary<string, string> Get(object message)
         {
             if (message == null)
@@ -29,34 +25,7 @@ namespace Obvs
                 throw new ArgumentNullException(nameof(message));
             }
 
-            return Headers.TryGetValue(message, out var holder) ? holder.Headers : None;
-        }
-
-        /// <summary>Attaches <paramref name="headers"/> to <paramref name="message"/>, replacing any already attached.</summary>
-        public static void Set(object message, IReadOnlyDictionary<string, string> headers)
-        {
-            if (message == null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-            if (headers == null)
-            {
-                throw new ArgumentNullException(nameof(headers));
-            }
-
-            // A copy, so later changes to the caller's dictionary don't change what's sent
-            var copy = new Dictionary<string, string>();
-            foreach (var header in headers)
-            {
-                copy[header.Key] = header.Value;
-            }
-            Headers.GetValue(message, _ => new Holder()).Headers = copy;
-        }
-
-        // Mutable, because ConditionalWeakTable can't replace an entry's value on every target framework
-        private sealed class Holder
-        {
-            public volatile IReadOnlyDictionary<string, string> Headers = None;
+            return ObvsReceivedMessage.GetHeaders(message);
         }
     }
 }

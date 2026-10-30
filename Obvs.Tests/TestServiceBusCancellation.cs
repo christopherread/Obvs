@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -22,7 +23,7 @@ namespace Obvs.Tests
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.PublishAsync(ev, Cancelled()));
 
-            A.CallTo(() => endpoint.PublishAsync(A<IEvent>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => endpoint.PublishAsync(A<IEvent>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
         }
 
         [Fact]
@@ -32,13 +33,13 @@ namespace Obvs.Tests
             var first = EndpointFor(ev);
             var second = EndpointFor(ev);
             using var cancellation = new CancellationTokenSource();
-            A.CallTo(() => first.PublishAsync(ev, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Returns(Task.CompletedTask);
+            A.CallTo(() => first.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Returns(Task.CompletedTask);
             var serviceBus = new ServiceBus(NoEndpointClients, new[] { first, second });
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.PublishAsync(ev, cancellation.Token));
 
-            A.CallTo(() => first.PublishAsync(ev, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => second.PublishAsync(A<IEvent>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => first.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => second.PublishAsync(A<IEvent>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
         }
 
         [Fact]
@@ -51,7 +52,7 @@ namespace Obvs.Tests
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.ReplyAsync(request, response, Cancelled()));
 
-            A.CallTo(() => endpoint.ReplyAsync(A<IRequest>._, A<IResponse>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => endpoint.ReplyAsync(A<IRequest>._, A<IResponse>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
         }
 
         [Fact]
@@ -62,12 +63,12 @@ namespace Obvs.Tests
             var first = EndpointFor(response);
             var second = EndpointFor(response);
             using var cancellation = new CancellationTokenSource();
-            A.CallTo(() => first.ReplyAsync(request, response, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Returns(Task.CompletedTask);
+            A.CallTo(() => first.ReplyAsync(request, response, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Returns(Task.CompletedTask);
             var serviceBus = new ServiceBus(NoEndpointClients, new[] { first, second });
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.ReplyAsync(request, response, cancellation.Token));
 
-            A.CallTo(() => second.ReplyAsync(A<IRequest>._, A<IResponse>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => second.ReplyAsync(A<IRequest>._, A<IResponse>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
         }
 
         [Fact]
@@ -79,7 +80,7 @@ namespace Obvs.Tests
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.SendAsync(command, Cancelled()));
 
-            A.CallTo(() => endpointClient.SendAsync(A<ICommand>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => endpointClient.SendAsync(A<ICommand>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
         }
 
         [Fact]
@@ -89,12 +90,12 @@ namespace Obvs.Tests
             var first = EndpointClientFor(command);
             var second = EndpointClientFor(command);
             using var cancellation = new CancellationTokenSource();
-            A.CallTo(() => first.SendAsync(command, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Returns(Task.CompletedTask);
+            A.CallTo(() => first.SendAsync(command, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Returns(Task.CompletedTask);
             var serviceBus = new ServiceBus(new[] { first, second }, NoEndpoints);
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.SendAsync(command, cancellation.Token));
 
-            A.CallTo(() => second.SendAsync(A<ICommand>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => second.SendAsync(A<ICommand>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
         }
 
         [Fact]
@@ -108,7 +109,7 @@ namespace Obvs.Tests
             // Cancellation, not an AggregateException of each command's cancellation
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.SendAsync(commands, Cancelled()));
 
-            A.CallTo(() => endpointClient.SendAsync(A<ICommand>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => endpointClient.SendAsync(A<ICommand>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
         }
 
         [Fact]
@@ -119,12 +120,12 @@ namespace Obvs.Tests
             var endpointClient = A.Fake<IServiceEndpointClient>();
             A.CallTo(() => endpointClient.CanHandle(A<IMessage>._)).Returns(true);
             using var cancellation = new CancellationTokenSource();
-            A.CallTo(() => endpointClient.SendAsync(first, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Returns(Task.CompletedTask);
+            A.CallTo(() => endpointClient.SendAsync(first, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Returns(Task.CompletedTask);
             var serviceBus = new ServiceBus(new[] { endpointClient }, NoEndpoints);
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.SendAsync(new[] { first, second }, cancellation.Token));
 
-            A.CallTo(() => endpointClient.SendAsync(second, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => endpointClient.SendAsync(second, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
         }
 
         [Fact]
@@ -135,7 +136,7 @@ namespace Obvs.Tests
             var command = A.Fake<ICommand>();
             var endpointClient = EndpointClientFor(command);
             using var cancellation = new CancellationTokenSource();
-            A.CallTo(() => endpointClient.SendAsync(command, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Throws(() => new OperationCanceledException(cancellation.Token));
+            A.CallTo(() => endpointClient.SendAsync(command, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Throws(() => new OperationCanceledException(cancellation.Token));
             var serviceBus = new ServiceBus(new[] { endpointClient }, NoEndpoints);
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.SendAsync(command, cancellation.Token));
@@ -200,9 +201,9 @@ namespace Obvs.Tests
             await serviceBus.SendAsync(command, token);
             await serviceBus.ReplyAsync(request, response, token);
 
-            A.CallTo(() => endpoint.PublishAsync(ev, token)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => endpointClient.SendAsync(command, token)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => endpoint.ReplyAsync(request, response, token)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => endpoint.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => endpointClient.SendAsync(command, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => endpoint.ReplyAsync(request, response, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]
@@ -221,13 +222,13 @@ namespace Obvs.Tests
             using var cancellation = new CancellationTokenSource();
             var token = cancellation.Token;
 
-            await endpoint.PublishAsync(ev, token);
-            await endpoint.ReplyAsync(A.Fake<IRequest>(), response, token);
-            await endpointClient.SendAsync(command, token);
+            await endpoint.PublishAsync(ev, new Dictionary<string, string>(), token);
+            await endpoint.ReplyAsync(A.Fake<IRequest>(), response, new Dictionary<string, string>(), token);
+            await endpointClient.SendAsync(command, new Dictionary<string, string>(), token);
 
-            A.CallTo(() => eventPublisher.PublishAsync(ev, token)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => responsePublisher.PublishAsync(response, token)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => commandPublisher.PublishAsync(command, token)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => eventPublisher.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => responsePublisher.PublishAsync(response, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => commandPublisher.PublishAsync(command, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]
@@ -239,9 +240,9 @@ namespace Obvs.Tests
             using var cancellation = new CancellationTokenSource();
             var token = cancellation.Token;
 
-            await publisher.PublishAsync(ev, token);
+            await publisher.PublishAsync(ev, new Dictionary<string, string>(), token);
 
-            A.CallTo(() => eventPublisher.PublishAsync(ev, token)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => eventPublisher.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
         }
 
         private static CancellationToken Cancelled() => new CancellationToken(true);

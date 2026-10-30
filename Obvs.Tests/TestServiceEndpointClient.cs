@@ -6,6 +6,7 @@ using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -35,10 +36,10 @@ namespace Obvs.Tests
         public async Task ShouldPassAFailedRequestSendToTheResponsesObserver()
         {
             var requestPublisher = A.Fake<IMessagePublisher<IRequest>>();
-            A.CallTo(() => requestPublisher.PublishAsync(A<IRequest>._, A<CancellationToken>._)).ThrowsAsync(new InvalidOperationException("The broker refused the request"));
+            A.CallTo(() => requestPublisher.PublishAsync(A<IRequest>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).ThrowsAsync(new InvalidOperationException("The broker refused the request"));
             IServiceEndpointClient endpoint = new ServiceEndpointClient(new DefaultMessageSource<IEvent>(), Never<IResponse>(), requestPublisher, A.Fake<IMessagePublisher<ICommand>>(), typeof(ITestServiceMessage1));
 
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => endpoint.GetResponses(new TestServiceRequest1()).FirstAsync().ToTask())
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => endpoint.GetResponses(new TestServiceRequest1(), new Dictionary<string, string>()).FirstAsync().ToTask())
                 .WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
             Assert.Equal("The broker refused the request", exception.Message);
@@ -48,10 +49,10 @@ namespace Obvs.Tests
         public async Task ShouldPassARequestSendThatThrowsToTheResponsesObserver()
         {
             var requestPublisher = A.Fake<IMessagePublisher<IRequest>>();
-            A.CallTo(() => requestPublisher.PublishAsync(A<IRequest>._, A<CancellationToken>._)).Throws(new InvalidOperationException("Not connected"));
+            A.CallTo(() => requestPublisher.PublishAsync(A<IRequest>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Throws(new InvalidOperationException("Not connected"));
             IServiceEndpointClient endpoint = new ServiceEndpointClient(new DefaultMessageSource<IEvent>(), Never<IResponse>(), requestPublisher, A.Fake<IMessagePublisher<ICommand>>(), typeof(ITestServiceMessage1));
 
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => endpoint.GetResponses(new TestServiceRequest1()).FirstAsync().ToTask())
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => endpoint.GetResponses(new TestServiceRequest1(), new Dictionary<string, string>()).FirstAsync().ToTask())
                 .WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
             Assert.Equal("Not connected", exception.Message);
@@ -65,11 +66,11 @@ namespace Obvs.Tests
             A.CallTo(() => responseSource.Messages).Returns(responses);
             var requestPublisher = A.Fake<IMessagePublisher<IRequest>>();
             var response = new TestServiceResponse1();
-            A.CallTo(() => requestPublisher.PublishAsync(A<IRequest>._, A<CancellationToken>._)).Invokes(() => responses.OnNext(response)).Returns(Task.CompletedTask);
+            A.CallTo(() => requestPublisher.PublishAsync(A<IRequest>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Invokes(() => responses.OnNext(response)).Returns(Task.CompletedTask);
             IServiceEndpointClient endpoint = new ServiceEndpointClient(new DefaultMessageSource<IEvent>(), responseSource, requestPublisher, A.Fake<IMessagePublisher<ICommand>>(), typeof(ITestServiceMessage1));
             var received = new List<IResponse>();
 
-            using (endpoint.GetResponses(new TestServiceRequest1()).Subscribe(received.Add))
+            using (endpoint.GetResponses(new TestServiceRequest1(), new Dictionary<string, string>()).Subscribe(received.Add))
             {
                 Assert.Equal(new IResponse[] { response }, received);
             }
@@ -80,11 +81,11 @@ namespace Obvs.Tests
         {
             var send = new TaskCompletionSource<bool>();
             var requestPublisher = A.Fake<IMessagePublisher<IRequest>>();
-            A.CallTo(() => requestPublisher.PublishAsync(A<IRequest>._, A<CancellationToken>._)).Returns(send.Task);
+            A.CallTo(() => requestPublisher.PublishAsync(A<IRequest>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Returns(send.Task);
             IServiceEndpointClient endpoint = new ServiceEndpointClient(new DefaultMessageSource<IEvent>(), Never<IResponse>(), requestPublisher, A.Fake<IMessagePublisher<ICommand>>(), typeof(ITestServiceMessage1));
             var errors = new List<Exception>();
 
-            endpoint.GetResponses(new TestServiceRequest1()).Subscribe(_ => { }, errors.Add).Dispose();
+            endpoint.GetResponses(new TestServiceRequest1(), new Dictionary<string, string>()).Subscribe(_ => { }, errors.Add).Dispose();
             send.SetException(new InvalidOperationException("The broker refused the request"));
 
             Assert.Empty(errors);

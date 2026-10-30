@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Obvs.Serialization;
+using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs.AzureSB
@@ -32,9 +34,9 @@ namespace Obvs.AzureSB
 
         public bool CanHandle(IMessage message) => _endpoint.CanHandle(message);
 
-        public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default) => _endpoint.PublishAsync(ev, cancellationToken);
+        public Task PublishAsync(IEvent ev, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) => _endpoint.PublishAsync(ev, headers, cancellationToken);
 
-        public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default)
+        public Task ReplyAsync(IRequest request, IResponse response, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             if (!ReplyAddresses.TryGet(request, out var replyTo))
             {
@@ -43,7 +45,7 @@ namespace Obvs.AzureSB
             }
 
             var sender = _replySenders.GetOrAdd(replyTo, queue => _client.CreateSender(queue));
-            return sender.SendMessageAsync(MessagePublisher<IResponse>.ToServiceBusMessage(response, _serializer), cancellationToken);
+            return sender.SendMessageAsync(MessagePublisher<IResponse>.ToServiceBusMessage(response, headers, _serializer), cancellationToken);
         }
 
         public void Dispose()

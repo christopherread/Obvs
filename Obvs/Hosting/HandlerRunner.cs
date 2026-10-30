@@ -85,7 +85,7 @@ namespace Obvs.Hosting
                     var cancelled = false;
                     try
                     {
-                        await handler((TMessage)message, new MessageContext(serviceName, scope.ServiceProvider, bus), cancellationToken).ConfigureAwait(false);
+                        await handler((TMessage)message, new MessageContext(serviceName, ObvsMessageHeaders.Get(message), scope.ServiceProvider, bus), cancellationToken).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                     {

@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using Obvs.MessageProperties;
+using Obvs.Transports;
 using Obvs.Serialization;
 
 namespace Obvs.AmazonSqs
@@ -28,8 +28,9 @@ namespace Obvs.AmazonSqs
         // Throws on bytes that aren't UTF-8, rather than replacing them
         private static readonly UTF8Encoding StrictUtf8 = new UTF8Encoding(false, true);
 
+        /// <param name="headers">The Obvs headers (such as trace context) to send with it</param>
         /// <param name="replyTo">The URL of the queue responses should go to, for requests</param>
-        public static EncodedMessage Encode(object message, IMessageSerializer serializer, string replyTo = null)
+        public static EncodedMessage Encode(object message, IReadOnlyDictionary<string, string> headers, IMessageSerializer serializer, string replyTo = null)
         {
             byte[] bytes;
             using (var stream = new MemoryStream())
@@ -39,10 +40,10 @@ namespace Obvs.AmazonSqs
             }
 
             var attributes = new Dictionary<string, string> { [MessagePropertyNames.TypeName] = message.GetType().Name };
-            var headers = ObvsMessageHeaders.Get(message).Where(header => header.Key != MessagePropertyNames.TypeName).ToDictionary(header => header.Key, header => header.Value);
-            if (headers.Count > 0)
+            var sent = headers.Where(header => header.Key != MessagePropertyNames.TypeName).ToDictionary(header => header.Key, header => header.Value);
+            if (sent.Count > 0)
             {
-                attributes[HeadersAttribute] = JsonSerializer.Serialize(headers);
+                attributes[HeadersAttribute] = JsonSerializer.Serialize(sent);
             }
             if (replyTo != null)
             {

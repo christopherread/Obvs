@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Obvs.Kafka.Configuration;
@@ -19,7 +20,7 @@ namespace Obvs.Kafka.Tests
                 "orders.Commands", new JsonMessageSerializer(), null);
             using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
 
-            var publishing = publisher.PublishAsync(new PlaceOrder { OrderId = "o-1" }, cancellation.Token);
+            var publishing = publisher.PublishAsync(new PlaceOrder { OrderId = "o-1" }, new Dictionary<string, string>(), cancellation.Token);
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => publishing.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
         }

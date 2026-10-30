@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NATS.Client.Core;
 using NATS.Client.JetStream;
 using Obvs.Serialization;
+using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs.NATS.JetStream
@@ -33,9 +35,9 @@ namespace Obvs.NATS.JetStream
 
         public bool CanHandle(IMessage message) => _endpoint.CanHandle(message);
 
-        public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default) => _endpoint.PublishAsync(ev, cancellationToken);
+        public Task PublishAsync(IEvent ev, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) => _endpoint.PublishAsync(ev, headers, cancellationToken);
 
-        public Task ReplyAsync(IRequest request, IResponse response, CancellationToken cancellationToken = default)
+        public Task ReplyAsync(IRequest request, IResponse response, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             if (!ReplyAddresses.TryGet(request, out var replyTo))
             {
@@ -43,7 +45,7 @@ namespace Obvs.NATS.JetStream
                     $"Request {request.GetType().Name} {request.RequestId} didn't arrive over NATS JetStream with a reply subject, so there's nowhere to send its {response.GetType().Name}.");
             }
 
-            return MessagePublisher<IResponse>.PublishAsync(_jetStream, replyTo, response, _serializer, cancellationToken: cancellationToken);
+            return MessagePublisher<IResponse>.PublishAsync(_jetStream, replyTo, response, headers, _serializer, cancellationToken: cancellationToken);
         }
 
         public void Dispose()

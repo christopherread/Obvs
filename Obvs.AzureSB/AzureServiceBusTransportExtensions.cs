@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Obvs.AzureSB;
 using Obvs.Configuration;
+using Obvs.Transports;
 using Obvs.Types;
 
 // In the builder's namespace, so UseAzureServiceBus() is found without an extra using

@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Obvs.Transports;
 
 namespace Obvs.Kafka.Configuration
 {
@@ -36,14 +38,14 @@ namespace Obvs.Kafka.Configuration
             get { return _endpoint.Name; }
         }
 
-        public Task PublishAsync(TEvent ev, CancellationToken cancellationToken = default)
+        public Task PublishAsync(TEvent ev, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
-            return _endpoint.PublishAsync(ev, cancellationToken);
+            return _endpoint.PublishAsync(ev, headers, cancellationToken);
         }
 
-        public Task ReplyAsync(TRequest request, TResponse response, CancellationToken cancellationToken = default)
+        public Task ReplyAsync(TRequest request, TResponse response, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
-            return _endpoint.ReplyAsync(request, response, cancellationToken);
+            return _endpoint.ReplyAsync(request, response, headers, cancellationToken);
         }
 
         public IObservable<TRequest> Requests

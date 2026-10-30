@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Obvs.AzureSB.Tests.Hosting;
 using Obvs.Serialization;
 using Obvs.Serialization.Json;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -63,7 +64,7 @@ namespace Obvs.AzureSB.Tests
                 new AzureServiceBusOptions { ServiceName = serviceName });
             using var subscription = source.Messages.Subscribe(_ => { }, _ => { });
             var corrupt = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromString("not json"),
-                properties: new Dictionary<string, object> { [Obvs.MessageProperties.MessagePropertyNames.TypeName] = nameof(PlaceOrder) });
+                properties: new Dictionary<string, object> { [Obvs.Transports.MessagePropertyNames.TypeName] = nameof(PlaceOrder) });
 
             await processor.RaiseMessageAsync(corrupt);
 

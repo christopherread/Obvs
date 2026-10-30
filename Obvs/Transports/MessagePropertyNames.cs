@@ -1,4 +1,4 @@
-﻿namespace Obvs.MessageProperties
+﻿namespace Obvs.Transports
 {
     /// <summary> Well-known Message-Property-Names </summary>
     public static class MessagePropertyNames

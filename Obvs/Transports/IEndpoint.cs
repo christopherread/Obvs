@@ -1,7 +1,7 @@
 using System;
 using Obvs.Types;
 
-namespace Obvs
+namespace Obvs.Transports
 {
     /// <summary>An endpoint of a service: one side, server or client, of its transport.</summary>
     public interface IEndpoint<in TMessage> : IDisposable
