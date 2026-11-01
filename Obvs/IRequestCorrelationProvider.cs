@@ -4,22 +4,15 @@ using Obvs.Types;
 
 namespace Obvs
 {
-    /// <summary>Correlates responses with requests, for the bus's standard message interfaces.</summary>
-    internal interface IRequestCorrelationProvider : IRequestCorrelationProvider<IRequest, IResponse>
-    {
-    }
-
     /// <summary>Correlates responses with the requests they answer.</summary>
-    internal interface IRequestCorrelationProvider<in TRequest, in TResponse>
-        where TRequest : class
-        where TResponse : class
+    internal interface IRequestCorrelationProvider
     {
         /// <summary>Gives a request its IDs, before it's sent.</summary>
-        void SetRequestCorrelationIds(TRequest request);
+        void SetRequestCorrelationIds(IRequest request);
         /// <summary>Gives a response its request's IDs, before it's sent.</summary>
-        void SetCorrelationIds(TRequest request, TResponse response);
+        void SetCorrelationIds(IRequest request, IResponse response);
         /// <summary>Whether <paramref name="response"/> answers <paramref name="request"/>.</summary>
-        bool AreCorrelated(TRequest request, TResponse response);
+        bool AreCorrelated(IRequest request, IResponse response);
     }
 
     /// <summary>Correlates by <see cref="Types.IRequest.RequestId"/> and <see cref="Types.IRequest.RequesterId"/>: a new GUID and this process's <see cref="Configuration.RequesterId"/>.</summary>

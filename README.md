@@ -72,6 +72,8 @@ await client.SendAsync(new PlaceOrder("o-1"), ct);
 var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
 ```
 
+Everything on the bus is an Rx stream: `Commands`, `Events`, `Requests` and `GetResponses(request)`. Compose them with Rx operators, and process them with `SubscribeAsync`, which awaits your code and settles each message. Handlers are the same thing, registered at startup with a DI scope per message, and `RequestAsync` is a request with one response.
+
 ## Next steps
 
 - [Common tasks](docs/common-tasks.md): add a service, handle and send messages, requests, errors, tests, tracing.

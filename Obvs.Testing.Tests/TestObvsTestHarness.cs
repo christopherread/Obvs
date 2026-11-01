@@ -116,6 +116,21 @@ namespace Obvs.Testing.Tests
         }
 
         [Fact]
+        public async Task ShouldTimeOutRequestsOnTheTimeProvider()
+        {
+            var time = new FakeTimeProvider();
+            await using var harness = await ObvsTestHarness.StartAsync(
+                services => services.AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service.UseInMemory())),
+                options => options.TimeProvider = time,
+                TestContext.Current.CancellationToken);
+
+            var pending = harness.Client.RequestAsync(new GetQuote("sku-1"), TestContext.Current.CancellationToken);
+            time.Advance(TimeSpan.FromMinutes(1));
+
+            await Assert.ThrowsAsync<TimeoutException>(() => pending).WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        }
+
+        [Fact]
         public async Task ShouldTimeOutOnTheTimeProvider()
         {
             var time = new FakeTimeProvider();

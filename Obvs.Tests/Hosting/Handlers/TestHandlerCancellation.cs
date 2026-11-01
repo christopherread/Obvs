@@ -137,8 +137,12 @@ namespace Obvs.Tests.Hosting.Handlers
 
             public IObservable<IResponse> GetResponses(IRequest request) => _inner.GetResponses(request);
             public IObservable<IResponse> GetResponses(IRequest request, IReadOnlyDictionary<string, string> headers) => _inner.GetResponses(request, headers);
-            public IObservable<T> GetResponses<T>(IRequest request) where T : IResponse => _inner.GetResponses<T>(request);
-            public IObservable<T> GetResponse<T>(IRequest request) where T : IResponse => _inner.GetResponse<T>(request);
+            public Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default) where TResponse : class, IResponse => _inner.RequestAsync(request, cancellationToken);
+            public Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, TimeSpan timeout, CancellationToken cancellationToken = default) where TResponse : class, IResponse => _inner.RequestAsync(request, timeout, cancellationToken);
+            public Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) where TResponse : class, IResponse => _inner.RequestAsync(request, headers, cancellationToken);
+            public Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, IReadOnlyDictionary<string, string> headers, TimeSpan timeout, CancellationToken cancellationToken = default) where TResponse : class, IResponse => _inner.RequestAsync(request, headers, timeout, cancellationToken);
+            public IAsyncEnumerable<TEvent> ReadEventsAsync<TEvent>(CancellationToken cancellationToken = default, int capacity = 1024) where TEvent : IEvent => _inner.ReadEventsAsync<TEvent>(cancellationToken, capacity);
+            public IAsyncEnumerable<TCommand> ReadCommandsAsync<TCommand>(CancellationToken cancellationToken = default, int capacity = 1024) where TCommand : ICommand => _inner.ReadCommandsAsync<TCommand>(cancellationToken, capacity);
 
             public void Dispose() => ((IDisposable)_inner).Dispose();
         }

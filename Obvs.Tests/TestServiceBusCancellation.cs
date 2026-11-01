@@ -143,47 +143,6 @@ namespace Obvs.Tests
         }
 
         [Fact]
-        public async Task ShouldPassTheTokenThroughTheNonGenericBus()
-        {
-            var ev = A.Fake<IEvent>();
-            var command = A.Fake<ICommand>();
-            var commands = new[] { command };
-            var request = A.Fake<IRequest>();
-            var response = A.Fake<IResponse>();
-            var inner = A.Fake<IServiceBus<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var serviceBus = new ServiceBus(inner);
-            using var cancellation = new CancellationTokenSource();
-            var token = cancellation.Token;
-
-            await serviceBus.PublishAsync(ev, token);
-            await serviceBus.SendAsync(command, token);
-            await serviceBus.SendAsync(commands, token);
-            await serviceBus.ReplyAsync(request, response, token);
-
-            A.CallTo(() => inner.PublishAsync(ev, token)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => inner.SendAsync(command, token)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => inner.SendAsync(commands, token)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => inner.ReplyAsync(request, response, token)).MustHaveHappenedOnceExactly();
-        }
-
-        [Fact]
-        public async Task ShouldPassTheTokenThroughTheNonGenericClient()
-        {
-            var command = A.Fake<ICommand>();
-            var commands = new[] { command };
-            var inner = A.Fake<IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var client = new ServiceBusClient(inner);
-            using var cancellation = new CancellationTokenSource();
-            var token = cancellation.Token;
-
-            await client.SendAsync(command, token);
-            await client.SendAsync(commands, token);
-
-            A.CallTo(() => inner.SendAsync(command, token)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => inner.SendAsync(commands, token)).MustHaveHappenedOnceExactly();
-        }
-
-        [Fact]
         public async Task ShouldPassTheTokenToTheEndpoints()
         {
             var ev = A.Fake<IEvent>();

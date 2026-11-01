@@ -52,8 +52,9 @@ namespace Obvs.Testing
 
             var broker = new InMemoryBroker(options.Scheduler);
             var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
-            // Registered before the caller's services, so UseInMemory() picks up this broker
+            // Registered before the caller's services, so UseInMemory() picks up this broker, and the bus this time
             builder.Services.AddSingleton(broker);
+            builder.Services.AddSingleton(options.TimeProvider);
             configureServices(builder.Services);
 
             var harness = new ObvsTestHarness(builder.Build(), broker, options);

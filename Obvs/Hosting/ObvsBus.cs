@@ -115,10 +115,22 @@ namespace Obvs.Hosting
         public IObservable<IResponse> GetResponses(IRequest request, IReadOnlyDictionary<string, string> headers) => _bus.GetResponses(request, headers);
 
         /// <inheritdoc />
-        public IObservable<T> GetResponses<T>(IRequest request) where T : IResponse => _bus.GetResponses<T>(request);
+        public Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default) where TResponse : class, IResponse => _bus.RequestAsync(request, cancellationToken);
 
         /// <inheritdoc />
-        public IObservable<T> GetResponse<T>(IRequest request) where T : IResponse => _bus.GetResponse<T>(request);
+        public Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, TimeSpan timeout, CancellationToken cancellationToken = default) where TResponse : class, IResponse => _bus.RequestAsync(request, timeout, cancellationToken);
+
+        /// <inheritdoc />
+        public Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) where TResponse : class, IResponse => _bus.RequestAsync(request, headers, cancellationToken);
+
+        /// <inheritdoc />
+        public Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, IReadOnlyDictionary<string, string> headers, TimeSpan timeout, CancellationToken cancellationToken = default) where TResponse : class, IResponse => _bus.RequestAsync(request, headers, timeout, cancellationToken);
+
+        /// <inheritdoc />
+        public IAsyncEnumerable<TEvent> ReadEventsAsync<TEvent>(CancellationToken cancellationToken = default, int capacity = 1024) where TEvent : IEvent => _bus.ReadEventsAsync<TEvent>(cancellationToken, capacity);
+
+        /// <inheritdoc />
+        public IAsyncEnumerable<TCommand> ReadCommandsAsync<TCommand>(CancellationToken cancellationToken = default, int capacity = 1024) where TCommand : ICommand => _bus.ReadCommandsAsync<TCommand>(cancellationToken, capacity);
 
         /// <summary>Waits for running handlers to finish, then disposes the bus and its container.</summary>
         public async ValueTask DisposeAsync()

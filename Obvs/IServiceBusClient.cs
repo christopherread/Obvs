@@ -1,284 +1,103 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Obvs.Configuration;
-using Obvs.Extensions;
-using Obvs.Transports;
 using Obvs.Types;
 
 namespace Obvs
 {
-    /// <summary>The bus as a client, for the bus's standard message interfaces: resolve it from the container after <c>AddObvs</c>.</summary>
-    public interface IServiceBusClient : IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>
-    {
-    }
-
     /// <summary>
-    /// The bus as a client of its services: it sends commands and requests, and receives events and responses. Use
-    /// <see cref="ServiceBusClientRequestExtensions.RequestAsync{TResponse}(IServiceBusClient, IRequest{TResponse}, TimeSpan, CancellationToken, TimeProvider)"/> to await a response.
+    /// The bus as a client of its services: it sends commands and requests, and receives events and responses.
+    /// Resolve it from the container after <c>AddObvs</c>.
     /// </summary>
-    public interface IServiceBusClient<TMessage, in TCommand, out TEvent, in TRequest, TResponse>
-        where TMessage : class
-        where TCommand : class, TMessage
-        where TEvent : class, TMessage
-        where TRequest : class, TMessage
-        where TResponse : class, TMessage
+    public interface IServiceBusClient
     {
         /// <summary>The events the bus receives, from the services it's a client of.</summary>
-        IObservable<TEvent> Events { get; }
+        IObservable<IEvent> Events { get; }
 
         /// <summary>Sends <paramref name="command"/> to its service.</summary>
         /// <param name="command">The command</param>
         /// <param name="cancellationToken">Stops waiting for the broker</param>
-        Task SendAsync(TCommand command, CancellationToken cancellationToken = default);
+        Task SendAsync(ICommand command, CancellationToken cancellationToken = default);
+
         /// <summary>Sends <paramref name="command"/> to its service, with <paramref name="headers"/>.</summary>
         /// <param name="command">The command</param>
         /// <param name="headers">Headers to send with it, which its handler reads from <c>MessageContext.Headers</c>. Obvs sets the trace-context headers itself</param>
         /// <param name="cancellationToken">Stops waiting for the broker</param>
-        Task SendAsync(TCommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default);
+        Task SendAsync(ICommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default);
+
         /// <summary>Sends each of <paramref name="commands"/> to its service.</summary>
         /// <param name="commands">The commands</param>
         /// <param name="cancellationToken">Stops sending, and waiting for the broker</param>
-        Task SendAsync(IEnumerable<TCommand> commands, CancellationToken cancellationToken = default);
+        Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default);
 
-        /// <summary>Sends <paramref name="request"/> when subscribed to, and returns its responses. If the send fails, the stream ends with its error.</summary>
-        IObservable<TResponse> GetResponses(TRequest request);
+        /// <summary>
+        /// Sends a request and returns the first response of type <typeparamref name="TResponse"/>, the response the
+        /// request declares with <see cref="IRequest{TResponse}"/>. Throws <see cref="TimeoutException"/> if none arrives
+        /// within the bus's request timeout: 30 seconds, unless set with <c>UseRequestTimeout</c>. If the request can't be
+        /// sent, throws the transport's error straight away.
+        /// </summary>
+        /// <param name="request">The request</param>
+        /// <param name="cancellationToken">Stops waiting for the response</param>
+        Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+            where TResponse : class, IResponse;
+
+        /// <summary>
+        /// Sends a request and returns the first response of type <typeparamref name="TResponse"/>, the response the
+        /// request declares with <see cref="IRequest{TResponse}"/>. Throws <see cref="TimeoutException"/> if none arrives
+        /// within <paramref name="timeout"/>. If the request can't be sent, throws the transport's error straight away.
+        /// </summary>
+        /// <param name="request">The request</param>
+        /// <param name="timeout">How long to wait for the response</param>
+        /// <param name="cancellationToken">Stops waiting for the response</param>
+        Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, TimeSpan timeout, CancellationToken cancellationToken = default)
+            where TResponse : class, IResponse;
+
+        /// <summary>
+        /// Sends a request with <paramref name="headers"/>, and returns the first response of type
+        /// <typeparamref name="TResponse"/>, waiting for the bus's request timeout.
+        /// </summary>
+        /// <param name="request">The request</param>
+        /// <param name="headers">Headers to send with it, which its handler reads from <c>MessageContext.Headers</c>. Obvs sets the trace-context headers itself</param>
+        /// <param name="cancellationToken">Stops waiting for the response</param>
+        Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
+            where TResponse : class, IResponse;
+
+        /// <summary>
+        /// Sends a request with <paramref name="headers"/>, and returns the first response of type
+        /// <typeparamref name="TResponse"/>, waiting for up to <paramref name="timeout"/>.
+        /// </summary>
+        /// <param name="request">The request</param>
+        /// <param name="headers">Headers to send with it, which its handler reads from <c>MessageContext.Headers</c>. Obvs sets the trace-context headers itself</param>
+        /// <param name="timeout">How long to wait for the response</param>
+        /// <param name="cancellationToken">Stops waiting for the response</param>
+        Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, IReadOnlyDictionary<string, string> headers, TimeSpan timeout, CancellationToken cancellationToken = default)
+            where TResponse : class, IResponse;
+
+        /// <summary>
+        /// Sends <paramref name="request"/> when subscribed to, and returns its responses, for a request with several.
+        /// For one response, use <c>RequestAsync</c>. If the send fails, the stream ends with its error.
+        /// </summary>
+        IObservable<IResponse> GetResponses(IRequest request);
+
         /// <summary>Sends <paramref name="request"/>, with <paramref name="headers"/>, when subscribed to, and returns its responses. If the send fails, the stream ends with its error.</summary>
         /// <param name="request">The request</param>
         /// <param name="headers">Headers to send with it, which its handler reads from <c>MessageContext.Headers</c>. Obvs sets the trace-context headers itself</param>
-        IObservable<TResponse> GetResponses(TRequest request, IReadOnlyDictionary<string, string> headers);
-        /// <summary>Sends <paramref name="request"/> when subscribed to, and returns its responses of type <typeparamref name="T"/>.</summary>
-        IObservable<T> GetResponses<T>(TRequest request) where T : TResponse;
-        /// <summary>Sends <paramref name="request"/> when subscribed to, and returns its first response of type <typeparamref name="T"/>.</summary>
-        IObservable<T> GetResponse<T>(TRequest request) where T : TResponse;
+        IObservable<IResponse> GetResponses(IRequest request, IReadOnlyDictionary<string, string> headers);
+
+        /// <summary>
+        /// The bus's events of type <typeparamref name="TEvent"/>, read with <c>await foreach</c> from when enumeration
+        /// starts until it's cancelled or stopped. Each enumeration subscribes on its own, and buffers up to
+        /// <paramref name="capacity"/> events while its reader is busy. A reader that falls further behind gets an
+        /// <see cref="InvalidOperationException"/>, rather than holding up the bus's other subscribers or missing events
+        /// without knowing.
+        /// </summary>
+        /// <param name="cancellationToken">Stops reading</param>
+        /// <param name="capacity">How many events the reader can fall behind by</param>
+        IAsyncEnumerable<TEvent> ReadEventsAsync<TEvent>(CancellationToken cancellationToken = default, int capacity = 1024)
+            where TEvent : IEvent;
 
         /// <summary>Errors the services' streams report while the bus runs, such as a queue that's gone. A hosted bus logs them too.</summary>
         IObservable<Exception> Exceptions { get; }
-    }
-
-    /// <summary>The bus as a client, for the bus's standard message interfaces.</summary>
-    internal class ServiceBusClient : IServiceBusClient, IDisposable
-    {
-        private readonly IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse> _serviceBusClient;
-
-        /// <summary>Wraps a generic client.</summary>
-        /// <param name="serviceBusClient">The client</param>
-        internal ServiceBusClient(IServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse> serviceBusClient)
-        {
-            _serviceBusClient = serviceBusClient;
-        }
-
-        /// <inheritdoc />
-        public IObservable<IEvent> Events => _serviceBusClient.Events;
-
-        /// <inheritdoc />
-        public Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
-        {
-            return _serviceBusClient.SendAsync(command, cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public Task SendAsync(ICommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
-        {
-            return _serviceBusClient.SendAsync(command, headers, cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default)
-        {
-            return _serviceBusClient.SendAsync(commands, cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public IObservable<IResponse> GetResponses(IRequest request)
-        {
-            return _serviceBusClient.GetResponses(request);
-        }
-
-        /// <inheritdoc />
-        public IObservable<IResponse> GetResponses(IRequest request, IReadOnlyDictionary<string, string> headers)
-        {
-            return _serviceBusClient.GetResponses(request, headers);
-        }
-
-        /// <inheritdoc />
-        public IObservable<T> GetResponses<T>(IRequest request) where T : IResponse
-        {
-            return _serviceBusClient.GetResponses<T>(request);
-        }
-
-        /// <inheritdoc />
-        public IObservable<T> GetResponse<T>(IRequest request) where T : IResponse
-        {
-            return _serviceBusClient.GetResponse<T>(request);
-        }
-
-        /// <inheritdoc />
-        public IObservable<Exception> Exceptions => _serviceBusClient.Exceptions;
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            ((IDisposable)_serviceBusClient).Dispose();
-        }
-    }
-
-    /// <summary> merges multiple configured <see cref="IServiceEndpoint"/>s and <see cref="IServiceEndpointClient"/>s into an Observable stream per message type </summary>
-    internal class ServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceBusErrorHandlingBase<TMessage, TCommand, TEvent, TRequest, TResponse>
-        , IServiceBusClient<TMessage, TCommand, TEvent, TRequest, TResponse>
-        where TMessage : class
-        where TCommand : class, TMessage
-        where TEvent : class, TMessage
-        where TRequest : class, TMessage
-        where TResponse : class, TMessage
-    {
-        /// <summary>The server endpoints of the services the bus serves.</summary>
-        protected readonly IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> Endpoints;
-        private readonly IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> _endpointClients;
-        private readonly IRequestCorrelationProvider<TRequest, TResponse> _requestCorrelationProvider;
-
-        /// <summary>A client over these endpoints.</summary>
-        /// <param name="endpointClients">The client endpoints of the services the bus uses</param>
-        /// <param name="endpoints">The server endpoints of the services the bus serves</param>
-        /// <param name="requestCorrelationProvider">How responses are matched to requests</param>
-        internal ServiceBusClient(IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> endpointClients, 
-                                IEnumerable<IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>> endpoints, 
-                                IRequestCorrelationProvider<TRequest, TResponse> requestCorrelationProvider)
-        {
-            Endpoints = endpoints.ToList();
-
-            _endpointClients = endpointClients.ToArray();
-
-            Events = _endpointClients
-                .Select(endpointClient => endpointClient.EventsWithErrorHandling(_exceptions))
-                .Merge()
-                .PublishRefCountRetriable();
-
-            _requestCorrelationProvider = requestCorrelationProvider ?? throw new ArgumentNullException(nameof(requestCorrelationProvider));
-        }
-
-        /// <inheritdoc />
-        public IObservable<TEvent> Events { get; }
-
-        /// <inheritdoc />
-        public Task SendAsync(TCommand command, CancellationToken cancellationToken = default)
-        {
-            return SendAsync(command, ObvsReceivedMessage.NoHeaders, cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public Task SendAsync(TCommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
-        {
-            if (headers == null)
-            {
-                throw new ArgumentNullException(nameof(headers));
-            }
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var exceptions = new List<Exception>();
-
-            var tasks = EndpointClientsThatCanHandle(command)
-                .Select(endpoint => CatchUnlessCancelled(() => endpoint.SendAsync(command, headers, cancellationToken), exceptions, cancellationToken, CommandErrorMessage(endpoint)))
-                .ToArray();
-
-            if (exceptions.Any())
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                throw new AggregateException(CommandErrorMessage(command), exceptions);
-            }
-
-            if (tasks.Length == 0)
-            {
-                throw new InvalidOperationException(NoEndpointMessage(command));
-            }
-
-            return Task.WhenAll(tasks);
-        }
-
-        /// <inheritdoc />
-        public Task SendAsync(IEnumerable<TCommand> commands, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var commandsResolved = commands.ToArray();
-
-            if (commandsResolved.Length == 0)
-                return Task.FromResult(true);
-
-            var exceptions = new List<Exception>();
-            
-            var tasks = commandsResolved.Select(command => CatchUnlessCancelled(() => SendAsync(command, cancellationToken), exceptions, cancellationToken)).ToArray();
-
-            if (exceptions.Any())
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                Exception[] GetInnerExceptions(Exception e) =>
-                    e is AggregateException aggregateException
-                        ? aggregateException.InnerExceptions.ToArray()
-                        : new[] {e};
-
-                throw new AggregateException(CommandErrorMessage(), exceptions.SelectMany(GetInnerExceptions));
-            }
-
-            if (tasks.Length == 0)
-            {
-                throw new Exception("No endpoint configured for any of these commands, please check your ServiceBus configuration.");
-            }
-
-            return Task.WhenAll(tasks);
-        }
-
-        /// <inheritdoc />
-        public IObservable<TResponse> GetResponses(TRequest request)
-        {
-            return GetResponses(request, ObvsReceivedMessage.NoHeaders);
-        }
-
-        /// <inheritdoc />
-        public IObservable<TResponse> GetResponses(TRequest request, IReadOnlyDictionary<string, string> headers)
-        {
-            if (headers == null)
-            {
-                throw new ArgumentNullException(nameof(headers));
-            }
-            _requestCorrelationProvider.SetRequestCorrelationIds(request);
-
-            return EndpointClientsThatCanHandle(request)
-                .Select(endpoint => endpoint.GetResponses(request, headers)
-                .Where(response => _requestCorrelationProvider.AreCorrelated(request, response)))
-                .Merge()
-                .PublishRefCountRetriable();
-        }
-
-        /// <inheritdoc />
-        public IObservable<T> GetResponses<T>(TRequest request) where T : TResponse
-        {
-            return GetResponses(request).OfType<T>();
-        }
-
-        /// <inheritdoc />
-        public IObservable<T> GetResponse<T>(TRequest request) where T : TResponse
-        {
-            return GetResponses(request).OfType<T>().Take(1);
-        }
-
-        private IEnumerable<IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>> EndpointClientsThatCanHandle(TMessage message)
-        {
-            return _endpointClients.Where(endpoint => endpoint.CanHandle(message)).ToArray();
-        }
-
-        /// <inheritdoc />
-        public override void Dispose()
-        {
-            base.Dispose();
-            foreach (var endpointClient in _endpointClients)
-            {
-                endpointClient.Dispose();
-            }
-        }
     }
 }
