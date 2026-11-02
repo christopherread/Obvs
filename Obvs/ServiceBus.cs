@@ -107,37 +107,6 @@ namespace Obvs
         }
 
         /// <inheritdoc />
-        public Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var commandsResolved = commands.ToArray();
-
-            if (commandsResolved.Length == 0)
-            {
-                return Task.FromResult(true);
-            }
-
-            var exceptions = new List<Exception>();
-
-            var tasks = commandsResolved.Select(command => CatchUnlessCancelled(() => SendAsync(command, cancellationToken), exceptions, cancellationToken)).ToArray();
-
-            if (exceptions.Any())
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                Exception[] GetInnerExceptions(Exception e) =>
-                    e is AggregateException aggregateException
-                        ? aggregateException.InnerExceptions.ToArray()
-                        : new[] { e };
-
-                throw new AggregateException("Error sending commands", exceptions.SelectMany(GetInnerExceptions));
-            }
-
-            return Task.WhenAll(tasks);
-        }
-
-        /// <inheritdoc />
         public Task<TResponse> RequestAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
             where TResponse : class, IResponse
         {

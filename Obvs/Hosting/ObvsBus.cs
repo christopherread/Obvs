@@ -97,9 +97,6 @@ namespace Obvs.Hosting
         public Task SendAsync(ICommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default) => _bus.SendAsync(command, headers, cancellationToken);
 
         /// <inheritdoc />
-        public Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default) => _bus.SendAsync(commands, cancellationToken);
-
-        /// <inheritdoc />
         public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default) => _bus.PublishAsync(ev, cancellationToken);
 
         /// <inheritdoc />

@@ -18,7 +18,7 @@ namespace Obvs.Serialization.Tests
 
             var messageAfter = deserializer.Deserialize(new ProtoBufMessageSerializer().Serialize(messageBefore));
 
-            Assert.Equal(typeof(TestMessageProto).Name, deserializer.GetTypeName());
+            Assert.Equal(typeof(TestMessageProto).Name, deserializer.TypeName);
             Assert.Equal(messageBefore, messageAfter);
         }
 

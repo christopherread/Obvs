@@ -15,7 +15,7 @@ namespace Obvs.Serialization.Tests
         {
             var factory = new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>));
             var deses = factory.Create<TestMessage, IMessage>(ShouldLoadAssembly);
-            var des = deses.FirstOrDefault(d => d.GetTypeName() == typeof(TestMessage).Name);
+            var des = deses.FirstOrDefault(d => d.TypeName == typeof(TestMessage).Name);
 
             IMessageSerializer serializer = new JsonMessageSerializer();
             var messageBefore = new TestMessage { Id = 123, Name = "SomeName" };
@@ -36,7 +36,7 @@ namespace Obvs.Serialization.Tests
 
             var messageAfter = deserializer.Deserialize(new JsonMessageSerializer().Serialize(messageBefore));
 
-            Assert.Equal(typeof(TestMessage).Name, deserializer.GetTypeName());
+            Assert.Equal(typeof(TestMessage).Name, deserializer.TypeName);
             Assert.Equal(messageBefore, messageAfter);
         }
 

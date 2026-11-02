@@ -79,7 +79,7 @@ namespace Obvs.Serialization.Compression
                         if (decompressed.Length + read > _maxDecompressedBytes)
                         {
                             throw new InvalidDataException(
-                                $"A {GetTypeName()} message for service '{_serviceName}' decompresses to more than the limit of {_maxDecompressedBytes} bytes, " +
+                                $"A {TypeName} message for service '{_serviceName}' decompresses to more than the limit of {_maxDecompressedBytes} bytes, " +
                                 "so it wasn't read. If messages this large are expected, raise maxDecompressedBytes in Compressed(...) on the service.");
                         }
                         decompressed.Write(buffer, 0, read);
@@ -89,7 +89,7 @@ namespace Obvs.Serialization.Compression
                 }
             }
 
-            public string GetTypeName() => _inner.GetTypeName();
+            public string TypeName => _inner.TypeName;
         }
     }
 }

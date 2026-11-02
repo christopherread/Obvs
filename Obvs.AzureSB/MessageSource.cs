@@ -32,7 +32,7 @@ namespace Obvs.AzureSB
         {
             _createProcessor = createProcessor;
             _options = options;
-            _deserializers = deserializers.ToDictionary(deserializer => deserializer.GetTypeName());
+            _deserializers = deserializers.ToDictionary(deserializer => deserializer.TypeName);
             Messages = Observable.Defer(() =>
             {
                 lock (_sharedLock)

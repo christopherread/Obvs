@@ -82,6 +82,9 @@ Configuration errors fail startup, all at once, each with its fix. See [configur
 | `IServiceBus<TMessage, ...>` and `IServiceBusClient<TMessage, ...>` | `IServiceBus` and `IServiceBusClient`, over `IMessage` |
 | `GetResponse<T>(request)` | `RequestAsync(request, ct)` for a request that names its response, or `GetResponses(request).OfType<T>().Take(1)` |
 | `GetResponses<T>(request)` | `GetResponses(request).OfType<T>()` |
+| `SendAsync(IEnumerable<ICommand>)` | `await Task.WhenAll(commands.Select(command => bus.SendAsync(command, ct)))` |
+| `IMessageDeserializer<T>.GetTypeName()` | The `TypeName` property |
+| `MessageSerializerExtentions` and `MessageDeserializerExtentions` | `MessageSerializerExtensions` and `MessageDeserializerExtensions`, spelt correctly. Code that calls their methods as extensions doesn't change |
 | `IRequestCorrelationProvider` and `DefaultRequestCorrelationProvider` | Nothing: the bus matches responses to requests by request ID and requester ID, as v6's default did |
 | `Obvs.Logging`: `ILogger`, `ILoggerFactory`, `LogLevel`, the console and debug loggers | `Microsoft.Extensions.Logging` |
 | `Obvs.Monitoring`: `IMonitor`, `IMonitorFactory`, the console monitor | OpenTelemetry, through `ObvsTelemetry` |

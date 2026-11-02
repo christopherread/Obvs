@@ -65,7 +65,7 @@ namespace Obvs.Tests.Hosting
 
             var deserializers = service.DeserializerFactory.Create<IMessage, ICatalogueMessage>();
 
-            Assert.Equal(new[] { "AddProduct", "ProductAdded" }, deserializers.Select(deserializer => deserializer.GetTypeName()).OrderBy(name => name));
+            Assert.Equal(new[] { "AddProduct", "ProductAdded" }, deserializers.Select(deserializer => deserializer.TypeName).OrderBy(name => name));
             Assert.Equal(0, factory.Scans);
         }
 
@@ -79,7 +79,7 @@ namespace Obvs.Tests.Hosting
 
             var deserializers = service.DeserializerFactory.Create<ICommand, ICatalogueMessage>();
 
-            Assert.Equal("AddProduct", Assert.Single(deserializers).GetTypeName());
+            Assert.Equal("AddProduct", Assert.Single(deserializers).TypeName);
         }
 
         [Fact]
@@ -91,7 +91,7 @@ namespace Obvs.Tests.Hosting
 
             var deserializers = service.DeserializerFactory.Create<IMessage, ICatalogueMessage>();
 
-            Assert.Equal("AddProduct", Assert.Single(deserializers).GetTypeName());
+            Assert.Equal("AddProduct", Assert.Single(deserializers).TypeName);
         }
 
         [Fact]
@@ -233,7 +233,7 @@ namespace Obvs.Tests.Hosting
 
             public TMessage Deserialize(Stream source) => throw new NotSupportedException();
 
-            public string GetTypeName() => _type.Name;
+            public string TypeName => _type.Name;
         }
 
         private sealed class NullSerializer : IMessageSerializer

@@ -52,7 +52,7 @@ namespace Obvs.NATS.JetStream
             _destination = destination;
             _serviceName = serviceName;
             _options = options;
-            _deserializers = deserializers.ToDictionary(deserializer => deserializer.GetTypeName());
+            _deserializers = deserializers.ToDictionary(deserializer => deserializer.TypeName);
 
             Messages = Observable.Defer(Shared);
         }

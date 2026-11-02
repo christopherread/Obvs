@@ -46,7 +46,7 @@ namespace Obvs.Kafka
             Func<Dictionary<string, string>, bool> propertyFilter,
             string groupId = null)
         {
-            _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
+            _deserializers = deserializers.ToDictionary(d => d.TypeName);
             _topicName = topicName;
             _propertyFilter = propertyFilter;
             var clientId = $"{Environment.MachineName}-{Environment.UserName}-{Process.GetCurrentProcess().Id}";

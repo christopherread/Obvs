@@ -26,11 +26,6 @@ namespace Obvs
         /// <param name="cancellationToken">Stops waiting for the broker</param>
         Task SendAsync(ICommand command, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default);
 
-        /// <summary>Sends each of <paramref name="commands"/> to its service.</summary>
-        /// <param name="commands">The commands</param>
-        /// <param name="cancellationToken">Stops sending, and waiting for the broker</param>
-        Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default);
-
         /// <summary>
         /// Sends a request and returns the first response of type <typeparamref name="TResponse"/>, the response the
         /// request declares with <see cref="IRequest{TResponse}"/>. Throws <see cref="TimeoutException"/> if none arrives

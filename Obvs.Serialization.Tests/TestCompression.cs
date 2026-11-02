@@ -30,7 +30,7 @@ namespace Obvs.Serialization.Tests
             var deserializer = decompressing.Create<IMessage>(message.GetType());
 
             Assert.Equal(message, deserializer.Deserialize(bytes));
-            Assert.Equal(message.GetType().Name, deserializer.GetTypeName());
+            Assert.Equal(message.GetType().Name, deserializer.TypeName);
         }
 
         [Theory]
@@ -55,7 +55,7 @@ namespace Obvs.Serialization.Tests
 
             var deserializers = decompressing.Create<TestMessage, IMessage>(assembly => !assembly.FullName.Contains("xunit"));
 
-            var deserializer = Assert.Single(deserializers, d => d.GetTypeName() == nameof(TestMessage));
+            var deserializer = Assert.Single(deserializers, d => d.TypeName == nameof(TestMessage));
             Assert.Equal(message, deserializer.Deserialize(new GzipMessageSerializer(new SystemTextJsonMessageSerializer(), CompressionLevel.Fastest).Serialize(message)));
         }
 
