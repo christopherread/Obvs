@@ -199,7 +199,7 @@ namespace Obvs.NATS.Tests.JetStream
         }
 
         [Fact, Trait("Category", "Explicit")]
-        public async Task ShouldStopKeepingACommandInProgressAfterMaxInProgressDuration()
+        public async Task ShouldStopKeepingACommandInProgressAfterMaxHandlerDuration()
         {
             // Like a lock that's no longer renewed: JetStream delivers the command again while its first handler still runs
             var serviceName = _services.Create("in-progress-limit");
@@ -217,7 +217,7 @@ namespace Obvs.NATS.Tests.JetStream
                 }, handler => handler.MaxConcurrency = 2), options: options =>
             {
                 options.AckWait = TimeSpan.FromSeconds(1);
-                options.MaxInProgressDuration = TimeSpan.Zero;
+                options.MaxHandlerDuration = TimeSpan.Zero;
             });
 
             await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);

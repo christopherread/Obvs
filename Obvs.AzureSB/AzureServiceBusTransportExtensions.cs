@@ -109,9 +109,9 @@ namespace Obvs.Hosting
                 yield return $"Service '{service.ServiceName}' sets Azure Service Bus LockDuration to {lockDuration}, but Service Bus allows between 5 seconds and 5 minutes. " +
                              "Leave it unset for Service Bus's default of 1 minute.";
             }
-            if (options.MaxLockRenewalDuration < TimeSpan.Zero)
+            if (options.MaxHandlerDuration < TimeSpan.Zero)
             {
-                yield return $"Service '{service.ServiceName}' sets Azure Service Bus MaxLockRenewalDuration to {options.MaxLockRenewalDuration}, but it can't be negative. " +
+                yield return $"Service '{service.ServiceName}' sets Azure Service Bus MaxHandlerDuration to {options.MaxHandlerDuration}, but it can't be negative. " +
                              "Set TimeSpan.Zero to never renew a message's lock.";
             }
             if (service.InstanceId.Length > MaxSubscriptionNameLength)

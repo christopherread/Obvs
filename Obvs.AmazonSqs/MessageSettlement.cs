@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +11,8 @@ using Obvs.Transports;
 namespace Obvs.AmazonSqs
 {
     // Settles one received message on the queue it came from. Until it's settled, it holds one of the receive loop's
-    // MaxConcurrentMessages places, which onSettled gives back.
+    // MaxConcurrentMessages places, which onSettled gives back, and its visibility is extended so SQS doesn't deliver
+    // it again while its handler runs.
     internal sealed class MessageSettlement : IMessageSettlement
     {
         // Attributes recording why Obvs dead-lettered a message
@@ -29,17 +31,22 @@ namespace Obvs.AmazonSqs
         private readonly string _deadLetterQueueUrl;
         private readonly Message _message;
         private readonly int _maxDeliveryAttempts;
+        private readonly TimeSpan _visibilityTimeout;
+        private readonly TimeSpan _maxHandlerDuration;
         private readonly Action _onSettled;
         private readonly TaskCompletionSource<bool> _settled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         private int _settling;
 
-        public MessageSettlement(IAmazonSQS sqs, string queueUrl, string deadLetterQueueUrl, Message message, int maxDeliveryAttempts, Action onSettled)
+        public MessageSettlement(IAmazonSQS sqs, string queueUrl, string deadLetterQueueUrl, Message message, int maxDeliveryAttempts,
+            TimeSpan visibilityTimeout, TimeSpan maxHandlerDuration, Action onSettled)
         {
             _sqs = sqs;
             _queueUrl = queueUrl;
             _deadLetterQueueUrl = deadLetterQueueUrl;
             _message = message;
             _maxDeliveryAttempts = maxDeliveryAttempts;
+            _visibilityTimeout = visibilityTimeout;
+            _maxHandlerDuration = maxHandlerDuration;
             _onSettled = onSettled;
         }
 
@@ -68,6 +75,49 @@ namespace Obvs.AmazonSqs
             if (Interlocked.Exchange(ref _settling, 1) == 0)
             {
                 Finish();
+            }
+        }
+
+        // Until the message is settled, extends its visibility every third of the visibility timeout, for up to
+        // MaxHandlerDuration from when it was received, as SQS doesn't know a handler is still running it
+        public async Task KeepHiddenAsync()
+        {
+            var interval = TimeSpan.FromTicks(_visibilityTimeout.Ticks / 3);
+            var elapsed = Stopwatch.StartNew();
+            while (!_settled.Task.IsCompleted)
+            {
+                var remaining = _maxHandlerDuration - elapsed.Elapsed;
+                if (remaining <= TimeSpan.Zero)
+                {
+                    return;
+                }
+
+                using (var cancellation = new CancellationTokenSource())
+                {
+                    var delay = Task.Delay(remaining < interval ? remaining : interval, cancellation.Token);
+                    if (await Task.WhenAny(_settled.Task, delay).ConfigureAwait(false) == _settled.Task)
+                    {
+                        cancellation.Cancel();
+                        return;
+                    }
+                }
+
+                if (elapsed.Elapsed < _maxHandlerDuration && Volatile.Read(ref _settling) == 0)
+                {
+                    try
+                    {
+                        await _sqs.ChangeMessageVisibilityAsync(new ChangeMessageVisibilityRequest
+                        {
+                            QueueUrl = _queueUrl,
+                            ReceiptHandle = _message.ReceiptHandle,
+                            VisibilityTimeout = (int)Math.Ceiling(_visibilityTimeout.TotalSeconds),
+                        }).ConfigureAwait(false);
+                    }
+                    catch (Exception)
+                    {
+                        // The message was settled meanwhile, or SQS can't be reached: SQS delivers it again either way
+                    }
+                }
             }
         }
 

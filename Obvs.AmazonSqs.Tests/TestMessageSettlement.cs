@@ -134,7 +134,8 @@ namespace Obvs.AmazonSqs.Tests
                     [MessagePropertyNames.TypeName] = new MessageAttributeValue { DataType = "String", StringValue = "PlaceOrder" },
                 },
             };
-            return new MessageSettlement(_sqs, QueueUrl, DeadLetterQueueUrl, message, maxDeliveryAttempts, onSettled ?? (() => { }));
+            return new MessageSettlement(_sqs, QueueUrl, DeadLetterQueueUrl, message, maxDeliveryAttempts, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5),
+                onSettled ?? (() => { }));
         }
     }
 }

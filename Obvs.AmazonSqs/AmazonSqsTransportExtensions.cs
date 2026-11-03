@@ -111,16 +111,11 @@ namespace Obvs.Hosting
                 yield return $"Service '{service.ServiceName}' sets Amazon SQS VisibilityTimeout to {options.VisibilityTimeout}, but SQS allows between 1 second and 12 hours. " +
                              "Leave it unset for 1 minute.";
             }
-            else if (options.MaxHandlerDuration > TimeSpan.Zero && options.VisibilityTimeout <= options.MaxHandlerDuration)
+            if (options.MaxHandlerDuration < TimeSpan.Zero || options.MaxHandlerDuration > MaxVisibilityTimeout)
             {
-                yield return $"Service '{service.ServiceName}' sets Amazon SQS VisibilityTimeout to {options.VisibilityTimeout}, which must exceed MaxHandlerDuration ({options.MaxHandlerDuration}): " +
-                             "SQS delivers a message again once its visibility timeout passes, even while a handler is still running it. " +
-                             "Raise VisibilityTimeout, or lower MaxHandlerDuration if handlers finish sooner.";
-            }
-            if (options.MaxHandlerDuration <= TimeSpan.Zero)
-            {
-                yield return $"Service '{service.ServiceName}' sets Amazon SQS MaxHandlerDuration to {options.MaxHandlerDuration}, but it must be positive. " +
-                             "Set it to the longest a handler takes with a message, or leave it unset for 30 seconds.";
+                yield return $"Service '{service.ServiceName}' sets Amazon SQS MaxHandlerDuration to {options.MaxHandlerDuration}, but SQS keeps a message hidden " +
+                             "for at most 12 hours from when it's received, so it must be between zero and 12 hours. " +
+                             "Set it to the longest a handler takes with a message, TimeSpan.Zero to never extend a message's visibility, or leave it unset for 5 minutes.";
             }
             if (options.CleanUpAbandonedQueues)
             {

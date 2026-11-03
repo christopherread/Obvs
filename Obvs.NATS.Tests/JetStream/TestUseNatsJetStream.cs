@@ -24,7 +24,7 @@ namespace Obvs.NATS.Tests.JetStream
                 ["Obvs:Orders:NatsJetStream:MaxDeliveryAttempts"] = "3",
                 ["Obvs:Orders:NatsJetStream:MaxConcurrentMessages"] = "4",
                 ["Obvs:Orders:NatsJetStream:AckWait"] = "00:00:45",
-                ["Obvs:Orders:NatsJetStream:MaxInProgressDuration"] = "00:10:00",
+                ["Obvs:Orders:NatsJetStream:MaxHandlerDuration"] = "00:10:00",
             });
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
                 .AddService<IOrderMessage>("orders", service => service
@@ -36,7 +36,7 @@ namespace Obvs.NATS.Tests.JetStream
             Assert.Equal(3, options.MaxDeliveryAttempts);
             Assert.Equal(4, options.MaxConcurrentMessages);
             Assert.Equal(TimeSpan.FromSeconds(45), options.AckWait);
-            Assert.Equal(TimeSpan.FromMinutes(10), options.MaxInProgressDuration);
+            Assert.Equal(TimeSpan.FromMinutes(10), options.MaxHandlerDuration);
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Obvs.NATS.Tests.JetStream
             Assert.Equal(10, options.MaxDeliveryAttempts);
             Assert.Null(options.MaxConcurrentMessages);
             Assert.Null(options.AckWait);
-            Assert.Equal(TimeSpan.FromMinutes(5), options.MaxInProgressDuration);
+            Assert.Equal(TimeSpan.FromMinutes(5), options.MaxHandlerDuration);
         }
 
         [Fact]
@@ -119,12 +119,12 @@ namespace Obvs.NATS.Tests.JetStream
         }
 
         [Fact]
-        public async Task ShouldFailToStartWhenMaxInProgressDurationIsNegative()
+        public async Task ShouldFailToStartWhenMaxHandlerDurationIsNegative()
         {
-            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxInProgressDuration = TimeSpan.FromSeconds(-1)));
+            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxHandlerDuration = TimeSpan.FromSeconds(-1)));
 
             Assert.Contains("'orders'", error);
-            Assert.Contains("MaxInProgressDuration", error);
+            Assert.Contains("MaxHandlerDuration", error);
         }
 
         [Theory]

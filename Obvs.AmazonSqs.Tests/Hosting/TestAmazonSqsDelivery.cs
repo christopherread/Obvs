@@ -100,9 +100,29 @@ namespace Obvs.AmazonSqs.Tests.Hosting
         }
 
         [Fact, Trait("Category", "Explicit")]
-        public async Task ShouldRedeliverACommandWhoseHandlerOutlastsTheVisibilityTimeout()
+        public async Task ShouldKeepACommandHiddenWhileItsHandlerOutlastsTheVisibilityTimeout()
         {
-            // Why VisibilityTimeout must exceed MaxHandlerDuration: SQS doesn't know a handler is still running
+            // The bus extends the message's visibility while its handler runs, as Service Bus renews a lock
+            var serviceName = _serviceNames.Create("extended");
+            var attempts = 0;
+            using var host = await TestAmazonSqsHosting.StartHostAsync(serviceName,
+                service => service.HandleCommand<PlaceOrder>(async (command, context, ct) =>
+                {
+                    Interlocked.Increment(ref attempts);
+                    await Task.Delay(TimeSpan.FromSeconds(7), ct);
+                }, handler => handler.MaxConcurrency = 2),
+                configureOptions: options => options.VisibilityTimeout = TimeSpan.FromSeconds(2));
+
+            await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+
+            await WaitUntilAsync(() => Volatile.Read(ref attempts) == 1);
+            await Task.Delay(TimeSpan.FromSeconds(10), Ct);
+            Assert.Equal(1, Volatile.Read(ref attempts));
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldRedeliverACommandWhoseHandlerOutlastsMaxHandlerDuration()
+        {
             var serviceName = _serviceNames.Create("outlasted");
             var attempts = 0;
             using var host = await TestAmazonSqsHosting.StartHostAsync(serviceName,
@@ -116,7 +136,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                 configureOptions: options =>
                 {
                     options.VisibilityTimeout = TimeSpan.FromSeconds(2);
-                    options.MaxHandlerDuration = TimeSpan.FromSeconds(1);
+                    options.MaxHandlerDuration = TimeSpan.Zero;
                 });
 
             await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);

@@ -115,14 +115,14 @@ namespace Obvs.AzureSB.Tests.Hosting
         }
 
         [Fact, Trait("Category", "Explicit")]
-        public async Task ShouldRedeliverACommandWhoseHandlerOutlastsMaxLockRenewalDuration()
+        public async Task ShouldRedeliverACommandWhoseHandlerOutlastsMaxHandlerDuration()
         {
             var serviceName = _serviceNames.Create("lock-lost");
             var attempts = 0;
             using var host = await StartHostAsync(serviceName, options =>
                 {
                     options.LockDuration = TimeSpan.FromSeconds(5);
-                    options.MaxLockRenewalDuration = TimeSpan.Zero;
+                    options.MaxHandlerDuration = TimeSpan.Zero;
                 },
                 service => service.HandleCommand<PlaceOrder>(async (command, context, ct) =>
                 {

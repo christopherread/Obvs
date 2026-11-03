@@ -298,12 +298,14 @@ namespace Obvs.AmazonSqs
                 }
 
                 MessageSettlement settlement = null;
-                settlement = new MessageSettlement(_source._sqs, _source._queueUrl, _source._deadLetterQueueUrl, received, _source._options.MaxDeliveryAttempts, () =>
-                {
-                    _inHand.TryRemove(settlement, out _);
-                    _places.Release();
-                });
+                settlement = new MessageSettlement(_source._sqs, _source._queueUrl, _source._deadLetterQueueUrl, received, _source._options.MaxDeliveryAttempts,
+                    _source._options.VisibilityTimeout, _source._options.MaxHandlerDuration, () =>
+                    {
+                        _inHand.TryRemove(settlement, out _);
+                        _places.Release();
+                    });
                 _inHand[settlement] = true;
+                _ = settlement.KeepHiddenAsync();
                 ObvsReceivedMessage.Attach(message, headers, settlement);
                 _observer.OnNext(message);
                 if (Volatile.Read(ref _stopped) == 1)
