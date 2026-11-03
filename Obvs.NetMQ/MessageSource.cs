@@ -27,7 +27,7 @@ namespace Obvs.NetMQ
         public MessageSource(string address, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string topic, SocketType socketType = SocketType.Client)
         {
             _address = address;
-            _deserializers = deserializers.ToDictionary(d => d.GetTypeName(), d => d);
+            _deserializers = deserializers.ToDictionary(d => d.TypeName, d => d);
             _topic = topic;
             _socketType = socketType;
         }

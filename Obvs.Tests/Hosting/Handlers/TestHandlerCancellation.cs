@@ -112,11 +112,6 @@ namespace Obvs.Tests.Hosting.Handlers
                 return _inner.SendAsync(command, headers, cancellationToken);
             }
 
-            public Task SendAsync(IEnumerable<ICommand> commands, CancellationToken cancellationToken = default)
-            {
-                return _inner.SendAsync(commands, cancellationToken);
-            }
-
             public Task PublishAsync(IEvent ev, CancellationToken cancellationToken = default)
             {
                 _recording.Enqueue(("publish", ev, cancellationToken));

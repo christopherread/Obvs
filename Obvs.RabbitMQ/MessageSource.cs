@@ -43,7 +43,7 @@ namespace Obvs.RabbitMQ
             _connection = connection;
             _exchange = exchange;
             _uniqueQueueSuffix = uniqueQueueSuffix;
-            _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
+            _deserializers = deserializers.ToDictionary(d => d.TypeName);
             _routingKey = string.Format("{0}.*", routingKeyPrefix);
             _queueNamePrefix = routingKeyPrefix.StartsWith(exchange) ? routingKeyPrefix : string.Format("{0}.{1}*", _exchange, routingKeyPrefix);
         }

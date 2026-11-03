@@ -24,7 +24,7 @@ namespace Obvs.Serialization.Tests {
 
             var messageAfter = deserializer.Deserialize(new MessagePackCSharpMessageSerializer().Serialize(messageBefore));
 
-            Assert.Equal(typeof(TestMessage).Name, deserializer.GetTypeName());
+            Assert.Equal(typeof(TestMessage).Name, deserializer.TypeName);
             Assert.Equal(messageBefore, messageAfter);
         }
 

@@ -28,7 +28,7 @@ namespace Obvs.NATS
             IEnumerable<IMessageDeserializer<TMessage>> deserializers,
             Func<Dictionary<string, string>, bool> filter = null)
         {
-            _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
+            _deserializers = deserializers.ToDictionary(d => d.TypeName);
             _connection = connection;
             _filter = filter;
             _subject = string.Format("{0}.*", subjectPrefix);

@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using Obvs.Serialization;
+using Obvs.Types;
 using Xunit;
 
 namespace Obvs.Tests
@@ -35,7 +38,7 @@ namespace Obvs.Tests
         [Theory]
         [InlineData(typeof(IServiceBusClient), "RequestAsync", 4)]
         [InlineData(typeof(IServiceBusClient), "ReadEventsAsync", 1)]
-        [InlineData(typeof(IServiceBusClient), "SendAsync", 3)]
+        [InlineData(typeof(IServiceBusClient), "SendAsync", 2)]
         [InlineData(typeof(IServiceBus), "ReadCommandsAsync", 1)]
         [InlineData(typeof(IServiceBus), "PublishAsync", 2)]
         public void ShouldOfferWhatAppsCallAsMembersOfTheBus(Type bus, string name, int overloads)
@@ -51,6 +54,36 @@ namespace Obvs.Tests
 
             Assert.DoesNotContain(methods, method => method.Name == "GetResponse");
             Assert.All(methods.Where(method => method.Name == "GetResponses"), method => Assert.False(method.IsGenericMethod));
+        }
+
+        [Fact]
+        public void ShouldLeaveSendingSeveralCommandsToTheCaller()
+        {
+            var sends = typeof(IServiceBusClient).GetMethods().Where(method => method.Name == "SendAsync");
+
+            Assert.DoesNotContain(sends, send => send.GetParameters()[0].ParameterType == typeof(IEnumerable<ICommand>));
+        }
+
+        [Fact]
+        public void ShouldNameTheSerializationHelpersExtensions()
+        {
+            var names = Obvs.GetExportedTypes().Where(type => type.Namespace == "Obvs.Serialization").Select(type => type.Name).ToArray();
+
+            Assert.Contains("MessageSerializerExtensions", names);
+            Assert.Contains("MessageDeserializerExtensions", names);
+            Assert.DoesNotContain(Obvs.GetExportedTypes(), type => type.Name.Contains("Extention"));
+        }
+
+        [Fact]
+        public void ShouldExposeADeserializersTypeNameAsAProperty()
+        {
+            var deserializer = typeof(IMessageDeserializer<>);
+
+            Assert.Null(deserializer.GetMethod("GetTypeName"));
+            var typeName = deserializer.GetProperty("TypeName");
+            Assert.NotNull(typeName);
+            Assert.Equal(typeof(string), typeName.PropertyType);
+            Assert.False(typeName.CanWrite);
         }
 
         [Theory]

@@ -189,7 +189,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => bytesMessage.Properties.Contains(MessagePropertyNames.TypeName)).Returns(true);
             A.CallTo(() => bytesMessage.Properties.GetString(MessagePropertyNames.TypeName)).Returns("SomeTypeName");
             A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
-            A.CallTo(() => _deserializer.GetTypeName()).Returns("SomeTypeName");
+            A.CallTo(() => _deserializer.TypeName).Returns("SomeTypeName");
 
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
                 _acknowledgementMode);
@@ -215,7 +215,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => bytesMessage.Content).Returns(bytes);
             A.CallTo(() => bytesMessage.Properties).Returns(new PrimitiveMap());
             A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
-            A.CallTo(() => _deserializer.GetTypeName()).Returns("");
+            A.CallTo(() => _deserializer.TypeName).Returns("");
 
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination, _acknowledgementMode);
 
@@ -248,7 +248,7 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => bytesMessage.Content).Returns(bytes);
             A.CallTo(() => bytesMessage.Properties).Returns(messageProperties);
             A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
-            A.CallTo(() => _deserializer.GetTypeName()).Returns(typeName);
+            A.CallTo(() => _deserializer.TypeName).Returns(typeName);
 
             _source = new MessageSource<ITestMessage>(_lazyConnection, new[] {_deserializer}, _destination,
                 _acknowledgementMode, null, filter, false);

@@ -820,7 +820,8 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpointClient2.SendAsync(command1, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
             A.CallTo(() => serviceEndpointClient3.SendAsync(command1, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
             
-            serviceBus.SendAsync(new[]{command2, command3}, TestContext.Current.CancellationToken);
+            serviceBus.SendAsync(command2, TestContext.Current.CancellationToken);
+            serviceBus.SendAsync(command3, TestContext.Current.CancellationToken);
 
             A.CallTo(() => serviceEndpointClient1.SendAsync(command2, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
             A.CallTo(() => serviceEndpointClient2.SendAsync(command2, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
@@ -969,7 +970,6 @@ namespace Obvs.Tests
             IServiceEndpointClient serviceEndpointClient3 = A.Fake<IServiceEndpointClient>();
 
             ICommand command = A.Fake<ICommand>();
-            ICommand command2 = A.Fake<ICommand>();
 
             A.CallTo(() => serviceEndpointClient1.CanHandle(A<ICommand>._)).Returns(true);
             A.CallTo(() => serviceEndpointClient2.CanHandle(A<ICommand>._)).Returns(true);
@@ -985,7 +985,7 @@ namespace Obvs.Tests
             AggregateException aggregateException = null;
             try
             {
-                serviceBus.SendAsync(new[] {command, command2}, TestContext.Current.CancellationToken);
+                serviceBus.SendAsync(command, TestContext.Current.CancellationToken);
             }
             catch (AggregateException ex)
             {

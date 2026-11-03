@@ -38,7 +38,7 @@ namespace Obvs.ActiveMQ
             Func<IDictionary, bool> propertyFilter = null,
             bool noLocal = false)
         {
-            _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
+            _deserializers = deserializers.ToDictionary(d => d.TypeName);
             _lazyConnection = lazyConnection;
             _destination = destination;
             _mode = mode == AcknowledgementMode.ClientAcknowledge ? Apache.NMS.AcknowledgementMode.ClientAcknowledge : Apache.NMS.AcknowledgementMode.AutoAcknowledge;

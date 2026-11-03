@@ -3,7 +3,7 @@ using System.IO;
 namespace Obvs.Serialization
 {
     /// <summary>Helpers for deserializers.</summary>
-    public static class MessageDeserializerExtentions
+    public static class MessageDeserializerExtensions
     {
         /// <summary>Deserializes a message from bytes.</summary>
         public static TMessage Deserialize<TMessage>(this IMessageDeserializer<TMessage> deserializer, byte[] obj)
@@ -24,7 +24,7 @@ namespace Obvs.Serialization
         TMessage Deserialize(Stream source);
 
         /// <summary>The name of the type this reads, which matches the type name a message is sent with.</summary>
-        string GetTypeName();
+        string TypeName { get; }
     }
 
     /// <summary>A base for deserializers of <typeparamref name="TMessage"/>, named after it.</summary>
@@ -35,9 +35,6 @@ namespace Obvs.Serialization
         public abstract TMessage Deserialize(Stream source);
 
         /// <inheritdoc />
-        public string GetTypeName()
-        {
-            return typeof(TMessage).Name;
-        }
+        public string TypeName => typeof(TMessage).Name;
     }
 }

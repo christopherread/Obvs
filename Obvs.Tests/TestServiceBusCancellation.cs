@@ -99,36 +99,6 @@ namespace Obvs.Tests
         }
 
         [Fact]
-        public async Task ShouldNotSendAnyCommandsWhenAlreadyCancelled()
-        {
-            var commands = new[] { A.Fake<ICommand>(), A.Fake<ICommand>() };
-            var endpointClient = A.Fake<IServiceEndpointClient>();
-            A.CallTo(() => endpointClient.CanHandle(A<IMessage>._)).Returns(true);
-            var serviceBus = new ServiceBus(new[] { endpointClient }, NoEndpoints);
-
-            // Cancellation, not an AggregateException of each command's cancellation
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.SendAsync(commands, Cancelled()));
-
-            A.CallTo(() => endpointClient.SendAsync(A<ICommand>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
-        }
-
-        [Fact]
-        public async Task ShouldStopSendingFurtherCommandsWhenCancelled()
-        {
-            var first = A.Fake<ICommand>();
-            var second = A.Fake<ICommand>();
-            var endpointClient = A.Fake<IServiceEndpointClient>();
-            A.CallTo(() => endpointClient.CanHandle(A<IMessage>._)).Returns(true);
-            using var cancellation = new CancellationTokenSource();
-            A.CallTo(() => endpointClient.SendAsync(first, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Invokes(() => cancellation.Cancel()).Returns(Task.CompletedTask);
-            var serviceBus = new ServiceBus(new[] { endpointClient }, NoEndpoints);
-
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serviceBus.SendAsync(new[] { first, second }, cancellation.Token));
-
-            A.CallTo(() => endpointClient.SendAsync(second, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
-        }
-
-        [Fact]
         public async Task ShouldReportCancellationRatherThanTheErrorsItCaused()
         {
             // The endpoint client is cancelled while sending and fails with it, so the caller sees the cancellation,
