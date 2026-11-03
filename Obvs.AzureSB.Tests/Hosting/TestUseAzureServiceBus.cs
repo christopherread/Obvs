@@ -95,7 +95,7 @@ namespace Obvs.AzureSB.Tests.Hosting
                 ["Obvs:Orders:AzureServiceBus:FullyQualifiedNamespace"] = "contoso.servicebus.windows.net",
                 ["Obvs:Orders:AzureServiceBus:MaxConcurrentMessages"] = "4",
                 ["Obvs:Orders:AzureServiceBus:LockDuration"] = "00:00:30",
-                ["Obvs:Orders:AzureServiceBus:MaxLockRenewalDuration"] = "00:10:00",
+                ["Obvs:Orders:AzureServiceBus:MaxHandlerDuration"] = "00:10:00",
             });
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
                 .AddService<IOrderMessage>("orders", service => service
@@ -105,7 +105,7 @@ namespace Obvs.AzureSB.Tests.Hosting
             var options = host.Services.GetRequiredService<IOptionsMonitor<AzureServiceBusOptions>>().Get("orders");
             Assert.Equal(4, options.MaxConcurrentMessages);
             Assert.Equal(TimeSpan.FromSeconds(30), options.LockDuration);
-            Assert.Equal(TimeSpan.FromMinutes(10), options.MaxLockRenewalDuration);
+            Assert.Equal(TimeSpan.FromMinutes(10), options.MaxHandlerDuration);
         }
 
         [Fact]
@@ -115,7 +115,7 @@ namespace Obvs.AzureSB.Tests.Hosting
 
             Assert.Null(options.MaxConcurrentMessages);
             Assert.Null(options.LockDuration);
-            Assert.Equal(TimeSpan.FromMinutes(5), options.MaxLockRenewalDuration);
+            Assert.Equal(TimeSpan.FromMinutes(5), options.MaxHandlerDuration);
         }
 
         [Fact]
@@ -142,12 +142,12 @@ namespace Obvs.AzureSB.Tests.Hosting
         }
 
         [Fact]
-        public async Task ShouldFailToStartWhenMaxLockRenewalDurationIsNegative()
+        public async Task ShouldFailToStartWhenMaxHandlerDurationIsNegative()
         {
-            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxLockRenewalDuration = TimeSpan.FromSeconds(-1)));
+            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxHandlerDuration = TimeSpan.FromSeconds(-1)));
 
             Assert.Contains("'orders'", error);
-            Assert.Contains("MaxLockRenewalDuration", error);
+            Assert.Contains("MaxHandlerDuration", error);
         }
 
         [Fact]

@@ -63,14 +63,14 @@ namespace Obvs.NATS.JetStream
         }
 
         // Waits for the message to be settled, telling JetStream it's in progress every third of its ack wait, for up to
-        // MaxInProgressDuration
+        // MaxHandlerDuration
         public async Task WaitAsync()
         {
             var interval = TimeSpan.FromTicks((_options.AckWait ?? TimeSpan.FromSeconds(30)).Ticks / 3);
             var elapsed = Stopwatch.StartNew();
             while (!_settled.Task.IsCompleted)
             {
-                var remaining = _options.MaxInProgressDuration - elapsed.Elapsed;
+                var remaining = _options.MaxHandlerDuration - elapsed.Elapsed;
                 if (remaining <= TimeSpan.Zero)
                 {
                     await _settled.Task.ConfigureAwait(false);
@@ -87,7 +87,7 @@ namespace Obvs.NATS.JetStream
                     }
                 }
 
-                if (elapsed.Elapsed < _options.MaxInProgressDuration && !_settled.Task.IsCompleted)
+                if (elapsed.Elapsed < _options.MaxHandlerDuration && !_settled.Task.IsCompleted)
                 {
                     try
                     {

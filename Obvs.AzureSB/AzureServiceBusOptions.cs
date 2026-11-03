@@ -45,10 +45,11 @@ namespace Obvs.AzureSB
         public TimeSpan? LockDuration { get; set; }
 
         /// <summary>
-        /// How long the lock on a message keeps being renewed while its handler runs. 5 minutes by default; a handler
-        /// that runs longer loses the lock, and the message is delivered again.
+        /// The longest a handler runs with a message, for which the message's lock keeps being renewed. 5 minutes by
+        /// default; a handler that runs longer loses the lock, and the message is delivered again. Set
+        /// <c>TimeSpan.Zero</c> to never renew it.
         /// </summary>
-        public TimeSpan MaxLockRenewalDuration { get; set; } = TimeSpan.FromMinutes(5);
+        public TimeSpan MaxHandlerDuration { get; set; } = TimeSpan.FromMinutes(5);
 
         // Set by UseAzureServiceBus from the app's logging, and the service's name, for metrics
         internal ILogger Logger { get; set; } = NullLogger.Instance;

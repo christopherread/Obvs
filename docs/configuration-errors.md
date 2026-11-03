@@ -43,10 +43,10 @@ Each transport checks its own options. The message says which option to set, and
 | RabbitMQ | A broker address is set. |
 | ActiveMQ | A broker URI is set. |
 | NATS | A server address is set. |
-| NATS JetStream | <ul><li>A server address is set.</li><li>`MaxDeliveryAttempts` and `MaxConcurrentMessages` are at least 1.</li><li>`AckWait` is positive, and `MaxInProgressDuration` isn't negative.</li><li>The service name and instance ID are valid stream and consumer names.</li></ul> |
+| NATS JetStream | <ul><li>A server address is set.</li><li>`MaxDeliveryAttempts` and `MaxConcurrentMessages` are at least 1.</li><li>`AckWait` is positive, and `MaxHandlerDuration` isn't negative.</li><li>The service name and instance ID are valid stream and consumer names.</li></ul> |
 | Kafka | <ul><li>Bootstrap servers are set.</li><li>`SecurityProtocol`, `SaslMechanism`, credentials, the OAuth token provider and TLS files are consistent with each other.</li><li>The settings match what Confluent Cloud, Amazon MSK and Azure Event Hubs need, when the bootstrap servers are theirs.</li></ul> |
-| Azure Service Bus | <ul><li>Exactly one of a namespace or a connection string is set.</li><li>`MaxDeliveryAttempts` and `MaxConcurrentMessages` are at least 1.</li><li>`LockDuration` is between 5 seconds and 5 minutes, and `MaxLockRenewalDuration` isn't negative.</li><li>The instance ID fits in a subscription name.</li></ul> At startup, it also reports a Basic-tier namespace, and any missing entities when the credentials lack the Manage right. |
-| Amazon SQS | <ul><li>A region is set, and `ServiceUrl` is an http or https URL.</li><li>`MaxDeliveryAttempts`, `MaxConcurrentMessages`, `VisibilityTimeout` and `MaxHandlerDuration` are within SQS's limits.</li><li>`VisibilityTimeout` is longer than `MaxHandlerDuration`.</li><li>The clean-up intervals make sense.</li><li>Queue and topic names fit SQS's character set and length.</li></ul> |
+| Azure Service Bus | <ul><li>Exactly one of a namespace or a connection string is set.</li><li>`MaxDeliveryAttempts` and `MaxConcurrentMessages` are at least 1.</li><li>`LockDuration` is between 5 seconds and 5 minutes, and `MaxHandlerDuration` isn't negative.</li><li>The instance ID fits in a subscription name.</li></ul> At startup, it also reports a Basic-tier namespace, and any missing entities when the credentials lack the Manage right. |
+| Amazon SQS | <ul><li>A region is set, and `ServiceUrl` is an http or https URL.</li><li>`MaxDeliveryAttempts`, `MaxConcurrentMessages`, `VisibilityTimeout` and `MaxHandlerDuration` are within SQS's limits.</li><li>The clean-up intervals make sense.</li><li>Queue and topic names fit SQS's character set and length.</li></ul> |
 
 ## While running
 

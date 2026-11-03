@@ -34,10 +34,11 @@ namespace Obvs.NATS
         public TimeSpan? AckWait { get; set; }
 
         /// <summary>
-        /// How long a running handler keeps telling JetStream its message is in progress, which restarts the message's
-        /// <see cref="AckWait"/>. 5 minutes by default; a handler that runs longer loses the message, and it's delivered again.
+        /// The longest a handler runs with a message, for which the bus keeps telling JetStream the message is in
+        /// progress, restarting its <see cref="AckWait"/>. 5 minutes by default; a handler that runs longer loses the
+        /// message, and it's delivered again. Set <c>TimeSpan.Zero</c> to never keep it in progress.
         /// </summary>
-        public TimeSpan MaxInProgressDuration { get; set; } = TimeSpan.FromMinutes(5);
+        public TimeSpan MaxHandlerDuration { get; set; } = TimeSpan.FromMinutes(5);
 
         // Set by UseNatsJetStream from the app's logging
         internal ILogger Logger { get; set; } = NullLogger.Instance;

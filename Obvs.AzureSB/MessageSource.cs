@@ -64,7 +64,7 @@ namespace Obvs.AzureSB
                     {
                         AutoCompleteMessages = false,
                         MaxConcurrentCalls = _maxConcurrentMessages,
-                        MaxAutoLockRenewalDuration = _options.MaxLockRenewalDuration,
+                        MaxAutoLockRenewalDuration = _options.MaxHandlerDuration,
                     });
                     var waiting = new ConcurrentDictionary<MessageSettlement, bool>();
                     var stopped = false;

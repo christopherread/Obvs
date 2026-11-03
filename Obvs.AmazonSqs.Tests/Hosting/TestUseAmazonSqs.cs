@@ -91,13 +91,14 @@ namespace Obvs.AmazonSqs.Tests.Hosting
         }
 
         [Fact]
-        public void ShouldDeliverAFailingMessageTenTimesAndTakeAsManyMessagesAtOnceAsTheHandlersByDefault()
+        public void ShouldDeliverAFailingMessageTenTimesTakeAsManyAtOnceAsTheHandlersAndKeepItHiddenForFiveMinutesByDefault()
         {
             var options = new AmazonSqsOptions();
 
             Assert.Equal(10, options.MaxDeliveryAttempts);
             Assert.Null(options.MaxConcurrentMessages);
-            Assert.True(options.VisibilityTimeout > options.MaxHandlerDuration);
+            Assert.Equal(TimeSpan.FromMinutes(1), options.VisibilityTimeout);
+            Assert.Equal(TimeSpan.FromMinutes(5), options.MaxHandlerDuration);
             Assert.Null(options.ServiceUrl);
             Assert.Null(options.Credentials);
         }
@@ -239,20 +240,22 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             Assert.Contains("handlers' MaxConcurrency", error);
         }
 
-        [Fact]
-        public async Task ShouldFailToStartWhenTheVisibilityTimeoutDoesntExceedTheHandlerDuration()
+        [Theory]
+        [InlineData("00:00:00")]
+        [InlineData("00:10:00")]
+        [InlineData("12:00:00")]
+        public async Task ShouldAcceptAHandlerDurationFromZeroToTwelveHoursWhateverTheVisibilityTimeout(string maxHandlerDuration)
         {
-            // SQS delivers a message again once its visibility timeout passes, even while a handler is still running it
+            // The bus extends a message's visibility while its handler runs, so a handler can outlast VisibilityTimeout
             var error = Assert.Single(await StartupErrorsAsync(options =>
             {
                 options.VisibilityTimeout = TimeSpan.FromSeconds(30);
-                options.MaxHandlerDuration = TimeSpan.FromSeconds(30);
+                options.MaxHandlerDuration = TimeSpan.Parse(maxHandlerDuration);
+                // Fails startup with this error alone rather than connecting to AWS
+                options.MaxConcurrentMessages = 0;
             }));
 
-            Assert.Contains("'orders'", error);
-            Assert.Contains("VisibilityTimeout", error);
-            Assert.Contains("MaxHandlerDuration", error);
-            Assert.Contains("exceed", error);
+            Assert.Contains("MaxConcurrentMessages", error);
         }
 
         [Theory]
@@ -263,7 +266,6 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             var errors = await StartupErrorsAsync(options =>
             {
                 options.VisibilityTimeout = TimeSpan.Parse(visibilityTimeout);
-                options.MaxHandlerDuration = TimeSpan.FromMilliseconds(100);
             });
 
             var error = Assert.Single(errors);
@@ -272,13 +274,17 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             Assert.Contains("1 second and 12 hours", error);
         }
 
-        [Fact]
-        public async Task ShouldFailToStartWhenMaxHandlerDurationIsntPositive()
+        [Theory]
+        [InlineData("-00:00:01")]
+        [InlineData("12:00:01")]
+        public async Task ShouldFailToStartWhenMaxHandlerDurationIsOutsideWhatSqsAllows(string maxHandlerDuration)
         {
-            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxHandlerDuration = TimeSpan.Zero));
+            // SQS keeps a message hidden for at most 12 hours from when it's received
+            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxHandlerDuration = TimeSpan.Parse(maxHandlerDuration)));
 
             Assert.Contains("'orders'", error);
             Assert.Contains("MaxHandlerDuration", error);
+            Assert.Contains("between zero and 12 hours", error);
         }
 
         [Fact]

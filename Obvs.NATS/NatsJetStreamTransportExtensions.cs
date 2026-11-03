@@ -102,9 +102,9 @@ namespace Obvs.Hosting
                 yield return $"Service '{service.ServiceName}' sets NATS JetStream AckWait to {ackWait}, but it must be positive. " +
                              "Leave it unset for JetStream's default of 30 seconds.";
             }
-            if (options.MaxInProgressDuration < TimeSpan.Zero)
+            if (options.MaxHandlerDuration < TimeSpan.Zero)
             {
-                yield return $"Service '{service.ServiceName}' sets NATS JetStream MaxInProgressDuration to {options.MaxInProgressDuration}, but it can't be negative. " +
+                yield return $"Service '{service.ServiceName}' sets NATS JetStream MaxHandlerDuration to {options.MaxHandlerDuration}, but it can't be negative. " +
                              "Set TimeSpan.Zero to never keep a message in progress.";
             }
             if (!IsValidName(service.ServiceName))

@@ -41,17 +41,17 @@ namespace Obvs.AmazonSqs
 
         /// <summary>
         /// How long a received message stays hidden from other receivers before SQS delivers it again, between 1 second
-        /// and 12 hours. 1 minute by default. It must exceed <see cref="MaxHandlerDuration"/>. Applied to queues Obvs
-        /// creates, and to each receive.
+        /// and 12 hours. 1 minute by default. While a handler runs, the bus extends it every third of this, for up to
+        /// <see cref="MaxHandlerDuration"/>. Applied to queues Obvs creates, and to each receive.
         /// </summary>
         public TimeSpan VisibilityTimeout { get; set; } = TimeSpan.FromMinutes(1);
 
         /// <summary>
-        /// The longest a handler is expected to take with a message, 30 seconds by default. SQS doesn't know a handler
-        /// is still running, so a message whose handler outlasts <see cref="VisibilityTimeout"/> is delivered again;
-        /// startup checks that the visibility timeout exceeds this.
+        /// The longest a handler runs with a message, for which the bus keeps extending the message's visibility, up to
+        /// 12 hours. 5 minutes by default; a handler that runs longer loses the message, and it's delivered again once
+        /// its <see cref="VisibilityTimeout"/> passes. Set <c>TimeSpan.Zero</c> to never extend it.
         /// </summary>
-        public TimeSpan MaxHandlerDuration { get; set; } = TimeSpan.FromSeconds(30);
+        public TimeSpan MaxHandlerDuration { get; set; } = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// Whether buses delete the queues, and topic subscriptions, that crashed buses of the service left behind. True
