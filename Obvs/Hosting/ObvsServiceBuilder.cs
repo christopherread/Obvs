@@ -21,13 +21,13 @@ namespace Obvs.Hosting
     public sealed class ObvsServiceBuilder
     {
         private readonly ObvsBuilder _bus;
-        private readonly List<Func<IServiceProvider, IEnumerable<string>>> _validators = new List<Func<IServiceProvider, IEnumerable<string>>>();
         private readonly List<HandlerRegistration> _handlers = new List<HandlerRegistration>();
         private readonly List<Type> _messages = new List<Type>();
         private IMessageSerializer _serializer = new SystemTextJsonMessageSerializer();
         private IMessageDeserializerFactory _deserializerFactory = new SystemTextJsonMessageDeserializerFactory();
         private CompressionLevel? _compression;
         private long _maxDecompressedBytes;
+        private Func<ObvsTransportContext, IEnumerable<string>> _validateTransport;
 
         internal ObvsServiceBuilder(string name, Type serviceMessageType, IServiceCollection services, ObvsBuilder bus)
         {
@@ -40,26 +40,18 @@ namespace Obvs.Hosting
         /// <summary>The service's name, unique on the bus.</summary>
         public string Name { get; }
 
-        /// <summary>The interface every message of this service implements.</summary>
-        public Type ServiceMessageType { get; }
+        // The interface every message of this service implements
+        internal Type ServiceMessageType { get; }
 
         /// <summary>The container's services, for transports that need to register their own.</summary>
         public IServiceCollection Services { get; }
 
-        /// <summary>
-        /// The bus's instance ID, for transports to make broker-side names unique to this bus,
-        /// so several buses in one process (as in tests) don't collide.
-        /// </summary>
-        public string InstanceId => _bus.InstanceId;
+        // What the service's transport is given, in its ObvsTransportContext
+        internal string InstanceId => _bus.InstanceId;
 
-        /// <summary>The serializer set with <see cref="SerializedWith"/>, or System.Text.Json by default, gzipped if <see cref="Compressed"/>.</summary>
-        public IMessageSerializer Serializer => _compression == null ? _serializer : new GzipMessageSerializer(_serializer, _compression.Value);
+        internal IMessageSerializer Serializer => _compression == null ? _serializer : new GzipMessageSerializer(_serializer, _compression.Value);
 
-        /// <summary>
-        /// The deserializer factory set with <see cref="SerializedWith"/>, or System.Text.Json by default. If the service registers its messages
-        /// with <see cref="AddMessages"/>, it creates deserializers for those types only.
-        /// </summary>
-        public IMessageDeserializerFactory DeserializerFactory
+        internal IMessageDeserializerFactory DeserializerFactory
         {
             get
             {
@@ -97,11 +89,7 @@ namespace Obvs.Hosting
             return this;
         }
 
-        /// <summary>
-        /// The message types registered with <see cref="AddMessages"/>, or none if the service finds its messages by
-        /// scanning assemblies.
-        /// </summary>
-        public IReadOnlyCollection<Type> Messages => _messages;
+        internal IReadOnlyCollection<Type> Messages => _messages;
 
         /// <summary>
         /// Registers the service's message types: its commands, events, requests and responses. Its transport then
@@ -120,46 +108,54 @@ namespace Obvs.Hosting
             return this;
         }
 
-        /// <summary>
-        /// Adds a check that runs when the bus starts. Return a message for each problem found, saying how to fix it;
-        /// every problem from every service is reported together in one <see cref="ObvsConfigurationException"/>.
-        /// </summary>
-        public ObvsServiceBuilder ValidateWith(Func<IServiceProvider, IEnumerable<string>> validate)
-        {
-            _validators.Add(validate ?? throw new ArgumentNullException(nameof(validate)));
-            return this;
-        }
-
         internal IEnumerable<string> Validate(IServiceProvider serviceProvider)
         {
+            var transportErrors = _validateTransport?.Invoke(CreateTransportContext(serviceProvider)) ?? Enumerable.Empty<string>();
             return ValidateMessages()
                 .Concat(ValidateHandlers())
-                .Concat(_validators.SelectMany(validate => validate(serviceProvider) ?? Enumerable.Empty<string>()));
+                .Concat(transportErrors);
         }
 
-        internal Func<IServiceProvider, IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>> EndpointProviderFactory { get; private set; }
+        internal Func<ObvsTransportContext, IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>> CreateTransport { get; private set; }
 
-        /// <summary>Whether this app is a client of the service, sending its commands and requests and receiving its events. True by default.</summary>
-        public bool IsClient { get; private set; } = true;
+        // Whether this app is a client of the service, its server, or both, the default
+        internal bool IsClient { get; private set; } = true;
 
-        /// <summary>Whether this app is the service's server, receiving its commands and requests and publishing its events. True by default.</summary>
-        public bool IsServer { get; private set; } = true;
+        internal bool IsServer { get; private set; } = true;
 
         /// <summary>
-        /// Uses a transport's endpoint provider, created from the container when the bus starts. Each transport's
-        /// <c>Use&lt;Transport&gt;()</c> calls this, naming itself in <paramref name="transportName"/>, which the
-        /// service's contract shows.
+        /// Carries the service's messages on a transport, whose endpoint provider is created when the bus starts. Each
+        /// transport's <c>Use&lt;Transport&gt;()</c> calls this, and so can your own.
         /// </summary>
-        public ObvsServiceBuilder UseEndpointProvider(Func<IServiceProvider, IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>> factory,
-            string transportName = null)
+        /// <param name="name">The transport's name, such as RabbitMQ, which the service's contract shows</param>
+        /// <param name="create">Creates the endpoint provider from the service's configuration, once it's complete</param>
+        /// <param name="validate">
+        /// Checks the transport's configuration when the bus starts, before <paramref name="create"/>. Return a message
+        /// for each problem found, saying how to fix it; every problem from every service is reported together in one
+        /// <see cref="ObvsConfigurationException"/>.
+        /// </param>
+        public ObvsServiceBuilder UseTransport(string name, Func<ObvsTransportContext, IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>> create,
+            Func<ObvsTransportContext, IEnumerable<string>> validate = null)
         {
-            EndpointProviderFactory = factory ?? throw new ArgumentNullException(nameof(factory));
-            TransportName = transportName;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("A transport needs a name, which the service's contract shows.", nameof(name));
+            }
+
+            CreateTransport = create ?? throw new ArgumentNullException(nameof(create));
+            TransportName = name;
+            _validateTransport = validate;
             return this;
         }
 
-        /// <summary>The service's transport, as it names itself, such as RabbitMQ, if it does.</summary>
-        public string TransportName { get; private set; }
+        // The service's transport, as it names itself, such as RabbitMQ
+        internal string TransportName { get; private set; }
+
+        internal ObvsTransportContext CreateTransportContext(IServiceProvider serviceProvider)
+        {
+            return new ObvsTransportContext(Name, ServiceMessageType, _messages.ToArray(), InstanceId, Serializer, DeserializerFactory,
+                IsClient, IsServer, serviceProvider);
+        }
 
         /// <summary>
         /// Handles the service's <typeparamref name="TCommand"/> commands with <paramref name="handler"/>, which runs

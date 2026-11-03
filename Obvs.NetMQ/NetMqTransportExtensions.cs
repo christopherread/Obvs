@@ -58,41 +58,41 @@ namespace Obvs.Hosting
 
         private static ObvsServiceBuilder UseNetMq(ObvsServiceBuilder service, string whereToSetAddress, string whereToSetPort)
         {
-            return service
-                .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetAddress, whereToSetPort))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)), "NetMQ");
+            return service.UseTransport("NetMQ",
+                transport => CreateProvider(transport, GetOptions(transport)),
+                transport => Validate(transport, GetOptions(transport), whereToSetAddress, whereToSetPort));
         }
 
-        private static NetMqOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
+        private static NetMqOptions GetOptions(ObvsTransportContext service)
         {
-            return serviceProvider.GetRequiredService<IOptionsMonitor<NetMqOptions>>().Get(service.Name);
+            return service.ServiceProvider.GetRequiredService<IOptionsMonitor<NetMqOptions>>().Get(service.ServiceName);
         }
 
-        private static IEnumerable<string> Validate(ObvsServiceBuilder service, NetMqOptions options, string whereToSetAddress, string whereToSetPort)
+        private static IEnumerable<string> Validate(ObvsTransportContext service, NetMqOptions options, string whereToSetAddress, string whereToSetPort)
         {
             if (string.IsNullOrWhiteSpace(options.Address))
             {
-                yield return $"Service '{service.Name}' has no NetMQ address. Set {whereToSetAddress}, for example tcp://localhost.";
+                yield return $"Service '{service.ServiceName}' has no NetMQ address. Set {whereToSetAddress}, for example tcp://localhost.";
             }
             if (options.Port == 0)
             {
-                yield return $"Service '{service.Name}' has no NetMQ port. Set {whereToSetPort}, for example 5555: the service uses it and the next three.";
+                yield return $"Service '{service.ServiceName}' has no NetMQ port. Set {whereToSetPort}, for example 5555: the service uses it and the next three.";
             }
             else if (options.Port < 1 || options.Port > HighestPort)
             {
-                yield return $"Service '{service.Name}' has NetMQ port {options.Port}, but the service uses it and the next three, " +
+                yield return $"Service '{service.ServiceName}' has NetMQ port {options.Port}, but the service uses it and the next three, " +
                              $"so it must be 1 to {HighestPort}. Change {whereToSetPort}.";
             }
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, NetMqOptions options)
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, NetMqOptions options)
         {
             var providerType = typeof(NetMqServiceEndpointProvider<,,,,,>).MakeGenericType(
                 service.ServiceMessageType, typeof(IMessage), typeof(ICommand), typeof(IEvent), typeof(IRequest), typeof(IResponse));
 
             return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
-                service.Name, options.Address, options.Port, service.Serializer, service.DeserializerFactory, null, null, options.SendHeaders);
+                service.ServiceName, options.Address, options.Port, service.Serializer, service.DeserializerFactory, null, null, options.SendHeaders);
         }
     }
 }

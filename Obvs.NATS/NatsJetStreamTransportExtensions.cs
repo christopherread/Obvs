@@ -70,51 +70,51 @@ namespace Obvs.Hosting
 
         private static ObvsServiceBuilder UseNatsJetStream(ObvsServiceBuilder service, string whereToSetUrl)
         {
-            return service
-                .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetUrl))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
-                    serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.NATS.JetStream")), "NATS JetStream");
+            return service.UseTransport("NATS JetStream",
+                transport => CreateProvider(transport, GetOptions(transport),
+                    transport.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.NATS.JetStream")),
+                transport => Validate(transport, GetOptions(transport), whereToSetUrl));
         }
 
-        private static NatsJetStreamOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
+        private static NatsJetStreamOptions GetOptions(ObvsTransportContext service)
         {
-            return serviceProvider.GetRequiredService<IOptionsMonitor<NatsJetStreamOptions>>().Get(service.Name);
+            return service.ServiceProvider.GetRequiredService<IOptionsMonitor<NatsJetStreamOptions>>().Get(service.ServiceName);
         }
 
-        private static IEnumerable<string> Validate(ObvsServiceBuilder service, NatsJetStreamOptions options, string whereToSetUrl)
+        private static IEnumerable<string> Validate(ObvsTransportContext service, NatsJetStreamOptions options, string whereToSetUrl)
         {
             if (string.IsNullOrWhiteSpace(options.Url))
             {
-                yield return $"Service '{service.Name}' has no NATS server address. Set {whereToSetUrl}, for example nats://localhost:4222.";
+                yield return $"Service '{service.ServiceName}' has no NATS server address. Set {whereToSetUrl}, for example nats://localhost:4222.";
             }
             if (options.MaxDeliveryAttempts < 1)
             {
-                yield return $"Service '{service.Name}' sets NATS JetStream MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but it must be at least 1. " +
+                yield return $"Service '{service.ServiceName}' sets NATS JetStream MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but it must be at least 1. " +
                              "Leave it unset for the default of 10.";
             }
             if (options.MaxConcurrentMessages < 1)
             {
-                yield return $"Service '{service.Name}' sets NATS JetStream MaxConcurrentMessages to {options.MaxConcurrentMessages}, but it must be at least 1. " +
+                yield return $"Service '{service.ServiceName}' sets NATS JetStream MaxConcurrentMessages to {options.MaxConcurrentMessages}, but it must be at least 1. " +
                              "Leave it unset to handle one message at a time, in order.";
             }
             if (options.AckWait is TimeSpan ackWait && ackWait <= TimeSpan.Zero)
             {
-                yield return $"Service '{service.Name}' sets NATS JetStream AckWait to {ackWait}, but it must be positive. " +
+                yield return $"Service '{service.ServiceName}' sets NATS JetStream AckWait to {ackWait}, but it must be positive. " +
                              "Leave it unset for JetStream's default of 30 seconds.";
             }
             if (options.MaxInProgressDuration < TimeSpan.Zero)
             {
-                yield return $"Service '{service.Name}' sets NATS JetStream MaxInProgressDuration to {options.MaxInProgressDuration}, but it can't be negative. " +
+                yield return $"Service '{service.ServiceName}' sets NATS JetStream MaxInProgressDuration to {options.MaxInProgressDuration}, but it can't be negative. " +
                              "Set TimeSpan.Zero to never keep a message in progress.";
             }
-            if (!IsValidName(service.Name))
+            if (!IsValidName(service.ServiceName))
             {
-                yield return $"Service '{service.Name}' uses NATS JetStream, which names the service's streams after it, but stream names can't contain " +
+                yield return $"Service '{service.ServiceName}' uses NATS JetStream, which names the service's streams after it, but stream names can't contain " +
                              $"{InvalidNameCharactersDescription}. Give the service a name without them.";
             }
             if (!IsValidName(service.InstanceId))
             {
-                yield return $"Service '{service.Name}' uses NATS JetStream, which names this bus's own consumers after its instance ID, but instance ID " +
+                yield return $"Service '{service.ServiceName}' uses NATS JetStream, which names this bus's own consumers after its instance ID, but instance ID " +
                              $"'{service.InstanceId}' contains {InvalidNameCharactersDescription}, which consumer names can't. Set another with UseInstanceId(...).";
             }
         }
@@ -125,7 +125,7 @@ namespace Obvs.Hosting
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, NatsJetStreamOptions options, ILogger logger)
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, NatsJetStreamOptions options, ILogger logger)
         {
             if (logger != null)
             {
@@ -135,7 +135,7 @@ namespace Obvs.Hosting
             try
             {
                 return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
-                    service.Name, service.InstanceId, options, service.Serializer, service.DeserializerFactory, service.IsServer, service.IsClient);
+                    service.ServiceName, service.InstanceId, options, service.Serializer, service.DeserializerFactory, service.IsServer, service.IsClient);
             }
             catch (TargetInvocationException exception) when (exception.InnerException != null)
             {

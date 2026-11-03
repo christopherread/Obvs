@@ -62,7 +62,7 @@ await using var bus = await ObvsBus.StartAsync(obvs => obvs
 | `.SerializedAsJson()` | Nothing: System.Text.Json is the default. Or `SerializedWith(...)` |
 | `.SerializedAsJson(gzipped: true)` | `.Compressed()` |
 | `.FilterMessageTypeAssemblies(...)` | `.AddMessages(typeof(PlaceOrder), ...)`, or `[ObvsMessages(typeof(IOrderMessage))]` on a partial class to generate the list |
-| `.WithEndpoints(new MyEndpoint())` | `.UseEndpointProvider(serviceProvider => new MyEndpointProvider(), "MyTransport")` |
+| `.WithEndpoints(new MyEndpoint())` | `.UseTransport("MyTransport", transport => new MyEndpointProvider())` |
 | `.PublishLocally()` | Not carried over. Use the in-memory transport, `UseInMemory()` from `Obvs.Testing`, for in-process services |
 | `.UsingConsoleLogging()`, `.UsingLogging(...)`, `Obvs.Logging.NLog` | `Microsoft.Extensions.Logging`: the bus logs through the app's `ILoggerFactory` |
 | `.UsingMonitor(...)`, `Obvs.Monitoring.*` | OpenTelemetry: `tracing.AddSource(ObvsTelemetry.ActivitySourceName)` and `metrics.AddMeter(ObvsTelemetry.MeterName)` |
@@ -161,7 +161,7 @@ Every send takes the message's headers, which include its trace context, and a `
 
 A transport sends the headers with the message. When it receives one, it attaches the headers it arrived with by calling `ObvsReceivedMessage.Attach(message, headers)`, so handlers and `ObvsMessageHeaders.Get` see them.
 
-Register a custom transport with `UseEndpointProvider(factory, "MyTransport")`; the name shows in the service's contract. A transport that can't deserialize a message can count it with `ObvsTransportTelemetry.RecordUndeserializable`.
+Register a custom transport with `UseTransport("MyTransport", create, validate)`; the name shows in the service's contract. `create` builds the endpoint provider when the bus starts, and the optional `validate` returns the transport's configuration problems, each saying how to fix it, which startup reports with the rest. Both are given an `ObvsTransportContext`, with the service's name, message type and registered messages, its serializer and deserializer factory, whether this app is its client or server, the bus's instance ID, and the app's services. A transport that can't deserialize a message can count it with `ObvsTransportTelemetry.RecordUndeserializable`.
 
 ## Errors
 

@@ -74,7 +74,7 @@ namespace Obvs.Tests.Hosting
             builder.Services
                 .AddLogging(logging => logging.AddProvider(logs))
                 .AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service
-                    .UseEndpointProvider(_ => provider)
+                    .UseTransport("Fake", _ => provider)
                     .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask)));
             return builder.Build();
         }

@@ -162,9 +162,9 @@ namespace Contoso.Orders
         }
 
         [Fact]
-        public async Task ShouldAcceptAServiceWithItsOwnEndpointProvider()
+        public async Task ShouldAcceptAServiceWithItsOwnTransport()
         {
-            Assert.Empty(await DiagnosticsAsync(Configure("service => service.UseEndpointProvider(provider => null)")));
+            Assert.Empty(await DiagnosticsAsync(Configure("service => service.UseTransport(\"Fake\", transport => null)")));
         }
 
         [Fact]

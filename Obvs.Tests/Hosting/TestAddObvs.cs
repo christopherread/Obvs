@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
@@ -26,7 +27,7 @@ namespace Obvs.Tests.Hosting
         {
             var provider = new FakeEndpointProvider(typeof(IOrderMessage));
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => provider))));
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider))));
 
             var bus = host.Services.GetRequiredService<IServiceBus>();
 
@@ -39,7 +40,7 @@ namespace Obvs.Tests.Hosting
         {
             var provider = new FakeEndpointProvider(typeof(IOrderMessage));
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => provider))));
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider))));
 
             Assert.Equal(0, provider.EndpointsCreated + provider.ClientsCreated);
 
@@ -54,7 +55,7 @@ namespace Obvs.Tests.Hosting
         {
             var provider = new FakeEndpointProvider(typeof(IOrderMessage));
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => provider))));
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider))));
             await host.StartAsync(TestContext.Current.CancellationToken);
 
             var received = host.Services.GetRequiredService<IServiceBus>()
@@ -71,8 +72,8 @@ namespace Obvs.Tests.Hosting
             var orders = new FakeEndpointProvider(typeof(IOrderMessage));
             var shipping = new FakeEndpointProvider(typeof(IShippingMessage));
             using var host = BuildHost(services => services
-                .AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => orders)))
-                .AddObvs(obvs => obvs.AddService<IShippingMessage>("shipping", service => service.UseEndpointProvider(_ => shipping))));
+                .AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => orders)))
+                .AddObvs(obvs => obvs.AddService<IShippingMessage>("shipping", service => service.UseTransport("Fake", _ => shipping))));
             await host.StartAsync(TestContext.Current.CancellationToken);
 
             Assert.Same(host.Services.GetRequiredService<IServiceBus>(), host.Services.GetRequiredService<IServiceBusClient>());
@@ -85,7 +86,7 @@ namespace Obvs.Tests.Hosting
         {
             var provider = new FakeEndpointProvider(typeof(IOrderMessage));
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => provider).AsClient())));
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider).AsClient())));
 
             await host.StartAsync(TestContext.Current.CancellationToken);
 
@@ -98,7 +99,7 @@ namespace Obvs.Tests.Hosting
         {
             var provider = new FakeEndpointProvider(typeof(IOrderMessage));
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => provider).AsServer())));
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider).AsServer())));
 
             await host.StartAsync(TestContext.Current.CancellationToken);
 
@@ -111,7 +112,7 @@ namespace Obvs.Tests.Hosting
         {
             var provider = new FakeEndpointProvider(typeof(IOrderMessage));
             var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => provider))));
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider))));
             await host.StartAsync(TestContext.Current.CancellationToken);
             await host.StopAsync(TestContext.Current.CancellationToken);
 
@@ -128,7 +129,7 @@ namespace Obvs.Tests.Hosting
             // Server only, so the shared fake endpoint is owned once by the bus
             var provider = new FakeEndpointProvider(typeof(IOrderMessage));
             var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => provider).AsServer())));
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider).AsServer())));
             await host.StartAsync(TestContext.Current.CancellationToken);
             host.Services.GetRequiredService<IServiceBusClient>();
             await host.StopAsync(TestContext.Current.CancellationToken);
@@ -143,7 +144,7 @@ namespace Obvs.Tests.Hosting
         {
             // One provider per container, as a real transport's connection would be
             Action<IServiceCollection> configure = services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => new FakeEndpointProvider(typeof(IOrderMessage)))));
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IOrderMessage)))));
             using var hostA = BuildHost(configure);
             using var hostB = BuildHost(configure);
             await hostA.StartAsync(TestContext.Current.CancellationToken);
@@ -166,9 +167,9 @@ namespace Obvs.Tests.Hosting
         {
             using var host = BuildHost(services => services
                 .AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service
-                    .UseEndpointProvider(_ => new FakeEndpointProvider(typeof(IOrderMessage)))))
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IOrderMessage)))))
                 .AddObvs("analytics", obvs => obvs.AddService<IShippingMessage>("shipping", service => service
-                    .UseEndpointProvider(_ => new FakeEndpointProvider(typeof(IShippingMessage))))));
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IShippingMessage))))));
 
             var defaultBus = host.Services.GetRequiredService<IServiceBus>();
             var analyticsBus = host.Services.GetRequiredKeyedService<IServiceBus>("analytics");
@@ -191,7 +192,7 @@ namespace Obvs.Tests.Hosting
             Assert.Contains("UseRabbitMq", error);
             Assert.Contains("UseAzureServiceBus", error);
             Assert.Contains("UseInMemory", error);
-            Assert.Contains("UseEndpointProvider", error);
+            Assert.Contains("UseTransport", error);
         }
 
         [Fact]
@@ -199,9 +200,9 @@ namespace Obvs.Tests.Hosting
         {
             using var host = BuildHost(services => services
                 .AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service
-                    .UseEndpointProvider(_ => new FakeEndpointProvider(typeof(IOrderMessage)))))
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IOrderMessage)))))
                 .AddObvs(obvs => obvs.AddService<IShippingMessage>("orders", service => service
-                    .UseEndpointProvider(_ => new FakeEndpointProvider(typeof(IShippingMessage))))));
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IShippingMessage))))));
 
             var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(
                 () => host.StartAsync(TestContext.Current.CancellationToken));
@@ -233,15 +234,15 @@ namespace Obvs.Tests.Hosting
             string instanceIdA = null;
             string instanceIdB = null;
             using var hostA = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ =>
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", transport =>
                 {
-                    instanceIdA = service.InstanceId;
+                    instanceIdA = transport.InstanceId;
                     return new FakeEndpointProvider(typeof(IOrderMessage));
                 }))));
             using var hostB = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ =>
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", transport =>
                 {
-                    instanceIdB = service.InstanceId;
+                    instanceIdB = transport.InstanceId;
                     return new FakeEndpointProvider(typeof(IOrderMessage));
                 }))));
 
@@ -258,9 +259,9 @@ namespace Obvs.Tests.Hosting
             string instanceId = null;
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
                 .UseInstanceId("orders-worker-1")
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ =>
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", transport =>
                 {
-                    instanceId = service.InstanceId;
+                    instanceId = transport.InstanceId;
                     return new FakeEndpointProvider(typeof(IOrderMessage));
                 }))));
 
@@ -287,10 +288,10 @@ namespace Obvs.Tests.Hosting
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
                 .AddService<IOrderMessage>("orders", service => service
                     .SerializedWith(serializer, deserializerFactory)
-                    .UseEndpointProvider(_ =>
+                    .UseTransport("Fake", transport =>
                     {
-                        transportSerializer = service.Serializer;
-                        transportDeserializerFactory = service.DeserializerFactory;
+                        transportSerializer = transport.Serializer;
+                        transportDeserializerFactory = transport.DeserializerFactory;
                         return new FakeEndpointProvider(typeof(IOrderMessage));
                     }))));
 
@@ -307,10 +308,9 @@ namespace Obvs.Tests.Hosting
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
                 .AddService<IOrderMessage>("orders", service => { })
                 .AddService<IShippingMessage>("shipping", service => service
-                    .UseEndpointProvider(_ => new FakeEndpointProvider(typeof(IShippingMessage)))
-                    .ValidateWith(serviceProvider =>
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IShippingMessage)), transport =>
                     {
-                        validatedWith = serviceProvider;
+                        validatedWith = transport.ServiceProvider;
                         return new[] { "Service 'shipping' needs a broker address." };
                     }))));
 
@@ -320,6 +320,60 @@ namespace Obvs.Tests.Hosting
             Assert.Equal(2, exception.Errors.Count);
             Assert.Contains("Service 'shipping' needs a broker address.", exception.Errors);
             Assert.NotNull(validatedWith);
+        }
+
+        [Fact]
+        public async Task ShouldTellTheTransportWhichServiceItCarries()
+        {
+            ObvsTransportContext context = null;
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .AddMessages(typeof(PlaceOrder), typeof(OrderPlaced))
+                    .AsServer()
+                    .UseTransport("Fake", transport =>
+                    {
+                        context = transport;
+                        return new FakeEndpointProvider(typeof(IOrderMessage));
+                    }))));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal("orders", context.ServiceName);
+            Assert.Equal(typeof(IOrderMessage), context.ServiceMessageType);
+            Assert.Equal(new[] { typeof(PlaceOrder), typeof(OrderPlaced) }, context.Messages);
+            Assert.True(context.IsServer);
+            Assert.False(context.IsClient);
+            // The host's container: the same singletons, though the bus is given its root scope rather than the host's wrapper
+            Assert.Same(host.Services.GetRequiredService<ObvsContracts>(), context.ServiceProvider.GetRequiredService<ObvsContracts>());
+        }
+
+        [Fact]
+        public async Task ShouldNameTheTransportInTheServicesContract()
+        {
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .AddMessages(typeof(PlaceOrder))
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IOrderMessage))))));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            var document = JsonNode.Parse(host.Services.GetRequiredService<ObvsContracts>().Describe());
+            Assert.Equal("Fake", (string)document["channels"]["orders.commands"]["x-obvs-transport"]);
+        }
+
+        [Fact]
+        public void ShouldCheckUseTransportsArguments()
+        {
+            var provider = new FakeEndpointProvider(typeof(IOrderMessage));
+            BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service =>
+                {
+                    // The name shows in the service's contract, so a transport must give one
+                    Assert.ThrowsAny<ArgumentException>(() => service.UseTransport(null, _ => provider));
+                    Assert.ThrowsAny<ArgumentException>(() => service.UseTransport(" ", _ => provider));
+                    var error = Assert.Throws<ArgumentNullException>(() => service.UseTransport("Fake", null));
+                    Assert.Equal("create", error.ParamName);
+                })));
         }
 
         [Fact]
@@ -369,7 +423,7 @@ namespace Obvs.Tests.Hosting
             A.CallTo(() => provider.CreateEndpoint()).Returns(endpoint);
             A.CallTo(() => provider.CreateEndpointClient()).Returns(endpointClient);
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => provider))));
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider))));
             await host.StartAsync(TestContext.Current.CancellationToken);
             var bus = host.Services.GetRequiredService<IServiceBus>();
             var command = new PlaceOrder { OrderId = "o-1" };

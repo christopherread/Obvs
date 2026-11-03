@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Obvs.Serialization;
 using Obvs.Types;
 using Xunit;
@@ -86,6 +87,48 @@ namespace Obvs.Tests
             Assert.False(typeName.CanWrite);
         }
 
+        // What an app configures a service with. What transports build from is in their ObvsTransportContext.
+        [Fact]
+        public void ShouldOfferAppsOnlyWhatTheyConfigureOnTheServiceBuilder()
+        {
+            Assert.Equal(new[]
+            {
+                "AddMessages",
+                "AsClient",
+                "AsClientAndServer",
+                "AsServer",
+                "Compressed",
+                "DefaultMaxDecompressedBytes",
+                "HandleCommand",
+                "HandleEvent",
+                "HandleRequest",
+                "Name",
+                "SerializedWith",
+                "Services",
+                "UseTransport",
+            }, PublicMembers(typeof(global::Obvs.Hosting.ObvsServiceBuilder)));
+        }
+
+        [Fact]
+        public void ShouldGiveTransportsWhatTheyBuildFromInTheirContext()
+        {
+            var context = Obvs.GetType("Obvs.Transports.ObvsTransportContext");
+
+            Assert.NotNull(context);
+            Assert.Equal(new[]
+            {
+                "DeserializerFactory",
+                "InstanceId",
+                "IsClient",
+                "IsServer",
+                "Messages",
+                "Serializer",
+                "ServiceMessageType",
+                "ServiceName",
+                "ServiceProvider",
+            }, PublicMembers(context));
+        }
+
         [Theory]
         [InlineData("IEndpoint")]
         [InlineData("IEndpoint`1")]
@@ -111,9 +154,21 @@ namespace Obvs.Tests
         [InlineData("IMessagePropertyProvider`1")]
         [InlineData("IMessageSettlement")]
         [InlineData("ObvsReceivedMessage")]
+        [InlineData("ObvsTransportContext")]
         public void ShouldPutWhatTransportsAreBuiltFromInObvsTransports(string name)
         {
             Assert.NotNull(Obvs.GetType("Obvs.Transports." + name));
+        }
+
+        // Members declared on the type, without property accessors or constructors
+        private static string[] PublicMembers(Type type)
+        {
+            return type.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                .Where(member => member.MemberType != MemberTypes.Constructor && !(member is MethodInfo method && method.IsSpecialName))
+                .Select(member => member.Name)
+                .Distinct()
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToArray();
         }
     }
 }

@@ -23,10 +23,8 @@ namespace Obvs.Hosting
 
             // TryAdd, so a broker registered first (as ObvsTestHarness does) is used instead
             service.Services.TryAddSingleton(_ => new InMemoryBroker());
-            var name = service.Name;
-            var serviceMessageType = service.ServiceMessageType;
-            return service.UseEndpointProvider(serviceProvider =>
-                new InMemoryEndpointProvider(name, serviceMessageType, serviceProvider.GetRequiredService<InMemoryBroker>()), "InMemory");
+            return service.UseTransport("InMemory", transport =>
+                new InMemoryEndpointProvider(transport.ServiceName, transport.ServiceMessageType, transport.ServiceProvider.GetRequiredService<InMemoryBroker>()));
         }
 
         /// <summary>
@@ -45,9 +43,7 @@ namespace Obvs.Hosting
             }
 
             service.Services.TryAddSingleton(broker);
-            var name = service.Name;
-            var serviceMessageType = service.ServiceMessageType;
-            return service.UseEndpointProvider(_ => new InMemoryEndpointProvider(name, serviceMessageType, broker), "InMemory");
+            return service.UseTransport("InMemory", transport => new InMemoryEndpointProvider(transport.ServiceName, transport.ServiceMessageType, broker));
         }
     }
 }

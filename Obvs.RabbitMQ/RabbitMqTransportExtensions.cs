@@ -55,32 +55,32 @@ namespace Obvs.Hosting
 
         private static ObvsServiceBuilder UseRabbitMq(ObvsServiceBuilder service, string whereToSetUri)
         {
-            return service
-                .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetUri))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)), "RabbitMQ");
+            return service.UseTransport("RabbitMQ",
+                transport => CreateProvider(transport, GetOptions(transport)),
+                transport => Validate(transport, GetOptions(transport), whereToSetUri));
         }
 
-        private static RabbitMqOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
+        private static RabbitMqOptions GetOptions(ObvsTransportContext service)
         {
-            return serviceProvider.GetRequiredService<IOptionsMonitor<RabbitMqOptions>>().Get(service.Name);
+            return service.ServiceProvider.GetRequiredService<IOptionsMonitor<RabbitMqOptions>>().Get(service.ServiceName);
         }
 
-        private static IEnumerable<string> Validate(ObvsServiceBuilder service, RabbitMqOptions options, string whereToSetUri)
+        private static IEnumerable<string> Validate(ObvsTransportContext service, RabbitMqOptions options, string whereToSetUri)
         {
             if (options.Uri == null)
             {
-                yield return $"Service '{service.Name}' has no RabbitMQ broker address. Set {whereToSetUri}, for example amqp://localhost:5672.";
+                yield return $"Service '{service.ServiceName}' has no RabbitMQ broker address. Set {whereToSetUri}, for example amqp://localhost:5672.";
             }
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, RabbitMqOptions options)
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, RabbitMqOptions options)
         {
             var providerType = typeof(RabbitMQServiceEndpointProvider<,,,,,>).MakeGenericType(
                 service.ServiceMessageType, typeof(IMessage), typeof(ICommand), typeof(IEvent), typeof(IRequest), typeof(IResponse));
 
             return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
-                service.Name, options.Uri.ToString(), service.Serializer, service.DeserializerFactory,
+                service.ServiceName, options.Uri.ToString(), service.Serializer, service.DeserializerFactory,
                 null, null, options.AutomaticRecoveryEnabled, service.InstanceId);
         }
     }

@@ -87,7 +87,7 @@ namespace Obvs.Tests.Hosting
             A.CallTo(() => provider.CreateEndpoint()).Returns(endpoint);
             A.CallTo(() => provider.CreateEndpointClient()).Returns(endpointClient);
             var bus = await ObvsBus.StartAsync(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.UseEndpointProvider(_ => provider)), Ct);
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider)), Ct);
 
             await bus.DisposeAsync();
 
