@@ -154,7 +154,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                 {
                     await Task.Delay(200, ct);
                     return new Quote { Price = decimal.Parse(request.Sku) };
-                }, handler => handler.MaxConcurrency = 10), configureOptions: options => options.MaxConcurrentCalls = 10);
+                }, handler => handler.MaxConcurrency = 10));
             using var client = await StartHostAsync(serviceName, service => service.AsClient());
             var bus = client.Services.GetRequiredService<IServiceBusClient>();
 

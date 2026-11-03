@@ -362,6 +362,45 @@ namespace Obvs.Tests.Hosting
         }
 
         [Fact]
+        public async Task ShouldTellTheTransportHowManyMessagesOfEachKindItsHandlersTakeAtOnce()
+        {
+            var context = await StartAndCaptureContextAsync(service => service
+                .HandleCommand<PlaceOrder>((command, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 8)
+                .HandleRequest<GetQuote, Quote>((request, messageContext, ct) => Task.FromResult(new Quote()), handler => handler.MaxConcurrency = 3)
+                .HandleEvent<OrderPlaced>((@event, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 2));
+
+            Assert.Equal(8, context.HandlerConcurrency(typeof(ICommand)));
+            Assert.Equal(3, context.HandlerConcurrency(typeof(IRequest)));
+            Assert.Equal(2, context.HandlerConcurrency(typeof(IEvent)));
+        }
+
+        [Fact]
+        public async Task ShouldAddUpTheConcurrencyOfHandlersWhoseMessagesShareAQueue()
+        {
+            // Each handler takes its messages in order, so a queue they share takes enough for all of them at once
+            var context = await StartAndCaptureContextAsync(service => service
+                .HandleCommand<PlaceOrder>((command, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 3)
+                .HandleCommand<CancelOrder>((command, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 5)
+                .HandleEvent<OrderPlaced>((@event, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 2)
+                .HandleEvent<OrderPlaced>((@event, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 4));
+
+            Assert.Equal(8, context.HandlerConcurrency(typeof(ICommand)));
+            Assert.Equal(6, context.HandlerConcurrency(typeof(IEvent)));
+        }
+
+        [Fact]
+        public async Task ShouldTellTheTransportToTakeOneMessageAtATimeWhereNoHandlerTakesThem()
+        {
+            var context = await StartAndCaptureContextAsync(service => service
+                .HandleCommand<PlaceOrder>((command, messageContext, ct) => Task.CompletedTask));
+
+            Assert.Equal(1, context.HandlerConcurrency(typeof(ICommand)));
+            Assert.Equal(1, context.HandlerConcurrency(typeof(IRequest)));
+            Assert.Equal(1, context.HandlerConcurrency(typeof(IEvent)));
+            Assert.Equal(1, context.HandlerConcurrency(typeof(IResponse)));
+        }
+
+        [Fact]
         public void ShouldCheckUseTransportsArguments()
         {
             var provider = new FakeEndpointProvider(typeof(IOrderMessage));
@@ -445,6 +484,21 @@ namespace Obvs.Tests.Hosting
             return builder.Build();
         }
 
+        private static async Task<ObvsTransportContext> StartAndCaptureContextAsync(Action<ObvsServiceBuilder> configure)
+        {
+            ObvsTransportContext context = null;
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => configure(service.UseTransport("Fake", transport =>
+                {
+                    context = transport;
+                    return new FakeEndpointProvider(typeof(IOrderMessage));
+                })))));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+            await host.StopAsync(TestContext.Current.CancellationToken);
+            return context;
+        }
+
         public interface IOrderMessage : IMessage { }
 
         public interface IShippingMessage : IMessage { }
@@ -457,6 +511,23 @@ namespace Obvs.Tests.Hosting
         public class OrderPlaced : IOrderMessage, IEvent
         {
             public string OrderId { get; set; }
+        }
+
+        public class CancelOrder : IOrderMessage, ICommand
+        {
+            public string OrderId { get; set; }
+        }
+
+        public class GetQuote : IOrderMessage, IRequest<Quote>
+        {
+            public string RequestId { get; set; }
+            public string RequesterId { get; set; }
+        }
+
+        public class Quote : IOrderMessage, IResponse
+        {
+            public string RequestId { get; set; }
+            public string RequesterId { get; set; }
         }
 
         // Hands out one shared fake endpoint as both server and client, so messages loop back in-process

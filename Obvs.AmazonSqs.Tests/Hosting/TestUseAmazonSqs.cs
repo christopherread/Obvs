@@ -74,7 +74,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             {
                 ["Obvs:Orders:AmazonSqs:Region"] = "eu-west-1",
                 ["Obvs:Orders:AmazonSqs:MaxDeliveryAttempts"] = "3",
-                ["Obvs:Orders:AmazonSqs:MaxConcurrentCalls"] = "4",
+                ["Obvs:Orders:AmazonSqs:MaxConcurrentMessages"] = "4",
                 ["Obvs:Orders:AmazonSqs:VisibilityTimeout"] = "00:05:00",
                 ["Obvs:Orders:AmazonSqs:MaxHandlerDuration"] = "00:04:00",
             });
@@ -85,18 +85,18 @@ namespace Obvs.AmazonSqs.Tests.Hosting
 
             var options = host.Services.GetRequiredService<IOptionsMonitor<AmazonSqsOptions>>().Get("orders");
             Assert.Equal(3, options.MaxDeliveryAttempts);
-            Assert.Equal(4, options.MaxConcurrentCalls);
+            Assert.Equal(4, options.MaxConcurrentMessages);
             Assert.Equal(TimeSpan.FromMinutes(5), options.VisibilityTimeout);
             Assert.Equal(TimeSpan.FromMinutes(4), options.MaxHandlerDuration);
         }
 
         [Fact]
-        public void ShouldDeliverAFailingMessageTenTimesOneMessageAtATimeByDefault()
+        public void ShouldDeliverAFailingMessageTenTimesAndTakeAsManyMessagesAtOnceAsTheHandlersByDefault()
         {
             var options = new AmazonSqsOptions();
 
             Assert.Equal(10, options.MaxDeliveryAttempts);
-            Assert.Equal(1, options.MaxConcurrentCalls);
+            Assert.Null(options.MaxConcurrentMessages);
             Assert.True(options.VisibilityTimeout > options.MaxHandlerDuration);
             Assert.Null(options.ServiceUrl);
             Assert.Null(options.Credentials);
@@ -171,13 +171,13 @@ namespace Obvs.AmazonSqs.Tests.Hosting
                         options.LastSeenInterval = TimeSpan.Zero;
                         options.AbandonedAfter = TimeSpan.Zero;
                         // Fails startup with the one error below rather than connecting to AWS
-                        options.MaxConcurrentCalls = 0;
+                        options.MaxConcurrentMessages = 0;
                     })
                     .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
 
             var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
 
-            Assert.Contains("MaxConcurrentCalls", Assert.Single(exception.Errors));
+            Assert.Contains("MaxConcurrentMessages", Assert.Single(exception.Errors));
         }
 
         [Fact]
@@ -229,13 +229,14 @@ namespace Obvs.AmazonSqs.Tests.Hosting
         }
 
         [Fact]
-        public async Task ShouldFailToStartWhenMaxConcurrentCallsIsLessThanOne()
+        public async Task ShouldFailToStartWhenMaxConcurrentMessagesIsLessThanOne()
         {
-            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxConcurrentCalls = 0));
+            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxConcurrentMessages = 0));
 
             Assert.Contains("'orders'", error);
-            Assert.Contains("MaxConcurrentCalls", error);
+            Assert.Contains("MaxConcurrentMessages", error);
             Assert.Contains("at least 1", error);
+            Assert.Contains("handlers' MaxConcurrency", error);
         }
 
         [Fact]

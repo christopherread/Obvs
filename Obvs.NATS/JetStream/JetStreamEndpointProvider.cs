@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using NATS.Client.Core;
 using NATS.Client.JetStream;
@@ -15,16 +16,19 @@ namespace Obvs.NATS.JetStream
         private readonly string _serviceName;
         private readonly string _instanceId;
         private readonly NatsJetStreamOptions _options;
+        private readonly Func<Type, int> _concurrency;
         private readonly IMessageSerializer _serializer;
         private readonly IMessageDeserializerFactory _deserializerFactory;
         private readonly JetStreamTopology _topology;
 
-        public JetStreamEndpointProvider(string serviceName, string instanceId, NatsJetStreamOptions options,
+        /// <param name="concurrency">How many messages of each kind to take at once</param>
+        public JetStreamEndpointProvider(string serviceName, string instanceId, NatsJetStreamOptions options, Func<Type, int> concurrency,
             IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, bool isServer, bool isClient)
         {
             _serviceName = serviceName;
             _instanceId = instanceId;
             _options = options;
+            _concurrency = concurrency;
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
             _topology = new JetStreamTopology(serviceName, instanceId, options);
@@ -48,8 +52,8 @@ namespace Obvs.NATS.JetStream
             var connection = Connect();
             var jetStream = new NatsJSContext(connection);
             var endpoint = new ServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>(
-                new MessageSource<IRequest>(jetStream, _topology, _topology.Requests, _serviceName, Deserializers<IRequest>(), _options),
-                new MessageSource<ICommand>(jetStream, _topology, _topology.Commands, _serviceName, Deserializers<ICommand>(), _options),
+                new MessageSource<IRequest>(jetStream, _topology, _topology.Requests, _serviceName, Deserializers<IRequest>(), _options, _concurrency(typeof(IRequest))),
+                new MessageSource<ICommand>(jetStream, _topology, _topology.Commands, _serviceName, Deserializers<ICommand>(), _options, _concurrency(typeof(ICommand))),
                 new MessagePublisher<IEvent>(jetStream, _topology.Events.SubjectPrefix, _serializer),
                 new DefaultMessagePublisher<IResponse>(), // Responses go to each request's reply subject instead
                 typeof(TServiceMessage));
@@ -61,8 +65,8 @@ namespace Obvs.NATS.JetStream
             var connection = Connect();
             var jetStream = new NatsJSContext(connection);
             var endpointClient = new ServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>(
-                new MessageSource<IEvent>(jetStream, _topology, _topology.Events, _serviceName, Deserializers<IEvent>(), _options),
-                new MessageSource<IResponse>(jetStream, _topology, _topology.Responses, _serviceName, Deserializers<IResponse>(), _options),
+                new MessageSource<IEvent>(jetStream, _topology, _topology.Events, _serviceName, Deserializers<IEvent>(), _options, _concurrency(typeof(IEvent))),
+                new MessageSource<IResponse>(jetStream, _topology, _topology.Responses, _serviceName, Deserializers<IResponse>(), _options, _concurrency(typeof(IResponse))),
                 new MessagePublisher<IRequest>(jetStream, _topology.Requests.SubjectPrefix, _serializer, _topology.Responses.SubjectPrefix),
                 new MessagePublisher<ICommand>(jetStream, _topology.Commands.SubjectPrefix, _serializer),
                 typeof(TServiceMessage));

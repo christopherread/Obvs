@@ -93,7 +93,7 @@ namespace Obvs.AzureSB.Tests.Hosting
             var configuration = Configuration(new Dictionary<string, string>
             {
                 ["Obvs:Orders:AzureServiceBus:FullyQualifiedNamespace"] = "contoso.servicebus.windows.net",
-                ["Obvs:Orders:AzureServiceBus:MaxConcurrentCalls"] = "4",
+                ["Obvs:Orders:AzureServiceBus:MaxConcurrentMessages"] = "4",
                 ["Obvs:Orders:AzureServiceBus:LockDuration"] = "00:00:30",
                 ["Obvs:Orders:AzureServiceBus:MaxLockRenewalDuration"] = "00:10:00",
             });
@@ -103,29 +103,30 @@ namespace Obvs.AzureSB.Tests.Hosting
                     .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
 
             var options = host.Services.GetRequiredService<IOptionsMonitor<AzureServiceBusOptions>>().Get("orders");
-            Assert.Equal(4, options.MaxConcurrentCalls);
+            Assert.Equal(4, options.MaxConcurrentMessages);
             Assert.Equal(TimeSpan.FromSeconds(30), options.LockDuration);
             Assert.Equal(TimeSpan.FromMinutes(10), options.MaxLockRenewalDuration);
         }
 
         [Fact]
-        public void ShouldDeliverOneMessageAtATimeAndRenewLocksForFiveMinutesByDefault()
+        public void ShouldTakeAsManyMessagesAtOnceAsTheHandlersAndRenewLocksForFiveMinutesByDefault()
         {
             var options = new AzureServiceBusOptions();
 
-            Assert.Equal(1, options.MaxConcurrentCalls);
+            Assert.Null(options.MaxConcurrentMessages);
             Assert.Null(options.LockDuration);
             Assert.Equal(TimeSpan.FromMinutes(5), options.MaxLockRenewalDuration);
         }
 
         [Fact]
-        public async Task ShouldFailToStartWhenMaxConcurrentCallsIsLessThanOne()
+        public async Task ShouldFailToStartWhenMaxConcurrentMessagesIsLessThanOne()
         {
-            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxConcurrentCalls = 0));
+            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxConcurrentMessages = 0));
 
             Assert.Contains("'orders'", error);
-            Assert.Contains("MaxConcurrentCalls", error);
+            Assert.Contains("MaxConcurrentMessages", error);
             Assert.Contains("at least 1", error);
+            Assert.Contains("handlers' MaxConcurrency", error);
         }
 
         [Theory]

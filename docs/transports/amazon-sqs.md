@@ -54,14 +54,14 @@ All of these are in `AmazonSqsOptions`. Everything except `Credentials` can be s
 | `ServiceUrl` | AWS's own | An endpoint to use instead of AWS's, for example `http://localhost:4566` for LocalStack |
 | `Credentials` | The AWS SDK's default chain | An `AWSCredentials` to sign in with. Code only |
 | `MaxDeliveryAttempts` | 10 | How many times a message is delivered to a failing handler before it's dead-lettered, from 1 to 1000 |
-| `MaxConcurrentCalls` | 1 | How many messages each queue hands this bus at once. Raise it together with a handler's `MaxConcurrency` |
+| `MaxConcurrentMessages` | The handlers' | How many messages each queue hands this bus at once. When not set, the sum of the `MaxConcurrency` of the service's handlers of that queue's messages, or 1 if none takes them |
 | `VisibilityTimeout` | 1 minute | How long a received message is hidden from other receivers, from 1 second to 12 hours. It must exceed `MaxHandlerDuration` |
 | `MaxHandlerDuration` | 30 seconds | The longest a handler is expected to take with a message |
 | `CleanUpAbandonedQueues` | true | Whether buses delete the queues crashed buses left behind |
 | `LastSeenInterval` | 5 minutes | How often a bus records that it's still running, and looks for crashed buses' queues |
 | `AbandonedAfter` | 1 hour | How long a bus can go unseen before other buses delete its queues. At least three times `LastSeenInterval` |
 
-For example, to handle up to 8 messages at once with handlers that can take up to 4 minutes:
+For example, to handle up to 8 messages at once with handlers that can take up to 4 minutes, set the handler's `MaxConcurrency` to 8, which the commands queue follows, and the durations in configuration:
 
 ```json
 {
@@ -69,7 +69,6 @@ For example, to handle up to 8 messages at once with handlers that can take up t
     "Orders": {
       "AmazonSqs": {
         "Region": "eu-west-1",
-        "MaxConcurrentCalls": 8,
         "VisibilityTimeout": "00:05:00",
         "MaxHandlerDuration": "00:04:00",
         "MaxDeliveryAttempts": 5
@@ -107,7 +106,7 @@ SQS doesn't know a handler is still running. If a handler takes longer than `Vis
 The bus checks the settings when it starts, and reports every problem together in one `ObvsConfigurationException`, saying which setting to change. It checks that:
 
 - a region is set, and `ServiceUrl`, when set, is an `http` or `https` URL;
-- `MaxDeliveryAttempts` is from 1 to 1000, and `MaxConcurrentCalls` is at least 1;
+- `MaxDeliveryAttempts` is from 1 to 1000, and `MaxConcurrentMessages`, when set, is at least 1;
 - `VisibilityTimeout` is from 1 second to 12 hours, and exceeds `MaxHandlerDuration`;
 - with clean-up on, `LastSeenInterval` is positive and `AbandonedAfter` is at least three times it;
 - the service name and instance ID use only letters, digits, hyphens and underscores, and the bus's queue names fit in SQS's 80 characters.

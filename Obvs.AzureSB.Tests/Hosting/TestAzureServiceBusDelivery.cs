@@ -26,38 +26,38 @@ namespace Obvs.AzureSB.Tests.Hosting
         private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
         [Fact, Trait("Category", "Explicit")]
-        public async Task ShouldHandleUpToMaxConcurrentCallsCommandsAtOnce()
+        public async Task ShouldHandleAsManyCommandsAtOnceAsTheirHandlersMaxConcurrency()
         {
             var running = new ConcurrencyRecorder();
-            using var host = await StartHostAsync(_serviceNames.Create("concurrent"), options => options.MaxConcurrentCalls = 3,
-                service => service.HandleCommand<PlaceOrder>((command, context, ct) => running.RunAsync(), handler => handler.MaxConcurrency = 3));
+            using var host = await StartHostAsync(_serviceNames.Create("concurrent"), options => { },
+                service => service.HandleCommand<PlaceOrder>((command, context, ct) => running.RunAsync(), handler => handler.MaxConcurrency = 4));
             var bus = host.Services.GetRequiredService<IServiceBus>();
 
-            for (var i = 0; i < 3; i++)
+            for (var i = 0; i < 4; i++)
             {
                 await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" }, TestContext.Current.CancellationToken);
             }
 
-            await WaitUntilAsync(() => running.Current == 3);
+            await WaitUntilAsync(() => running.Current == 4);
             running.Finish();
         }
 
         [Fact, Trait("Category", "Explicit")]
-        public async Task ShouldHandleOneCommandAtATimeByDefault()
+        public async Task ShouldHandleNoMoreCommandsAtOnceThanMaxConcurrentMessages()
         {
             var running = new ConcurrencyRecorder();
-            using var host = await StartHostAsync(_serviceNames.Create("one-at-a-time"), options => { },
-                service => service.HandleCommand<PlaceOrder>((command, context, ct) => running.RunAsync(), handler => handler.MaxConcurrency = 3));
+            using var host = await StartHostAsync(_serviceNames.Create("capped"), options => options.MaxConcurrentMessages = 2,
+                service => service.HandleCommand<PlaceOrder>((command, context, ct) => running.RunAsync(), handler => handler.MaxConcurrency = 4));
             var bus = host.Services.GetRequiredService<IServiceBus>();
 
-            for (var i = 0; i < 3; i++)
+            for (var i = 0; i < 4; i++)
             {
                 await bus.SendAsync(new PlaceOrder { OrderId = $"o-{i}" }, TestContext.Current.CancellationToken);
             }
 
-            await WaitUntilAsync(() => running.Current == 1);
+            await WaitUntilAsync(() => running.Current == 2);
             await Task.Delay(TimeSpan.FromSeconds(3), Ct);
-            Assert.Equal(1, running.Most);
+            Assert.Equal(2, running.Most);
             running.Finish();
         }
 
@@ -66,7 +66,7 @@ namespace Obvs.AzureSB.Tests.Hosting
         {
             // Every request in flight listens on the bus's one reply queue
             var serviceName = _serviceNames.Create("concurrent-requests");
-            using var server = await StartHostAsync(serviceName, options => options.MaxConcurrentCalls = 10,
+            using var server = await StartHostAsync(serviceName, options => { },
                 service => service.AsServer().HandleRequest<GetQuote, Quote>(async (request, context, ct) =>
                 {
                     await Task.Delay(200, ct);

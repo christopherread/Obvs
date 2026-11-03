@@ -154,7 +154,7 @@ namespace Obvs.Hosting
         internal ObvsTransportContext CreateTransportContext(IServiceProvider serviceProvider)
         {
             return new ObvsTransportContext(Name, ServiceMessageType, _messages.ToArray(), InstanceId, Serializer, DeserializerFactory,
-                IsClient, IsServer, serviceProvider);
+                IsClient, IsServer, serviceProvider, _handlers.ToArray());
         }
 
         /// <summary>

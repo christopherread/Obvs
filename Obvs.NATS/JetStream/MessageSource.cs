@@ -39,19 +39,21 @@ namespace Obvs.NATS.JetStream
         private readonly JetStreamTopology.Destination _destination;
         private readonly string _serviceName;
         private readonly NatsJetStreamOptions _options;
+        private readonly int _maxConcurrentMessages;
         private readonly ConcurrentDictionary<Receiver, bool> _receivers = new ConcurrentDictionary<Receiver, bool>();
         private readonly object _gate = new object();
         private IObservable<TMessage> _shared;
         private TimeSpan _retryDelay;
 
         public MessageSource(INatsJSContext jetStream, JetStreamTopology topology, JetStreamTopology.Destination destination, string serviceName,
-            IEnumerable<IMessageDeserializer<TMessage>> deserializers, NatsJetStreamOptions options)
+            IEnumerable<IMessageDeserializer<TMessage>> deserializers, NatsJetStreamOptions options, int maxConcurrentMessages)
         {
             _jetStream = jetStream;
             _topology = topology;
             _destination = destination;
             _serviceName = serviceName;
             _options = options;
+            _maxConcurrentMessages = maxConcurrentMessages;
             _deserializers = deserializers.ToDictionary(deserializer => deserializer.TypeName);
 
             Messages = Observable.Defer(Shared);
@@ -84,7 +86,7 @@ namespace Obvs.NATS.JetStream
                     })
                     // Hand messages to subscribers on the task pool, in order. Subscriber code running on the receive loop
                     // could otherwise deadlock it, for example by disposing the bus, which waits for that loop. With
-                    // MaxConcurrentMessages above 1, messages arrive at the same time, but observers take one at a time.
+                    // more than one message at once, messages arrive at the same time, but observers take one at a time.
                     .Synchronize()
                     .ObserveOn(TaskPoolScheduler.Default)
                     .Do(_ => { }, _ => Forget(shared), () => Forget(shared))
@@ -238,7 +240,7 @@ namespace Obvs.NATS.JetStream
             {
                 _source = source;
                 _observer = observer;
-                _slots = new SemaphoreSlim(source._options.MaxConcurrentMessages);
+                _slots = new SemaphoreSlim(source._maxConcurrentMessages);
                 _receiving = Task.Run(ReceiveAsync);
             }
 

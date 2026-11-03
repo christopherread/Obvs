@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Obvs.Configuration;
 using Obvs.Serialization;
@@ -11,14 +12,17 @@ namespace Obvs.AmazonSqs
         where TServiceMessage : class
     {
         private readonly AmazonSqsOptions _options;
+        private readonly Func<Type, int> _concurrency;
         private readonly IMessageSerializer _serializer;
         private readonly IMessageDeserializerFactory _deserializerFactory;
         private readonly AmazonSqsEntities _entities;
 
-        public AmazonSqsEndpointProvider(string serviceName, string instanceId, AmazonSqsOptions options,
+        /// <param name="concurrency">How many messages of each kind to take at once</param>
+        public AmazonSqsEndpointProvider(string serviceName, string instanceId, AmazonSqsOptions options, Func<Type, int> concurrency,
             IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, bool isClient)
         {
             _options = options;
+            _concurrency = concurrency;
             _serializer = serializer;
             _deserializerFactory = deserializerFactory;
             _entities = new AmazonSqsEntities(serviceName, instanceId, options);
@@ -31,8 +35,8 @@ namespace Obvs.AmazonSqs
             var sqs = AmazonSqsEntities.CreateSqsClient(_options);
             var sns = AmazonSqsEntities.CreateSnsClient(_options);
             var endpoint = new ServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>(
-                new MessageSource<IRequest>(sqs, _entities.RequestsUrl, _entities.DeadLettersUrl, Deserializers<IRequest>(), _options),
-                new MessageSource<ICommand>(sqs, _entities.CommandsUrl, _entities.DeadLettersUrl, Deserializers<ICommand>(), _options),
+                new MessageSource<IRequest>(sqs, _entities.RequestsUrl, _entities.DeadLettersUrl, Deserializers<IRequest>(), _options, _concurrency(typeof(IRequest))),
+                new MessageSource<ICommand>(sqs, _entities.CommandsUrl, _entities.DeadLettersUrl, Deserializers<ICommand>(), _options, _concurrency(typeof(ICommand))),
                 new TopicMessagePublisher<IEvent>(sns, _entities.EventsTopicArn, _serializer),
                 new DefaultMessagePublisher<IResponse>(), // Responses go to each request's reply queue instead
                 typeof(TServiceMessage));
@@ -45,8 +49,8 @@ namespace Obvs.AmazonSqs
             // With clean-up on, the bus recreates its own queues if another bus deletes them, so receiving waits for them
             var recreated = _options.CleanUpAbandonedQueues;
             var endpointClient = new ServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>(
-                new MessageSource<IEvent>(sqs, _entities.EventQueueUrl, _entities.DeadLettersUrl, Deserializers<IEvent>(), _options, recreated),
-                new MessageSource<IResponse>(sqs, _entities.RepliesUrl, _entities.DeadLettersUrl, Deserializers<IResponse>(), _options, recreated),
+                new MessageSource<IEvent>(sqs, _entities.EventQueueUrl, _entities.DeadLettersUrl, Deserializers<IEvent>(), _options, _concurrency(typeof(IEvent)), recreated),
+                new MessageSource<IResponse>(sqs, _entities.RepliesUrl, _entities.DeadLettersUrl, Deserializers<IResponse>(), _options, _concurrency(typeof(IResponse)), recreated),
                 new QueueMessagePublisher<IRequest>(sqs, _entities.RequestsUrl, _serializer, _entities.RepliesUrl),
                 new QueueMessagePublisher<ICommand>(sqs, _entities.CommandsUrl, _serializer),
                 typeof(TServiceMessage));

@@ -190,7 +190,6 @@ namespace Obvs.NATS.Tests.JetStream
                 }, handler => handler.MaxConcurrency = 2), options: options =>
             {
                 options.AckWait = TimeSpan.FromSeconds(1);
-                options.MaxConcurrentMessages = 2;
             });
 
             await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
@@ -219,7 +218,6 @@ namespace Obvs.NATS.Tests.JetStream
             {
                 options.AckWait = TimeSpan.FromSeconds(1);
                 options.MaxInProgressDuration = TimeSpan.Zero;
-                options.MaxConcurrentMessages = 2;
             });
 
             await host.Services.GetRequiredService<IServiceBus>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
