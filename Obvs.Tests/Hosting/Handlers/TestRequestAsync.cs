@@ -180,7 +180,7 @@ namespace Obvs.Tests.Hosting.Handlers
         private static Task<ObvsTestHarness> StartClientAsync(RequestTransport transport)
         {
             return ObvsTestHarness.StartAsync(services => services.AddObvs(obvs => obvs
-                .AddService<IOrderMessage>("orders", service => service.AsClient().UseEndpointProvider(_ => transport))),
+                .AddService<IOrderMessage>("orders", service => service.AsClient().UseTransport("Fake", _ => transport))),
                 cancellationToken: Ct);
         }
 

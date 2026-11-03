@@ -74,64 +74,64 @@ namespace Obvs.Hosting
 
         private static ObvsServiceBuilder UseAmazonSqs(ObvsServiceBuilder service, string whereToSetRegion, string whereToSetServiceUrl)
         {
-            return service
-                .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetRegion, whereToSetServiceUrl))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
-                    serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.AmazonSqs")), "Amazon SQS");
+            return service.UseTransport("Amazon SQS",
+                transport => CreateProvider(transport, GetOptions(transport),
+                    transport.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.AmazonSqs")),
+                transport => Validate(transport, GetOptions(transport), whereToSetRegion, whereToSetServiceUrl));
         }
 
-        private static AmazonSqsOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
+        private static AmazonSqsOptions GetOptions(ObvsTransportContext service)
         {
-            return serviceProvider.GetRequiredService<IOptionsMonitor<AmazonSqsOptions>>().Get(service.Name);
+            return service.ServiceProvider.GetRequiredService<IOptionsMonitor<AmazonSqsOptions>>().Get(service.ServiceName);
         }
 
-        private static IEnumerable<string> Validate(ObvsServiceBuilder service, AmazonSqsOptions options, string whereToSetRegion, string whereToSetServiceUrl)
+        private static IEnumerable<string> Validate(ObvsTransportContext service, AmazonSqsOptions options, string whereToSetRegion, string whereToSetServiceUrl)
         {
             if (string.IsNullOrWhiteSpace(options.Region))
             {
-                yield return $"Service '{service.Name}' has no AWS region for Amazon SQS. Set {whereToSetRegion}.";
+                yield return $"Service '{service.ServiceName}' has no AWS region for Amazon SQS. Set {whereToSetRegion}.";
             }
             if (!string.IsNullOrWhiteSpace(options.ServiceUrl) && !IsHttpUrl(options.ServiceUrl))
             {
-                yield return $"Service '{service.Name}' sets Amazon SQS ServiceUrl to '{options.ServiceUrl}', which isn't an http or https URL. " +
+                yield return $"Service '{service.ServiceName}' sets Amazon SQS ServiceUrl to '{options.ServiceUrl}', which isn't an http or https URL. " +
                              $"Set {whereToSetServiceUrl} to one such as http://localhost:4566, or leave it unset to use AWS's own endpoints.";
             }
             if (options.MaxDeliveryAttempts < 1 || options.MaxDeliveryAttempts > 1000)
             {
-                yield return $"Service '{service.Name}' sets Amazon SQS MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but SQS allows between 1 and 1000. " +
+                yield return $"Service '{service.ServiceName}' sets Amazon SQS MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but SQS allows between 1 and 1000. " +
                              "Leave it unset for 10.";
             }
             if (options.MaxConcurrentCalls < 1)
             {
-                yield return $"Service '{service.Name}' sets Amazon SQS MaxConcurrentCalls to {options.MaxConcurrentCalls}, but it must be at least 1. " +
+                yield return $"Service '{service.ServiceName}' sets Amazon SQS MaxConcurrentCalls to {options.MaxConcurrentCalls}, but it must be at least 1. " +
                              "Leave it unset to handle one message at a time.";
             }
             if (options.VisibilityTimeout < MinVisibilityTimeout || options.VisibilityTimeout > MaxVisibilityTimeout)
             {
-                yield return $"Service '{service.Name}' sets Amazon SQS VisibilityTimeout to {options.VisibilityTimeout}, but SQS allows between 1 second and 12 hours. " +
+                yield return $"Service '{service.ServiceName}' sets Amazon SQS VisibilityTimeout to {options.VisibilityTimeout}, but SQS allows between 1 second and 12 hours. " +
                              "Leave it unset for 1 minute.";
             }
             else if (options.MaxHandlerDuration > TimeSpan.Zero && options.VisibilityTimeout <= options.MaxHandlerDuration)
             {
-                yield return $"Service '{service.Name}' sets Amazon SQS VisibilityTimeout to {options.VisibilityTimeout}, which must exceed MaxHandlerDuration ({options.MaxHandlerDuration}): " +
+                yield return $"Service '{service.ServiceName}' sets Amazon SQS VisibilityTimeout to {options.VisibilityTimeout}, which must exceed MaxHandlerDuration ({options.MaxHandlerDuration}): " +
                              "SQS delivers a message again once its visibility timeout passes, even while a handler is still running it. " +
                              "Raise VisibilityTimeout, or lower MaxHandlerDuration if handlers finish sooner.";
             }
             if (options.MaxHandlerDuration <= TimeSpan.Zero)
             {
-                yield return $"Service '{service.Name}' sets Amazon SQS MaxHandlerDuration to {options.MaxHandlerDuration}, but it must be positive. " +
+                yield return $"Service '{service.ServiceName}' sets Amazon SQS MaxHandlerDuration to {options.MaxHandlerDuration}, but it must be positive. " +
                              "Set it to the longest a handler takes with a message, or leave it unset for 30 seconds.";
             }
             if (options.CleanUpAbandonedQueues)
             {
                 if (options.LastSeenInterval <= TimeSpan.Zero)
                 {
-                    yield return $"Service '{service.Name}' sets Amazon SQS LastSeenInterval to {options.LastSeenInterval}, but it must be positive. " +
+                    yield return $"Service '{service.ServiceName}' sets Amazon SQS LastSeenInterval to {options.LastSeenInterval}, but it must be positive. " +
                                  "Leave it unset for 5 minutes, or set CleanUpAbandonedQueues to false to turn clean-up off.";
                 }
                 else if (options.AbandonedAfter.Ticks < options.LastSeenInterval.Ticks * MinRefreshesPerWindow)
                 {
-                    yield return $"Service '{service.Name}' sets Amazon SQS AbandonedAfter to {options.AbandonedAfter}, which must be at least three times " +
+                    yield return $"Service '{service.ServiceName}' sets Amazon SQS AbandonedAfter to {options.AbandonedAfter}, which must be at least three times " +
                                  $"LastSeenInterval ({options.LastSeenInterval}), so that a bus missing a refresh or two isn't taken for crashed and has its queues deleted. " +
                                  "Raise AbandonedAfter, or lower LastSeenInterval.";
                 }
@@ -148,19 +148,19 @@ namespace Obvs.Hosting
             return Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
         }
 
-        private static IEnumerable<string> ValidateNames(ObvsServiceBuilder service)
+        private static IEnumerable<string> ValidateNames(ObvsTransportContext service)
         {
             var namesAllowed = true;
-            if (!AllowedName.IsMatch(service.Name))
+            if (!AllowedName.IsMatch(service.ServiceName))
             {
                 namesAllowed = false;
-                yield return $"Service '{service.Name}' uses Amazon SQS, which names the service's queues and topic after it, but SQS and SNS names allow only " +
+                yield return $"Service '{service.ServiceName}' uses Amazon SQS, which names the service's queues and topic after it, but SQS and SNS names allow only " +
                              "letters, digits, hyphens and underscores. Rename the service.";
             }
             if (!AllowedName.IsMatch(service.InstanceId))
             {
                 namesAllowed = false;
-                yield return $"Service '{service.Name}' uses Amazon SQS, which names this bus's own queues after its instance ID, but instance ID '{service.InstanceId}' " +
+                yield return $"Service '{service.ServiceName}' uses Amazon SQS, which names this bus's own queues after its instance ID, but instance ID '{service.InstanceId}' " +
                              "has characters SQS doesn't allow: only letters, digits, hyphens and underscores. Set another with UseInstanceId(...).";
             }
             if (!namesAllowed)
@@ -168,27 +168,27 @@ namespace Obvs.Hosting
                 yield break;
             }
 
-            var longest = AmazonSqsEntities.QueueNames(service.Name, service.InstanceId).OrderByDescending(name => name.Length).First();
+            var longest = AmazonSqsEntities.QueueNames(service.ServiceName, service.InstanceId).OrderByDescending(name => name.Length).First();
             if (longest.Length > MaxQueueNameLength)
             {
-                yield return $"Service '{service.Name}' uses Amazon SQS, which allows queue names of up to {MaxQueueNameLength} characters, but this bus's queue " +
+                yield return $"Service '{service.ServiceName}' uses Amazon SQS, which allows queue names of up to {MaxQueueNameLength} characters, but this bus's queue " +
                              $"'{longest}' has {longest.Length}. Use a shorter service name, or set a shorter instance ID with UseInstanceId(...).";
             }
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, AmazonSqsOptions options, ILogger logger)
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, AmazonSqsOptions options, ILogger logger)
         {
             if (logger != null)
             {
                 options.Logger = logger;
             }
-            options.ServiceName = service.Name;
+            options.ServiceName = service.ServiceName;
             var providerType = typeof(AmazonSqsEndpointProvider<>).MakeGenericType(service.ServiceMessageType);
             try
             {
                 return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
-                    service.Name, service.InstanceId, options, service.Serializer, service.DeserializerFactory, service.IsClient);
+                    service.ServiceName, service.InstanceId, options, service.Serializer, service.DeserializerFactory, service.IsClient);
             }
             catch (TargetInvocationException exception) when (exception.InnerException != null)
             {

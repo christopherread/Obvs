@@ -283,7 +283,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             A.CallTo(() => endpointClient.SendAsync(A<ICommand>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).ThrowsAsync(new TimeoutException("The broker didn't answer"));
             var provider = A.Fake<IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             A.CallTo(() => provider.CreateEndpointClient()).Returns(endpointClient);
-            await using var harness = await StartAsync(service => service.AsClient().UseEndpointProvider(_ => provider));
+            await using var harness = await StartAsync(service => service.AsClient().UseTransport("Fake", _ => provider));
 
             await Assert.ThrowsAnyAsync<Exception>(() => harness.Client.SendAsync(new PlaceOrder("o-1"), Ct));
 
@@ -298,7 +298,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             using var activities = new ActivityRecorder();
             using var metrics = new MetricRecorder();
             var transport = new RequestTransport { SendFailure = new TimeoutException("The broker didn't answer") };
-            await using var harness = await StartAsync(service => service.AsClient().UseEndpointProvider(_ => transport));
+            await using var harness = await StartAsync(service => service.AsClient().UseTransport("Fake", _ => transport));
 
             await Assert.ThrowsAsync<TimeoutException>(() => harness.Client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromMinutes(5), Ct))
                 .WaitAsync(Timeout, Ct);
@@ -317,7 +317,7 @@ namespace Obvs.Tests.Hosting.Telemetry
             using var activities = new ActivityRecorder();
             using var metrics = new MetricRecorder();
             var transport = new RequestTransport();
-            await using var harness = await StartAsync(service => service.AsClient().UseEndpointProvider(_ => transport));
+            await using var harness = await StartAsync(service => service.AsClient().UseTransport("Fake", _ => transport));
 
             await harness.Client.RequestAsync(new GetQuote("sku-1"), Timeout, Ct);
 

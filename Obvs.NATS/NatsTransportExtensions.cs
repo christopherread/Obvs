@@ -56,30 +56,30 @@ namespace Obvs.Hosting
 
         private static ObvsServiceBuilder UseNats(ObvsServiceBuilder service, string whereToSetUrl)
         {
-            return service
-                .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetUrl))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)), "NATS");
+            return service.UseTransport("NATS",
+                transport => CreateProvider(transport, GetOptions(transport)),
+                transport => Validate(transport, GetOptions(transport), whereToSetUrl));
         }
 
-        private static NatsOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
+        private static NatsOptions GetOptions(ObvsTransportContext service)
         {
-            return serviceProvider.GetRequiredService<IOptionsMonitor<NatsOptions>>().Get(service.Name);
+            return service.ServiceProvider.GetRequiredService<IOptionsMonitor<NatsOptions>>().Get(service.ServiceName);
         }
 
-        private static IEnumerable<string> Validate(ObvsServiceBuilder service, NatsOptions options, string whereToSetUrl)
+        private static IEnumerable<string> Validate(ObvsTransportContext service, NatsOptions options, string whereToSetUrl)
         {
             if (string.IsNullOrWhiteSpace(options.Url))
             {
-                yield return $"Service '{service.Name}' has no NATS server address. Set {whereToSetUrl}, for example nats://localhost:4222.";
+                yield return $"Service '{service.ServiceName}' has no NATS server address. Set {whereToSetUrl}, for example nats://localhost:4222.";
             }
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time.
         // Connections aren't shared: v6's shared connections are process-wide, so one host stopping would
         // close another's.
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, NatsOptions options)
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, NatsOptions options)
         {
-            var settings = new NatsEndpointSettings<IMessage> { ServiceName = service.Name };
+            var settings = new NatsEndpointSettings<IMessage> { ServiceName = service.ServiceName };
             settings.Configure((NatsEndpointSettings<IMessage>.BrokerConnection connection) =>
             {
                 connection.Url = options.Url;

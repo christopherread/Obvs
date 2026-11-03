@@ -329,7 +329,7 @@ namespace Obvs.Tests.Hosting.Handlers
             }
             builder.Services.AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service =>
             {
-                service.UseEndpointProvider(_ => transport);
+                service.UseTransport("Fake", _ => transport);
                 configure(service);
             }));
             var host = builder.Build();

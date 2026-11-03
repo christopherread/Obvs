@@ -10,7 +10,7 @@ namespace Obvs.Transports
     /// <summary>
     /// A transport's factory for one service's endpoints: <see cref="CreateEndpoint"/> for an app that's the
     /// service's server, and <see cref="CreateEndpointClient"/> for one that's its client. Each transport's
-    /// <c>Use&lt;Transport&gt;()</c> registers one with <c>UseEndpointProvider</c>.
+    /// <c>Use&lt;Transport&gt;()</c> registers one with <c>UseTransport</c>.
     /// </summary>
     public interface IServiceEndpointProvider<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class

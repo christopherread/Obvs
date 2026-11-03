@@ -57,35 +57,35 @@ namespace Obvs.Hosting
 
         private static ObvsServiceBuilder UseActiveMq(ObvsServiceBuilder service, string whereToSetBrokerUri)
         {
-            return service
-                .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetBrokerUri))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service)), "ActiveMQ");
+            return service.UseTransport("ActiveMQ",
+                transport => CreateProvider(transport, GetOptions(transport)),
+                transport => Validate(transport, GetOptions(transport), whereToSetBrokerUri));
         }
 
-        private static ActiveMqOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
+        private static ActiveMqOptions GetOptions(ObvsTransportContext service)
         {
-            return serviceProvider.GetRequiredService<IOptionsMonitor<ActiveMqOptions>>().Get(service.Name);
+            return service.ServiceProvider.GetRequiredService<IOptionsMonitor<ActiveMqOptions>>().Get(service.ServiceName);
         }
 
-        private static IEnumerable<string> Validate(ObvsServiceBuilder service, ActiveMqOptions options, string whereToSetBrokerUri)
+        private static IEnumerable<string> Validate(ObvsTransportContext service, ActiveMqOptions options, string whereToSetBrokerUri)
         {
             if (string.IsNullOrWhiteSpace(options.BrokerUri))
             {
-                yield return $"Service '{service.Name}' has no ActiveMQ broker. Set {whereToSetBrokerUri}, for example activemq:tcp://localhost:61616.";
+                yield return $"Service '{service.ServiceName}' has no ActiveMQ broker. Set {whereToSetBrokerUri}, for example activemq:tcp://localhost:61616.";
             }
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time.
         // Client IDs get the bus's instance ID, as on .NET Framework they're otherwise the same for every bus
         // in the process, and the broker refuses a second connection with the same client ID.
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, ActiveMqOptions options)
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, ActiveMqOptions options)
         {
             var providerType = typeof(ActiveMQServiceEndpointProvider<,,,,,>).MakeGenericType(
                 service.ServiceMessageType, typeof(IMessage), typeof(ICommand), typeof(IEvent), typeof(IRequest), typeof(IResponse));
             Action<ConnectionFactory> configureConnectionFactory = factory => factory.ClientId = $"{factory.ClientId}-{service.InstanceId}";
 
             return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
-                service.Name, options.BrokerUri, service.Serializer, service.DeserializerFactory, new List<Tuple<Type, AcknowledgementMode>>(),
+                service.ServiceName, options.BrokerUri, service.Serializer, service.DeserializerFactory, new List<Tuple<Type, AcknowledgementMode>>(),
                 null, null, null, null, null, null, options.UserName, options.Password, configureConnectionFactory, false);
         }
     }

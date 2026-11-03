@@ -70,73 +70,73 @@ namespace Obvs.Hosting
 
         private static ObvsServiceBuilder UseAzureServiceBus(ObvsServiceBuilder service, string whereToSetNamespace)
         {
-            return service
-                .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSetNamespace))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
-                    serviceProvider.GetService<IServiceBusAdministrationFactory>(), serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.AzureSB")), "Azure Service Bus");
+            return service.UseTransport("Azure Service Bus",
+                transport => CreateProvider(transport, GetOptions(transport),
+                    transport.ServiceProvider.GetService<IServiceBusAdministrationFactory>(), transport.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.AzureSB")),
+                transport => Validate(transport, GetOptions(transport), whereToSetNamespace));
         }
 
-        private static AzureServiceBusOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
+        private static AzureServiceBusOptions GetOptions(ObvsTransportContext service)
         {
-            return serviceProvider.GetRequiredService<IOptionsMonitor<AzureServiceBusOptions>>().Get(service.Name);
+            return service.ServiceProvider.GetRequiredService<IOptionsMonitor<AzureServiceBusOptions>>().Get(service.ServiceName);
         }
 
-        private static IEnumerable<string> Validate(ObvsServiceBuilder service, AzureServiceBusOptions options, string whereToSetNamespace)
+        private static IEnumerable<string> Validate(ObvsTransportContext service, AzureServiceBusOptions options, string whereToSetNamespace)
         {
             var hasNamespace = !string.IsNullOrWhiteSpace(options.FullyQualifiedNamespace);
             var hasConnectionString = !string.IsNullOrWhiteSpace(options.ConnectionString);
             if (!hasNamespace && !hasConnectionString)
             {
-                yield return $"Service '{service.Name}' has no Azure Service Bus namespace. Set {whereToSetNamespace}.";
+                yield return $"Service '{service.ServiceName}' has no Azure Service Bus namespace. Set {whereToSetNamespace}.";
             }
             if (hasNamespace && hasConnectionString)
             {
-                yield return $"Service '{service.Name}' sets both an Azure Service Bus namespace and a connection string. Set one, not both: " +
+                yield return $"Service '{service.ServiceName}' sets both an Azure Service Bus namespace and a connection string. Set one, not both: " +
                              "FullyQualifiedNamespace to sign in with a credential, or ConnectionString to use a shared access key.";
             }
             if (options.MaxDeliveryAttempts < 1)
             {
-                yield return $"Service '{service.Name}' sets Azure Service Bus MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but it must be at least 1. " +
+                yield return $"Service '{service.ServiceName}' sets Azure Service Bus MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but it must be at least 1. " +
                              "Leave it unset for Service Bus's default of 10.";
             }
             if (options.MaxConcurrentCalls < 1)
             {
-                yield return $"Service '{service.Name}' sets Azure Service Bus MaxConcurrentCalls to {options.MaxConcurrentCalls}, but it must be at least 1. " +
+                yield return $"Service '{service.ServiceName}' sets Azure Service Bus MaxConcurrentCalls to {options.MaxConcurrentCalls}, but it must be at least 1. " +
                              "Leave it unset to handle one message at a time, in order.";
             }
             if (options.LockDuration is TimeSpan lockDuration && (lockDuration < MinLockDuration || lockDuration > MaxLockDuration))
             {
-                yield return $"Service '{service.Name}' sets Azure Service Bus LockDuration to {lockDuration}, but Service Bus allows between 5 seconds and 5 minutes. " +
+                yield return $"Service '{service.ServiceName}' sets Azure Service Bus LockDuration to {lockDuration}, but Service Bus allows between 5 seconds and 5 minutes. " +
                              "Leave it unset for Service Bus's default of 1 minute.";
             }
             if (options.MaxLockRenewalDuration < TimeSpan.Zero)
             {
-                yield return $"Service '{service.Name}' sets Azure Service Bus MaxLockRenewalDuration to {options.MaxLockRenewalDuration}, but it can't be negative. " +
+                yield return $"Service '{service.ServiceName}' sets Azure Service Bus MaxLockRenewalDuration to {options.MaxLockRenewalDuration}, but it can't be negative. " +
                              "Set TimeSpan.Zero to never renew a message's lock.";
             }
             if (service.InstanceId.Length > MaxSubscriptionNameLength)
             {
-                yield return $"Service '{service.Name}' uses Azure Service Bus, which names this bus's event subscription after its instance ID " +
+                yield return $"Service '{service.ServiceName}' uses Azure Service Bus, which names this bus's event subscription after its instance ID " +
                              $"and allows {MaxSubscriptionNameLength} characters, but instance ID '{service.InstanceId}' has {service.InstanceId.Length}. " +
                              "Set a shorter one with UseInstanceId(...).";
             }
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, AzureServiceBusOptions options,
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, AzureServiceBusOptions options,
             IServiceBusAdministrationFactory administrationFactory, ILogger logger)
         {
             if (logger != null)
             {
                 options.Logger = logger;
             }
-            options.ServiceName = service.Name;
+            options.ServiceName = service.ServiceName;
             var admin = administrationFactory?.Create(options) ?? new ServiceBusAdministration(options);
             var providerType = typeof(AzureServiceBusEndpointProvider<>).MakeGenericType(service.ServiceMessageType);
             try
             {
                 return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
-                    service.Name, service.InstanceId, options, service.Serializer, service.DeserializerFactory, admin, service.IsClient);
+                    service.ServiceName, service.InstanceId, options, service.Serializer, service.DeserializerFactory, admin, service.IsClient);
             }
             catch (TargetInvocationException exception) when (exception.InnerException != null)
             {

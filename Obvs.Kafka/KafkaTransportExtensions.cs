@@ -89,47 +89,47 @@ namespace Obvs.Hosting
 
         private static ObvsServiceBuilder UseKafka(ObvsServiceBuilder service, Func<string, string> whereToSet)
         {
-            return service
-                .ValidateWith(serviceProvider => Validate(service, GetOptions(serviceProvider, service), whereToSet))
-                .UseEndpointProvider(serviceProvider => CreateProvider(service, GetOptions(serviceProvider, service),
-                    serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.Kafka")), "Kafka");
+            return service.UseTransport("Kafka",
+                transport => CreateProvider(transport, GetOptions(transport),
+                    transport.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.Kafka")),
+                transport => Validate(transport, GetOptions(transport), whereToSet));
         }
 
-        private static KafkaOptions GetOptions(IServiceProvider serviceProvider, ObvsServiceBuilder service)
+        private static KafkaOptions GetOptions(ObvsTransportContext service)
         {
-            return serviceProvider.GetRequiredService<IOptionsMonitor<KafkaOptions>>().Get(service.Name);
+            return service.ServiceProvider.GetRequiredService<IOptionsMonitor<KafkaOptions>>().Get(service.ServiceName);
         }
 
-        private static IEnumerable<string> Validate(ObvsServiceBuilder service, KafkaOptions options, Func<string, string> whereToSet)
+        private static IEnumerable<string> Validate(ObvsTransportContext service, KafkaOptions options, Func<string, string> whereToSet)
         {
             if (string.IsNullOrWhiteSpace(options.BootstrapServers))
             {
-                yield return $"Service '{service.Name}' has no Kafka brokers. Set {whereToSet("BootstrapServers")}, for example localhost:9092.";
+                yield return $"Service '{service.ServiceName}' has no Kafka brokers. Set {whereToSet("BootstrapServers")}, for example localhost:9092.";
             }
-            foreach (var error in KafkaSecurityChecks.Validate(service.Name, options, whereToSet))
+            foreach (var error in KafkaSecurityChecks.Validate(service.ServiceName, options, whereToSet))
             {
                 yield return error;
             }
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsServiceBuilder service, KafkaOptions options, ILogger logger)
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, KafkaOptions options, ILogger logger)
         {
             var kafkaConfiguration = new KafkaConfiguration(options);
             if (logger != null)
             {
                 kafkaConfiguration.Logger = logger;
             }
-            KafkaTopics.EnsureCreated(service.Name, kafkaConfiguration, new[]
+            KafkaTopics.EnsureCreated(service.ServiceName, kafkaConfiguration, new[]
             {
-                $"{service.Name}.Commands", $"{service.Name}.Events", $"{service.Name}.Requests", $"{service.Name}.Responses",
+                $"{service.ServiceName}.Commands", $"{service.ServiceName}.Events", $"{service.ServiceName}.Requests", $"{service.ServiceName}.Responses",
             });
 
             var providerType = typeof(KafkaServiceEndpointProvider<,,,,,>).MakeGenericType(
                 service.ServiceMessageType, typeof(IMessage), typeof(ICommand), typeof(IEvent), typeof(IRequest), typeof(IResponse));
 
             return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
-                service.Name, kafkaConfiguration, null, null, service.Serializer, service.DeserializerFactory, null, null, null, null, service.InstanceId);
+                service.ServiceName, kafkaConfiguration, null, null, service.Serializer, service.DeserializerFactory, null, null, null, null, service.InstanceId);
         }
     }
 }

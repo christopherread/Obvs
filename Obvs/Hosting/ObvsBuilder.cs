@@ -96,7 +96,7 @@ namespace Obvs.Hosting
             var endpointClients = new List<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             foreach (var service in _services)
             {
-                var provider = service.EndpointProviderFactory(serviceProvider);
+                var provider = service.CreateTransport(service.CreateTransportContext(serviceProvider));
                 if (service.IsServer)
                 {
                     endpoints.Add(new TelemetryServiceEndpoint(new SettlingServiceEndpoint(provider.CreateEndpoint(), service.Name, logger), service.Name, logger));
@@ -120,10 +120,10 @@ namespace Obvs.Hosting
                 .Select(group => $"Service name '{group.Key}' is used more than once. Each service on a bus needs a unique name."));
 
             errors.AddRange(_services
-                .Where(service => service.EndpointProviderFactory == null)
+                .Where(service => service.CreateTransport == null)
                 .Select(service => $"Service '{service.Name}' has no transport. Call one on it inside AddService(\"{service.Name}\", ...): " +
                                    "UseRabbitMq, UseKafka, UseNats, UseNatsJetStream, UseActiveMq, UseAzureServiceBus, UseAmazonSqs or UseNetMq, each from its " +
-                                   "Obvs package, UseInMemory from Obvs.Testing for tests, or UseEndpointProvider(...) for your own."));
+                                   "Obvs package, UseInMemory from Obvs.Testing for tests, or UseTransport(...) for your own."));
 
             errors.AddRange(_services.SelectMany(service => service.Validate(serviceProvider)));
 
