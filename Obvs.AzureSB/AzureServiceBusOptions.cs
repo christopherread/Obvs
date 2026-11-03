@@ -31,10 +31,12 @@ namespace Obvs.AzureSB
         public int MaxDeliveryAttempts { get; set; } = 10;
 
         /// <summary>
-        /// How many messages each queue or subscription delivers to this bus at once. 1 by default, so messages arrive
-        /// in order. Raise it so handlers with a <c>MaxConcurrency</c> above 1 can run in parallel; order isn't kept then.
+        /// How many messages each queue or subscription delivers to this bus at once. When not set, as many as the
+        /// service's handlers of its messages take at once: the sum of their <c>MaxConcurrency</c>, or 1 if no handler
+        /// takes them. Messages arrive in order only one at a time. Set it to cap the handlers, or for messages processed
+        /// with <c>SubscribeAsync</c> or Rx, which the bus can't see at startup.
         /// </summary>
-        public int MaxConcurrentCalls { get; set; } = 1;
+        public int? MaxConcurrentMessages { get; set; }
 
         /// <summary>
         /// How long a delivered message stays locked to this bus before Service Bus delivers it again, between 5 seconds

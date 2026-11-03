@@ -101,10 +101,10 @@ namespace Obvs.Hosting
                 yield return $"Service '{service.ServiceName}' sets Amazon SQS MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but SQS allows between 1 and 1000. " +
                              "Leave it unset for 10.";
             }
-            if (options.MaxConcurrentCalls < 1)
+            if (options.MaxConcurrentMessages < 1)
             {
-                yield return $"Service '{service.ServiceName}' sets Amazon SQS MaxConcurrentCalls to {options.MaxConcurrentCalls}, but it must be at least 1. " +
-                             "Leave it unset to handle one message at a time.";
+                yield return $"Service '{service.ServiceName}' sets Amazon SQS MaxConcurrentMessages to {options.MaxConcurrentMessages}, but it must be at least 1. " +
+                             "Leave it unset to take as many at once as the service's handlers' MaxConcurrency add up to.";
             }
             if (options.VisibilityTimeout < MinVisibilityTimeout || options.VisibilityTimeout > MaxVisibilityTimeout)
             {
@@ -184,11 +184,12 @@ namespace Obvs.Hosting
                 options.Logger = logger;
             }
             options.ServiceName = service.ServiceName;
+            Func<Type, int> concurrency = kind => options.MaxConcurrentMessages ?? service.HandlerConcurrency(kind);
             var providerType = typeof(AmazonSqsEndpointProvider<>).MakeGenericType(service.ServiceMessageType);
             try
             {
                 return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
-                    service.ServiceName, service.InstanceId, options, service.Serializer, service.DeserializerFactory, service.IsClient);
+                    service.ServiceName, service.InstanceId, options, concurrency, service.Serializer, service.DeserializerFactory, service.IsClient);
             }
             catch (TargetInvocationException exception) when (exception.InnerException != null)
             {

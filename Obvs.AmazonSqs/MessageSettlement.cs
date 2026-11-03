@@ -10,7 +10,7 @@ using Obvs.Transports;
 namespace Obvs.AmazonSqs
 {
     // Settles one received message on the queue it came from. Until it's settled, it holds one of the receive loop's
-    // MaxConcurrentCalls places, which onSettled gives back.
+    // MaxConcurrentMessages places, which onSettled gives back.
     internal sealed class MessageSettlement : IMessageSettlement
     {
         // Attributes recording why Obvs dead-lettered a message

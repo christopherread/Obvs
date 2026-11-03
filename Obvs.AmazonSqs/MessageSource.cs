@@ -26,6 +26,7 @@ namespace Obvs.AmazonSqs
         private readonly string _queueUrl;
         private readonly string _deadLetterQueueUrl;
         private readonly AmazonSqsOptions _options;
+        private readonly int _maxConcurrentMessages;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly ConcurrentDictionary<ReceiveLoop, bool> _loops = new ConcurrentDictionary<ReceiveLoop, bool>();
         private readonly bool _queueRecreatedIfMissing;
@@ -33,17 +34,19 @@ namespace Obvs.AmazonSqs
         private IObservable<TMessage> _shared;
 
         /// <param name="sqs">Shared with the endpoint's other sources and publishers, which dispose it</param>
-        /// <param name="options">How many messages to have in hand at once, how long to hide them, and how many times to deliver a failing one</param>
+        /// <param name="options">How long to hide messages, and how many times to deliver a failing one</param>
+        /// <param name="maxConcurrentMessages">How many messages to have in hand at once</param>
         /// <param name="queueRecreatedIfMissing">
         /// The bus recreates the queue if it goes missing, so receiving waits for it to come back rather than reporting an error
         /// </param>
         public MessageSource(IAmazonSQS sqs, string queueUrl, string deadLetterQueueUrl, IEnumerable<IMessageDeserializer<TMessage>> deserializers, AmazonSqsOptions options,
-            bool queueRecreatedIfMissing = false)
+            int maxConcurrentMessages, bool queueRecreatedIfMissing = false)
         {
             _sqs = sqs;
             _queueUrl = queueUrl;
             _deadLetterQueueUrl = deadLetterQueueUrl;
             _options = options;
+            _maxConcurrentMessages = maxConcurrentMessages;
             _queueRecreatedIfMissing = queueRecreatedIfMissing;
             _deserializers = deserializers.ToDictionary(deserializer => deserializer.TypeName);
             Messages = Observable.Defer(() =>
@@ -136,7 +139,7 @@ namespace Obvs.AmazonSqs
         }
 
         // Long-polls the queue on a thread of its own, so a slow or blocked thread pool can't stall receiving. It has at
-        // most MaxConcurrentCalls messages in hand, each until it's settled, by its handler or as it arrives if no handler
+        // most MaxConcurrentMessages messages in hand, each until it's settled, by its handler or as it arrives if no handler
         // takes it.
         private sealed class ReceiveLoop
         {
@@ -159,7 +162,7 @@ namespace Obvs.AmazonSqs
             {
                 _source = source;
                 _observer = observer;
-                _places = new SemaphoreSlim(source._options.MaxConcurrentCalls);
+                _places = new SemaphoreSlim(source._maxConcurrentMessages);
                 _thread = new Thread(Run) { IsBackground = true, Name = $"Obvs.AmazonSqs receive {source._queueUrl}" };
             }
 

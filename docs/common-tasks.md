@@ -90,7 +90,7 @@ services.AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => ser
     .HandleCommand<PlaceOrder, PlaceOrderHandler>()));
 ```
 
-A handler handles one message at a time, in order. For more at once, set `handler => handler.MaxConcurrency = 8`, and the transport's own concurrency, such as Azure Service Bus's `MaxConcurrentCalls`.
+A handler handles one message at a time, in order. For more at once, set `handler => handler.MaxConcurrency = 8`. Azure Service Bus, Amazon SQS and NATS JetStream then take as many messages from the queue at once as its handlers add up to, unless you set their `MaxConcurrentMessages`.
 
 ## Send a command
 

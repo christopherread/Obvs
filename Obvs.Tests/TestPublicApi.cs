@@ -118,6 +118,7 @@ namespace Obvs.Tests
             Assert.Equal(new[]
             {
                 "DeserializerFactory",
+                "HandlerConcurrency",
                 "InstanceId",
                 "IsClient",
                 "IsServer",

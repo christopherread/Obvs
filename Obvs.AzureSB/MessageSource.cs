@@ -23,15 +23,19 @@ namespace Obvs.AzureSB
         private readonly Func<ServiceBusProcessorOptions, ServiceBusProcessor> _createProcessor;
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
         private readonly AzureServiceBusOptions _options;
+        private readonly int _maxConcurrentMessages;
         private readonly object _sharedLock = new object();
         private IObservable<TMessage> _shared;
 
         /// <param name="createProcessor">Creates a processor for the queue or subscription, when <see cref="Messages"/> gets its first subscriber</param>
-        /// <param name="options">How many messages to deliver at once, how long to renew their locks, and how many times to deliver a failing one</param>
-        public MessageSource(Func<ServiceBusProcessorOptions, ServiceBusProcessor> createProcessor, IEnumerable<IMessageDeserializer<TMessage>> deserializers, AzureServiceBusOptions options)
+        /// <param name="options">How long to renew messages' locks, and how many times to deliver a failing one</param>
+        /// <param name="maxConcurrentMessages">How many messages to deliver at once</param>
+        public MessageSource(Func<ServiceBusProcessorOptions, ServiceBusProcessor> createProcessor, IEnumerable<IMessageDeserializer<TMessage>> deserializers, AzureServiceBusOptions options,
+            int maxConcurrentMessages)
         {
             _createProcessor = createProcessor;
             _options = options;
+            _maxConcurrentMessages = maxConcurrentMessages;
             _deserializers = deserializers.ToDictionary(deserializer => deserializer.TypeName);
             Messages = Observable.Defer(() =>
             {
@@ -54,12 +58,12 @@ namespace Obvs.AzureSB
             IObservable<TMessage> shared = null;
             shared = Observable.Create<TMessage>(observer =>
                 {
-                    // One message at a time (MaxConcurrentCalls 1, the default) keeps them in order. Each waits in its callback
+                    // One message at a time, as for one handler with the default MaxConcurrency, keeps them in order. Each waits in its callback
                     // until it's settled, by its handler or as it arrives if no handler takes it, while its lock is renewed.
                     var processor = _createProcessor(new ServiceBusProcessorOptions
                     {
                         AutoCompleteMessages = false,
-                        MaxConcurrentCalls = _options.MaxConcurrentCalls,
+                        MaxConcurrentCalls = _maxConcurrentMessages,
                         MaxAutoLockRenewalDuration = _options.MaxLockRenewalDuration,
                     });
                     var waiting = new ConcurrentDictionary<MessageSettlement, bool>();
@@ -146,7 +150,7 @@ namespace Obvs.AzureSB
                 })
                 // Hand messages to subscribers on the task pool, in order. Subscriber code running in the processor's
                 // callback could otherwise deadlock it, for example by disposing the bus, which waits for that callback.
-                // With MaxConcurrentCalls above 1, callbacks deliver at the same time, but observers take one at a time
+                // With more than one message at once, callbacks deliver at the same time, but observers take one at a time
                 .Synchronize()
                 .ObserveOn(TaskPoolScheduler.Default)
                 .Do(_ => { }, _ => Forget(shared), () => Forget(shared))

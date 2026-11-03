@@ -35,7 +35,7 @@ namespace Obvs.AmazonSqs.Tests
                     ? Task.FromException<ReceiveMessageResponse>(new HttpRequestException("No route to host"))
                     : Task.FromResult(new ReceiveMessageResponse { Messages = new List<Message>() }));
             var source = new MessageSource<ICommand>(sqs, QueueUrl, null, new IMessageDeserializer<ICommand>[] { new JsonMessageDeserializer<PlaceOrder>() },
-                new AmazonSqsOptions { Logger = logger });
+                new AmazonSqsOptions { Logger = logger }, maxConcurrentMessages: 1);
             var errors = new ConcurrentQueue<Exception>();
 
             using (source.Messages.Subscribe(_ => { }, errors.Enqueue))
@@ -75,7 +75,7 @@ namespace Obvs.AmazonSqs.Tests
                     Messages = Interlocked.Increment(ref receives) == 1 ? new List<Message> { corrupt } : new List<Message>(),
                 }));
             var source = new MessageSource<ICommand>(sqs, QueueUrl, null, new IMessageDeserializer<ICommand>[] { new JsonMessageDeserializer<PlaceOrder>() },
-                new AmazonSqsOptions { ServiceName = serviceName });
+                new AmazonSqsOptions { ServiceName = serviceName }, maxConcurrentMessages: 1);
 
             using (source.Messages.Subscribe(_ => { }, _ => { }))
             {

@@ -51,12 +51,12 @@ namespace Obvs.NATS.Tests.JetStream
         }
 
         [Fact]
-        public void ShouldDeliverOneMessageAtATimeTenTimesAndKeepItInProgressForFiveMinutesByDefault()
+        public void ShouldDeliverAMessageTenTimesTakeAsManyAtOnceAsTheHandlersAndKeepItInProgressForFiveMinutesByDefault()
         {
             var options = new NatsJetStreamOptions();
 
             Assert.Equal(10, options.MaxDeliveryAttempts);
-            Assert.Equal(1, options.MaxConcurrentMessages);
+            Assert.Null(options.MaxConcurrentMessages);
             Assert.Null(options.AckWait);
             Assert.Equal(TimeSpan.FromMinutes(5), options.MaxInProgressDuration);
         }
@@ -104,6 +104,7 @@ namespace Obvs.NATS.Tests.JetStream
             Assert.Contains("'orders'", error);
             Assert.Contains("MaxConcurrentMessages", error);
             Assert.Contains("at least 1", error);
+            Assert.Contains("handlers' MaxConcurrency", error);
         }
 
         [Theory]

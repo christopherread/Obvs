@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Obvs.Hosting;
 using Obvs.Serialization;
 
 namespace Obvs.Transports
@@ -10,9 +12,13 @@ namespace Obvs.Transports
     /// </summary>
     public sealed class ObvsTransportContext
     {
+        private readonly IReadOnlyCollection<HandlerRegistration> _handlers;
+
         internal ObvsTransportContext(string serviceName, Type serviceMessageType, IReadOnlyCollection<Type> messages, string instanceId,
-            IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, bool isClient, bool isServer, IServiceProvider serviceProvider)
+            IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory, bool isClient, bool isServer, IServiceProvider serviceProvider,
+            IReadOnlyCollection<HandlerRegistration> handlers)
         {
+            _handlers = handlers;
             ServiceName = serviceName;
             ServiceMessageType = serviceMessageType;
             Messages = messages;
@@ -62,5 +68,23 @@ namespace Obvs.Transports
 
         /// <summary>The app's services, for the transport's options and anything else it resolves.</summary>
         public IServiceProvider ServiceProvider { get; }
+
+        /// <summary>
+        /// How many messages of one kind the service's handlers take at once: the sum of <c>MaxConcurrency</c> over its
+        /// handlers of <paramref name="messageKind"/>, or 1 if none takes them. Each handler takes its messages in order,
+        /// so a queue its handlers share needs this many at once to keep them all busy. Transports default to it for each
+        /// queue or subscription, unless the app sets a number of its own.
+        /// </summary>
+        /// <param name="messageKind"><c>ICommand</c>, <c>IEvent</c>, <c>IRequest</c> or <c>IResponse</c></param>
+        public int HandlerConcurrency(Type messageKind)
+        {
+            if (messageKind == null)
+            {
+                throw new ArgumentNullException(nameof(messageKind));
+            }
+
+            var handlers = _handlers.Where(handler => messageKind.IsAssignableFrom(handler.MessageType)).ToArray();
+            return handlers.Length == 0 ? 1 : handlers.Sum(handler => handler.Options.MaxConcurrency);
+        }
     }
 }

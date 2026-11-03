@@ -245,13 +245,13 @@ namespace Obvs.NATS.Tests.JetStream
         private Obvs.NATS.JetStream.MessageSource<ICommand> Commands()
         {
             return new Obvs.NATS.JetStream.MessageSource<ICommand>(_jetStream, _topology, _topology.Commands, "orders",
-                new IMessageDeserializer<ICommand>[] { new JsonMessageDeserializer<PlaceOrder>() }, _options);
+                new IMessageDeserializer<ICommand>[] { new JsonMessageDeserializer<PlaceOrder>() }, _options, maxConcurrentMessages: 1);
         }
 
         private Obvs.NATS.JetStream.MessageSource<IEvent> Events()
         {
             return new Obvs.NATS.JetStream.MessageSource<IEvent>(_jetStream, _topology, _topology.Events, "orders",
-                new IMessageDeserializer<IEvent>[] { new JsonMessageDeserializer<OrderPlaced>() }, _options);
+                new IMessageDeserializer<IEvent>[] { new JsonMessageDeserializer<OrderPlaced>() }, _options, maxConcurrentMessages: 1);
         }
 
         // Handlers settle each message, which frees its slot for the next

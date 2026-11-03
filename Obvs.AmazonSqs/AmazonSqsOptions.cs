@@ -32,11 +32,12 @@ namespace Obvs.AmazonSqs
         public int MaxDeliveryAttempts { get; set; } = 10;
 
         /// <summary>
-        /// How many messages each queue delivers to this bus at once. 1 by default, so messages arrive one at a time.
-        /// Raise it so handlers with a <c>MaxConcurrency</c> above 1 can run in parallel. Standard queues don't
-        /// guarantee order either way.
+        /// How many messages each queue delivers to this bus at once. When not set, as many as the service's handlers of
+        /// its messages take at once: the sum of their <c>MaxConcurrency</c>, or 1 if no handler takes them. Standard
+        /// queues don't guarantee order either way. Set it to cap the handlers, or for messages processed with
+        /// <c>SubscribeAsync</c> or Rx, which the bus can't see at startup.
         /// </summary>
-        public int MaxConcurrentCalls { get; set; } = 1;
+        public int? MaxConcurrentMessages { get; set; }
 
         /// <summary>
         /// How long a received message stays hidden from other receivers before SQS delivers it again, between 1 second

@@ -61,7 +61,7 @@ namespace Obvs.AzureSB.Tests
             using var listener = ConsumedMessagesListener(serviceName, counted);
             var processor = new StandInProcessor();
             var source = new MessageSource<ICommand>(_ => processor, new IMessageDeserializer<ICommand>[] { new JsonMessageDeserializer<PlaceOrder>() },
-                new AzureServiceBusOptions { ServiceName = serviceName });
+                new AzureServiceBusOptions { ServiceName = serviceName }, maxConcurrentMessages: 1);
             using var subscription = source.Messages.Subscribe(_ => { }, _ => { });
             var corrupt = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromString("not json"),
                 properties: new Dictionary<string, object> { [Obvs.Transports.MessagePropertyNames.TypeName] = nameof(PlaceOrder) });
@@ -104,7 +104,7 @@ namespace Obvs.AzureSB.Tests
         private static MessageSource<ICommand> Source(StandInProcessor processor, ILogger logger)
         {
             var options = new AzureServiceBusOptions { Logger = logger };
-            return new MessageSource<ICommand>(_ => processor, new IMessageDeserializer<ICommand>[] { new JsonMessageDeserializer<PlaceOrder>() }, options);
+            return new MessageSource<ICommand>(_ => processor, new IMessageDeserializer<ICommand>[] { new JsonMessageDeserializer<PlaceOrder>() }, options, maxConcurrentMessages: 1);
         }
 
         private sealed class StandInProcessor : ServiceBusProcessor
