@@ -74,7 +74,9 @@ service.HandleCommand&lt;PlaceOrder, PlaceOrderHandler&gt;();</code></pre>
 <pre><code class="language-csharp">var quote = await bus.GetResponses(new GetQuote(&quot;sku-1&quot;))
     .OfType&lt;Quote&gt;().Take(1).Timeout(TimeSpan.FromSeconds(5)).ToTask();</code></pre>
 
-<pre><code class="language-csharp">var quote = await client.RequestAsync&lt;GetQuote, Quote&gt;(new GetQuote(&quot;sku-1&quot;), TimeSpan.FromSeconds(5), ct);</code></pre>
+<p>In v7, a request that names its response, as <code>GetQuote : IRequest&lt;Quote&gt;</code> does, can be awaited:</p>
+
+<pre><code class="language-csharp">var quote = await client.RequestAsync(new GetQuote(&quot;sku-1&quot;), TimeSpan.FromSeconds(5), ct);</code></pre>
 
 <h2 id="what-changed">What changed since v6</h2>
 
