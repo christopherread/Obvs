@@ -172,7 +172,7 @@ namespace Obvs.Hosting
             {
                 namesAllowed = false;
                 yield return $"Service '{service.ServiceName}' uses Amazon SQS, which names this bus's own queues after its instance ID, but instance ID '{service.InstanceId}' " +
-                             "has characters SQS doesn't allow: only letters, digits, hyphens and underscores. Set another with UseInstanceId(...).";
+                             "has characters SQS doesn't allow: only letters, digits, hyphens and underscores. Set another with WithInstanceId(...).";
             }
             if (!namesAllowed)
             {
@@ -183,7 +183,7 @@ namespace Obvs.Hosting
             if (longest.Length > MaxQueueNameLength)
             {
                 yield return $"Service '{service.ServiceName}' uses Amazon SQS, which allows queue names of up to {MaxQueueNameLength} characters, but this bus's queue " +
-                             $"'{longest}' has {longest.Length}. Use a shorter service name, or set a shorter instance ID with UseInstanceId(...).";
+                             $"'{longest}' has {longest.Length}. Use a shorter service name, or set a shorter instance ID with WithInstanceId(...).";
             }
         }
 

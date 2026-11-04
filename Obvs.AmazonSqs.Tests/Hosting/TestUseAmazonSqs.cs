@@ -346,7 +346,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
         public async Task ShouldFailToStartWhenTheInstanceIdHasCharactersSqsDoesntAllow()
         {
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .UseInstanceId("worker.1")
+                .WithInstanceId("worker.1")
                 .AddService<IOrderMessage>("orders", service => service
                     .UseAmazonSqs(options => options.Region = "eu-west-1")
                     .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
@@ -356,7 +356,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             var error = Assert.Single(exception.Errors);
             Assert.Contains("'worker.1'", error);
             Assert.Contains("letters, digits, hyphens and underscores", error);
-            Assert.Contains("UseInstanceId", error);
+            Assert.Contains("WithInstanceId", error);
         }
 
         [Fact]
@@ -364,7 +364,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
         {
             // This bus's reply queue is named {service}-responses-{instance ID}, and SQS allows 80 characters: here, 81
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .UseInstanceId(new string('i', 64))
+                .WithInstanceId(new string('i', 64))
                 .AddService<IOrderMessage>("orders", service => service
                     .UseAmazonSqs(options => options.Region = "eu-west-1")
                     .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
@@ -375,7 +375,7 @@ namespace Obvs.AmazonSqs.Tests.Hosting
             Assert.Contains("'orders'", error);
             Assert.Contains("80 characters", error);
             Assert.Contains($"orders-responses-{new string('i', 64)}", error);
-            Assert.Contains("UseInstanceId", error);
+            Assert.Contains("WithInstanceId", error);
         }
 
         // Starts a host whose options are valid apart from what configure sets, and returns the startup errors

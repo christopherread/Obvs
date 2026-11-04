@@ -192,7 +192,7 @@ namespace Obvs.NATS.Tests.JetStream
         {
             // This bus's own consumers are named after its instance ID
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .UseInstanceId(instanceId)
+                .WithInstanceId(instanceId)
                 .AddService<IOrderMessage>("orders", service => service
                     .UseNatsJetStream(options => options.Url = "nats://nats.example:4222")
                     .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
@@ -202,7 +202,7 @@ namespace Obvs.NATS.Tests.JetStream
             var error = Assert.Single(exception.Errors);
             Assert.Contains("'orders'", error);
             Assert.Contains($"'{instanceId}'", error);
-            Assert.Contains("UseInstanceId", error);
+            Assert.Contains("WithInstanceId", error);
         }
 
         // Starts a host whose options are valid apart from what configure sets, and returns the startup errors

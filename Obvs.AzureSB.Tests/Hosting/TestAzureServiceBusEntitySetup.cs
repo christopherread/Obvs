@@ -70,7 +70,7 @@ namespace Obvs.AzureSB.Tests.Hosting
             Assert.Contains($"subscription {instanceId} on topic {serviceName}.Events", error);
             Assert.Contains($"queue {serviceName}.Responses.{instanceId}", error);
             Assert.DoesNotContain($"queue {serviceName}.Commands", error);
-            Assert.Contains("UseInstanceId", error);
+            Assert.Contains("WithInstanceId", error);
         }
 
         private static async Task CreateEntitiesAsync(string serviceName, string instanceId, bool commands, bool requests, bool events, bool subscription, bool replies)
@@ -140,7 +140,7 @@ namespace Obvs.AzureSB.Tests.Hosting
             {
                 if (instanceId != null)
                 {
-                    obvs.UseInstanceId(instanceId);
+                    obvs.WithInstanceId(instanceId);
                 }
                 obvs.AddService<IOrderMessage>(serviceName, service => service
                     .UseAzureServiceBus(configure)

@@ -76,7 +76,7 @@ namespace Obvs.Tests.Hosting.Handlers
         public async Task ShouldWaitForTheBusesRequestTimeoutByDefault()
         {
             var time = new FakeTimeProvider();
-            await using var harness = await StartOrdersAsync(obvs => obvs.UseRequestTimeout(TimeSpan.FromMinutes(2)), time);
+            await using var harness = await StartOrdersAsync(obvs => obvs.WithRequestTimeout(TimeSpan.FromMinutes(2)), time);
 
             var pending = harness.Client.RequestAsync(new GetQuote("sku-1"), Ct);
             time.Advance(TimeSpan.FromSeconds(90));
@@ -122,7 +122,7 @@ namespace Obvs.Tests.Hosting.Handlers
         public void ShouldRejectARequestTimeoutThatIsntPositive()
         {
             ArgumentOutOfRangeException error = null;
-            new ServiceCollection().AddObvs(obvs => error = Assert.Throws<ArgumentOutOfRangeException>(() => obvs.UseRequestTimeout(TimeSpan.Zero)));
+            new ServiceCollection().AddObvs(obvs => error = Assert.Throws<ArgumentOutOfRangeException>(() => obvs.WithRequestTimeout(TimeSpan.Zero)));
 
             Assert.Equal("timeout", error.ParamName);
             Assert.Contains("positive", error.Message);

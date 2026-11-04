@@ -38,7 +38,7 @@ For a service named `orders`, on a bus with the instance ID `worker-1`:
 | Responses | Each bus has its own SQS queue, `orders-responses-worker-1`. A request carries its bus's reply queue URL in the `obvs-reply-to` attribute, and the response is sent there |
 | Dead letters | SQS queue `orders-dead-letters`, shared by the service's queues. Messages are kept for 14 days, the longest SQS allows |
 
-The instance ID comes from `UseInstanceId(...)`, or is generated for each run when not set. A bus deletes its own two queues, and unsubscribes from the topic, when it stops. A bus that crashes leaves them behind: see [Cleaning up after crashed buses](#cleaning-up-after-crashed-buses).
+The instance ID comes from `WithInstanceId(...)`, or is generated for each run when not set. A bus deletes its own two queues, and unsubscribes from the topic, when it stops. A bus that crashes leaves them behind: see [Cleaning up after crashed buses](#cleaning-up-after-crashed-buses).
 
 Settings such as the visibility timeout and redrive policy apply only to queues Obvs creates. Queues that already exist keep theirs.
 
