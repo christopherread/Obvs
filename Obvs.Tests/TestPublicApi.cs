@@ -109,6 +109,34 @@ namespace Obvs.Tests
             }, PublicMembers(typeof(global::Obvs.Hosting.ObvsServiceBuilder)));
         }
 
+        // Bus settings start With; Use is for transports
+        [Fact]
+        public void ShouldOfferAppsOnlyWhatTheyConfigureOnTheBusBuilder()
+        {
+            Assert.Equal(new[]
+            {
+                "AddService",
+                "InstanceId",
+                "RequestTimeout",
+                "Services",
+                "WithConfiguration",
+                "WithInstanceId",
+                "WithRequestTimeout",
+            }, PublicMembers(typeof(global::Obvs.Hosting.ObvsBuilder)));
+        }
+
+        [Fact]
+        public void ShouldStartOnlyTransportsWithUse()
+        {
+            var uses = Obvs.GetExportedTypes()
+                .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+                .Where(method => method.Name.StartsWith("Use", StringComparison.Ordinal))
+                .Select(method => method.DeclaringType.Name + "." + method.Name)
+                .Distinct();
+
+            Assert.Equal(new[] { "ObvsServiceBuilder.UseTransport" }, uses);
+        }
+
         [Fact]
         public void ShouldGiveTransportsWhatTheyBuildFromInTheirContext()
         {

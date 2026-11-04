@@ -240,7 +240,7 @@ namespace Obvs.Kafka.Tests.Hosting
             {
                 if (instanceId != null)
                 {
-                    obvs.UseInstanceId(instanceId);
+                    obvs.WithInstanceId(instanceId);
                 }
                 obvs.AddService<IOrderMessage>(serviceName, service =>
                 {

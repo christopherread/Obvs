@@ -29,7 +29,7 @@ namespace Obvs
         /// <summary>
         /// Sends a request and returns the first response of type <typeparamref name="TResponse"/>, the response the
         /// request declares with <see cref="IRequest{TResponse}"/>. Throws <see cref="TimeoutException"/> if none arrives
-        /// within the bus's request timeout: 30 seconds, unless set with <c>UseRequestTimeout</c>. If the request can't be
+        /// within the bus's request timeout: 30 seconds, unless set with <c>WithRequestTimeout</c>. If the request can't be
         /// sent, throws the transport's error straight away.
         /// </summary>
         /// <param name="request">The request</param>

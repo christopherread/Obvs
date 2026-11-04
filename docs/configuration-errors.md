@@ -11,6 +11,7 @@ This page lists every check. Each one has a test that asserts its message names 
 | Two services on a bus share a name | Give each service a unique name in `AddService<T>(name, ...)`. |
 | A service has no transport | Call a transport on it: `UseRabbitMq`, `UseKafka`, `UseNats`, `UseNatsJetStream`, `UseActiveMq`, `UseAzureServiceBus`, `UseAmazonSqs` or `UseNetMq` from its package; `UseInMemory` from `Obvs.Testing` for tests; or `UseTransport(...)` for your own. |
 | A custom transport's check, the `validate` argument of `UseTransport(...)`, fails | Its own message says what to fix. |
+| The `RequestTimeout` read by `WithConfiguration(...)` isn't a positive time span | Set the configuration key it names to one, such as `00:00:30`, or leave it unset for 30 seconds. |
 
 A service with no `SerializedWith(...)` serializes its messages with System.Text.Json. It reads and writes the same JSON as `Obvs.Serialization.Json`, so v6 services can read its messages, and it can read theirs.
 

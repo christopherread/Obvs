@@ -248,7 +248,7 @@ namespace Obvs.AzureSB.Tests.Hosting
         {
             // This bus's event subscription is named after its instance ID, and Service Bus allows 50 characters
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .UseInstanceId(new string('i', 51))
+                .WithInstanceId(new string('i', 51))
                 .AddService<IOrderMessage>("orders", service => service
                     .UseAzureServiceBus(options => options.FullyQualifiedNamespace = "contoso.servicebus.windows.net")
                     .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
@@ -258,7 +258,7 @@ namespace Obvs.AzureSB.Tests.Hosting
             var error = Assert.Single(exception.Errors);
             Assert.Contains("'orders'", error);
             Assert.Contains("50 characters", error);
-            Assert.Contains("UseInstanceId", error);
+            Assert.Contains("WithInstanceId", error);
         }
 
         // Starts a host whose options are valid apart from what configure sets, and returns the startup errors

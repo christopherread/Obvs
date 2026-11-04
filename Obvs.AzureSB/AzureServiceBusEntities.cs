@@ -171,7 +171,7 @@ namespace Obvs.AzureSB
                     {
                         $"Service '{_serviceName}' can't create its Azure Service Bus entities, as its credentials don't have the Manage right, " +
                         $"and these couldn't be found: {string.Join(", ", missing)}. Create them beforehand, or use credentials with the Manage right. " +
-                        "This bus's own subscription and reply queue are named after its instance ID, so give it a fixed one with UseInstanceId(...) to create them beforehand.",
+                        "This bus's own subscription and reply queue are named after its instance ID, so give it a fixed one with WithInstanceId(...) to create them beforehand.",
                     });
                 }
             }

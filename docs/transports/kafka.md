@@ -88,12 +88,12 @@ Each topic is read in a consumer group of its own, named after the topic and not
 - A group that's new starts at the end of its topic. After that, a bus carries on from the group's committed position, so commands and requests sent while none of the service's buses was running are handled when one starts.
 - Positions are committed every few seconds as messages are received, not after they're handled. A bus that crashes can receive the last few messages again, or lose one it was handling.
 
-The instance ID is the bus's `InstanceId`, a new GUID each time the bus starts unless it's set with `UseInstanceId(...)`. With a new one, a bus starts with new events and responses groups, at the end of the topics, so it doesn't receive events published while it was stopped. To keep its groups across restarts, give each bus a fixed instance ID of its own, such as the pod name in a Kubernetes StatefulSet:
+The instance ID is the bus's `InstanceId`, a new GUID each time the bus starts unless it's set with `WithInstanceId(...)`. With a new one, a bus starts with new events and responses groups, at the end of the topics, so it doesn't receive events published while it was stopped. To keep its groups across restarts, give each bus a fixed instance ID of its own, such as the pod name in a Kubernetes StatefulSet:
 
 <!-- snippet: kafka-instance-id -->
 ```csharp
 builder.Services.AddObvs(obvs => obvs
-    .UseInstanceId(Environment.GetEnvironmentVariable("POD_NAME"))
+    .WithInstanceId(Environment.GetEnvironmentVariable("POD_NAME"))
     .AddService<IOrderMessage>("orders", service => service
         .UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"))));
 ```

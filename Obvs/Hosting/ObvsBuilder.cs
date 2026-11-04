@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -18,6 +20,7 @@ namespace Obvs.Hosting
         private readonly List<ObvsServiceBuilder> _services = new List<ObvsServiceBuilder>();
         private string _instanceId = Guid.NewGuid().ToString("N");
         private TimeSpan _requestTimeout = TimeSpan.FromSeconds(30);
+        private readonly List<string> _configurationErrors = new List<string>();
 
         internal ObvsBuilder(IServiceCollection services)
         {
@@ -29,7 +32,7 @@ namespace Obvs.Hosting
 
         /// <summary>
         /// Identifies this bus to transports, which use it to keep broker-side names (such as queues) unique to the bus.
-        /// A new GUID unless set with <see cref="UseInstanceId"/>.
+        /// A new GUID unless set with <see cref="WithInstanceId"/>.
         /// </summary>
         public string InstanceId => _instanceId;
 
@@ -37,7 +40,7 @@ namespace Obvs.Hosting
         /// Sets the bus's instance ID, for example to keep queue names stable across restarts.
         /// It must be unique among buses connected to the same broker.
         /// </summary>
-        public ObvsBuilder UseInstanceId(string instanceId)
+        public ObvsBuilder WithInstanceId(string instanceId)
         {
             if (string.IsNullOrWhiteSpace(instanceId))
             {
@@ -50,12 +53,12 @@ namespace Obvs.Hosting
 
         /// <summary>
         /// How long <c>RequestAsync</c> waits for a response when the call doesn't say. 30 seconds unless set with
-        /// <see cref="UseRequestTimeout"/>.
+        /// <see cref="WithRequestTimeout"/>.
         /// </summary>
         public TimeSpan RequestTimeout => _requestTimeout;
 
         /// <summary>Sets how long <c>RequestAsync</c> waits for a response when the call doesn't say.</summary>
-        public ObvsBuilder UseRequestTimeout(TimeSpan timeout)
+        public ObvsBuilder WithRequestTimeout(TimeSpan timeout)
         {
             if (timeout <= TimeSpan.Zero)
             {
@@ -63,6 +66,40 @@ namespace Obvs.Hosting
             }
 
             _requestTimeout = timeout;
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the bus's <see cref="InstanceId"/> and <see cref="RequestTimeout"/> from <paramref name="configuration"/>,
+        /// for example <c>builder.Configuration.GetSection("Obvs")</c>, keeping the defaults for what it leaves out. A request
+        /// timeout that isn't a positive time span fails the bus's startup.
+        /// </summary>
+        public ObvsBuilder WithConfiguration(IConfiguration configuration)
+        {
+            if (configuration == null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
+            var prefix = configuration is IConfigurationSection section ? section.Path + ":" : "";
+            var instanceId = configuration["InstanceId"];
+            if (!string.IsNullOrWhiteSpace(instanceId))
+            {
+                _instanceId = instanceId;
+            }
+            var requestTimeout = configuration["RequestTimeout"];
+            if (!string.IsNullOrWhiteSpace(requestTimeout))
+            {
+                if (TimeSpan.TryParse(requestTimeout, CultureInfo.InvariantCulture, out var timeout) && timeout > TimeSpan.Zero)
+                {
+                    _requestTimeout = timeout;
+                }
+                else
+                {
+                    _configurationErrors.Add($"Configuration key {prefix}RequestTimeout is '{requestTimeout}', but a request timeout must be a positive " +
+                                             "time span, for example 00:00:30. Leave it unset for the default of 30 seconds.");
+                }
+            }
             return this;
         }
 
@@ -112,7 +149,7 @@ namespace Obvs.Hosting
 
         private void Validate(IServiceProvider serviceProvider)
         {
-            var errors = new List<string>();
+            var errors = new List<string>(_configurationErrors);
 
             errors.AddRange(_services
                 .GroupBy(service => service.Name)

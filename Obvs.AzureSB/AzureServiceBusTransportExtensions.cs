@@ -134,7 +134,7 @@ namespace Obvs.Hosting
             {
                 yield return $"Service '{service.ServiceName}' uses Azure Service Bus, which names this bus's event subscription after its instance ID " +
                              $"and allows {MaxSubscriptionNameLength} characters, but instance ID '{service.InstanceId}' has {service.InstanceId.Length}. " +
-                             "Set a shorter one with UseInstanceId(...).";
+                             "Set a shorter one with WithInstanceId(...).";
             }
         }
 

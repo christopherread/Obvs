@@ -131,7 +131,7 @@ namespace Obvs.Hosting
             if (!IsValidName(service.InstanceId))
             {
                 yield return $"Service '{service.ServiceName}' uses NATS JetStream, which names this bus's own consumers after its instance ID, but instance ID " +
-                             $"'{service.InstanceId}' contains {InvalidNameCharactersDescription}, which consumer names can't. Set another with UseInstanceId(...).";
+                             $"'{service.InstanceId}' contains {InvalidNameCharactersDescription}, which consumer names can't. Set another with WithInstanceId(...).";
             }
         }
 

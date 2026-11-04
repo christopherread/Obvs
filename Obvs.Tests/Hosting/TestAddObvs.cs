@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Obvs.Configuration;
@@ -258,7 +259,7 @@ namespace Obvs.Tests.Hosting
         {
             string instanceId = null;
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
-                .UseInstanceId("orders-worker-1")
+                .WithInstanceId("orders-worker-1")
                 .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", transport =>
                 {
                     instanceId = transport.InstanceId;
@@ -275,7 +276,73 @@ namespace Obvs.Tests.Hosting
         {
             var services = new ServiceCollection();
 
-            Assert.Throws<ArgumentException>(() => services.AddObvs(obvs => obvs.UseInstanceId(" ")));
+            Assert.Throws<ArgumentException>(() => services.AddObvs(obvs => obvs.WithInstanceId(" ")));
+        }
+
+        [Fact]
+        public void ShouldTakeTheInstanceIdAndRequestTimeoutFromConfiguration()
+        {
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:InstanceId"] = "orders-worker-1",
+                ["Obvs:RequestTimeout"] = "00:02:00",
+            });
+            ObvsBuilder bus = null;
+
+            new ServiceCollection().AddObvs(obvs => bus = obvs.WithConfiguration(configuration.GetSection("Obvs")));
+
+            Assert.Equal("orders-worker-1", bus.InstanceId);
+            Assert.Equal(TimeSpan.FromMinutes(2), bus.RequestTimeout);
+        }
+
+        [Fact]
+        public void ShouldKeepTheDefaultsForWhatConfigurationLeavesOut()
+        {
+            var configuration = Configuration(new Dictionary<string, string>());
+            ObvsBuilder bus = null;
+
+            new ServiceCollection().AddObvs(obvs => bus = obvs.WithConfiguration(configuration.GetSection("Obvs")));
+
+            Assert.Matches("^[0-9a-f]{32}$", bus.InstanceId);
+            Assert.Equal(TimeSpan.FromSeconds(30), bus.RequestTimeout);
+        }
+
+        [Fact]
+        public void ShouldLetCodeChangeWhatConfigurationSet()
+        {
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:InstanceId"] = "orders-worker-1",
+                ["Obvs:RequestTimeout"] = "00:02:00",
+            });
+            ObvsBuilder bus = null;
+
+            new ServiceCollection().AddObvs(obvs => bus = obvs
+                .WithConfiguration(configuration.GetSection("Obvs"))
+                .WithRequestTimeout(TimeSpan.FromSeconds(10)));
+
+            Assert.Equal("orders-worker-1", bus.InstanceId);
+            Assert.Equal(TimeSpan.FromSeconds(10), bus.RequestTimeout);
+        }
+
+        [Theory]
+        [InlineData("00:00:00")]
+        [InlineData("-00:00:05")]
+        [InlineData("30s")]
+        public async Task ShouldFailToStartWhenConfigurationSetsARequestTimeoutThatIsntAPositiveTimeSpan(string requestTimeout)
+        {
+            var configuration = Configuration(new Dictionary<string, string> { ["Obvs:RequestTimeout"] = requestTimeout });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .WithConfiguration(configuration.GetSection("Obvs"))
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IOrderMessage))))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("Obvs:RequestTimeout", error);
+            Assert.Contains($"'{requestTimeout}'", error);
+            Assert.Contains("positive", error);
+            Assert.Contains("00:00:30", error);
         }
 
         [Fact]
@@ -475,6 +542,11 @@ namespace Obvs.Tests.Hosting
 
             A.CallTo(() => endpointClient.SendAsync(command, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
             A.CallTo(() => endpoint.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
+        }
+
+        private static IConfiguration Configuration(IDictionary<string, string> values)
+        {
+            return new ConfigurationBuilder().AddInMemoryCollection(values).Build();
         }
 
         private static IHost BuildHost(Action<IServiceCollection> configure)

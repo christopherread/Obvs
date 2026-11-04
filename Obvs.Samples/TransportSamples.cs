@@ -26,7 +26,7 @@ namespace Obvs.Samples
 
             // snippet: kafka-instance-id
             builder.Services.AddObvs(obvs => obvs
-                .UseInstanceId(Environment.GetEnvironmentVariable("POD_NAME"))
+                .WithInstanceId(Environment.GetEnvironmentVariable("POD_NAME"))
                 .AddService<IOrderMessage>("orders", service => service
                     .UseKafka(builder.Configuration.GetSection("Obvs:Orders:Kafka"))));
             // end-snippet

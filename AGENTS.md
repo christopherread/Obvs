@@ -51,6 +51,19 @@ The build has no warnings. Keep it that way.
 - **Test first.** Write the failing test, see it fail for the right reason, then make it pass. Test names say the behaviour: `ShouldDescribeOneService`.
 - **Language versions.** The core and the transports also target `net472` and `netstandard2.0`, which compile as C# 7.3: no nullable reference types, no async streams or `await using`, no default interface members. Tests, `Obvs.Mcp` and the Roslyn projects target newer frameworks.
 - **Packages** are versioned centrally in `Directory.Packages.props`.
+- **Configuration verbs.** A method's first word says what it configures. `TestPublicApi` checks the core's.
+
+  | Verb | For | For example |
+  |---|---|---|
+  | `Use…` | Transports only | `UseRabbitMq`, `UseTransport` |
+  | `Add…` | What's added to the bus | `AddService`, `AddMessages` |
+  | `Handle…` | Handlers | `HandleCommand` |
+  | `As…` | The service's role | `AsClient`, `AsServer` |
+  | A past participle | How messages are written | `SerializedWith`, `Compressed` |
+  | `With…` | The bus's own settings | `WithInstanceId`, `WithRequestTimeout`, `WithConfiguration` |
+
+  Each `Use<Transport>` takes `(IConfiguration)`, `(Action<Options>)` and `(IConfiguration, Action<Options>)`.
+- **Option names.** A setting Obvs implements, or that several transports share, has one Obvs name everywhere, such as `MaxConcurrentMessages` and `MaxHandlerDuration`. A setting passed straight to the broker or its client keeps the broker's name, such as Kafka's `SaslMechanism`.
 - **Errors say how to fix them.** A startup check names the service, what's wrong and the API that fixes it, and has a test asserting its message names the fix (see `docs/configuration-errors.md`).
 - **Snippets.** Code in the README or a doc page comes from a region in `Obvs.Samples`:
   - mark the region `// snippet: name` ... `// end-snippet`;
