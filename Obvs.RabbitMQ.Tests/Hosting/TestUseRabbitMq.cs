@@ -48,6 +48,40 @@ namespace Obvs.RabbitMQ.Tests.Hosting
         }
 
         [Fact]
+        public void ShouldBindOptionsFromConfigurationThenConfigureThemInCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:Orders:RabbitMq:Uri"] = "amqp://broker.example:5672",
+                ["Obvs:Orders:RabbitMq:AutomaticRecoveryEnabled"] = "false",
+            });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseRabbitMq(configuration.GetSection("Obvs:Orders:RabbitMq"), options => options.Uri = new Uri("amqp://code.example:5672"))
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var options = host.Services.GetRequiredService<IOptionsMonitor<RabbitMqOptions>>().Get("orders");
+            Assert.Equal(new Uri("amqp://code.example:5672"), options.Uri);
+            Assert.False(options.AutomaticRecoveryEnabled);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenTheUriIsMissingFromConfigurationAndCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string>());
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseRabbitMq(configuration.GetSection("Obvs:Orders:RabbitMq"), options => options.AutomaticRecoveryEnabled = false)
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("Obvs:Orders:RabbitMq:Uri", error);
+        }
+
+        [Fact]
         public async Task ShouldFailToStartWhenTheUriIsMissingFromConfiguration()
         {
             var configuration = Configuration(new Dictionary<string, string>());

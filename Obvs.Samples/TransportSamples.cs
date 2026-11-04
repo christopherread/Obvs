@@ -104,8 +104,8 @@ namespace Obvs.Samples
                 // end-snippet
 
                 // snippet: sqs-credentials
-                service.UseAmazonSqs(builder.Configuration.GetSection("Obvs:Orders:AmazonSqs"));
-                builder.Services.Configure<AmazonSqsOptions>("orders", options => options.Credentials = new BasicAWSCredentials(accessKey, secretKey));
+                service.UseAmazonSqs(builder.Configuration.GetSection("Obvs:Orders:AmazonSqs"),
+                    options => options.Credentials = new BasicAWSCredentials(accessKey, secretKey));
                 // end-snippet
 
                 // snippet: sqs-localstack

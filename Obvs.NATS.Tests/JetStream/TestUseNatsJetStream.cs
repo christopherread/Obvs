@@ -51,6 +51,45 @@ namespace Obvs.NATS.Tests.JetStream
         }
 
         [Fact]
+        public void ShouldBindOptionsFromConfigurationThenConfigureThemInCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:Orders:NatsJetStream:Url"] = "nats://nats.example:4222",
+                ["Obvs:Orders:NatsJetStream:MaxDeliveryAttempts"] = "3",
+            });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseNatsJetStream(configuration.GetSection("Obvs:Orders:NatsJetStream"), options =>
+                    {
+                        options.MaxDeliveryAttempts = 5;
+                        options.MaxConcurrentMessages = 4;
+                    })
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var options = host.Services.GetRequiredService<IOptionsMonitor<NatsJetStreamOptions>>().Get("orders");
+            Assert.Equal("nats://nats.example:4222", options.Url);
+            Assert.Equal(5, options.MaxDeliveryAttempts);
+            Assert.Equal(4, options.MaxConcurrentMessages);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenTheUrlIsMissingFromConfigurationAndCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string>());
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseNatsJetStream(configuration.GetSection("Obvs:Orders:NatsJetStream"), options => options.MaxDeliveryAttempts = 5)
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("Obvs:Orders:NatsJetStream:Url", error);
+        }
+
+        [Fact]
         public void ShouldDeliverAMessageTenTimesTakeAsManyAtOnceAsTheHandlersAndKeepItInProgressForFiveMinutesByDefault()
         {
             var options = new NatsJetStreamOptions();

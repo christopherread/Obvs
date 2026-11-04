@@ -45,6 +45,8 @@ Its settings come from configuration, such as `appsettings.json`:
 { "Obvs": { "Orders": { "RabbitMq": { "Uri": "amqp://localhost:5672" } } } }
 ```
 
+Or set them in code with `UseRabbitMq(options => ...)`. To take some from each, pass both: `UseRabbitMq(section, options => ...)` binds the section, then runs the code, which wins where both set a setting. Every transport's `Use…` takes the same three.
+
 `AddMessages(OrderMessages.Types)` registers the service's messages from a list Obvs's source generator writes, so nothing is scanned at startup:
 
 <!-- snippet: generated-registry -->

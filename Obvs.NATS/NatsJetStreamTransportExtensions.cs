@@ -33,6 +33,18 @@ namespace Obvs.Hosting
         /// </summary>
         public static ObvsServiceBuilder UseNatsJetStream(this ObvsServiceBuilder service, IConfiguration configuration)
         {
+            return UseNatsJetStream(service, configuration, options => { });
+        }
+
+        /// <summary>
+        /// Carries this service's messages over NATS JetStream, with settings bound from <paramref name="configuration"/>,
+        /// then changed by <paramref name="configure"/>, for example to set a URL read from a secret store. Messages are
+        /// kept in streams until handled: commands and requests through consumers the service's buses share, so each is
+        /// handled once; events reach every bus. The service's streams, and this bus's own consumers, are created at
+        /// startup if they don't exist.
+        /// </summary>
+        public static ObvsServiceBuilder UseNatsJetStream(this ObvsServiceBuilder service, IConfiguration configuration, Action<NatsJetStreamOptions> configure)
+        {
             if (service == null)
             {
                 throw new ArgumentNullException(nameof(service));
@@ -41,8 +53,12 @@ namespace Obvs.Hosting
             {
                 throw new ArgumentNullException(nameof(configuration));
             }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
 
-            service.Services.AddOptions<NatsJetStreamOptions>(service.Name).Bind(configuration);
+            service.Services.AddOptions<NatsJetStreamOptions>(service.Name).Bind(configuration).Configure(configure);
             var urlKey = configuration is IConfigurationSection section ? section.Path + ":Url" : "Url";
             return UseNatsJetStream(service, $"configuration key {urlKey}");
         }

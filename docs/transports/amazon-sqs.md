@@ -86,12 +86,12 @@ service
 
 ### Credentials
 
-By default the bus signs in with the AWS SDK's default credential chain: environment variables, the shared credentials and config files, and the IAM role of the EC2 instance, ECS task or Lambda function it runs in. To sign in some other way, set `Credentials` in code. With the other settings in configuration, call `UseAmazonSqs` with the configuration section, then `services.Configure<AmazonSqsOptions>("orders", ...)` with the service's name:
+By default the bus signs in with the AWS SDK's default credential chain: environment variables, the shared credentials and config files, and the IAM role of the EC2 instance, ECS task or Lambda function it runs in. To sign in some other way, set `Credentials` in code. With the other settings in configuration, pass `UseAmazonSqs` the configuration section, then set `Credentials` in code:
 
 <!-- snippet: sqs-credentials -->
 ```csharp
-service.UseAmazonSqs(builder.Configuration.GetSection("Obvs:Orders:AmazonSqs"));
-builder.Services.Configure<AmazonSqsOptions>("orders", options => options.Credentials = new BasicAWSCredentials(accessKey, secretKey));
+service.UseAmazonSqs(builder.Configuration.GetSection("Obvs:Orders:AmazonSqs"),
+    options => options.Credentials = new BasicAWSCredentials(accessKey, secretKey));
 ```
 
 Keep access keys out of `appsettings.json`. When the bus runs in AWS, prefer an IAM role to keys.

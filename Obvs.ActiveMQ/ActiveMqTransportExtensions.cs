@@ -23,6 +23,15 @@ namespace Obvs.Hosting
         /// </summary>
         public static ObvsServiceBuilder UseActiveMq(this ObvsServiceBuilder service, IConfiguration configuration)
         {
+            return UseActiveMq(service, configuration, options => { });
+        }
+
+        /// <summary>
+        /// Carries this service's messages over ActiveMQ topics, with settings bound from <paramref name="configuration"/>,
+        /// then changed by <paramref name="configure"/>, for example to set a password read from a secret store.
+        /// </summary>
+        public static ObvsServiceBuilder UseActiveMq(this ObvsServiceBuilder service, IConfiguration configuration, Action<ActiveMqOptions> configure)
+        {
             if (service == null)
             {
                 throw new ArgumentNullException(nameof(service));
@@ -31,8 +40,12 @@ namespace Obvs.Hosting
             {
                 throw new ArgumentNullException(nameof(configuration));
             }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
 
-            service.Services.AddOptions<ActiveMqOptions>(service.Name).Bind(configuration);
+            service.Services.AddOptions<ActiveMqOptions>(service.Name).Bind(configuration).Configure(configure);
             var brokerUriKey = configuration is IConfigurationSection section ? section.Path + ":BrokerUri" : "BrokerUri";
             return UseActiveMq(service, $"configuration key {brokerUriKey}");
         }

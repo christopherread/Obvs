@@ -24,6 +24,16 @@ namespace Obvs.Hosting
         /// </summary>
         public static ObvsServiceBuilder UseNetMq(this ObvsServiceBuilder service, IConfiguration configuration)
         {
+            return UseNetMq(service, configuration, options => { });
+        }
+
+        /// <summary>
+        /// Carries this service's messages over NetMQ, with settings bound from <paramref name="configuration"/>, then
+        /// changed by <paramref name="configure"/>, for example to set a port only known at startup. The service's server
+        /// binds its sockets, and its clients connect to them.
+        /// </summary>
+        public static ObvsServiceBuilder UseNetMq(this ObvsServiceBuilder service, IConfiguration configuration, Action<NetMqOptions> configure)
+        {
             if (service == null)
             {
                 throw new ArgumentNullException(nameof(service));
@@ -32,8 +42,12 @@ namespace Obvs.Hosting
             {
                 throw new ArgumentNullException(nameof(configuration));
             }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
 
-            service.Services.AddOptions<NetMqOptions>(service.Name).Bind(configuration);
+            service.Services.AddOptions<NetMqOptions>(service.Name).Bind(configuration).Configure(configure);
             var prefix = configuration is IConfigurationSection section ? section.Path + ":" : "";
             return UseNetMq(service, $"configuration key {prefix}Address", $"configuration key {prefix}Port");
         }

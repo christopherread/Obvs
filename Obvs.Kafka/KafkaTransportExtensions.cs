@@ -24,17 +24,7 @@ namespace Obvs.Hosting
         /// </summary>
         public static ObvsServiceBuilder UseKafka(this ObvsServiceBuilder service, IConfiguration configuration)
         {
-            if (service == null)
-            {
-                throw new ArgumentNullException(nameof(service));
-            }
-            if (configuration == null)
-            {
-                throw new ArgumentNullException(nameof(configuration));
-            }
-
-            service.Services.AddOptions<KafkaOptions>(service.Name).Bind(configuration);
-            return UseKafka(service, ConfigurationKey(configuration));
+            return UseKafka(service, configuration, options => { });
         }
 
         /// <summary>

@@ -46,6 +46,42 @@ namespace Obvs.ActiveMQ.Tests.Hosting
         }
 
         [Fact]
+        public void ShouldBindOptionsFromConfigurationThenConfigureThemInCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:Orders:ActiveMq:BrokerUri"] = "activemq:tcp://activemq.example:61616",
+                ["Obvs:Orders:ActiveMq:UserName"] = "orders-app",
+                ["Obvs:Orders:ActiveMq:Password"] = "placeholder",
+            });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseActiveMq(configuration.GetSection("Obvs:Orders:ActiveMq"), options => options.Password = "not-a-real-password")
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var options = host.Services.GetRequiredService<IOptionsMonitor<ActiveMqOptions>>().Get("orders");
+            Assert.Equal("activemq:tcp://activemq.example:61616", options.BrokerUri);
+            Assert.Equal("orders-app", options.UserName);
+            Assert.Equal("not-a-real-password", options.Password);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenTheBrokerUriIsMissingFromConfigurationAndCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string>());
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseActiveMq(configuration.GetSection("Obvs:Orders:ActiveMq"), options => options.UserName = "orders-app")
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("Obvs:Orders:ActiveMq:BrokerUri", error);
+        }
+
+        [Fact]
         public async Task ShouldFailToStartWhenTheBrokerUriIsMissingFromConfiguration()
         {
             var configuration = Configuration(new Dictionary<string, string>());

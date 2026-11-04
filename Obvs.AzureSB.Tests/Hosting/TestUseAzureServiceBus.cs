@@ -46,6 +46,47 @@ namespace Obvs.AzureSB.Tests.Hosting
         }
 
         [Fact]
+        public void ShouldBindOptionsFromConfigurationThenConfigureThemInCode()
+        {
+            var credential = new AzureCliCredential();
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:Orders:AzureServiceBus:FullyQualifiedNamespace"] = "contoso.servicebus.windows.net",
+                ["Obvs:Orders:AzureServiceBus:MaxDeliveryAttempts"] = "3",
+            });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseAzureServiceBus(configuration.GetSection("Obvs:Orders:AzureServiceBus"), options =>
+                    {
+                        options.Credential = credential;
+                        options.MaxDeliveryAttempts = 5;
+                    })
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var options = host.Services.GetRequiredService<IOptionsMonitor<AzureServiceBusOptions>>().Get("orders");
+            Assert.Equal("contoso.servicebus.windows.net", options.FullyQualifiedNamespace);
+            Assert.Same(credential, options.Credential);
+            Assert.Equal(5, options.MaxDeliveryAttempts);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenTheNamespaceIsMissingFromConfigurationAndCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string>());
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseAzureServiceBus(configuration.GetSection("Obvs:Orders:AzureServiceBus"), options => options.MaxDeliveryAttempts = 5)
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("Obvs:Orders:AzureServiceBus:FullyQualifiedNamespace", error);
+            Assert.Contains("Obvs:Orders:AzureServiceBus:ConnectionString", error);
+        }
+
+        [Fact]
         public void ShouldBindMaxDeliveryAttemptsFromConfiguration()
         {
             var configuration = Configuration(new Dictionary<string, string>

@@ -38,6 +38,35 @@ namespace Obvs.NATS.Tests.Hosting
         }
 
         [Fact]
+        public void ShouldBindOptionsFromConfigurationThenConfigureThemInCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string> { ["Obvs:Orders:Nats:Url"] = "nats://nats.example:4222" });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseNats(configuration.GetSection("Obvs:Orders:Nats"), options => options.Url = "nats://code.example:4222")
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var options = host.Services.GetRequiredService<IOptionsMonitor<NatsOptions>>().Get("orders");
+            Assert.Equal("nats://code.example:4222", options.Url);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenTheUrlIsMissingFromConfigurationAndCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string>());
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseNats(configuration.GetSection("Obvs:Orders:Nats"), options => { })
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("Obvs:Orders:Nats:Url", error);
+        }
+
+        [Fact]
         public async Task ShouldFailToStartWhenTheUrlIsMissingFromConfiguration()
         {
             var configuration = Configuration(new Dictionary<string, string>());
