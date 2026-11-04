@@ -1,0 +1,301 @@
+abstract Obvs.Serialization.MessageDeserializerBase<TMessage>.Deserialize(System.IO.Stream source) -> TMessage
+const Obvs.Hosting.ObvsServiceBuilder.DefaultMaxDecompressedBytes = 16777216 -> long
+const Obvs.Hosting.ObvsTelemetry.ActivitySourceName = "Obvs" -> string
+const Obvs.Hosting.ObvsTelemetry.MeterName = "Obvs" -> string
+const Obvs.ObvsMessageHeaders.TraceParent = "traceparent" -> string
+const Obvs.ObvsMessageHeaders.TraceState = "tracestate" -> string
+const Obvs.Transports.MessagePropertyNames.RequesterId = "RequesterId" -> string
+const Obvs.Transports.MessagePropertyNames.RequestId = "RequestId" -> string
+const Obvs.Transports.MessagePropertyNames.TypeName = "TypeName" -> string
+Microsoft.Extensions.DependencyInjection.ObvsServiceCollectionExtensions
+Obvs.Configuration.MessageTypes
+Obvs.Configuration.RequesterId
+Obvs.Extensions.EndpointExtensions
+Obvs.Extensions.TypeExtensions
+Obvs.Hosting.HandlerOptions
+Obvs.Hosting.HandlerOptions.HandlerOptions() -> void
+Obvs.Hosting.HandlerOptions.MaxConcurrency.get -> int
+Obvs.Hosting.HandlerOptions.MaxConcurrency.set -> void
+Obvs.Hosting.ICommandHandler<TCommand>
+Obvs.Hosting.ICommandHandler<TCommand>.HandleAsync(TCommand command, Obvs.Hosting.MessageContext context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task
+Obvs.Hosting.IEventHandler<TEvent>
+Obvs.Hosting.IEventHandler<TEvent>.HandleAsync(TEvent ev, Obvs.Hosting.MessageContext context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task
+Obvs.Hosting.IRequestHandler<TRequest, TResponse>
+Obvs.Hosting.IRequestHandler<TRequest, TResponse>.HandleAsync(TRequest request, Obvs.Hosting.MessageContext context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<TResponse>
+Obvs.Hosting.MessageContext
+Obvs.Hosting.MessageContext.Headers.get -> System.Collections.Generic.IReadOnlyDictionary<string, string>
+Obvs.Hosting.MessageContext.PublishAsync(Obvs.Types.IEvent ev, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Hosting.MessageContext.PublishAsync(Obvs.Types.IEvent ev, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Hosting.MessageContext.RequestAsync<TResponse>(Obvs.Types.IRequest<TResponse> request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<TResponse>
+Obvs.Hosting.MessageContext.RequestAsync<TResponse>(Obvs.Types.IRequest<TResponse> request, System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<TResponse>
+Obvs.Hosting.MessageContext.SendAsync(Obvs.Types.ICommand command, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Hosting.MessageContext.SendAsync(Obvs.Types.ICommand command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Hosting.MessageContext.ServiceName.get -> string
+Obvs.Hosting.MessageContext.Services.get -> System.IServiceProvider
+Obvs.Hosting.ObvsBuilder
+Obvs.Hosting.ObvsBuilder.AddService<TServiceMessage>(string name, System.Action<Obvs.Hosting.ObvsServiceBuilder> configure) -> Obvs.Hosting.ObvsBuilder
+Obvs.Hosting.ObvsBuilder.InstanceId.get -> string
+Obvs.Hosting.ObvsBuilder.RequestTimeout.get -> System.TimeSpan
+Obvs.Hosting.ObvsBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+Obvs.Hosting.ObvsBuilder.WithConfiguration(Microsoft.Extensions.Configuration.IConfiguration configuration) -> Obvs.Hosting.ObvsBuilder
+Obvs.Hosting.ObvsBuilder.WithInstanceId(string instanceId) -> Obvs.Hosting.ObvsBuilder
+Obvs.Hosting.ObvsBuilder.WithRequestTimeout(System.TimeSpan timeout) -> Obvs.Hosting.ObvsBuilder
+Obvs.Hosting.ObvsBus
+Obvs.Hosting.ObvsBus.Commands.get -> System.IObservable<Obvs.Types.ICommand>
+Obvs.Hosting.ObvsBus.Dispose() -> void
+Obvs.Hosting.ObvsBus.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Obvs.Hosting.ObvsBus.Events.get -> System.IObservable<Obvs.Types.IEvent>
+Obvs.Hosting.ObvsBus.Exceptions.get -> System.IObservable<System.Exception>
+Obvs.Hosting.ObvsBus.GetResponses(Obvs.Types.IRequest request) -> System.IObservable<Obvs.Types.IResponse>
+Obvs.Hosting.ObvsBus.GetResponses(Obvs.Types.IRequest request, System.Collections.Generic.IReadOnlyDictionary<string, string> headers) -> System.IObservable<Obvs.Types.IResponse>
+Obvs.Hosting.ObvsBus.PublishAsync(Obvs.Types.IEvent ev, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Hosting.ObvsBus.PublishAsync(Obvs.Types.IEvent ev, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Hosting.ObvsBus.ReadCommandsAsync<TCommand>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken), int capacity = 1024) -> System.Collections.Generic.IAsyncEnumerable<TCommand>
+Obvs.Hosting.ObvsBus.ReadEventsAsync<TEvent>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken), int capacity = 1024) -> System.Collections.Generic.IAsyncEnumerable<TEvent>
+Obvs.Hosting.ObvsBus.ReplyAsync(Obvs.Types.IRequest request, Obvs.Types.IResponse response, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Hosting.ObvsBus.RequestAsync<TResponse>(Obvs.Types.IRequest<TResponse> request, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<TResponse>
+Obvs.Hosting.ObvsBus.RequestAsync<TResponse>(Obvs.Types.IRequest<TResponse> request, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<TResponse>
+Obvs.Hosting.ObvsBus.RequestAsync<TResponse>(Obvs.Types.IRequest<TResponse> request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<TResponse>
+Obvs.Hosting.ObvsBus.RequestAsync<TResponse>(Obvs.Types.IRequest<TResponse> request, System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<TResponse>
+Obvs.Hosting.ObvsBus.Requests.get -> System.IObservable<Obvs.Types.IRequest>
+Obvs.Hosting.ObvsBus.SendAsync(Obvs.Types.ICommand command, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Hosting.ObvsBus.SendAsync(Obvs.Types.ICommand command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Hosting.ObvsBus.Services.get -> System.IServiceProvider
+Obvs.Hosting.ObvsConfigurationException
+Obvs.Hosting.ObvsConfigurationException.Errors.get -> System.Collections.Generic.IReadOnlyList<string>
+Obvs.Hosting.ObvsConfigurationException.ObvsConfigurationException(System.Collections.Generic.IReadOnlyList<string> errors) -> void
+Obvs.Hosting.ObvsContractComparer
+Obvs.Hosting.ObvsContracts
+Obvs.Hosting.ObvsContracts.Describe() -> string
+Obvs.Hosting.ObvsContracts.Describe(string serviceName) -> string
+Obvs.Hosting.ObvsContracts.MessageTypes(string serviceName) -> System.Collections.Generic.IReadOnlyList<System.Type>
+Obvs.Hosting.ObvsContracts.ServiceNames.get -> System.Collections.Generic.IReadOnlyList<string>
+Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.AddMessages(params System.Type[] messageTypes) -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.AsClient() -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.AsClientAndServer() -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.AsServer() -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.Compressed(System.IO.Compression.CompressionLevel level = System.IO.Compression.CompressionLevel.Fastest, long maxDecompressedBytes = 16777216) -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.HandleCommand<TCommand, THandler>(System.Action<Obvs.Hosting.HandlerOptions> configure = null) -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.HandleCommand<TCommand>(System.Func<TCommand, Obvs.Hosting.MessageContext, System.Threading.CancellationToken, System.Threading.Tasks.Task> handler, System.Action<Obvs.Hosting.HandlerOptions> configure = null) -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.HandleEvent<TEvent, THandler>(System.Action<Obvs.Hosting.HandlerOptions> configure = null) -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.HandleEvent<TEvent>(System.Func<TEvent, Obvs.Hosting.MessageContext, System.Threading.CancellationToken, System.Threading.Tasks.Task> handler, System.Action<Obvs.Hosting.HandlerOptions> configure = null) -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.HandleRequest<TRequest, TResponse, THandler>(System.Action<Obvs.Hosting.HandlerOptions> configure = null) -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.HandleRequest<TRequest, TResponse>(System.Func<TRequest, Obvs.Hosting.MessageContext, System.Threading.CancellationToken, System.Threading.Tasks.Task<TResponse>> handler, System.Action<Obvs.Hosting.HandlerOptions> configure = null) -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.Name.get -> string
+Obvs.Hosting.ObvsServiceBuilder.SerializedWith(Obvs.Serialization.IMessageSerializer serializer, Obvs.Serialization.IMessageDeserializerFactory deserializerFactory) -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsServiceBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+Obvs.Hosting.ObvsServiceBuilder.UseTransport(string name, System.Func<Obvs.Transports.ObvsTransportContext, Obvs.Transports.IServiceEndpointProvider<Obvs.Types.IMessage, Obvs.Types.ICommand, Obvs.Types.IEvent, Obvs.Types.IRequest, Obvs.Types.IResponse>> create, System.Func<Obvs.Transports.ObvsTransportContext, System.Collections.Generic.IEnumerable<string>> validate = null) -> Obvs.Hosting.ObvsServiceBuilder
+Obvs.Hosting.ObvsTelemetry
+Obvs.Hosting.ObvsTransportTelemetry
+Obvs.IServiceBus
+Obvs.IServiceBus.Commands.get -> System.IObservable<Obvs.Types.ICommand>
+Obvs.IServiceBus.PublishAsync(Obvs.Types.IEvent ev, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.IServiceBus.PublishAsync(Obvs.Types.IEvent ev, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.IServiceBus.ReadCommandsAsync<TCommand>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken), int capacity = 1024) -> System.Collections.Generic.IAsyncEnumerable<TCommand>
+Obvs.IServiceBus.ReplyAsync(Obvs.Types.IRequest request, Obvs.Types.IResponse response, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.IServiceBus.Requests.get -> System.IObservable<Obvs.Types.IRequest>
+Obvs.IServiceBusClient
+Obvs.IServiceBusClient.Events.get -> System.IObservable<Obvs.Types.IEvent>
+Obvs.IServiceBusClient.Exceptions.get -> System.IObservable<System.Exception>
+Obvs.IServiceBusClient.GetResponses(Obvs.Types.IRequest request) -> System.IObservable<Obvs.Types.IResponse>
+Obvs.IServiceBusClient.GetResponses(Obvs.Types.IRequest request, System.Collections.Generic.IReadOnlyDictionary<string, string> headers) -> System.IObservable<Obvs.Types.IResponse>
+Obvs.IServiceBusClient.ReadEventsAsync<TEvent>(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken), int capacity = 1024) -> System.Collections.Generic.IAsyncEnumerable<TEvent>
+Obvs.IServiceBusClient.RequestAsync<TResponse>(Obvs.Types.IRequest<TResponse> request, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<TResponse>
+Obvs.IServiceBusClient.RequestAsync<TResponse>(Obvs.Types.IRequest<TResponse> request, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<TResponse>
+Obvs.IServiceBusClient.RequestAsync<TResponse>(Obvs.Types.IRequest<TResponse> request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<TResponse>
+Obvs.IServiceBusClient.RequestAsync<TResponse>(Obvs.Types.IRequest<TResponse> request, System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<TResponse>
+Obvs.IServiceBusClient.SendAsync(Obvs.Types.ICommand command, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.IServiceBusClient.SendAsync(Obvs.Types.ICommand command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.ObservableSubscribeAsyncExtensions
+Obvs.ObvsMessageHeaders
+Obvs.Serialization.Compression.GzipMessageDeserializerFactory
+Obvs.Serialization.Compression.GzipMessageDeserializerFactory.Create<TMessage, TServiceMessage>(System.Func<System.Reflection.Assembly, bool> assemblyFilter = null, System.Func<System.Type, bool> typeFilter = null) -> System.Collections.Generic.IEnumerable<Obvs.Serialization.IMessageDeserializer<TMessage>>
+Obvs.Serialization.Compression.GzipMessageDeserializerFactory.Create<TMessage>(System.Type messageType) -> Obvs.Serialization.IMessageDeserializer<TMessage>
+Obvs.Serialization.Compression.GzipMessageDeserializerFactory.GzipMessageDeserializerFactory(Obvs.Serialization.IMessageDeserializerFactory inner, long maxDecompressedBytes, string serviceName) -> void
+Obvs.Serialization.Compression.GzipMessageSerializer
+Obvs.Serialization.Compression.GzipMessageSerializer.GzipMessageSerializer(Obvs.Serialization.IMessageSerializer inner, System.IO.Compression.CompressionLevel level = System.IO.Compression.CompressionLevel.Fastest) -> void
+Obvs.Serialization.Compression.GzipMessageSerializer.Inner.get -> Obvs.Serialization.IMessageSerializer
+Obvs.Serialization.Compression.GzipMessageSerializer.Serialize(System.IO.Stream stream, object message) -> void
+Obvs.Serialization.IMessageDeserializer<TMessage>
+Obvs.Serialization.IMessageDeserializer<TMessage>.Deserialize(System.IO.Stream source) -> TMessage
+Obvs.Serialization.IMessageDeserializer<TMessage>.TypeName.get -> string
+Obvs.Serialization.IMessageDeserializerFactory
+Obvs.Serialization.IMessageDeserializerFactory.Create<TMessage, TServiceMessage>(System.Func<System.Reflection.Assembly, bool> assemblyFilter = null, System.Func<System.Type, bool> typeFilter = null) -> System.Collections.Generic.IEnumerable<Obvs.Serialization.IMessageDeserializer<TMessage>>
+Obvs.Serialization.IMessageSerializer
+Obvs.Serialization.IMessageSerializer.Serialize(System.IO.Stream destination, object message) -> void
+Obvs.Serialization.IMessageTypeDeserializerFactory
+Obvs.Serialization.IMessageTypeDeserializerFactory.Create<TMessage>(System.Type messageType) -> Obvs.Serialization.IMessageDeserializer<TMessage>
+Obvs.Serialization.MessageDeserializerBase<TMessage>
+Obvs.Serialization.MessageDeserializerBase<TMessage>.MessageDeserializerBase() -> void
+Obvs.Serialization.MessageDeserializerBase<TMessage>.TypeName.get -> string
+Obvs.Serialization.MessageDeserializerExtensions
+Obvs.Serialization.MessageSerializerExtensions
+Obvs.Serialization.SystemTextJson.SystemTextJsonMessageDefaults
+Obvs.Serialization.SystemTextJson.SystemTextJsonMessageDeserializer<TMessage>
+Obvs.Serialization.SystemTextJson.SystemTextJsonMessageDeserializer<TMessage>.SystemTextJsonMessageDeserializer(System.Text.Json.JsonSerializerOptions options = null) -> void
+Obvs.Serialization.SystemTextJson.SystemTextJsonMessageDeserializerFactory
+Obvs.Serialization.SystemTextJson.SystemTextJsonMessageDeserializerFactory.Create<TMessage, TServiceMessage>(System.Func<System.Reflection.Assembly, bool> assemblyFilter = null, System.Func<System.Type, bool> typeFilter = null) -> System.Collections.Generic.IEnumerable<Obvs.Serialization.IMessageDeserializer<TMessage>>
+Obvs.Serialization.SystemTextJson.SystemTextJsonMessageDeserializerFactory.Create<TMessage>(System.Type messageType) -> Obvs.Serialization.IMessageDeserializer<TMessage>
+Obvs.Serialization.SystemTextJson.SystemTextJsonMessageDeserializerFactory.SystemTextJsonMessageDeserializerFactory(System.Text.Json.JsonSerializerOptions options = null) -> void
+Obvs.Serialization.SystemTextJson.SystemTextJsonMessageSerializer
+Obvs.Serialization.SystemTextJson.SystemTextJsonMessageSerializer.Serialize(System.IO.Stream stream, object message) -> void
+Obvs.Serialization.SystemTextJson.SystemTextJsonMessageSerializer.SystemTextJsonMessageSerializer(System.Text.Json.JsonSerializerOptions options = null) -> void
+Obvs.Transports.CompositeMessagePropertyProvider<TMessage>
+Obvs.Transports.CompositeMessagePropertyProvider<TMessage>.CompositeMessagePropertyProvider() -> void
+Obvs.Transports.CompositeMessagePropertyProvider<TMessage>.CompositeMessagePropertyProvider(System.Collections.Generic.IEnumerable<Obvs.Transports.IMessagePropertyProvider<TMessage>> providers) -> void
+Obvs.Transports.CompositeMessagePropertyProvider<TMessage>.GetProperties(TMessage message) -> System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, object>>
+Obvs.Transports.CompositeMessagePropertyProvider<TMessage>.Providers.get -> System.Collections.Generic.List<Obvs.Transports.IMessagePropertyProvider<TMessage>>
+Obvs.Transports.DefaultMessagePublisher<TMessage>
+Obvs.Transports.DefaultMessagePublisher<TMessage>.DefaultMessagePublisher() -> void
+Obvs.Transports.DefaultMessagePublisher<TMessage>.Dispose() -> void
+Obvs.Transports.DefaultMessagePublisher<TMessage>.PublishAsync(TMessage message, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Transports.DefaultMessageSource<TMessage>
+Obvs.Transports.DefaultMessageSource<TMessage>.DefaultMessageSource() -> void
+Obvs.Transports.DefaultMessageSource<TMessage>.Dispose() -> void
+Obvs.Transports.DefaultMessageSource<TMessage>.Messages.get -> System.IObservable<TMessage>
+Obvs.Transports.DefaultPropertyProvider<TMessage>
+Obvs.Transports.DefaultPropertyProvider<TMessage>.DefaultPropertyProvider() -> void
+Obvs.Transports.DefaultPropertyProvider<TMessage>.GetProperties(TMessage message) -> System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, object>>
+Obvs.Transports.FuncMessagePropertyProvider<TMessage>
+Obvs.Transports.FuncMessagePropertyProvider<TMessage>.FuncMessagePropertyProvider(System.Func<TMessage, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, object>>> multiPropertyProviderFunc) -> void
+Obvs.Transports.FuncMessagePropertyProvider<TMessage>.FuncMessagePropertyProvider(System.Func<TMessage, System.Collections.Generic.KeyValuePair<string, object>> singlePropertyProviderFunc) -> void
+Obvs.Transports.FuncMessagePropertyProvider<TMessage>.GetProperties(TMessage message) -> System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, object>>
+Obvs.Transports.IEndpoint
+Obvs.Transports.IEndpoint<TMessage>
+Obvs.Transports.IEndpoint<TMessage>.CanHandle(TMessage message) -> bool
+Obvs.Transports.IEndpoint<TMessage>.Name.get -> string
+Obvs.Transports.IMessagePropertyProvider<TMessage>
+Obvs.Transports.IMessagePropertyProvider<TMessage>.GetProperties(TMessage message) -> System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, object>>
+Obvs.Transports.IMessagePublisher<TMessage>
+Obvs.Transports.IMessagePublisher<TMessage>.PublishAsync(TMessage message, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Transports.IMessageSettlement
+Obvs.Transports.IMessageSettlement.AbandonAsync(System.Exception exception) -> System.Threading.Tasks.Task
+Obvs.Transports.IMessageSettlement.CompleteAsync() -> System.Threading.Tasks.Task
+Obvs.Transports.IMessageSettlement.ReleaseAsync() -> System.Threading.Tasks.Task
+Obvs.Transports.IMessageSource<TMessage>
+Obvs.Transports.IMessageSource<TMessage>.Messages.get -> System.IObservable<TMessage>
+Obvs.Transports.IServiceEndpoint
+Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
+Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.Commands.get -> System.IObservable<TCommand>
+Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.PublishAsync(TEvent tEvent, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.ReplyAsync(TRequest request, TResponse response, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.Requests.get -> System.IObservable<TRequest>
+Obvs.Transports.IServiceEndpointClient
+Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>
+Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>.Events.get -> System.IObservable<TEvent>
+Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>.GetResponses(TRequest request, System.Collections.Generic.IReadOnlyDictionary<string, string> headers) -> System.IObservable<TResponse>
+Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>.SendAsync(TCommand command, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Transports.IServiceEndpointProvider
+Obvs.Transports.IServiceEndpointProvider<TMessage, TCommand, TEvent, TRequest, TResponse>
+Obvs.Transports.IServiceEndpointProvider<TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpoint() -> Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
+Obvs.Transports.IServiceEndpointProvider<TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpointClient() -> Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>
+Obvs.Transports.MergedMessageSource<TMessage>
+Obvs.Transports.MergedMessageSource<TMessage>.Dispose() -> void
+Obvs.Transports.MergedMessageSource<TMessage>.MergedMessageSource(System.Collections.Generic.IEnumerable<Obvs.Transports.IMessageSource<TMessage>> sources) -> void
+Obvs.Transports.MergedMessageSource<TMessage>.Messages.get -> System.IObservable<TMessage>
+Obvs.Transports.MessagePropertyNames
+Obvs.Transports.MessagePropertyProviderListExtensions
+Obvs.Transports.MessagePropertyProviderManager<TMessage>
+Obvs.Transports.MessagePropertyProviderManager<TMessage>.Add<T>(Obvs.Transports.IMessagePropertyProvider<T> messagePropertyProvider) -> void
+Obvs.Transports.MessagePropertyProviderManager<TMessage>.GetMessagePropertyProviderFor<T>() -> Obvs.Transports.IMessagePropertyProvider<T>
+Obvs.Transports.MessagePropertyProviderManager<TMessage>.MessagePropertyProviderManager() -> void
+Obvs.Transports.ObvsReceivedMessage
+Obvs.Transports.ObvsTransportContext
+Obvs.Transports.ObvsTransportContext.DeserializerFactory.get -> Obvs.Serialization.IMessageDeserializerFactory
+Obvs.Transports.ObvsTransportContext.HandlerConcurrency(System.Type messageKind) -> int
+Obvs.Transports.ObvsTransportContext.InstanceId.get -> string
+Obvs.Transports.ObvsTransportContext.IsClient.get -> bool
+Obvs.Transports.ObvsTransportContext.IsServer.get -> bool
+Obvs.Transports.ObvsTransportContext.Messages.get -> System.Collections.Generic.IReadOnlyCollection<System.Type>
+Obvs.Transports.ObvsTransportContext.Serializer.get -> Obvs.Serialization.IMessageSerializer
+Obvs.Transports.ObvsTransportContext.ServiceMessageType.get -> System.Type
+Obvs.Transports.ObvsTransportContext.ServiceName.get -> string
+Obvs.Transports.ObvsTransportContext.ServiceProvider.get -> System.IServiceProvider
+Obvs.Transports.RequestPropertyProvider
+Obvs.Transports.RequestPropertyProvider.GetProperties(Obvs.Types.IRequest request) -> System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, object>>
+Obvs.Transports.RequestPropertyProvider.RequestPropertyProvider() -> void
+Obvs.Transports.ResponsePropertyProvider
+Obvs.Transports.ResponsePropertyProvider.GetProperties(Obvs.Types.IResponse response) -> System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, object>>
+Obvs.Transports.ResponsePropertyProvider.ResponsePropertyProvider() -> void
+Obvs.Transports.ServiceEndpoint
+Obvs.Transports.ServiceEndpoint.ServiceEndpoint(Obvs.Transports.IMessageSource<Obvs.Types.IRequest> requestSource, Obvs.Transports.IMessageSource<Obvs.Types.ICommand> commandSource, Obvs.Transports.IMessagePublisher<Obvs.Types.IEvent> eventPublisher, Obvs.Transports.IMessagePublisher<Obvs.Types.IResponse> responsePublisher, System.Type serviceType) -> void
+Obvs.Transports.ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
+Obvs.Transports.ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.CanHandle(TMessage message) -> bool
+Obvs.Transports.ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.Commands.get -> System.IObservable<TCommand>
+Obvs.Transports.ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.Dispose() -> void
+Obvs.Transports.ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.Name.get -> string
+Obvs.Transports.ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.PublishAsync(TEvent ev, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Transports.ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.ReplyAsync(TRequest request, TResponse response, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Transports.ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.Requests.get -> System.IObservable<TRequest>
+Obvs.Transports.ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>.ServiceEndpoint(Obvs.Transports.IMessageSource<TRequest> requestSource, Obvs.Transports.IMessageSource<TCommand> commandSource, Obvs.Transports.IMessagePublisher<TEvent> eventPublisher, Obvs.Transports.IMessagePublisher<TResponse> responsePublisher, System.Type serviceType) -> void
+Obvs.Transports.ServiceEndpointClient
+Obvs.Transports.ServiceEndpointClient.ServiceEndpointClient(Obvs.Transports.IMessageSource<Obvs.Types.IEvent> eventSource, Obvs.Transports.IMessageSource<Obvs.Types.IResponse> responseSource, Obvs.Transports.IMessagePublisher<Obvs.Types.IRequest> requestPublisher, Obvs.Transports.IMessagePublisher<Obvs.Types.ICommand> commandPublisher, System.Type serviceType) -> void
+Obvs.Transports.ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>
+Obvs.Transports.ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>.CanHandle(TMessage message) -> bool
+Obvs.Transports.ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>.Dispose() -> void
+Obvs.Transports.ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>.Events.get -> System.IObservable<TEvent>
+Obvs.Transports.ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>.GetResponses(TRequest request, System.Collections.Generic.IReadOnlyDictionary<string, string> headers) -> System.IObservable<TResponse>
+Obvs.Transports.ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>.Name.get -> string
+Obvs.Transports.ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>.SendAsync(TCommand command, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Transports.ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>.ServiceEndpointClient(Obvs.Transports.IMessageSource<TEvent> eventSource, Obvs.Transports.IMessageSource<TResponse> responseSource, Obvs.Transports.IMessagePublisher<TRequest> requestPublisher, Obvs.Transports.IMessagePublisher<TCommand> commandPublisher, System.Type serviceType) -> void
+Obvs.Transports.ServiceEndpointProviderBase
+Obvs.Transports.ServiceEndpointProviderBase.ServiceEndpointProviderBase(string serviceName) -> void
+Obvs.Transports.ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>
+Obvs.Transports.ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>.ServiceEndpointProviderBase(string serviceName) -> void
+Obvs.Transports.ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>.ServiceName.get -> string
+Obvs.Transports.TypeRoutingMessagePublisher<TMessage>
+Obvs.Transports.TypeRoutingMessagePublisher<TMessage>.Dispose() -> void
+Obvs.Transports.TypeRoutingMessagePublisher<TMessage>.PublishAsync(TMessage message, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Transports.TypeRoutingMessagePublisher<TMessage>.TypeRoutingMessagePublisher(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<System.Type, Obvs.Transports.IMessagePublisher<TMessage>>> publishers) -> void
+Obvs.Types.ICommand
+Obvs.Types.IEvent
+Obvs.Types.IMessage
+Obvs.Types.IRequest
+Obvs.Types.IRequest.RequesterId.get -> string
+Obvs.Types.IRequest.RequesterId.set -> void
+Obvs.Types.IRequest.RequestId.get -> string
+Obvs.Types.IRequest.RequestId.set -> void
+Obvs.Types.IRequest<TResponse>
+Obvs.Types.IResponse
+Obvs.Types.IResponse.RequesterId.get -> string
+Obvs.Types.IResponse.RequesterId.set -> void
+Obvs.Types.IResponse.RequestId.get -> string
+Obvs.Types.IResponse.RequestId.set -> void
+Obvs.Types.ObvsMessagesAttribute
+Obvs.Types.ObvsMessagesAttribute.ObvsMessagesAttribute(System.Type serviceMessageType) -> void
+Obvs.Types.ObvsMessagesAttribute.ServiceMessageType.get -> System.Type
+override Obvs.Serialization.SystemTextJson.SystemTextJsonMessageDeserializer<TMessage>.Deserialize(System.IO.Stream stream) -> TMessage
+readonly Obvs.Transports.ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>.CommandsDestination -> string
+readonly Obvs.Transports.ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>.EventsDestination -> string
+readonly Obvs.Transports.ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>.RequestsDestination -> string
+readonly Obvs.Transports.ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>.ResponsesDestination -> string
+static Microsoft.Extensions.DependencyInjection.ObvsServiceCollectionExtensions.AddObvs(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, string key, System.Action<Obvs.Hosting.ObvsBuilder> configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+static Microsoft.Extensions.DependencyInjection.ObvsServiceCollectionExtensions.AddObvs(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Obvs.Hosting.ObvsBuilder> configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+static Obvs.Configuration.MessageTypes.Get<TMessage, TServiceMessage>(System.Func<System.Reflection.Assembly, bool> assemblyFilter = null, System.Func<System.Type, bool> typeFilter = null) -> System.Collections.Generic.IEnumerable<System.Type>
+static Obvs.Configuration.RequesterId.Create() -> string
+static Obvs.Extensions.EndpointExtensions.CommandsWithErrorHandling<TMessage, TCommand, TEvent, TRequest, TResponse>(this Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint, System.IObserver<System.Exception> exceptions) -> System.IObservable<TCommand>
+static Obvs.Extensions.EndpointExtensions.EventsWithErrorHandling<TMessage, TCommand, TEvent, TRequest, TResponse>(this Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint, System.IObserver<System.Exception> exceptions) -> System.IObservable<TEvent>
+static Obvs.Extensions.EndpointExtensions.RequestsWithErrorHandling<TMessage, TCommand, TEvent, TRequest, TResponse>(this Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint, System.IObserver<System.Exception> exceptions) -> System.IObservable<TRequest>
+static Obvs.Extensions.TypeExtensions.GetSimpleName(this System.Reflection.TypeInfo t) -> string
+static Obvs.Extensions.TypeExtensions.HasDefaultConstructor(this System.Reflection.TypeInfo type) -> bool
+static Obvs.Extensions.TypeExtensions.IsValidMessageType<TMessage, TServiceMessage>(this System.Reflection.TypeInfo type) -> bool
+static Obvs.Hosting.ObvsBus.StartAsync(System.Action<Microsoft.Extensions.DependencyInjection.IServiceCollection> configureServices, System.Action<Obvs.Hosting.ObvsBuilder> configure, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Obvs.Hosting.ObvsBus>
+static Obvs.Hosting.ObvsBus.StartAsync(System.Action<Obvs.Hosting.ObvsBuilder> configure, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Obvs.Hosting.ObvsBus>
+static Obvs.Hosting.ObvsContractComparer.FindBreakingChanges(string before, string after) -> System.Collections.Generic.IReadOnlyList<string>
+static Obvs.Hosting.ObvsTransportTelemetry.RecordUndeserializable(string serviceName, string messageTypeName, System.Exception exception) -> void
+static Obvs.ObservableSubscribeAsyncExtensions.SubscribeAsync<T>(this System.IObservable<T> messages, System.Func<T, System.Threading.CancellationToken, System.Threading.Tasks.Task> onNext, int maxConcurrency = 1, System.Action<T, System.Exception> onError = null) -> System.IDisposable
+static Obvs.ObservableSubscribeAsyncExtensions.SubscribeAsync<T>(this System.IObservable<T> messages, System.Func<T, System.Threading.Tasks.Task> onNext, int maxConcurrency = 1, System.Action<T, System.Exception> onError = null) -> System.IDisposable
+static Obvs.ObvsMessageHeaders.Get(object message) -> System.Collections.Generic.IReadOnlyDictionary<string, string>
+static Obvs.Serialization.MessageDeserializerExtensions.Deserialize<TMessage>(this Obvs.Serialization.IMessageDeserializer<TMessage> deserializer, byte[] obj) -> TMessage
+static Obvs.Serialization.MessageSerializerExtensions.Serialize(this Obvs.Serialization.IMessageSerializer serializer, object obj) -> byte[]
+static Obvs.Transports.FuncMessagePropertyProvider<TMessage>.implicit operator Obvs.Transports.FuncMessagePropertyProvider<TMessage>(System.Func<TMessage, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, object>>> multiPropertyProviderFunc) -> Obvs.Transports.FuncMessagePropertyProvider<TMessage>
+static Obvs.Transports.FuncMessagePropertyProvider<TMessage>.implicit operator Obvs.Transports.FuncMessagePropertyProvider<TMessage>(System.Func<TMessage, System.Collections.Generic.KeyValuePair<string, object>> singleValuePropertyProviderFunc) -> Obvs.Transports.FuncMessagePropertyProvider<TMessage>
+static Obvs.Transports.MessagePropertyProviderListExtensions.Add<T>(this System.Collections.Generic.List<Obvs.Transports.IMessagePropertyProvider<T>> propertyProviderList, System.Func<T, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, object>>> providerFunc) -> void
+static Obvs.Transports.MessagePropertyProviderListExtensions.Add<T>(this System.Collections.Generic.List<Obvs.Transports.IMessagePropertyProvider<T>> propertyProviderList, System.Func<T, System.Collections.Generic.KeyValuePair<string, object>> providerFunc) -> void
+static Obvs.Transports.MessagePropertyProviderListExtensions.AddRange<T>(this System.Collections.Generic.List<Obvs.Transports.IMessagePropertyProvider<T>> propertyProviderList, params System.Func<T, System.Collections.Generic.KeyValuePair<string, object>>[] providerFuncs) -> void
+static Obvs.Transports.ObvsReceivedMessage.Attach(object message, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, Obvs.Transports.IMessageSettlement settlement = null) -> void
+static Obvs.Transports.ObvsReceivedMessage.GetSettlement(object message) -> Obvs.Transports.IMessageSettlement
+static readonly Obvs.Serialization.SystemTextJson.SystemTextJsonMessageDefaults.Options -> System.Text.Json.JsonSerializerOptions
+virtual Obvs.Transports.ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpoint() -> Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
+virtual Obvs.Transports.ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpointClient() -> Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>

@@ -72,8 +72,11 @@ The build has no warnings. Keep it that way.
 
   `TestSnippets` fails when a doc and its sample differ. A block that can't compile gets `<!-- not compiled: why -->`.
 - **XML docs** on every public member, which ship in the packages. A missing one fails the build (CS1591 is an error). The exceptions are v6's transport building blocks, which the `Use*` transports are built on, and code copied into the repo. Each of those files says so above its `#pragma warning disable`. Implementations of a documented interface use `/// <inheritdoc />`.
+- **Public API.** Each package declares what apps can call in `PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt`, and the public API analyzer fails the build when the code and the files differ: RS0016 for a public member that isn't declared, RS0017 for a declared one that's gone. Declare a new member in `PublicAPI.Unshipped.txt`, with the analyzer's code fix or `dotnet format analyzers <project> --diagnostics RS0016`. Removing or changing a shipped member breaks apps: mark it `*REMOVED*` in `PublicAPI.Unshipped.txt`, and only in a major version.
 - **Wire compatibility.** v6 and v7 apps share brokers. Don't change routing names or JSON shapes without a test that a v6 app still understands them (see `Obvs.RabbitMQ.Tests/Hosting/TestV6Interop.cs`, which runs `Obvs.V6InteropApp`).
 
 ## Pull requests
 
 Work goes into the `v7` branch, one pull request per change, with the v7 milestone. CI builds, runs every broker suite and the unit tests, and publishes packages from `master` and tags only.
+
+When a version ships, move each package's `PublicAPI.Unshipped.txt` lines into its `PublicAPI.Shipped.txt`. Until 7.0.0 ships, the whole v7 API is in `PublicAPI.Unshipped.txt`.
