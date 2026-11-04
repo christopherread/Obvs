@@ -38,6 +38,18 @@ namespace Obvs.Hosting
         /// </summary>
         public static ObvsServiceBuilder UseAmazonSqs(this ObvsServiceBuilder service, IConfiguration configuration)
         {
+            return UseAmazonSqs(service, configuration, options => { });
+        }
+
+        /// <summary>
+        /// Carries this service's messages over Amazon SQS and SNS, with settings bound from <paramref name="configuration"/>,
+        /// then changed by <paramref name="configure"/>, for example to set <see cref="AmazonSqsOptions.Credentials"/>,
+        /// which can't come from configuration. Commands and requests go to SQS queues the service's buses share, so each
+        /// is handled once; events go to an SNS topic that delivers them to every bus. The service's queues and topic, and
+        /// this bus's own queues, are created at startup if they don't exist.
+        /// </summary>
+        public static ObvsServiceBuilder UseAmazonSqs(this ObvsServiceBuilder service, IConfiguration configuration, Action<AmazonSqsOptions> configure)
+        {
             if (service == null)
             {
                 throw new ArgumentNullException(nameof(service));
@@ -46,8 +58,12 @@ namespace Obvs.Hosting
             {
                 throw new ArgumentNullException(nameof(configuration));
             }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
 
-            service.Services.AddOptions<AmazonSqsOptions>(service.Name).Bind(configuration);
+            service.Services.AddOptions<AmazonSqsOptions>(service.Name).Bind(configuration).Configure(configure);
             var prefix = configuration is IConfigurationSection section ? section.Path + ":" : "";
             return UseAmazonSqs(service, $"configuration key {prefix}Region (for example eu-west-1)", $"configuration key {prefix}ServiceUrl");
         }

@@ -52,6 +52,46 @@ namespace Obvs.AmazonSqs.Tests.Hosting
         }
 
         [Fact]
+        public void ShouldBindOptionsFromConfigurationThenConfigureThemInCode()
+        {
+            var credentials = new BasicAWSCredentials("access-key", "secret-key");
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:Orders:AmazonSqs:Region"] = "eu-west-1",
+                ["Obvs:Orders:AmazonSqs:MaxDeliveryAttempts"] = "3",
+            });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseAmazonSqs(configuration.GetSection("Obvs:Orders:AmazonSqs"), options =>
+                    {
+                        options.Credentials = credentials;
+                        options.MaxDeliveryAttempts = 5;
+                    })
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var options = host.Services.GetRequiredService<IOptionsMonitor<AmazonSqsOptions>>().Get("orders");
+            Assert.Equal("eu-west-1", options.Region);
+            Assert.Same(credentials, options.Credentials);
+            Assert.Equal(5, options.MaxDeliveryAttempts);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenTheRegionIsMissingFromConfigurationAndCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string>());
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseAmazonSqs(configuration.GetSection("Obvs:Orders:AmazonSqs"), options => options.Credentials = new AnonymousAWSCredentials())
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("Obvs:Orders:AmazonSqs:Region", error);
+        }
+
+        [Fact]
         public void ShouldKeepEachServicesOptionsApart()
         {
             using var host = BuildHost(services => services.AddObvs(obvs => obvs

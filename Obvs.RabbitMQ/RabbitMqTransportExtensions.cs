@@ -21,6 +21,15 @@ namespace Obvs.Hosting
         /// </summary>
         public static ObvsServiceBuilder UseRabbitMq(this ObvsServiceBuilder service, IConfiguration configuration)
         {
+            return UseRabbitMq(service, configuration, options => { });
+        }
+
+        /// <summary>
+        /// Carries this service's messages over RabbitMQ, with settings bound from <paramref name="configuration"/>, then
+        /// changed by <paramref name="configure"/>, for example to set a URI read from a secret store.
+        /// </summary>
+        public static ObvsServiceBuilder UseRabbitMq(this ObvsServiceBuilder service, IConfiguration configuration, Action<RabbitMqOptions> configure)
+        {
             if (service == null)
             {
                 throw new ArgumentNullException(nameof(service));
@@ -29,8 +38,12 @@ namespace Obvs.Hosting
             {
                 throw new ArgumentNullException(nameof(configuration));
             }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
 
-            service.Services.AddOptions<RabbitMqOptions>(service.Name).Bind(configuration);
+            service.Services.AddOptions<RabbitMqOptions>(service.Name).Bind(configuration).Configure(configure);
             var uriKey = configuration is IConfigurationSection section ? section.Path + ":Uri" : "Uri";
             return UseRabbitMq(service, $"configuration key {uriKey}");
         }

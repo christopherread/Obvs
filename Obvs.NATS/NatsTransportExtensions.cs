@@ -22,6 +22,16 @@ namespace Obvs.Hosting
         /// </summary>
         public static ObvsServiceBuilder UseNats(this ObvsServiceBuilder service, IConfiguration configuration)
         {
+            return UseNats(service, configuration, options => { });
+        }
+
+        /// <summary>
+        /// Carries this service's messages over NATS, with settings bound from <paramref name="configuration"/>, then
+        /// changed by <paramref name="configure"/>, for example to set a URL read from a secret store. Each service on
+        /// each bus gets its own connection.
+        /// </summary>
+        public static ObvsServiceBuilder UseNats(this ObvsServiceBuilder service, IConfiguration configuration, Action<NatsOptions> configure)
+        {
             if (service == null)
             {
                 throw new ArgumentNullException(nameof(service));
@@ -30,8 +40,12 @@ namespace Obvs.Hosting
             {
                 throw new ArgumentNullException(nameof(configuration));
             }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
 
-            service.Services.AddOptions<NatsOptions>(service.Name).Bind(configuration);
+            service.Services.AddOptions<NatsOptions>(service.Name).Bind(configuration).Configure(configure);
             var urlKey = configuration is IConfigurationSection section ? section.Path + ":Url" : "Url";
             return UseNats(service, $"configuration key {urlKey}");
         }

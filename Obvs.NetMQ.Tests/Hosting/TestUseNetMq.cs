@@ -49,6 +49,41 @@ namespace Obvs.NetMQ.Tests.Hosting
         }
 
         [Fact]
+        public void ShouldBindOptionsFromConfigurationThenConfigureThemInCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:Orders:NetMq:Address"] = "tcp://orders.example",
+                ["Obvs:Orders:NetMq:Port"] = "5555",
+            });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseNetMq(configuration.GetSection("Obvs:Orders:NetMq"), options =>
+                {
+                    options.Port = 6666;
+                    options.SendHeaders = true;
+                }))));
+
+            var options = host.Services.GetRequiredService<IOptionsMonitor<NetMqOptions>>().Get("orders");
+            Assert.Equal("tcp://orders.example", options.Address);
+            Assert.Equal(6666, options.Port);
+            Assert.True(options.SendHeaders);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenTheAddressIsMissingFromConfigurationAndCode()
+        {
+            var configuration = Configuration(new Dictionary<string, string>());
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseNetMq(configuration.GetSection("Obvs:Orders:NetMq"), options => options.Port = 5555))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("Obvs:Orders:NetMq:Address", error);
+        }
+
+        [Fact]
         public void ShouldNotSendHeadersUnlessAsked()
         {
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
