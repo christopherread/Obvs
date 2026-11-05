@@ -83,7 +83,7 @@ namespace Obvs.Transports
             _requestPublisher = requestPublisher;
             _commandPublisher = commandPublisher;
             _serviceType = serviceType.GetTypeInfo();
-            _name = string.Format("{0}[{1}]", GetType().GetTypeInfo().GetSimpleName(), _serviceType.Name);
+            _name = string.Format("{0}[{1}]", GetType().GetSimpleName(), _serviceType.Name);
         }
 
         /// <inheritdoc />

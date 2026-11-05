@@ -30,6 +30,14 @@ namespace Obvs.Tests
             Assert.True(File.Exists(Path.Combine(Root, package, "PublicAPI.Unshipped.txt")), $"{package} has no PublicAPI.Unshipped.txt");
         }
 
+        [Fact]
+        public void ShouldNotDependOnSystemReflectionEmitLightweight()
+        {
+            // Obvs.ActiveMQ took it for code it no longer has; every framework Obvs targets has what's left of it
+            Assert.DoesNotContain("System.Reflection.Emit.Lightweight", File.ReadAllText(Path.Combine(Root, "Obvs.ActiveMQ", "Obvs.ActiveMQ.csproj")));
+            Assert.DoesNotContain("System.Reflection.Emit.Lightweight", File.ReadAllText(Path.Combine(Root, "Directory.Packages.props")));
+        }
+
         private static string FindRoot()
         {
             var directory = new DirectoryInfo(AppContext.BaseDirectory);
