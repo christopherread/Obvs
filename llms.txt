@@ -1,0 +1,26 @@
+# Obvs
+
+> Obvs is a .NET library for messaging between services. Each service is a set of messages that share an interface: commands (sent to the service), events (published by it), and requests and responses. Configure the bus with `services.AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service.UseRabbitMq(...)))`, handle messages with `HandleCommand`, `HandleEvent` and `HandleRequest`, send with `IServiceBusClient.SendAsync` and `RequestAsync`, and read the Rx streams `Commands`, `Events` and `Requests` for anything more. Transports: RabbitMQ, Kafka, NATS and NATS JetStream, ActiveMQ, Azure Service Bus, Amazon SQS and SNS, NetMQ. Serialization is System.Text.Json unless a service says otherwise.
+
+Key types: `IServiceBus` and `IServiceBusClient` (the bus), `ObvsServiceBuilder` (a service's configuration), `MessageContext` (what a handler gets), `ObvsTestHarness` (tests), `ObvsContracts` (a service's AsyncAPI contract), `ObvsBus` (a bus without a host).
+
+## Docs
+
+- [README](https://github.com/christopherread/Obvs/blob/master/README.md): what Obvs is, and a quick start
+- [Common tasks](https://github.com/christopherread/Obvs/blob/master/docs/common-tasks.md): define messages, add a service, handle and send commands, events, requests, errors, tests, tracing, without a host
+- [Testing](https://github.com/christopherread/Obvs/blob/master/docs/testing.md): the in-memory transport and test harness
+- [Configuration errors](https://github.com/christopherread/Obvs/blob/master/docs/configuration-errors.md): every startup check, and its fix
+- [Analyzers](https://github.com/christopherread/Obvs/blob/master/docs/analyzers.md): OBVS001 to OBVS006
+- [Contracts](https://github.com/christopherread/Obvs/blob/master/docs/contracts.md): AsyncAPI documents, and catching breaking changes
+- [MCP server](https://github.com/christopherread/Obvs/blob/master/docs/mcp.md): inspect and drive a development bus from an agent
+- [Migrating from v6](https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md)
+
+## Transports
+
+- [Kafka](https://github.com/christopherread/Obvs/blob/master/docs/transports/kafka.md), on [Confluent Cloud](https://github.com/christopherread/Obvs/blob/master/docs/transports/kafka-confluent-cloud.md), [Amazon MSK](https://github.com/christopherread/Obvs/blob/master/docs/transports/kafka-amazon-msk.md) and [Azure Event Hubs](https://github.com/christopherread/Obvs/blob/master/docs/transports/kafka-azure-event-hubs.md)
+- [Amazon SQS and SNS](https://github.com/christopherread/Obvs/blob/master/docs/transports/amazon-sqs.md)
+
+## Optional
+
+- [Design for v7](https://github.com/christopherread/Obvs/blob/master/docs/v7-design.md)
+- [Working on Obvs](https://github.com/christopherread/Obvs/blob/master/AGENTS.md): build, tests and conventions
