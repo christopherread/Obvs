@@ -1,0 +1,82 @@
+Obvs.Hosting.KafkaTransportExtensions
+Obvs.Kafka.Configuration.KafkaConfiguration
+Obvs.Kafka.Configuration.KafkaConfiguration.BootstrapServers.get -> string
+Obvs.Kafka.Configuration.KafkaConfiguration.KafkaConfiguration(params System.Net.IPEndPoint[] bootstrapServers) -> void
+Obvs.Kafka.Configuration.KafkaConfiguration.KafkaConfiguration(string bootstrapServers) -> void
+Obvs.Kafka.Configuration.KafkaProducerConfiguration
+Obvs.Kafka.Configuration.KafkaProducerConfiguration.BatchFlushSize.get -> int
+Obvs.Kafka.Configuration.KafkaProducerConfiguration.BatchFlushSize.set -> void
+Obvs.Kafka.Configuration.KafkaProducerConfiguration.KafkaProducerConfiguration() -> void
+Obvs.Kafka.Configuration.KafkaServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>
+Obvs.Kafka.Configuration.KafkaServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.KafkaServiceEndpointProvider(string serviceName, Obvs.Kafka.Configuration.KafkaConfiguration kafkaConfiguration, Obvs.Kafka.Configuration.KafkaSourceConfiguration sourceConfiguration, Obvs.Kafka.Configuration.KafkaProducerConfiguration producerConfiguration, Obvs.Serialization.IMessageSerializer serializer, Obvs.Serialization.IMessageDeserializerFactory deserializerFactory, System.Func<System.Collections.Generic.Dictionary<string, string>, bool> propertyFilter, System.Func<TMessage, System.Collections.Generic.Dictionary<string, string>> propertyProvider, System.Func<System.Reflection.Assembly, bool> assemblyFilter = null, System.Func<System.Type, bool> typeFilter = null, string instanceId = null) -> void
+Obvs.Kafka.Configuration.KafkaSourceConfiguration
+Obvs.Kafka.Configuration.KafkaSourceConfiguration.FetchMaxBytes.get -> int?
+Obvs.Kafka.Configuration.KafkaSourceConfiguration.FetchMaxBytes.set -> void
+Obvs.Kafka.Configuration.KafkaSourceConfiguration.FetchMinBytes.get -> int?
+Obvs.Kafka.Configuration.KafkaSourceConfiguration.FetchMinBytes.set -> void
+Obvs.Kafka.Configuration.KafkaSourceConfiguration.KafkaSourceConfiguration() -> void
+Obvs.Kafka.Configuration.PublisherFactory
+Obvs.Kafka.Configuration.SourceFactory
+Obvs.Kafka.ConsumerValueDeserializer<T>
+Obvs.Kafka.ConsumerValueDeserializer<T>.ConsumerValueDeserializer() -> void
+Obvs.Kafka.ConsumerValueDeserializer<T>.Deserialize(System.ReadOnlySpan<byte> data, bool isNull, Confluent.Kafka.SerializationContext context) -> T
+Obvs.Kafka.KafkaOAuthBearerToken
+Obvs.Kafka.KafkaOAuthBearerToken.ExpiresAt.get -> System.DateTimeOffset
+Obvs.Kafka.KafkaOAuthBearerToken.Extensions.get -> System.Collections.Generic.IDictionary<string, string>
+Obvs.Kafka.KafkaOAuthBearerToken.Extensions.set -> void
+Obvs.Kafka.KafkaOAuthBearerToken.KafkaOAuthBearerToken(string value, System.DateTimeOffset expiresAt) -> void
+Obvs.Kafka.KafkaOAuthBearerToken.PrincipalName.get -> string
+Obvs.Kafka.KafkaOAuthBearerToken.PrincipalName.set -> void
+Obvs.Kafka.KafkaOAuthBearerToken.Value.get -> string
+Obvs.Kafka.KafkaOptions
+Obvs.Kafka.KafkaOptions.BootstrapServers.get -> string
+Obvs.Kafka.KafkaOptions.BootstrapServers.set -> void
+Obvs.Kafka.KafkaOptions.EnableSslCertificateVerification.get -> bool?
+Obvs.Kafka.KafkaOptions.EnableSslCertificateVerification.set -> void
+Obvs.Kafka.KafkaOptions.KafkaOptions() -> void
+Obvs.Kafka.KafkaOptions.OAuthBearerTokenProvider.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<Obvs.Kafka.KafkaOAuthBearerToken>>
+Obvs.Kafka.KafkaOptions.OAuthBearerTokenProvider.set -> void
+Obvs.Kafka.KafkaOptions.SaslMechanism.get -> string
+Obvs.Kafka.KafkaOptions.SaslMechanism.set -> void
+Obvs.Kafka.KafkaOptions.SaslPassword.get -> string
+Obvs.Kafka.KafkaOptions.SaslPassword.set -> void
+Obvs.Kafka.KafkaOptions.SaslUsername.get -> string
+Obvs.Kafka.KafkaOptions.SaslUsername.set -> void
+Obvs.Kafka.KafkaOptions.SecurityProtocol.get -> string
+Obvs.Kafka.KafkaOptions.SecurityProtocol.set -> void
+Obvs.Kafka.KafkaOptions.SslCaLocation.get -> string
+Obvs.Kafka.KafkaOptions.SslCaLocation.set -> void
+Obvs.Kafka.KafkaOptions.SslCaPem.get -> string
+Obvs.Kafka.KafkaOptions.SslCaPem.set -> void
+Obvs.Kafka.KafkaOptions.SslCertificateLocation.get -> string
+Obvs.Kafka.KafkaOptions.SslCertificateLocation.set -> void
+Obvs.Kafka.KafkaOptions.SslKeyLocation.get -> string
+Obvs.Kafka.KafkaOptions.SslKeyLocation.set -> void
+Obvs.Kafka.KafkaOptions.SslKeyPassword.get -> string
+Obvs.Kafka.KafkaOptions.SslKeyPassword.set -> void
+Obvs.Kafka.MessagePublisher<TMessage>
+Obvs.Kafka.MessagePublisher<TMessage>.Dispose() -> void
+Obvs.Kafka.MessagePublisher<TMessage>.MessagePublisher(Obvs.Kafka.Configuration.KafkaConfiguration kafkaConfiguration, Obvs.Kafka.Configuration.KafkaProducerConfiguration producerConfig, string topic, Obvs.Serialization.IMessageSerializer serializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, string>> propertyProvider) -> void
+Obvs.Kafka.MessagePublisher<TMessage>.PublishAsync(TMessage message, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.Kafka.MessageSource<TMessage>
+Obvs.Kafka.MessageSource<TMessage>.Dispose() -> void
+Obvs.Kafka.MessageSource<TMessage>.Messages.get -> System.IObservable<TMessage>
+Obvs.Kafka.MessageSource<TMessage>.MessageSource(Obvs.Kafka.Configuration.KafkaConfiguration kafkaConfig, Obvs.Kafka.Configuration.KafkaSourceConfiguration sourceConfig, string topicName, System.Collections.Generic.IEnumerable<Obvs.Serialization.IMessageDeserializer<TMessage>> deserializers, System.Func<System.Collections.Generic.Dictionary<string, string>, bool> propertyFilter, string groupId = null) -> void
+Obvs.Kafka.ProducerValueSerializer<T>
+Obvs.Kafka.ProducerValueSerializer<T>.ProducerValueSerializer() -> void
+Obvs.Kafka.ProducerValueSerializer<T>.Serialize(T data, Confluent.Kafka.SerializationContext context) -> byte[]
+Obvs.Kafka.WrapperMessage
+Obvs.Kafka.WrapperMessage.Payload.get -> byte[]
+Obvs.Kafka.WrapperMessage.Payload.set -> void
+Obvs.Kafka.WrapperMessage.PayloadType.get -> string
+Obvs.Kafka.WrapperMessage.PayloadType.set -> void
+Obvs.Kafka.WrapperMessage.Properties.get -> System.Collections.Generic.Dictionary<string, string>
+Obvs.Kafka.WrapperMessage.Properties.set -> void
+Obvs.Kafka.WrapperMessage.WrapperMessage() -> void
+override Obvs.Kafka.Configuration.KafkaServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpoint() -> Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
+override Obvs.Kafka.Configuration.KafkaServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpointClient() -> Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>
+static Obvs.Hosting.KafkaTransportExtensions.UseKafka(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Hosting.KafkaTransportExtensions.UseKafka(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration, System.Action<Obvs.Kafka.KafkaOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Hosting.KafkaTransportExtensions.UseKafka(this Obvs.Hosting.ObvsServiceBuilder service, System.Action<Obvs.Kafka.KafkaOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Kafka.Configuration.PublisherFactory.CreatePublisher<TMessage>(Obvs.Kafka.Configuration.KafkaConfiguration kafkaConfiguration, Obvs.Kafka.Configuration.KafkaProducerConfiguration producerConfiguration, string topic, Obvs.Serialization.IMessageSerializer messageSerializer, System.Reactive.Concurrency.IScheduler scheduler, System.Func<TMessage, System.Collections.Generic.Dictionary<string, string>> propertyProvider) -> Obvs.Kafka.MessagePublisher<TMessage>
+static Obvs.Kafka.Configuration.SourceFactory.Create<TMessage, TServiceMessage>(Obvs.Kafka.Configuration.KafkaConfiguration kafkaConfiguration, Obvs.Kafka.Configuration.KafkaSourceConfiguration sourceConfiguration, string topic, Obvs.Serialization.IMessageDeserializerFactory deserializerFactory, System.Func<System.Collections.Generic.Dictionary<string, string>, bool> propertyFilter, System.Func<System.Reflection.Assembly, bool> assemblyFilter = null, System.Func<System.Type, bool> typeFilter = null, string groupId = null) -> Obvs.Kafka.MessageSource<TMessage>

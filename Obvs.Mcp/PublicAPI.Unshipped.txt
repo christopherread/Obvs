@@ -1,0 +1,14 @@
+Microsoft.AspNetCore.Builder.ObvsMcpEndpointRouteBuilderExtensions
+Microsoft.Extensions.DependencyInjection.ObvsMcpServiceCollectionExtensions
+Obvs.Mcp.ObvsMcpOptions
+Obvs.Mcp.ObvsMcpOptions.AllowOutsideDevelopment.get -> bool
+Obvs.Mcp.ObvsMcpOptions.AllowOutsideDevelopment.set -> void
+Obvs.Mcp.ObvsMcpOptions.AllowSending.get -> bool
+Obvs.Mcp.ObvsMcpOptions.AllowSending.set -> void
+Obvs.Mcp.ObvsMcpOptions.ObvsMcpOptions() -> void
+Obvs.Mcp.ObvsMcpOptions.RecentErrors.get -> int
+Obvs.Mcp.ObvsMcpOptions.RecentErrors.set -> void
+Obvs.Mcp.ObvsMcpOptions.RecentMessages.get -> int
+Obvs.Mcp.ObvsMcpOptions.RecentMessages.set -> void
+static Microsoft.AspNetCore.Builder.ObvsMcpEndpointRouteBuilderExtensions.MapObvsMcp(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder endpoints, string pattern = "/obvs/mcp") -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder
+static Microsoft.Extensions.DependencyInjection.ObvsMcpServiceCollectionExtensions.AddObvsMcp(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Obvs.Mcp.ObvsMcpOptions> configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
