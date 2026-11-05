@@ -26,6 +26,13 @@
         <!-- The bus's overloads each take an optional CancellationToken, as the Azure SDK's do, and TestPublicApi pins them -->
         <NoWarn>$(NoWarn);RS0026</NoWarn>
     </PropertyGroup>
+    <!-- Apps can publish as a single file, where assemblies have no location and no dependency context: the analyzer
+         flags code that relies on either. It runs on net10.0, as it can't on .NET Framework and .NET Standard. A project
+         with one target framework sets it after this file, so its TargetFramework is still empty here. -->
+    <PropertyGroup Condition="'$(IsObvsPackage)' == 'true' And ('$(TargetFramework)' == '' Or $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')))">
+        <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+        <WarningsAsErrors>$(WarningsAsErrors);IL3000;IL3001;IL3002</WarningsAsErrors>
+    </PropertyGroup>
     <ItemGroup Condition="'$(IsObvsPackage)' == 'true'">
         <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all"/>
         <AdditionalFiles Include="PublicAPI.Shipped.txt;PublicAPI.Unshipped.txt"/>
