@@ -4,26 +4,54 @@
     <meta charset="UTF-8">
     <title>What's new in Obvs v7</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <meta name="description" content="Obvs v7: hosting through dependency injection, handlers, awaitable requests, new transports, OpenTelemetry, a test kit and analyzers.">
+    <meta property="og:title" content="What's new in Obvs v7">
+    <meta property="og:description" content="Commands, events, requests and responses over RabbitMQ, Kafka, NATS, ActiveMQ, Azure Service Bus or Amazon SQS, with handlers, awaitable requests and Reactive Extensions streams.">
+    <link rel="icon" href="images/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="stylesheets/site.css">
   </head>
   <body>
-    <section class="page-header">
-      <h1 class="project-name">Obvs</h1>
-      <h2 class="project-tagline">A .NET library for messaging between services: commands, events, requests and responses over RabbitMQ, Kafka, NATS, ActiveMQ, Azure Service Bus or Amazon SQS, with handlers, awaitable requests and Reactive Extensions streams.</h2>
-      <a href="https://github.com/christopherread/Obvs" class="btn">View on GitHub</a>
-      <a href="https://www.nuget.org/packages?q=obvs" class="btn">Packages on NuGet</a>
-      <a href="v7.html" class="btn">What's new in v7</a>
+    <header class="nav">
+      <div class="container">
+        <a class="brand" href="./">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0e9f8e"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#g)"/><path d="M8 11h16M8 21h16" stroke="#fff" stroke-opacity=".45" stroke-width="2" stroke-linecap="round"/><circle cx="11" cy="11" r="3" fill="#fff"/><circle cx="21" cy="21" r="3" fill="#fff"/><path d="M11 11l10 10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+          Obvs
+        </a>
+        <nav class="nav-links">
+          <a href="./#quick-start" class="hide-sm">Quick start</a>
+          <a href="./#docs" class="hide-sm">Docs</a>
+          <a href="v7.html">What's new in v7</a>
+          <a href="https://github.com/christopherread/Obvs" class="github" aria-label="Obvs on GitHub">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+            <span class="hide-sm">GitHub</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero compact">
+      <div class="container narrow">
+        <div>
+          <a class="back" href="./">← Obvs</a>
+          <p class="eyebrow" style="color:#5eead4">Release notes</p>
+          <h1>What's new in <span class="gradient-text">v7</span></h1>
+          <p class="lede">v7 makes Obvs a library you host, test and observe the way you do the rest of a modern .NET app. The Rx streams that were v6's whole API are still there, and v6 and v7 apps work together on the same broker, so you can move one app at a time.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md">Migration guide</a>
+            <a class="btn btn-ghost" href="#before-and-after">Before and after</a>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section class="main-content">
-<h2 id="whats-new">What's new in v7</h2>
+    <article class="prose">
+      <div class="container narrow">
+<h2 id="whats-new">Highlights</h2>
 
-<p>v7 makes Obvs a library you host, test and observe the way you do the rest of a modern .NET app. The Rx streams that were v6's whole API are still there; most of what's new is additive, and v6 and v7 apps work together on the same broker, so you can move one app at a time.</p>
-
-<ul>
+<ul class="highlights">
 <li><strong>Hosting through dependency injection.</strong> <code>services.AddObvs(...)</code> configures the bus, and <code>IServiceBus</code> and <code>IServiceBusClient</code> come from the container. The bus starts and stops with the host. Its configuration is checked at startup, and every problem is reported in one <code>ObvsConfigurationException</code>, each saying how to fix it. Without a host, <code>ObvsBus.StartAsync(...)</code> does the same.</li>
 <li><strong>Every transport configured the same way</strong>: <code>UseRabbitMq</code>, <code>UseKafka</code>, <code>UseNats</code>, <code>UseNatsJetStream</code>, <code>UseActiveMq</code>, <code>UseAzureServiceBus</code> and <code>UseAmazonSqs</code>, each with an options class, from configuration or code.</li>
 <li><strong>New transports.</strong> Azure Service Bus and Amazon SQS and SNS, where a service's instances share its command and request queues, each bus has its own subscription to events, and messages are settled after their handler: completed, delivered again on failure, and dead-lettered after <code>MaxDeliveryAttempts</code>. NATS JetStream works the same way. Kafka supports Confluent Cloud, Amazon MSK and Azure Event Hubs.</li>
@@ -37,8 +65,11 @@
 
 <h2 id="before-and-after">Before and after</h2>
 
-<p>v6:</p>
+<p>Configuring the bus:</p>
 
+<div class="compare">
+  <div class="window">
+    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="label v6">v6</span></div>
 <pre><code class="language-csharp">IServiceBus bus = ServiceBus.Configure()
     .WithRabbitMQEndpoints&lt;IOrderMessage&gt;()
         .Named(&quot;orders&quot;)
@@ -47,20 +78,29 @@
         .AsClientAndServer()
     .UsingConsoleLogging()
     .Create();</code></pre>
-
-<pre><code class="language-csharp">bus.Commands.OfType&lt;PlaceOrder&gt;().Subscribe(async command =&gt;
-{
-    await bus.PublishAsync(new OrderPlaced(command.OrderId));
-});</code></pre>
-
-<p>v7:</p>
-
+  </div>
+  <div class="window">
+    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="label v7">v7</span></div>
 <pre><code class="language-csharp">builder.Services.AddObvs(obvs =&gt; obvs
     .AddService&lt;IOrderMessage&gt;(&quot;orders&quot;, service =&gt; service
         .UseRabbitMq(options =&gt; options.Uri = new Uri(&quot;amqp://localhost:5672&quot;))));
 
 // IServiceBus and IServiceBusClient are in the container. The bus starts with the host.</code></pre>
+  </div>
+</div>
 
+<p>Handling a command:</p>
+
+<div class="compare">
+  <div class="window">
+    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="label v6">v6</span></div>
+<pre><code class="language-csharp">bus.Commands.OfType&lt;PlaceOrder&gt;().Subscribe(async command =&gt;
+{
+    await bus.PublishAsync(new OrderPlaced(command.OrderId));
+});</code></pre>
+  </div>
+  <div class="window">
+    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="label v7">v7</span></div>
 <pre><code class="language-csharp">service.HandleCommand&lt;PlaceOrder&gt;(async (command, context, ct) =&gt;
 {
     await context.PublishAsync(new OrderPlaced(command.OrderId), ct);
@@ -68,29 +108,51 @@
 
 // Or a class from the container
 service.HandleCommand&lt;PlaceOrder, PlaceOrderHandler&gt;();</code></pre>
+  </div>
+</div>
 
-<p>Requests, in v6 and v7:</p>
+<p>Making a request. The v6 way still works in v7, and a request that names its response, as <code>GetQuote : IRequest&lt;Quote&gt;</code> does, can be awaited:</p>
 
+<div class="compare">
+  <div class="window">
+    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="label v6">v6 and v7</span></div>
 <pre><code class="language-csharp">var quote = await bus.GetResponses(new GetQuote(&quot;sku-1&quot;))
     .OfType&lt;Quote&gt;().Take(1).Timeout(TimeSpan.FromSeconds(5)).ToTask();</code></pre>
-
-<p>In v7, a request that names its response, as <code>GetQuote : IRequest&lt;Quote&gt;</code> does, can be awaited:</p>
-
-<pre><code class="language-csharp">var quote = await client.RequestAsync(new GetQuote(&quot;sku-1&quot;), TimeSpan.FromSeconds(5), ct);</code></pre>
+  </div>
+  <div class="window">
+    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="label v7">v7</span></div>
+<pre><code class="language-csharp">var quote = await client.RequestAsync(
+    new GetQuote(&quot;sku-1&quot;), TimeSpan.FromSeconds(5), ct);</code></pre>
+  </div>
+</div>
 
 <h2 id="what-changed">What changed since v6</h2>
 
-<ul>
-<li><strong>Configuration.</strong> <code>ServiceBus.Configure()</code> still works for v6 apps, and is marked obsolete in favour of <code>AddObvs</code>.</li>
+<ul class="plain">
+<li><strong>Configuration.</strong> <code>ServiceBus.Configure()</code> and each transport's fluent configuration are gone: use <code>AddObvs</code> and <code>Use&lt;Transport&gt;(...)</code>, or <code>ObvsBus.StartAsync(...)</code> without a host.</li>
 <li><strong>Packages.</strong> The MsgPack.Cli, NetJSON, XML and YAML serializers, <code>Obvs.Monitoring.*</code> and <code>Obvs.Logging.NLog</code> stay on v6: use System.Text.Json, OpenTelemetry and <code>Microsoft.Extensions.Logging</code>. <code>Obvs.Serialization.MessagePack</code> is now MessagePack-CSharp.</li>
 <li><strong>Target frameworks</strong>: net472, netstandard2.0 and net10.0.</li>
 </ul>
 
-<p>The <a href="https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md">migration guide</a> has the details: before and after for each change, and what v6 and v7 apps on one broker share.</p>
+<div class="callout">
+  <p>The <a href="https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md">migration guide</a> has the details: before and after for each change, and what v6 and v7 apps on one broker share.</p>
+</div>
+      </div>
+    </article>
 
-      <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/christopherread/Obvs">Obvs</a> is maintained by <a href="https://github.com/christopherread">christopherread</a>.</span>
-      </footer>
-    </section>
+    <footer class="site">
+      <div class="container">
+        <span><a href="https://github.com/christopherread/Obvs">Obvs</a> is maintained by <a href="https://github.com/christopherread">christopherread</a>.</span>
+        <nav>
+          <a href="https://github.com/christopherread/Obvs">GitHub</a>
+          <a href="https://www.nuget.org/packages?q=obvs">NuGet</a>
+          <a href="v7.html">What's new in v7</a>
+          <a href="llms.txt">llms.txt</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="javascripts/main.js"></script>
   </body>
 </html>
