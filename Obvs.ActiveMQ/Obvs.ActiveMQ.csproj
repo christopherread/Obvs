@@ -12,7 +12,6 @@
   <ItemGroup>
     <PackageReference Include="Apache.NMS.ActiveMQ" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
-    <PackageReference Include="System.Reflection.Emit.Lightweight" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Obvs\Obvs.csproj" />

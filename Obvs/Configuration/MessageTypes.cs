@@ -69,7 +69,7 @@ namespace Obvs.Configuration
                 .Where(assemblyFilter)
                 .SelectMany(GetTypes)
                 .Where(typeFilter)
-                .Where(t => t.GetTypeInfo().IsValidMessageType<TMessage, TServiceMessage>())
+                .Where(t => t.IsValidMessageType<TMessage, TServiceMessage>())
                 .ToArray();
 
             EnsureTypesAreVisible(types);

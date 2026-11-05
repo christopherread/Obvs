@@ -277,9 +277,9 @@ static Obvs.Configuration.RequesterId.Create() -> string
 static Obvs.Extensions.EndpointExtensions.CommandsWithErrorHandling<TMessage, TCommand, TEvent, TRequest, TResponse>(this Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint, System.IObserver<System.Exception> exceptions) -> System.IObservable<TCommand>
 static Obvs.Extensions.EndpointExtensions.EventsWithErrorHandling<TMessage, TCommand, TEvent, TRequest, TResponse>(this Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint, System.IObserver<System.Exception> exceptions) -> System.IObservable<TEvent>
 static Obvs.Extensions.EndpointExtensions.RequestsWithErrorHandling<TMessage, TCommand, TEvent, TRequest, TResponse>(this Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> endpoint, System.IObserver<System.Exception> exceptions) -> System.IObservable<TRequest>
-static Obvs.Extensions.TypeExtensions.GetSimpleName(this System.Reflection.TypeInfo t) -> string
-static Obvs.Extensions.TypeExtensions.HasDefaultConstructor(this System.Reflection.TypeInfo type) -> bool
-static Obvs.Extensions.TypeExtensions.IsValidMessageType<TMessage, TServiceMessage>(this System.Reflection.TypeInfo type) -> bool
+static Obvs.Extensions.TypeExtensions.GetSimpleName(this System.Type t) -> string
+static Obvs.Extensions.TypeExtensions.HasDefaultConstructor(this System.Type type) -> bool
+static Obvs.Extensions.TypeExtensions.IsValidMessageType<TMessage, TServiceMessage>(this System.Type type) -> bool
 static Obvs.Hosting.ObvsBus.StartAsync(System.Action<Microsoft.Extensions.DependencyInjection.IServiceCollection> configureServices, System.Action<Obvs.Hosting.ObvsBuilder> configure, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Obvs.Hosting.ObvsBus>
 static Obvs.Hosting.ObvsBus.StartAsync(System.Action<Obvs.Hosting.ObvsBuilder> configure, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Obvs.Hosting.ObvsBus>
 static Obvs.Hosting.ObvsContractComparer.FindBreakingChanges(string before, string after) -> System.Collections.Generic.IReadOnlyList<string>
