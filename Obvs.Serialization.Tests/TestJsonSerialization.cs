@@ -73,5 +73,22 @@ namespace Obvs.Serialization.Tests
 
             Assert.Equal(message, deserialize);
         }
+
+        [Fact]
+        public void ShouldNotShipACopyOfArrayPool()
+        {
+            // v6 shipped a copy of System.Buffers' ArrayPool<T>; v7 pools Newtonsoft's buffers with .NET's own
+            Assert.DoesNotContain(typeof(JsonMessageSerializer).Assembly.GetTypes(), type => type.Name.StartsWith("ArrayPool") || type.Namespace == "Obvs.Serialization.Json.Utils");
+        }
+
+        [Fact]
+        public void ShouldRoundTripAMessageLargerThanOnePooledBuffer()
+        {
+            IMessageSerializer serializer = new JsonMessageSerializer();
+            IMessageDeserializer<TestMessageProto> deserializer = new JsonMessageDeserializer<TestMessageProto>();
+            var message = new TestMessageProto { Id = 123, Name = new string('x', 100_000) };
+
+            Assert.Equal(message, deserializer.Deserialize(serializer.Serialize(message)));
+        }
     }
 }

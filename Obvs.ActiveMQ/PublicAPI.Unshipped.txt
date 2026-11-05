@@ -1,6 +1,3 @@
-const Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.DefaultBlockSize = 131072 -> int
-const Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.DefaultLargeBufferMultiple = 1048576 -> int
-const Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.DefaultMaximumBufferSize = 134217728 -> int
 Obvs.ActiveMQ.AcknowledgementMode
 Obvs.ActiveMQ.AcknowledgementMode.AutoAcknowledge = 0 -> Obvs.ActiveMQ.AcknowledgementMode
 Obvs.ActiveMQ.AcknowledgementMode.ClientAcknowledge = 1 -> Obvs.ActiveMQ.AcknowledgementMode
@@ -26,120 +23,22 @@ Obvs.ActiveMQ.MessageSource<TMessage>
 Obvs.ActiveMQ.MessageSource<TMessage>.Dispose() -> void
 Obvs.ActiveMQ.MessageSource<TMessage>.Messages.get -> System.IObservable<TMessage>
 Obvs.ActiveMQ.MessageSource<TMessage>.MessageSource(System.Lazy<Apache.NMS.IConnection> lazyConnection, System.Collections.Generic.IEnumerable<Obvs.Serialization.IMessageDeserializer<TMessage>> deserializers, Apache.NMS.IDestination destination, Obvs.ActiveMQ.AcknowledgementMode mode = Obvs.ActiveMQ.AcknowledgementMode.AutoAcknowledge, string selector = null, System.Func<System.Collections.IDictionary, bool> propertyFilter = null, bool noLocal = false) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.RecyclableMemoryStream(Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager memoryManager) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.RecyclableMemoryStream(Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager memoryManager, string tag) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.RecyclableMemoryStream(Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager memoryManager, string tag, int requestedSize) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.SafeRead(byte[] buffer, int offset, int count, ref int streamPosition) -> int
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.SafeReadByte(ref int streamPosition) -> int
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.AggressiveBufferReturn.get -> bool
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.AggressiveBufferReturn.set -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.BlockCreated -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.EventHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.BlockDiscarded -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.EventHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.BlockSize.get -> int
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.EventHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.Events() -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamBufferType
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamBufferType.Large = 1 -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamBufferType
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamBufferType.Small = 0 -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamBufferType
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamCreated(System.Guid guid, string tag, int requestedSize) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamDiscardBuffer(Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamBufferType bufferType, string tag, Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamDiscardReason reason) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamDiscardReason
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamDiscardReason.EnoughFree = 1 -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamDiscardReason
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamDiscardReason.TooLarge = 0 -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamDiscardReason
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamDisposed(System.Guid guid, string tag) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamDoubleDispose(System.Guid guid, string tag, string allocationStack, string disposeStack1, string disposeStack2) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamFinalized(System.Guid guid, string tag, string allocationStack) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamManagerInitialized(int blockSize, int largeBufferMultiple, int maximumBufferSize) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamNewBlockCreated(long smallPoolInUseBytes) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamNewLargeBufferCreated(int requiredSize, long largePoolInUseBytes) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamNonPooledLargeBufferCreated(int requiredSize, string tag, string allocationStack) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamOverCapacity(int requestedCapacity, long maxCapacity, string tag, string allocationStack) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamToArray(System.Guid guid, string tag, string stack, int size) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.GenerateCallStacks.get -> bool
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.GenerateCallStacks.set -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.GetStream() -> System.IO.MemoryStream
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.GetStream(string tag) -> System.IO.MemoryStream
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.GetStream(string tag, byte[] buffer, int offset, int count) -> System.IO.MemoryStream
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.GetStream(string tag, int requiredSize) -> System.IO.MemoryStream
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.GetStream(string tag, int requiredSize, bool asContiguousBuffer) -> System.IO.MemoryStream
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.LargeBufferCreated -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.EventHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.LargeBufferDiscarded -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.LargeBufferDiscardedEventHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.LargeBufferDiscardedEventHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.LargeBufferMultiple.get -> int
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.LargeBuffersFree.get -> long
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.LargePoolFreeSize.get -> long
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.LargePoolInUseSize.get -> long
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.MaximumBufferSize.get -> int
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.MaximumFreeLargePoolBytes.get -> long
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.MaximumFreeLargePoolBytes.set -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.MaximumFreeSmallPoolBytes.get -> long
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.MaximumFreeSmallPoolBytes.set -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.MaximumStreamCapacity.get -> long
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.MaximumStreamCapacity.set -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.RecyclableMemoryStreamManager() -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.RecyclableMemoryStreamManager(int blockSize, int largeBufferMultiple, int maximumBufferSize) -> void
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.SmallBlocksFree.get -> long
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.SmallPoolFreeSize.get -> long
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.SmallPoolInUseSize.get -> long
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.StreamConvertedToArray -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.EventHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.StreamCreated -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.EventHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.StreamDisposed -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.EventHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.StreamFinalized -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.EventHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.StreamLength -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.StreamLengthReportHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.StreamLengthReportHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.UsageReport -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.UsageReportEventHandler
-Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.UsageReportEventHandler
 Obvs.ActiveMQ.TextMessagePublisher<TMessage>
 Obvs.ActiveMQ.TextMessagePublisher<TMessage>.TextMessagePublisher(System.Lazy<Apache.NMS.IConnection> lazyConnection, Apache.NMS.IDestination destination, Obvs.Serialization.IMessageSerializer serializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, object>> propertyProvider, System.Func<TMessage, Apache.NMS.MsgDeliveryMode> deliveryMode = null, System.Func<TMessage, Apache.NMS.MsgPriority> priority = null, System.Func<TMessage, System.TimeSpan> timeToLive = null) -> void
 Obvs.ActiveMQ.TextMessagePublisher<TMessage>.TextMessagePublisher(System.Lazy<Apache.NMS.IConnection> lazyConnection, Apache.NMS.IDestination destination, Obvs.Serialization.IMessageSerializer serializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, object>> propertyProvider, System.Reactive.Concurrency.IScheduler scheduler, System.Func<TMessage, Apache.NMS.MsgDeliveryMode> deliveryMode = null, System.Func<TMessage, Apache.NMS.MsgPriority> priority = null, System.Func<TMessage, System.TimeSpan> timeToLive = null) -> void
 Obvs.ActiveMQ.TextMessagePublisher<TMessage>.TextMessagePublisher(System.Lazy<Apache.NMS.IConnection> lazyConnection, Apache.NMS.IDestination destination, Obvs.Serialization.IMessageSerializer serializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, object>> propertyProvider, System.Threading.Tasks.TaskScheduler taskScheduler, System.Func<TMessage, Apache.NMS.MsgDeliveryMode> deliveryMode = null, System.Func<TMessage, Apache.NMS.MsgPriority> priority = null, System.Func<TMessage, System.TimeSpan> timeToLive = null) -> void
 Obvs.ActiveMQ.TextMessageSource<TMessage>
 Obvs.ActiveMQ.TextMessageSource<TMessage>.TextMessageSource(System.Lazy<Apache.NMS.IConnection> lazyConnection, System.Collections.Generic.IEnumerable<Obvs.Serialization.IMessageDeserializer<TMessage>> deserializers, Apache.NMS.IDestination destination, Obvs.ActiveMQ.AcknowledgementMode mode = Obvs.ActiveMQ.AcknowledgementMode.AutoAcknowledge, string selector = null, System.Text.Encoding encoding = null, System.Func<System.Collections.IDictionary, bool> propertyFilter = null, bool noLocal = false) -> void
-Obvs.ActiveMQ.Utils.LimitedConcurrencyLevelTaskScheduler
-Obvs.ActiveMQ.Utils.LimitedConcurrencyLevelTaskScheduler.LimitedConcurrencyLevelTaskScheduler(int maxDegreeOfParallelism) -> void
 Obvs.Hosting.ActiveMqTransportExtensions
 override Obvs.ActiveMQ.Configuration.ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpoint() -> Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
 override Obvs.ActiveMQ.Configuration.ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpointClient() -> Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.CanRead.get -> bool
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.CanSeek.get -> bool
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.CanTimeout.get -> bool
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.CanWrite.get -> bool
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.Capacity.get -> int
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.Capacity.set -> void
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.Close() -> void
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.GetBuffer() -> byte[]
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.Length.get -> long
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.Position.get -> long
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.Position.set -> void
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.Read(byte[] buffer, int offset, int count) -> int
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.ReadByte() -> int
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.Seek(long offset, System.IO.SeekOrigin loc) -> long
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.SetLength(long value) -> void
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.ToArray() -> byte[]
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.ToString() -> string
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.Write(byte[] buffer, int offset, int count) -> void
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.WriteByte(byte value) -> void
-override Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStream.WriteTo(System.IO.Stream stream) -> void
 override Obvs.ActiveMQ.TextMessagePublisher<TMessage>.GenerateMessage(TMessage message, Apache.NMS.IMessageProducer producer, Obvs.Serialization.IMessageSerializer serializer) -> Apache.NMS.IMessage
 override Obvs.ActiveMQ.TextMessageSource<TMessage>.DeserializeMessage(Apache.NMS.IMessage message, Obvs.Serialization.IMessageDeserializer<TMessage> deserializer) -> TMessage
-override sealed Obvs.ActiveMQ.Utils.LimitedConcurrencyLevelTaskScheduler.GetScheduledTasks() -> System.Collections.Generic.IEnumerable<System.Threading.Tasks.Task>
-override sealed Obvs.ActiveMQ.Utils.LimitedConcurrencyLevelTaskScheduler.MaximumConcurrencyLevel.get -> int
-override sealed Obvs.ActiveMQ.Utils.LimitedConcurrencyLevelTaskScheduler.QueueTask(System.Threading.Tasks.Task task) -> void
-override sealed Obvs.ActiveMQ.Utils.LimitedConcurrencyLevelTaskScheduler.TryDequeue(System.Threading.Tasks.Task task) -> bool
-override sealed Obvs.ActiveMQ.Utils.LimitedConcurrencyLevelTaskScheduler.TryExecuteTaskInline(System.Threading.Tasks.Task task, bool taskWasPreviouslyQueued) -> bool
 static Obvs.ActiveMQ.Configuration.ConnectionClientId.CreateWithSuffix(string uniqueSuffix) -> string
 static Obvs.ActiveMQ.Configuration.DestinationFactory.CreatePublisher<TMessage>(System.Lazy<Apache.NMS.IConnection> lazyConnection, string destination, Apache.NMS.DestinationType destinationType, Obvs.Serialization.IMessageSerializer messageSerializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, object>> propertyProvider, System.Threading.Tasks.TaskScheduler scheduler = null, System.Func<TMessage, Apache.NMS.MsgDeliveryMode> deliveryMode = null, System.Func<TMessage, Apache.NMS.MsgPriority> priority = null, System.Func<TMessage, System.TimeSpan> timeToLive = null) -> Obvs.ActiveMQ.MessagePublisher<TMessage>
 static Obvs.ActiveMQ.Configuration.DestinationFactory.CreateSource<TMessage, TServiceMessage>(System.Lazy<Apache.NMS.IConnection> lazyConnection, string destination, Apache.NMS.DestinationType destinationType, Obvs.Serialization.IMessageDeserializerFactory deserializerFactory, System.Func<System.Collections.IDictionary, bool> propertyFilter, System.Func<System.Reflection.Assembly, bool> assemblyFilter = null, System.Func<System.Type, bool> typeFilter = null, string selector = null, Obvs.ActiveMQ.AcknowledgementMode mode = Obvs.ActiveMQ.AcknowledgementMode.AutoAcknowledge, bool noLocal = false) -> Obvs.ActiveMQ.MessageSource<TMessage>
-static Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.Writer -> Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events
 static Obvs.Hosting.ActiveMqTransportExtensions.UseActiveMq(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration) -> Obvs.Hosting.ObvsServiceBuilder
 static Obvs.Hosting.ActiveMqTransportExtensions.UseActiveMq(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration, System.Action<Obvs.ActiveMQ.ActiveMqOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
 static Obvs.Hosting.ActiveMqTransportExtensions.UseActiveMq(this Obvs.Hosting.ObvsServiceBuilder service, System.Action<Obvs.ActiveMQ.ActiveMqOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
 virtual Obvs.ActiveMQ.MessagePublisher<TMessage>.GenerateMessage(TMessage message, Apache.NMS.IMessageProducer producer, Obvs.Serialization.IMessageSerializer serializer) -> Apache.NMS.IMessage
 virtual Obvs.ActiveMQ.MessageSource<TMessage>.DeserializeMessage(Apache.NMS.IMessage message, Obvs.Serialization.IMessageDeserializer<TMessage> deserializer) -> TMessage
-virtual Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.EventHandler.Invoke() -> void
-virtual Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.LargeBufferDiscardedEventHandler.Invoke(Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.Events.MemoryStreamDiscardReason reason) -> void
-virtual Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.StreamLengthReportHandler.Invoke(long bytes) -> void
-virtual Obvs.ActiveMQ.RecyclableMemoryStream.RecyclableMemoryStreamManager.UsageReportEventHandler.Invoke(long smallPoolInUseBytes, long smallPoolFreeBytes, long largePoolInUseBytes, long largePoolFreeBytes) -> void

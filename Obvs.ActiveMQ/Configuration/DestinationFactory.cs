@@ -13,8 +13,6 @@ using Obvs.Serialization;
 
 namespace Obvs.ActiveMQ.Configuration
 {
-    // Provides a task scheduler that ensures a maximum concurrency level while 
-    // running on top of the thread pool.
     public static class DestinationFactory
     {
         public static MessagePublisher<TMessage> CreatePublisher<TMessage>(
@@ -34,7 +32,7 @@ namespace Obvs.ActiveMQ.Configuration
                 CreateDestination(destination, destinationType),
                 messageSerializer,
                 propertyProvider,
-                scheduler ?? new LimitedConcurrencyLevelTaskScheduler(1),
+                scheduler ?? new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler,
                 deliveryMode, 
                 priority, 
                 timeToLive);
