@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Threading;
@@ -125,7 +126,7 @@ namespace Obvs.ActiveMQ
         {
             var bytesMessage = producer.CreateBytesMessage();
 
-            using (var stream = StreamManager.Instance.GetStream())
+            using (var stream = new MemoryStream())
             {
                 var offset = stream.Position;
 

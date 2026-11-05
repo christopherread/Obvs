@@ -1,5 +1,3 @@
-abstract Obvs.Serialization.Json.Utils.ArrayPool<T>.Rent(int minimumLength) -> T[]
-abstract Obvs.Serialization.Json.Utils.ArrayPool<T>.Return(T[] buffer, bool clearArray = false) -> void
 Obvs.Serialization.Json.JsonMessageDefaults
 Obvs.Serialization.Json.JsonMessageDeserializer<TMessage>
 Obvs.Serialization.Json.JsonMessageDeserializer<TMessage>.DeserializeCore(System.IO.TextReader textReader) -> TMessage
@@ -10,11 +8,6 @@ Obvs.Serialization.Json.JsonMessageDeserializerFactory.Create<TMessage>(System.T
 Obvs.Serialization.Json.JsonMessageDeserializerFactory.JsonMessageDeserializerFactory(System.Type deserializerType, Newtonsoft.Json.JsonSerializerSettings serializerSettings = null) -> void
 Obvs.Serialization.Json.JsonMessageSerializer
 Obvs.Serialization.Json.JsonMessageSerializer.JsonMessageSerializer(Newtonsoft.Json.JsonSerializerSettings serializerSettings = null) -> void
-Obvs.Serialization.Json.Utils.ArrayPool<T>
-Obvs.Serialization.Json.Utils.ArrayPool<T>.ArrayPool() -> void
 override Obvs.Serialization.Json.JsonMessageDeserializer<TMessage>.Deserialize(System.IO.Stream stream) -> TMessage
-static Obvs.Serialization.Json.Utils.ArrayPool<T>.Create() -> Obvs.Serialization.Json.Utils.ArrayPool<T>
-static Obvs.Serialization.Json.Utils.ArrayPool<T>.Create(int maxArrayLength, int numberOfArrays) -> Obvs.Serialization.Json.Utils.ArrayPool<T>
-static Obvs.Serialization.Json.Utils.ArrayPool<T>.Shared.get -> Obvs.Serialization.Json.Utils.ArrayPool<T>
 static readonly Obvs.Serialization.Json.JsonMessageDefaults.Encoding -> System.Text.Encoding
 virtual Obvs.Serialization.Json.JsonMessageSerializer.Serialize(System.IO.Stream stream, object message) -> void

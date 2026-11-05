@@ -90,6 +90,7 @@ Configuration errors fail startup, all at once, each with its fix. See [configur
 | `Obvs.Monitoring`: `IMonitor`, `IMonitorFactory`, the console monitor | OpenTelemetry, through `ObvsTelemetry` |
 | `SubjectServiceBus`, `SubjectMessageBus`, `IMessageBus`, `PublishLocally()` and `LocalBusOptions` | `UseInMemory()` from `Obvs.Testing` |
 | `MessageBridge`, `MessageSourceConverter` and `IMessageConverter` | A handler that sends what it receives on to another service |
+| The copies of other libraries' helpers: `Obvs.ActiveMQ.RecyclableMemoryStream`, `Obvs.ActiveMQ.Utils.LimitedConcurrencyLevelTaskScheduler` and `Obvs.Serialization.Json.Utils.ArrayPool<T>` | The originals: the `Microsoft.IO.RecyclableMemoryStream` package, `new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler` for one task at a time, and `System.Buffers.ArrayPool<T>` |
 
 ## Handling messages
 

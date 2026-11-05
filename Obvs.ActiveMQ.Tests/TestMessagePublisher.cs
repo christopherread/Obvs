@@ -148,6 +148,48 @@ namespace Obvs.ActiveMQ.Tests
         }
 
         [Fact]
+        public async Task ShouldWriteTheSerializedBytesToTheBytesMessage()
+        {
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
+            var serialized = new byte[] { 1, 2, 3, 4, 5 };
+            A.CallTo(() => _serializer.Serialize(A<Stream>._, A<object>._)).Invokes(call => call.GetArgument<Stream>(0).Write(serialized, 0, serialized.Length));
+            byte[] written = null;
+            A.CallTo(() => _message.WriteBytes(A<byte[]>._, A<int>._, A<int>._))
+                .Invokes((byte[] buffer, int offset, int length) => written = new ArraySegment<byte>(buffer, offset, length).ToArray());
+
+            await _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+
+            Assert.Equal(serialized, written);
+        }
+
+        [Fact]
+        public async Task ShouldPublishOneMessageAtATimeInOrderByDefault()
+        {
+            A.CallTo(() => _session.CreateProducer(A<IDestination>._)).Returns(_producer);
+            var publishing = 0;
+            var mostAtOnce = 0;
+            var sent = new List<int>();
+            A.CallTo(() => _serializer.Serialize(A<Stream>._, A<object>._)).Invokes(call =>
+            {
+                mostAtOnce = Math.Max(mostAtOnce, System.Threading.Interlocked.Increment(ref publishing));
+                System.Threading.Thread.Sleep(5);
+                lock (sent) sent.Add(((TestMessage)call.GetArgument<object>(1)).Id);
+                System.Threading.Interlocked.Decrement(ref publishing);
+            });
+            var publisher = Configuration.DestinationFactory.CreatePublisher<IMessage>(_lazyConnection, "orders", DestinationType.Topic, _serializer, _propertyProvider);
+
+            var publishes = new List<Task>();
+            for (var id = 0; id < 20; id++)
+            {
+                publishes.Add(publisher.PublishAsync(new TestMessage { Id = id }, new Dictionary<string, string>(), TestContext.Current.CancellationToken));
+            }
+            await Task.WhenAll(publishes);
+
+            Assert.Equal(1, mostAtOnce);
+            Assert.Equal(System.Linq.Enumerable.Range(0, 20), sent);
+        }
+
+        [Fact]
         public async Task ShouldSendMessageWithTypeNamePropertySet()
         {
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
