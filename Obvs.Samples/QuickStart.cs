@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -30,14 +29,24 @@ namespace Obvs.Samples
             // end-snippet
         }
 
-        public static async Task Client(IHost app, CancellationToken ct)
+        public static async Task Client(string[] args)
         {
             // snippet: quick-start-client
+            var builder = Host.CreateApplicationBuilder(args);
+
+            builder.Services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseRabbitMq(options => options.Uri = new Uri("amqp://localhost:5672"))
+                    .AsClient()));
+
+            using var app = builder.Build();
+            await app.StartAsync();
+
             var client = app.Services.GetRequiredService<IServiceBusClient>();
 
-            await client.SendAsync(new PlaceOrder("o-1"), ct);
+            await client.SendAsync(new PlaceOrder("o-1"));
 
-            var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
+            var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5));
             // end-snippet
         }
     }
