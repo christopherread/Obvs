@@ -16,6 +16,39 @@ namespace Obvs.Samples
     // The transports' docs. They need brokers or cloud accounts, so they're compiled, not run.
     public static class TransportSamples
     {
+        public static void RabbitMq(HostApplicationBuilder builder)
+        {
+            // snippet: rabbitmq-setup
+            builder.Services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseRabbitMq(builder.Configuration.GetSection("Obvs:Orders:RabbitMq"))));
+            // end-snippet
+        }
+
+        public static void Nats(HostApplicationBuilder builder)
+        {
+            // snippet: nats-setup
+            builder.Services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseNats(builder.Configuration.GetSection("Obvs:Orders:Nats"))));
+            // end-snippet
+
+            // snippet: nats-jetstream-setup
+            builder.Services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseNatsJetStream(builder.Configuration.GetSection("Obvs:Orders:NatsJetStream"))));
+            // end-snippet
+        }
+
+        public static void ActiveMq(HostApplicationBuilder builder)
+        {
+            // snippet: activemq-setup
+            builder.Services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseActiveMq(builder.Configuration.GetSection("Obvs:Orders:ActiveMq"))));
+            // end-snippet
+        }
+
         public static void Kafka(HostApplicationBuilder builder)
         {
             // snippet: kafka-setup

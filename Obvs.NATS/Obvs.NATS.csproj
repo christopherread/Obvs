@@ -3,13 +3,10 @@
     <TargetFrameworks>net472;netstandard2.0;net10.0</TargetFrameworks>
     <!-- C# 9 to set NATS.Net's init-only options (net472 and netstandard2.0 default to C# 7.3) -->
     <LangVersion>9.0</LangVersion>
-    <Company></Company>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
-    <Authors>Christopher Read</Authors>
-    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
-    <PackageReleaseNotes>Updated to NATS 0.11.0</PackageReleaseNotes>
-    <Description>NATS transport support for Obvs</Description>
+    <Description>NATS transport for Obvs: UseNats(...) for core NATS, and UseNatsJetStream(...) for JetStream, with consumers a service's instances share and dead-lettering.</Description>
+    <PackageTags>$(PackageTags) nats jetstream</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />

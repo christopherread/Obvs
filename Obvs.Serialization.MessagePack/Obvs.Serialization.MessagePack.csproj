@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <TargetFrameworks>net472;netstandard2.0;net10.0</TargetFrameworks>
-    <Description>MessagePack-CSharp (https://github.com/neuecc/MessagePack-CSharp) serialization for Obvs</Description>
+    <Description>MessagePack-CSharp serialization for Obvs: SerializedWith(new MessagePackCSharpMessageSerializer(), ...).</Description>
+    <PackageTags>$(PackageTags) messagepack serialization</PackageTags>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     <Version>1.0.0</Version>
-    <PackageReleaseNotes>Minor dependency update</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

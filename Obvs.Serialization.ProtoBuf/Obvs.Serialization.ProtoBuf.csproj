@@ -1,13 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net472;netstandard2.0;net10.0</TargetFrameworks>
-    <Company>Christopher Read</Company>
     <Copyright>Copyright © Christopher Read 2017</Copyright>
     <Version>1.0.0</Version>
-    <Authors />
-    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
-    <PackageReleaseNotes>Minor dependency update</PackageReleaseNotes>
-    <Description>ProtoBuf (https://github.com/mgravell/protobuf-net) serialization for Obvs</Description>
+    <Description>protobuf-net serialization for Obvs: SerializedWith(new ProtoBufMessageSerializer(), ...).</Description>
+    <PackageTags>$(PackageTags) protobuf serialization</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
