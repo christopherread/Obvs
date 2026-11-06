@@ -83,6 +83,38 @@ namespace Obvs.Samples
             // end-snippet
         }
 
+        public static void AzureServiceBus(HostApplicationBuilder builder, string clientId)
+        {
+            // snippet: asb-setup
+            builder.Services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseAzureServiceBus(builder.Configuration.GetSection("Obvs:Orders:AzureServiceBus"))));
+            // end-snippet
+
+            builder.Services.AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service =>
+            {
+                // snippet: asb-namespace
+                service.UseAzureServiceBus(options => options.FullyQualifiedNamespace = "contoso.servicebus.windows.net");
+                // end-snippet
+
+                // snippet: asb-concurrency
+                service
+                    .UseAzureServiceBus(builder.Configuration.GetSection("Obvs:Orders:AzureServiceBus"))
+                    .HandleCommand<PlaceOrder>(PlaceOrderAsync, handler => handler.MaxConcurrency = 8);
+                // end-snippet
+
+                // snippet: asb-credential
+                service.UseAzureServiceBus(builder.Configuration.GetSection("Obvs:Orders:AzureServiceBus"),
+                    options => options.Credential = new ManagedIdentityCredential(ManagedIdentityId.FromUserAssignedClientId(clientId)));
+                // end-snippet
+
+                // snippet: asb-emulator
+                service.UseAzureServiceBus(options => options.ConnectionString =
+                    "Endpoint=sb://localhost:5673;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;");
+                // end-snippet
+            }));
+        }
+
         public static void AmazonSqs(HostApplicationBuilder builder, string accessKey, string secretKey)
         {
             // snippet: sqs-setup

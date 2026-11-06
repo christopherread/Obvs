@@ -1,17 +1,13 @@
 # Obvs: an observable microservice bus
 ## observable services, *obviously*
 
-[![Join the chat at https://gitter.im/inter8ection/Obvs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/inter8ection/Obvs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-[![.NET](https://github.com/christopherread/Obvs/workflows/.NET/badge.svg)](https://github.com/christopherread/Obvs/actions)
-
-[![NuGet](https://img.shields.io/nuget/v/Obvs.svg)](https://www.nuget.org/packages/Obvs/)
+[![.NET](https://github.com/christopherread/Obvs/workflows/.NET/badge.svg)](https://github.com/christopherread/Obvs/actions) [![NuGet](https://img.shields.io/nuget/v/Obvs.svg)](https://www.nuget.org/packages/Obvs/) [![Discussions](https://img.shields.io/github/discussions/christopherread/Obvs)](https://github.com/christopherread/Obvs/discussions)
 
 Obvs is a .NET library for messaging between services. Each service has commands, events, requests and responses. You choose its transport, such as RabbitMQ, Kafka, NATS, Azure Service Bus or Amazon SQS. Your code handles its messages, or reads them as Reactive Extensions streams.
 
 ## Quick start
 
-```
+```bash
 dotnet add package Obvs
 dotnet add package Obvs.RabbitMQ
 ```
@@ -61,24 +57,35 @@ builder.Services.AddObvs(obvs => obvs
 await builder.Build().RunAsync();
 ```
 
-And use it from anywhere with the bus:
+Then send it commands and requests from another app, a client of the service:
 
 <!-- snippet: quick-start-client -->
 ```csharp
+var builder = Host.CreateApplicationBuilder(args);
+
+builder.Services.AddObvs(obvs => obvs
+    .AddService<IOrderMessage>("orders", service => service
+        .UseRabbitMq(options => options.Uri = new Uri("amqp://localhost:5672"))
+        .AsClient()));
+
+using var app = builder.Build();
+await app.StartAsync();
+
 var client = app.Services.GetRequiredService<IServiceBusClient>();
 
-await client.SendAsync(new PlaceOrder("o-1"), ct);
+await client.SendAsync(new PlaceOrder("o-1"));
 
-var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
+var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5));
 ```
 
 Everything on the bus is an Rx stream: `Commands`, `Events`, `Requests` and `GetResponses(request)`. Compose them with Rx operators, and process them with `SubscribeAsync`, which awaits your code and settles each message. Handlers are the same thing, registered at startup with a DI scope per message, and `RequestAsync` is a request with one response.
 
 ## Next steps
 
+- [The Obvs site](https://christopherread.github.io/Obvs/), with what's new in v7.
 - [Common tasks](docs/common-tasks.md): add a service, handle and send messages, requests, errors, tests, tracing.
 - [Testing](docs/testing.md) with an in-memory broker.
-- Transports: [Kafka](docs/transports/kafka.md) (and [Confluent Cloud](docs/transports/kafka-confluent-cloud.md), [Amazon MSK](docs/transports/kafka-amazon-msk.md), [Azure Event Hubs](docs/transports/kafka-azure-event-hubs.md)), [Amazon SQS and SNS](docs/transports/amazon-sqs.md), [NetMQ](docs/transports/netmq.md).
+- Transports: [Azure Service Bus](docs/transports/azure-service-bus.md), [Kafka](docs/transports/kafka.md) (and [Confluent Cloud](docs/transports/kafka-confluent-cloud.md), [Amazon MSK](docs/transports/kafka-amazon-msk.md), [Azure Event Hubs](docs/transports/kafka-azure-event-hubs.md)), [Amazon SQS and SNS](docs/transports/amazon-sqs.md), [NetMQ](docs/transports/netmq.md).
 - [Configuration errors](docs/configuration-errors.md) and [analyzers](docs/analyzers.md).
 - [Service contracts](docs/contracts.md) as AsyncAPI, and an [MCP server](docs/mcp.md) for agents.
 - [Migrating from v6](docs/migrating-from-v6.md).
@@ -99,7 +106,7 @@ The XML, NetJSON, YAML and MsgPack.Cli serializers, `Obvs.Monitoring.*` and `Obv
 ## Versions
 
 * v7 - hosting with dependency injection, handlers, `RequestAsync`, System.Text.Json, OpenTelemetry, Azure Service Bus and Amazon SQS, analyzers, a test kit, contracts and an MCP server. Supports `netstandard2.0`, `net472` and `net10.0`
-* v6 - `System.Reactive 5.0`, supports `netstandard2.0`, `net472` and `net5.0`. Mono-repo
+* v6 - `System.Reactive`, supports `netstandard2.0`, `net472` and `net10.0` (`net5.0` in early 6.x). The transports moved into this repo
 * v5 - `System.Reactive 4.1`, supports `netstandard2.0` and `net472`
 * v4 - `System.Reactive 3.1.1`, supports `netstandard1.6` and `net452`
 
@@ -107,6 +114,8 @@ The XML, NetJSON, YAML and MsgPack.Cli serializers, `Obvs.Monitoring.*` and `Obv
 
 `Examples/` has a client and a service on ActiveMQ, traced across both apps with OpenTelemetry's console exporter:
 
-	cd Examples
-	docker compose up        # ActiveMQ and the service
-	dotnet run --project Client
+```bash
+cd Examples
+docker compose up        # ActiveMQ and the service
+dotnet run --project Client
+```
