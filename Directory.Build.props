@@ -12,6 +12,19 @@
     <PropertyGroup>
         <IsObvsPackage>$([System.String]::Copy(';Obvs;Obvs.ActiveMQ;Obvs.AmazonSqs;Obvs.AzureSB;Obvs.Kafka;Obvs.Mcp;Obvs.NATS;Obvs.NetMQ;Obvs.RabbitMQ;Obvs.Serialization.Json;Obvs.Serialization.MessagePack;Obvs.Serialization.ProtoBuf;Obvs.Testing;').Contains(';$(MSBuildProjectName);'))</IsObvsPackage>
     </PropertyGroup>
+    <!-- What nuget.org shows for every package. Each adds its own Description and PackageTags, after these. -->
+    <PropertyGroup Condition="'$(IsObvsPackage)' == 'true'">
+        <Authors>Christopher Read</Authors>
+        <Company>Christopher Read</Company>
+        <PackageProjectUrl>https://christopherread.github.io/Obvs/</PackageProjectUrl>
+        <PackageTags>obvs messaging servicebus microservices</PackageTags>
+        <PackageReleaseNotes>v7 adds hosting with dependency injection, handlers, RequestAsync, System.Text.Json, OpenTelemetry, Azure Service Bus and Amazon SQS. Migrating from v6: https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md</PackageReleaseNotes>
+        <!-- Each package's own README.md, from its folder -->
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(IsObvsPackage)' == 'true'">
+        <None Include="README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
     <!-- The packages ship their XML docs, and every public member in them is documented: a missing one fails the build -->
     <PropertyGroup Condition="'$(IsObvsPackage)' == 'true'">
         <GenerateDocumentationFile>true</GenerateDocumentationFile>

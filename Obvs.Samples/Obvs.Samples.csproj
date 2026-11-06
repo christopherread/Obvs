@@ -29,6 +29,10 @@
     <ProjectReference Include="..\Obvs.Serialization.Json\Obvs.Serialization.Json.csproj" />
     <ProjectReference Include="..\Obvs.Testing\Obvs.Testing.csproj" />
     <ProjectReference Include="..\Obvs.AzureSB\Obvs.AzureSB.csproj" />
+    <ProjectReference Include="..\Obvs.ActiveMQ\Obvs.ActiveMQ.csproj" />
+    <ProjectReference Include="..\Obvs.NATS\Obvs.NATS.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.MessagePack\Obvs.Serialization.MessagePack.csproj" />
+    <ProjectReference Include="..\Obvs.Serialization.ProtoBuf\Obvs.Serialization.ProtoBuf.csproj" />
     <!-- As a project that uses the Obvs package gets them -->
     <ProjectReference Include="..\Obvs.Generators\Obvs.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Obvs.Analyzers\Obvs.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

@@ -1,38 +1,22 @@
 # Obvs.NATS
 
-[NATS](https://github.com/nats-io) transport support for [Obvs](https://github.com/christopherread/Obvs).
+The NATS transport for [Obvs](https://github.com/christopherread/Obvs). `UseNats` carries messages over core NATS, at most once. `UseNatsJetStream` carries them over JetStream: commands and requests on consumers a service's buses share, so each is handled once, with acknowledgement after the handler and dead-lettering.
 
-## NuGet Package
-
-[![NuGet](https://img.shields.io/nuget/v/Obvs.NATS.svg)](https://www.nuget.org/packages/Obvs.NATS/)
-
-See the [NuGet Package Obvs.NATS](https://www.nuget.org/packages/Obvs.NATS/).
-
-## JetStream (v7)
-
-`UseNats` carries messages over core NATS: delivered at most once, to every bus, and kept nowhere. `UseNatsJetStream` carries them over [JetStream](https://docs.nats.io/nats-concepts/jetstream) instead, with the same delivery model as `Obvs.AzureSB`:
-
-```csharp
-services.AddObvs(obvs => obvs
-    .AddService<IOrderMessage>("orders", service => service
-        .UseNatsJetStream(builder.Configuration.GetSection("Obvs:Orders:NatsJetStream")) // Url, MaxDeliveryAttempts, ...
-        .SerializedWith(serializer, deserializerFactory)));
+```bash
+dotnet add package Obvs.NATS
 ```
 
-| Obvs | JetStream |
-|---|---|
-| Commands, requests | Streams `orders_Commands` and `orders_Requests` (work-queue retention), each read through one consumer, named after the service, that the service's buses share, so each message is handled once |
-| Events | Stream `orders_Events` (interest retention), with a consumer per bus named after its instance ID. It's deleted when the bus stops, and deletes itself after 5 minutes idle if the bus crashes |
-| Responses | Stream `orders_Responses`; each request names its bus's subject, `orders.Responses.{instance ID}`, read by that bus's own consumer |
-| Headers and trace context | NATS headers |
-| Dead-lettering | After `MaxDeliveryAttempts` (default 10) failed deliveries, the message is republished to `orders.DeadLetters.{Commands, Events, ...}.{type}` in stream `orders_DeadLetters`, with headers `obvs-dead-letter-reason`, `obvs-dead-letter-description`, `obvs-exception-type` and `obvs-delivery-count` |
+<!-- snippet: nats-setup -->
+```csharp
+builder.Services.AddObvs(obvs => obvs
+    .AddService<IOrderMessage>("orders", service => service
+        .UseNats(builder.Configuration.GetSection("Obvs:Orders:Nats"))));
+```
 
-- Streams and consumers are created at startup if they're missing. Existing streams are left as they are.
-- A message is acknowledged after its handler succeeds, and negatively acknowledged, so it's delivered again, when the handler fails or the bus stops before handling it. Handlers must tolerate duplicates.
-- While a handler runs, its message is kept in progress, every third of `AckWait` (JetStream's default of 30 seconds when not set), for up to `MaxHandlerDuration` (5 minutes).
-- `MaxConcurrentMessages` is how many messages a bus takes from each consumer at once. When not set, it's the sum of the `MaxConcurrency` of the service's handlers of that consumer's messages, or 1 if none takes them.
-- When the connection drops, the NATS client reconnects by itself and the bus carries on reading the same consumers once it has. Subscribers aren't told; nothing is lost, as messages taken but not yet acknowledged are delivered again after `AckWait`, and a handler that finishes while the bus is disconnected has its message acknowledged once it reconnects. Other errors that can pass, such as timeouts or a cluster electing a leader, are retried after a wait that doubles from 250 ms up to 5 seconds.
-- Errors that won't fix themselves are reported on the bus's `Exceptions`: a stream deleted while the bus runs, the consumer the service's buses share deleted, or a server that comes back without JetStream. The bus then subscribes again, which retries with the same growing wait, so the bus recovers if the stream or consumer is created again, for example when another of the service's buses starts.
-- A bus's own consumers (events and responses) are created again if they've gone, as they delete themselves after 5 minutes without a pull, such as during a long outage. Events published while a bus's consumer was gone aren't delivered to that bus, as with a new subscription.
-- Stopping the bus ends its receive loops at once, even while they're waiting to reconnect. It tries for 2 seconds to delete the bus's own consumers; if the server can't be reached, they delete themselves once idle.
-- The server must have JetStream enabled (`nats-server -js`). JetStream messages aren't wrapped like core NATS messages, so the two modes don't interoperate.
+```json
+{ "Obvs": { "Orders": { "Nats": { "Url": "nats://localhost:4222" } } } }
+```
+
+For JetStream, its streams, consumers and settings, see [NATS](https://github.com/christopherread/Obvs/blob/master/docs/transports/nats.md).
+
+[Obvs](https://github.com/christopherread/Obvs) is a .NET library for messaging between services: commands, events, requests and responses, handled by your code or read as Rx streams. Start with its [README](https://github.com/christopherread/Obvs#readme) and [common tasks](https://github.com/christopherread/Obvs/blob/master/docs/common-tasks.md).

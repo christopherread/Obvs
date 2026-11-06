@@ -19,6 +19,10 @@ namespace Obvs.Samples
             var documents = new[] { "README.md" }
                 .Concat(Directory.GetFiles(Path.Combine(Root, "docs"), "*.md", SearchOption.AllDirectories)
                     .Select(path => Path.GetRelativePath(Root, path)))
+                // The README each package ships to nuget.org
+                .Concat(Directory.GetDirectories(Root, "Obvs*")
+                    .Where(directory => !directory.EndsWith(".Tests") && File.Exists(Path.Combine(directory, "README.md")))
+                    .Select(directory => Path.GetRelativePath(Root, Path.Combine(directory, "README.md"))))
                 // The design doc sketches APIs before they exist
                 .Where(path => Path.GetFileName(path) != "v7-design.md")
                 .OrderBy(path => path, StringComparer.Ordinal);
