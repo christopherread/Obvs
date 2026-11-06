@@ -83,14 +83,59 @@ namespace Obvs.Kafka.Tests
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldSkipAMessageItCantReadAndCarryOn()
         {
-            var topic = $"obvs-kafka-unreadable-{Guid.NewGuid():N}";
+            var (received, error, _) = await ReceiveAfter((topic, producer, publisher, ct) =>
+                // Not an Obvs message, so the consumer can't deserialize it
+                producer.ProduceAsync(topic, new Message<Null, byte[]> { Value = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF } }, ct));
+
+            Assert.Null(error);
+            Assert.Equal("after the skipped one", Assert.Single(received).Data);
+        }
+
+        // A tombstone, or a record another producer wrote without a value
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldSkipARecordWithNoValueAndCarryOn()
+        {
+            var (received, error, logger) = await ReceiveAfter((topic, producer, publisher, ct) =>
+                producer.ProduceAsync(topic, new Message<Null, byte[]> { Value = null }, ct));
+
+            Assert.Null(error);
+            Assert.Equal("after the skipped one", Assert.Single(received).Data);
+            Assert.Contains(logger.Entries, entry => entry.Level == LogLevel.Warning && entry.Message.Contains("no value"));
+        }
+
+        // A newer version of the service may send a message an older one doesn't know yet
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldSkipAMessageOfATypeItDoesntKnowAndCarryOn()
+        {
+            var (received, error, logger) = await ReceiveAfter((topic, producer, publisher, ct) =>
+                publisher.PublishAsync(new UnknownMessage { Data = "unknown" }, new Dictionary<string, string>(), ct));
+
+            Assert.Null(error);
+            Assert.Equal("after the skipped one", Assert.Single(received).Data);
+            Assert.Contains(logger.Entries, entry => entry.Level == LogLevel.Warning && entry.Message.Contains(nameof(UnknownMessage)));
+        }
+
+        public class UnknownMessage : ITestMessage
+        {
+            public string Data { get; set; }
+        }
+
+        // Sends what the test gives, then a TestMessage, to a source that reads only TestMessages, and collects what it receives
+        private static async Task<(List<TestMessage> Received, Exception Error, RecordingLogger Logger)> ReceiveAfter(
+            Func<string, IProducer<Null, byte[]>, MessagePublisher<ITestMessage>, System.Threading.CancellationToken, Task> sendFirst)
+        {
+            var topic = $"obvs-kafka-skipped-{Guid.NewGuid():N}";
+            var ct = TestContext.Current.CancellationToken;
             using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = TestBroker.BootstrapServers }).Build();
             await admin.CreateTopicsAsync(new[] { new TopicSpecification { Name = topic, NumPartitions = 1, ReplicationFactor = 1 } });
             try
             {
-                var configuration = new KafkaConfiguration(TestBroker.BootstrapServers);
+                var logger = new RecordingLogger();
+                var configuration = new KafkaConfiguration(TestBroker.BootstrapServers) { Logger = logger };
                 var source = new MessageSource<ITestMessage>(configuration, new KafkaSourceConfiguration(), topic,
-                    new IMessageDeserializer<ITestMessage>[] { new JsonMessageDeserializer<TestMessage>() }, null);
+                    new IMessageDeserializer<ITestMessage>[] { new JsonMessageDeserializer<TestMessage>() }, null,
+                    // Its own group: in the process's, it would wait for the group to rebalance away from the previous test's consumer
+                    groupId: topic);
                 var publisher = new MessagePublisher<ITestMessage>(configuration, new KafkaProducerConfiguration(), topic, new JsonMessageSerializer(), null);
                 var received = new ConcurrentQueue<TestMessage>();
                 Exception error = null;
@@ -98,19 +143,17 @@ namespace Obvs.Kafka.Tests
                 using (source.Messages.OfType<TestMessage>().Subscribe(received.Enqueue, exception => error = exception))
                 using (var producer = new ProducerBuilder<Null, byte[]>(new ProducerConfig { BootstrapServers = TestBroker.BootstrapServers }).Build())
                 {
-                    // Not an Obvs message, so the consumer can't deserialize it
-                    await producer.ProduceAsync(topic, new Message<Null, byte[]> { Value = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF } }, TestContext.Current.CancellationToken);
-                    await publisher.PublishAsync(new TestMessage { Data = "after the unreadable one" }, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+                    await sendFirst(topic, producer, publisher, ct);
+                    await publisher.PublishAsync(new TestMessage { Data = "after the skipped one" }, new Dictionary<string, string>(), ct);
 
                     var deadline = DateTime.UtcNow.AddSeconds(10);
                     while (received.IsEmpty && error == null && DateTime.UtcNow < deadline)
                     {
-                        await Task.Delay(100, TestContext.Current.CancellationToken);
+                        await Task.Delay(100, ct);
                     }
                 }
 
-                Assert.Null(error);
-                Assert.Equal("after the unreadable one", Assert.Single(received).Data);
+                return (received.ToList(), error, logger);
             }
             finally
             {
@@ -141,7 +184,10 @@ namespace Obvs.Kafka.Tests
 
         private sealed class RecordingLogger : ILogger
         {
-            public List<(LogLevel Level, string Message)> Entries { get; } = new List<(LogLevel, string)>();
+            // The consumer logs from its own thread
+            private readonly ConcurrentQueue<(LogLevel Level, string Message)> _entries = new ConcurrentQueue<(LogLevel, string)>();
+
+            public List<(LogLevel Level, string Message)> Entries => _entries.ToList();
 
             public IDisposable BeginScope<TState>(TState state) => null;
 
@@ -149,7 +195,7 @@ namespace Obvs.Kafka.Tests
 
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
             {
-                Entries.Add((logLevel, formatter(state, exception)));
+                _entries.Enqueue((logLevel, formatter(state, exception)));
             }
         }
     }

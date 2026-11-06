@@ -190,13 +190,26 @@ namespace Obvs.Kafka
         {
             try
             {
-                // TODO: deal with nulls here?
-                var kafkaMessage = consumer.Consume(token).Message;
+                var kafkaMessage = consumer.Consume(token)?.Message;
                 var msg = kafkaMessage?.Value;
+
+                // A tombstone, or a record another producer wrote without a value
+                if (msg?.Payload == null)
+                {
+                    _logger.LogWarning("Kafka consumer of {Topic} skipped a record with no value", _topicName);
+                    return true;
+                }
 
                 if (_propertyFilter == null || _propertyFilter(msg.Properties))
                 {
-                    var message = DeserializePayload(msg);
+                    // Such as a message a newer version of the service sends
+                    if (msg.PayloadType == null || !_deserializers.TryGetValue(msg.PayloadType, out var deserializer))
+                    {
+                        _logger.LogWarning("Kafka consumer of {Topic} skipped a {MessageType}, which it has no deserializer for", _topicName, msg.PayloadType);
+                        return true;
+                    }
+
+                    var message = DeserializePayload(deserializer, msg);
                     SetHeaders(message, kafkaMessage.Headers);
                     observer.OnNext(message);
                 }
@@ -239,11 +252,11 @@ namespace Obvs.Kafka
             return false;
         }
 
-        private TMessage DeserializePayload(WrapperMessage msg)
+        private static TMessage DeserializePayload(IMessageDeserializer<TMessage> deserializer, WrapperMessage msg)
         {
             using (var s = new MemoryStream(msg.Payload))
             {
-                return _deserializers[msg.PayloadType].Deserialize(s);
+                return deserializer.Deserialize(s);
             }
         }
 
@@ -269,7 +282,7 @@ namespace Obvs.Kafka
 
     public class ConsumerValueDeserializer<T> : IDeserializer<T> where T : new()
     {
-        public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context) => 
-            Serializer.Deserialize<T>(new MemoryStream(data.ToArray()));
+        public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context) =>
+            isNull ? default(T) : Serializer.Deserialize<T>(new MemoryStream(data.ToArray()));
     }
 }
