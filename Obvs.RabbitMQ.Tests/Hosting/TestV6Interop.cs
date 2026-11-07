@@ -13,16 +13,23 @@ namespace Obvs.RabbitMQ.Tests.Hosting
     // A v6 app, Obvs.V6InteropApp, on the published 6.x packages with Newtonsoft JSON, and a v7 app, configured with AddObvs
     // and its System.Text.Json default, on one broker: each must understand the other, so apps can move to v7 one at a time.
     // The v6 app runs in its own process, as it would in production.
-    public class TestV6Interop
+    public class TestV6Interop : IClassFixture<RabbitMqServices>
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
+
+        private readonly RabbitMqServices _services;
+
+        public TestV6Interop(RabbitMqServices services)
+        {
+            _services = services;
+        }
 
         private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldRunTheV6AppOnObvs6()
         {
-            await using var v6Server = await V6App.StartServerAsync("obvs-interop-version", TestBroker.Uri, Ct);
+            await using var v6Server = await V6App.StartServerAsync(_services.Create("interop-version"), TestBroker.Uri, Ct);
 
             Assert.StartsWith("6.", v6Server.ObvsVersion);
         }
@@ -30,7 +37,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldSendFromV7ToAV6ServerAndReceiveItsEvents()
         {
-            const string service = "obvs-interop-v7-to-v6";
+            var service = _services.Create("interop-v7-to-v6");
             await using var v6Server = await V6App.StartServerAsync(service, TestBroker.Uri, Ct);
             using var v7Client = await StartV7Async(service, configure => configure.AsClient());
             var v7 = v7Client.Services.GetRequiredService<IServiceBusClient>();
@@ -44,7 +51,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldGetAV6ServersResponseToAV7Request()
         {
-            const string service = "obvs-interop-v7-requests";
+            var service = _services.Create("interop-v7-requests");
             await using var v6Server = await V6App.StartServerAsync(service, TestBroker.Uri, Ct);
             using var v7Client = await StartV7Async(service, configure => configure.AsClient());
 
@@ -57,7 +64,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldSendFromV6ToAV7HandlerAndReceiveItsEvents()
         {
-            const string service = "obvs-interop-v6-to-v7";
+            var service = _services.Create("interop-v6-to-v7");
             using var v7Server = await StartV7Async(service, configure => configure
                 .AsServer()
                 .HandleCommand<PlaceOrder>((command, context, ct) => context.PublishAsync(new OrderPlaced { OrderId = command.OrderId }, ct)));

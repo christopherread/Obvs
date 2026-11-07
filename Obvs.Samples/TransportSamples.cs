@@ -23,6 +23,15 @@ namespace Obvs.Samples
                 .AddService<IOrderMessage>("orders", service => service
                     .UseRabbitMq(builder.Configuration.GetSection("Obvs:Orders:RabbitMq"))));
             // end-snippet
+
+            builder.Services.AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service =>
+            {
+                // snippet: rabbitmq-concurrency
+                service
+                    .UseRabbitMq(builder.Configuration.GetSection("Obvs:Orders:RabbitMq"))
+                    .HandleCommand<PlaceOrder>(PlaceOrderAsync, handler => handler.MaxConcurrency = 8);
+                // end-snippet
+            }));
         }
 
         public static void Nats(HostApplicationBuilder builder)

@@ -41,7 +41,7 @@ Each transport checks its own options. The message says which option to set, and
 
 | Transport | Checks |
 |---|---|
-| RabbitMQ | A broker address is set. |
+| RabbitMQ | <ul><li>A broker address is set.</li><li>`MaxDeliveryAttempts` and `MaxConcurrentMessages` are at least 1.</li></ul> |
 | ActiveMQ | A broker URI is set. |
 | NATS | A server address is set. |
 | NATS JetStream | <ul><li>A server address is set.</li><li>`MaxDeliveryAttempts` and `MaxConcurrentMessages` are at least 1.</li><li>`AckWait` is positive, and `MaxHandlerDuration` isn't negative.</li><li>The service name and instance ID are valid stream and consumer names.</li></ul> |

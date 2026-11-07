@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Obvs.Configuration;
 using Obvs.RabbitMQ;
-using Obvs.RabbitMQ.Configuration;
+using Obvs.RabbitMQ.SharedQueues;
 using Obvs.Transports;
 using Obvs.Types;
 
@@ -69,7 +70,8 @@ namespace Obvs.Hosting
         private static ObvsServiceBuilder UseRabbitMq(ObvsServiceBuilder service, string whereToSetUri)
         {
             return service.UseTransport("RabbitMQ",
-                transport => CreateProvider(transport, GetOptions(transport)),
+                transport => CreateProvider(transport, GetOptions(transport),
+                    transport.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.RabbitMQ")),
                 transport => Validate(transport, GetOptions(transport), whereToSetUri));
         }
 
@@ -84,17 +86,30 @@ namespace Obvs.Hosting
             {
                 yield return $"Service '{service.ServiceName}' has no RabbitMQ broker address. Set {whereToSetUri}, for example amqp://localhost:5672.";
             }
+            if (options.MaxDeliveryAttempts < 1)
+            {
+                yield return $"Service '{service.ServiceName}' sets RabbitMQ MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but it must be at least 1. " +
+                             "Leave it unset for the default of 10.";
+            }
+            if (options.MaxConcurrentMessages < 1)
+            {
+                yield return $"Service '{service.ServiceName}' sets RabbitMQ MaxConcurrentMessages to {options.MaxConcurrentMessages}, but it must be at least 1. " +
+                             "Leave it unset to take as many at once as the service's handlers' MaxConcurrency add up to.";
+            }
         }
 
         // The provider is generic in the service's message type, which the builder only knows at run time
-        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, RabbitMqOptions options)
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, RabbitMqOptions options, ILogger logger)
         {
-            var providerType = typeof(RabbitMQServiceEndpointProvider<,,,,,>).MakeGenericType(
-                service.ServiceMessageType, typeof(IMessage), typeof(ICommand), typeof(IEvent), typeof(IRequest), typeof(IResponse));
+            if (logger != null)
+            {
+                options.Logger = logger;
+            }
+            Func<Type, int> concurrency = kind => options.MaxConcurrentMessages ?? service.HandlerConcurrency(kind);
+            var providerType = typeof(RabbitMqEndpointProvider<>).MakeGenericType(service.ServiceMessageType);
 
             return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
-                service.ServiceName, options.Uri.ToString(), service.Serializer, service.DeserializerFactory,
-                null, null, options.AutomaticRecoveryEnabled, service.InstanceId);
+                service.ServiceName, service.InstanceId, options, concurrency, service.Serializer, service.DeserializerFactory, service.IsServer);
         }
     }
 }

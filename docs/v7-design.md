@@ -372,7 +372,7 @@ Most teams starting with a messaging library now use a managed cloud service rat
 | Azure Service Bus | Azure | None (the README lists it, but there's no package) | New `Obvs.AzureSB` (`Obvs.AzureServiceBus` on NuGet belongs to an unreleased 2016 prototype) |
 | Amazon SQS and SNS | AWS | None | New `Obvs.AmazonSqs` |
 | Google Cloud Pub/Sub | Google Cloud | None | Deferred |
-| RabbitMQ | CloudAMQP, Amazon MQ | `Obvs.RabbitMQ` | No change |
+| RabbitMQ | CloudAMQP, Amazon MQ | `Obvs.RabbitMQ` | Commands and requests on shared quorum queues (see the delivery model) |
 | ActiveMQ | Amazon MQ | `Obvs.ActiveMQ` | No change |
 | NATS | Synadia Cloud | `Obvs.NATS`, core NATS only | Add JetStream |
 
@@ -387,7 +387,7 @@ Cloud queues are built for the opposite: a durable queue that instances of a ser
 - **Responses** go to a reply queue for the requesting bus instance, named with its instance ID (see 1).
 - **Settlement** happens after the handler finishes (see 4): completed on success, abandoned for redelivery on failure, dead-lettered after the delivery limit (see open question 3). This is at-least-once delivery, so handlers must tolerate duplicates, and the docs need to say so.
 
-The existing transports keep their v6 behaviour for wire compatibility (see 12). Whether to offer them a durable, shared-queue mode is a separate decision.
+Kafka and RabbitMQ moved to it in 7.0 too, keeping v6's topics, exchanges and routing keys so v6 and v7 apps still reach each other: Kafka's servers share a consumer group for commands and requests, and RabbitMQ's a quorum queue. ActiveMQ, core NATS and NetMQ keep v6's behaviour.
 
 #### Azure Service Bus
 
@@ -480,7 +480,7 @@ The same tasks double as onboarding material for people.
    |---|---|---|---|
    | Azure Service Bus | `MaxDeliveryCount` on the queue or subscription | Built-in dead-letter subqueue | Set the limit from options; record the reason |
    | Amazon SQS | Redrive policy `maxReceiveCount` | A dead-letter queue | Create the dead-letter queue and redrive policy from options |
-   | RabbitMQ | Quorum queues' delivery limit | Dead-letter exchange | Declare both from options; v6 acknowledges on receipt, so nothing is ever dead-lettered |
+   | RabbitMQ | Quorum queues' delivery limit | Dead-letter exchange | Declare both from options, and dead-letter on the last attempt with the reason |
    | ActiveMQ | Client redelivery policy | `ActiveMQ.DLQ`, or one per destination | Set the policy from options |
    | NATS JetStream | `MaxDeliver` on the consumer | None (an advisory is published) | Republish to a dead-letter subject |
    | Kafka | None | None | A retry topic and a dead-letter topic |

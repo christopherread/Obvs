@@ -21,6 +21,8 @@ namespace Obvs.RabbitMQ.Tests.Hosting
             {
                 ["Obvs:Orders:RabbitMq:Uri"] = "amqp://broker.example:5672",
                 ["Obvs:Orders:RabbitMq:AutomaticRecoveryEnabled"] = "false",
+                ["Obvs:Orders:RabbitMq:MaxDeliveryAttempts"] = "3",
+                ["Obvs:Orders:RabbitMq:MaxConcurrentMessages"] = "4",
             });
             using var host = BuildHost(services => services.AddObvs(obvs => obvs
                 .AddService<IOrderMessage>("orders", service => service
@@ -31,6 +33,17 @@ namespace Obvs.RabbitMQ.Tests.Hosting
 
             Assert.Equal(new Uri("amqp://broker.example:5672"), options.Uri);
             Assert.False(options.AutomaticRecoveryEnabled);
+            Assert.Equal(3, options.MaxDeliveryAttempts);
+            Assert.Equal(4, options.MaxConcurrentMessages);
+        }
+
+        [Fact]
+        public void ShouldDeliverAMessageTenTimesAndTakeAsManyAtOnceAsTheHandlersByDefault()
+        {
+            var options = new RabbitMqOptions();
+
+            Assert.Equal(10, options.MaxDeliveryAttempts);
+            Assert.Null(options.MaxConcurrentMessages);
         }
 
         [Fact]
@@ -112,6 +125,41 @@ namespace Obvs.RabbitMQ.Tests.Hosting
             var error = Assert.Single(exception.Errors);
             Assert.Contains("'orders'", error);
             Assert.Contains("Uri", error);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenMaxDeliveryAttemptsIsLessThanOne()
+        {
+            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxDeliveryAttempts = 0));
+
+            Assert.Contains("'orders'", error);
+            Assert.Contains("MaxDeliveryAttempts", error);
+            Assert.Contains("at least 1", error);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenMaxConcurrentMessagesIsLessThanOne()
+        {
+            var error = Assert.Single(await StartupErrorsAsync(options => options.MaxConcurrentMessages = 0));
+
+            Assert.Contains("'orders'", error);
+            Assert.Contains("MaxConcurrentMessages", error);
+            Assert.Contains("at least 1", error);
+            Assert.Contains("handlers' MaxConcurrency", error);
+        }
+
+        private static async Task<IReadOnlyList<string>> StartupErrorsAsync(Action<RabbitMqOptions> configure)
+        {
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .UseRabbitMq(options =>
+                    {
+                        options.Uri = new Uri("amqp://broker.example:5672");
+                        configure(options);
+                    })
+                    .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+            return exception.Errors;
         }
 
         private static IConfiguration Configuration(IDictionary<string, string> values)

@@ -12,15 +12,22 @@ using Xunit;
 namespace Obvs.RabbitMQ.Tests.Hosting
 {
     // End to end through AddObvs and UseRabbitMq against a real broker (RABBITMQ_URI, default amqp://localhost:5672).
-    // Each test uses its own service name, so its exchanges and queues don't meet the other tests'.
-    public class TestRabbitMqHosting
+    // Each test uses its own service name, unique to the run, so its exchanges and queues don't meet the other tests'.
+    public class TestRabbitMqHosting : IClassFixture<RabbitMqServices>
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
+
+        private readonly RabbitMqServices _services;
+
+        public TestRabbitMqHosting(RabbitMqServices services)
+        {
+            _services = services;
+        }
 
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldSendCommandsAndPublishEventsOverRabbitMq()
         {
-            using var host = await StartHostAsync("obvs-hosting-commands-events");
+            using var host = await StartHostAsync(_services.Create("hosting-commands-events"));
             var bus = host.Services.GetRequiredService<IServiceBus>();
 
             var command = bus.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
@@ -35,7 +42,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldReturnResponsesOverRabbitMq()
         {
-            using var host = await StartHostAsync("obvs-hosting-requests");
+            using var host = await StartHostAsync(_services.Create("hosting-requests"));
             var bus = host.Services.GetRequiredService<IServiceBus>();
             using var server = bus.Requests.OfType<GetQuote>()
                 .Subscribe(request => _ = bus.ReplyAsync(request, new Quote { Price = 9.99m }));
@@ -49,21 +56,22 @@ namespace Obvs.RabbitMQ.Tests.Hosting
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldNotCollideWhenTwoBusesInOneProcessUseTheSameService()
         {
-            // Both buses subscribe to the same service's commands from one process, as two test hosts would.
+            // Both buses subscribe to the same service's events from one process, as two test hosts would.
             // Each subscription needs its own exclusive queue. Without unique names, the second bus's queue
             // declaration fails with RESOURCE_LOCKED: the bus reports the error and retries under a new name,
             // so the clash shows up as errors, not lost messages.
-            using var hostA = await StartHostAsync("obvs-hosting-two-buses");
-            using var hostB = await StartHostAsync("obvs-hosting-two-buses");
+            var serviceName = _services.Create("hosting-two-buses");
+            using var hostA = await StartHostAsync(serviceName);
+            using var hostB = await StartHostAsync(serviceName);
             var busA = hostA.Services.GetRequiredService<IServiceBus>();
             var busB = hostB.Services.GetRequiredService<IServiceBus>();
             var errors = new ConcurrentQueue<Exception>();
             using var errorsA = busA.Exceptions.Subscribe(errors.Enqueue);
             using var errorsB = busB.Exceptions.Subscribe(errors.Enqueue);
 
-            var receivedByA = busA.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            var receivedByB = busB.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
-            await busA.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+            var receivedByA = busA.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
+            var receivedByB = busB.Events.OfType<OrderPlaced>().FirstAsync().ToTask();
+            await busA.PublishAsync(new OrderPlaced { OrderId = "o-1" }, TestContext.Current.CancellationToken);
 
             Assert.Equal("o-1", (await receivedByA.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
             Assert.Equal("o-1", (await receivedByB.WaitAsync(Timeout, TestContext.Current.CancellationToken)).OrderId);
@@ -76,7 +84,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
             // Code that runs on receiving a message (including code after awaiting one) may shut the app down.
             // If messages arrived on RabbitMQ's consumer-dispatch thread, closing the connection there would
             // wait for that same thread, forever.
-            var host = await StartHostAsync("obvs-hosting-dispose-in-callback");
+            var host = await StartHostAsync(_services.Create("hosting-dispose-in-callback"));
             var bus = host.Services.GetRequiredService<IServiceBus>();
             var disposed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             using var subscription = bus.Commands.OfType<PlaceOrder>().Subscribe(_ =>

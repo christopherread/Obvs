@@ -12,6 +12,10 @@ Obvs.RabbitMQ.MessageSource<TMessage>.MessageSource(System.Lazy<RabbitMQ.Client.
 Obvs.RabbitMQ.RabbitMqOptions
 Obvs.RabbitMQ.RabbitMqOptions.AutomaticRecoveryEnabled.get -> bool
 Obvs.RabbitMQ.RabbitMqOptions.AutomaticRecoveryEnabled.set -> void
+Obvs.RabbitMQ.RabbitMqOptions.MaxConcurrentMessages.get -> int?
+Obvs.RabbitMQ.RabbitMqOptions.MaxConcurrentMessages.set -> void
+Obvs.RabbitMQ.RabbitMqOptions.MaxDeliveryAttempts.get -> int
+Obvs.RabbitMQ.RabbitMqOptions.MaxDeliveryAttempts.set -> void
 Obvs.RabbitMQ.RabbitMqOptions.RabbitMqOptions() -> void
 Obvs.RabbitMQ.RabbitMqOptions.Uri.get -> System.Uri
 Obvs.RabbitMQ.RabbitMqOptions.Uri.set -> void
