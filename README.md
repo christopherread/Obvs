@@ -85,7 +85,7 @@ Everything on the bus is an Rx stream: `Commands`, `Events`, `Requests` and `Get
 - [The Obvs site](https://christopherread.github.io/Obvs/), with what's new in v7.
 - [Common tasks](docs/common-tasks.md): add a service, handle and send messages, requests, errors, tests, tracing.
 - [Testing](docs/testing.md) with an in-memory broker.
-- Transports: [Azure Service Bus](docs/transports/azure-service-bus.md), [Kafka](docs/transports/kafka.md) (and [Confluent Cloud](docs/transports/kafka-confluent-cloud.md), [Amazon MSK](docs/transports/kafka-amazon-msk.md), [Azure Event Hubs](docs/transports/kafka-azure-event-hubs.md)), [Amazon SQS and SNS](docs/transports/amazon-sqs.md), [NATS and JetStream](docs/transports/nats.md), [NetMQ](docs/transports/netmq.md).
+- Transports: [RabbitMQ](docs/transports/rabbitmq.md), [Azure Service Bus](docs/transports/azure-service-bus.md), [Kafka](docs/transports/kafka.md) (and [Confluent Cloud](docs/transports/kafka-confluent-cloud.md), [Amazon MSK](docs/transports/kafka-amazon-msk.md), [Azure Event Hubs](docs/transports/kafka-azure-event-hubs.md)), [Amazon SQS and SNS](docs/transports/amazon-sqs.md), [NATS and JetStream](docs/transports/nats.md), [NetMQ](docs/transports/netmq.md).
 - [Configuration errors](docs/configuration-errors.md) and [analyzers](docs/analyzers.md).
 - [Service contracts](docs/contracts.md) as AsyncAPI, and an [MCP server](docs/mcp.md) for agents.
 - [Migrating from v6](docs/migrating-from-v6.md).

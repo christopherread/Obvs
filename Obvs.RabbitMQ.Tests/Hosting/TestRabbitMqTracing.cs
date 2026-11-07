@@ -13,14 +13,21 @@ using Xunit;
 namespace Obvs.RabbitMQ.Tests.Hosting
 {
     // Two hosts connected only through RabbitMQ stand in for two processes
-    public class TestRabbitMqTracing
+    public class TestRabbitMqTracing : IClassFixture<RabbitMqServices>
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
+
+        private readonly RabbitMqServices _services;
+
+        public TestRabbitMqTracing(RabbitMqServices services)
+        {
+            _services = services;
+        }
 
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldContinueTheSendersTraceAcrossRabbitMq()
         {
-            const string serviceName = "obvs-tracing-commands";
+            var serviceName = _services.Create("tracing-commands");
             using var activities = new ActivityRecorder();
             using var receiver = await StartHostAsync(serviceName, service => service.AsServer()
                 .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
@@ -37,7 +44,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldCarryHeadersTheAppSetsOverRabbitMq()
         {
-            const string serviceName = "obvs-tracing-headers";
+            var serviceName = _services.Create("tracing-headers");
             var received = new TaskCompletionSource<IReadOnlyDictionary<string, string>>(TaskCreationOptions.RunContinuationsAsynchronously);
             using var receiver = await StartHostAsync(serviceName, service => service.AsServer()
                 .HandleCommand<PlaceOrder>((command, context, ct) =>
@@ -57,7 +64,7 @@ namespace Obvs.RabbitMQ.Tests.Hosting
         [Fact, Trait("Category", "Explicit")]
         public async Task ShouldCarryEachSendsOwnHeadersWhenOneMessageIsSentTwiceAtOnce()
         {
-            const string serviceName = "obvs-tracing-headers-concurrent";
+            var serviceName = _services.Create("tracing-headers-concurrent");
             var tenants = new ConcurrentQueue<string>();
             var both = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             using var receiver = await StartHostAsync(serviceName, service => service.AsServer()
