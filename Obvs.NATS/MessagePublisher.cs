@@ -7,11 +7,13 @@ using NATS.Client.Core;
 using Obvs.Serialization;
 using Obvs.Transports;
 
-// v6's NATS transport building blocks, which UseNats(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.NATS
 {
+    /// <summary>
+    /// Publishes messages to NATS, as v6 did, for an app that builds its own endpoints. Each is published to the subject
+    /// <c>{subjectPrefix}.{type's name}</c>, with its headers as NATS headers.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
     public class MessagePublisher<TMessage> : IMessagePublisher<TMessage> where TMessage : class
     {
         private readonly INatsConnection _connection;
@@ -19,6 +21,11 @@ namespace Obvs.NATS
         private readonly IMessageSerializer _serializer;
         private readonly Func<TMessage, Dictionary<string, string>> _properties;
 
+        /// <summary>Creates a publisher to the subjects under <paramref name="subjectPrefix"/>.</summary>
+        /// <param name="connection">The connection to NATS</param>
+        /// <param name="subjectPrefix">The subjects' prefix, for example <c>orders.Events</c></param>
+        /// <param name="serializer">Writes each message's body</param>
+        /// <param name="properties">The properties to send with each message, which sources can filter on. None when null</param>
         public MessagePublisher(INatsConnection connection,
             string subjectPrefix,
             IMessageSerializer serializer,
@@ -30,6 +37,7 @@ namespace Obvs.NATS
             _properties = properties ?? (message => null);
         }
 
+        /// <inheritdoc />
         public async Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             byte[] body;
@@ -65,6 +73,7 @@ namespace Obvs.NATS
             return natsHeaders;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
         }

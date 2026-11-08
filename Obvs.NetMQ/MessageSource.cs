@@ -11,11 +11,13 @@ using Obvs.NetMQ.Extensions;
 using Obvs.Serialization;
 using Obvs.Transports;
 
-// v6's NetMQ transport building blocks, which UseNetMq(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.NetMQ
 {
+    /// <summary>
+    /// Receives the messages published to a NetMQ topic, as v6 did, for an app that builds its own endpoints. Each
+    /// subscription has its own subscriber socket, on a thread of its own, for as long as it lasts.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
     public class MessageSource<TMessage> : IMessageSource<TMessage> where TMessage : class
     {
         private readonly string _address;
@@ -24,6 +26,11 @@ namespace Obvs.NetMQ
         private readonly SocketType _socketType;
         private readonly TimeSpan _receiveTimeout = TimeSpan.FromSeconds(1);
 
+        /// <summary>Creates a source of the messages published to <paramref name="topic"/> at <paramref name="address"/>.</summary>
+        /// <param name="address">The socket's address, for example <c>tcp://localhost:5556</c></param>
+        /// <param name="deserializers">The deserializers, one for each type of message, chosen by the type's name the publisher sends</param>
+        /// <param name="topic">The topic, for example <c>orders.Events</c></param>
+        /// <param name="socketType">Whether the socket connects to the address, by default, or binds to it</param>
         public MessageSource(string address, IEnumerable<IMessageDeserializer<TMessage>> deserializers, string topic, SocketType socketType = SocketType.Client)
         {
             _address = address;
@@ -32,6 +39,7 @@ namespace Obvs.NetMQ
             _socketType = socketType;
         }
         
+        /// <inheritdoc />
         public IObservable<TMessage> Messages
         {
             get
@@ -128,6 +136,7 @@ namespace Obvs.NetMQ
             return topic == _topic;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
         }

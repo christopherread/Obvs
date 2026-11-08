@@ -1,11 +1,12 @@
-// v6's Kafka transport building blocks, which UseKafka(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.Kafka.Configuration
 {
+    /// <summary>How much a Kafka <see cref="MessageSource{TMessage}"/> fetches from the broker at once.</summary>
     public class KafkaSourceConfiguration
     {
+        /// <summary>The least data the broker returns to a fetch, as the consumer's <c>fetch.min.bytes</c>. The client's default when null.</summary>
         public int? FetchMinBytes { get; set; }
+
+        /// <summary>The most data the broker returns to a fetch, as the consumer's <c>fetch.max.bytes</c>. The client's default when null.</summary>
         public int? FetchMaxBytes { get; set; }
     }
 }

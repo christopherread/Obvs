@@ -131,6 +131,18 @@ namespace Obvs.ActiveMQ.Tests
         }
 
         [Fact]
+        public async Task ShouldPublishWhenGivenNoScheduler()
+        {
+            var textMessage = A.Fake<ITextMessage>();
+            A.CallTo(() => _producer.CreateTextMessage()).Returns(textMessage);
+            _publisher = new TextMessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider);
+
+            await _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+
+            A.CallTo(() => _producer.Send(textMessage, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
+        }
+
+        [Fact]
         public async Task ShouldSendBytesMessageSerializerReturnsBytes()
         {
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);

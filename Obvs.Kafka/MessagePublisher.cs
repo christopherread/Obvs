@@ -11,11 +11,13 @@ using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
 using Obvs.Transports;
 
-// v6's Kafka transport building blocks, which UseKafka(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.Kafka
 {
+    /// <summary>
+    /// Produces messages to a Kafka topic, as v6 did, for an app that builds its own endpoints, with their headers as
+    /// Kafka headers. Its producer is created on the first message.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
     public class MessagePublisher<TMessage> : IMessagePublisher<TMessage>
         where TMessage : class
     {
@@ -30,6 +32,12 @@ namespace Obvs.Kafka
         private IProducer<Null, WrapperMessage> _producer;
         private readonly Action<IClient, string> _oauthBearerTokenRefreshHandler;
 
+        /// <summary>Creates a publisher to <paramref name="topic"/>.</summary>
+        /// <param name="kafkaConfiguration">The cluster to connect to</param>
+        /// <param name="producerConfig">How to batch messages</param>
+        /// <param name="topic">The topic, for example <c>orders.Events</c></param>
+        /// <param name="serializer">Writes each message's body</param>
+        /// <param name="propertyProvider">The properties to send with each message, which sources can filter on. None when null</param>
         public MessagePublisher(KafkaConfiguration kafkaConfiguration, KafkaProducerConfiguration producerConfig, string topic, IMessageSerializer serializer, Func<TMessage, Dictionary<string, string>> propertyProvider)
         {
             _topic = topic;
@@ -45,6 +53,7 @@ namespace Obvs.Kafka
 
         internal ProducerConfig ProducerConfig => _producerConfig;
 
+        /// <inheritdoc />
         public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             if (_disposed)
@@ -128,6 +137,7 @@ namespace Obvs.Kafka
             }
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (_disposable != null && !_disposed)
@@ -137,7 +147,7 @@ namespace Obvs.Kafka
         }
     }
 
-    public class ProducerValueSerializer<T> : ISerializer<T>
+    internal class ProducerValueSerializer<T> : ISerializer<T>
     {
         public byte[] Serialize(T data, SerializationContext context)
         {

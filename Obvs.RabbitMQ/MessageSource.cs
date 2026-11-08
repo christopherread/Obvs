@@ -14,11 +14,14 @@ using Obvs.Transports;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-// v6's RabbitMQ transport building blocks, which UseRabbitMq(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.RabbitMQ
 {
+    /// <summary>
+    /// Receives messages published to a RabbitMQ topic exchange under a routing key prefix, as v6 did, for an app that
+    /// builds its own endpoints. Each subscription has its own queue, bound to <c>{routingKeyPrefix}.*</c>, which is
+    /// deleted when the subscription is disposed, and messages are acknowledged as they arrive.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
     public class MessageSource<TMessage> : IMessageSource<TMessage> where TMessage : class
     {
         private readonly Lazy<IConnection> _connection;
@@ -30,13 +33,13 @@ namespace Obvs.RabbitMQ
         private int _subscriberCount;
 
         /// <summary>
-        /// Creates a new MessageSource
+        /// Creates a source of the messages published to <paramref name="exchange"/> under <paramref name="routingKeyPrefix"/>.
         /// </summary>
-        /// <param name="connection">Lazy connection to RabbitMQ which will connect on first subscription</param>
-        /// <param name="deserializers">Collection of deserializers, one per message type</param>
-        /// <param name="exchange">RabbitMQ Exchange name</param>
-        /// <param name="routingKeyPrefix">Any routing key prefix for filtering messages</param>
-        /// <param name="uniqueQueueSuffix">Only required if you intend to create two or more message sources to subscribe to the same source in the same process</param>
+        /// <param name="connection">The connection to RabbitMQ, opened on the first subscription</param>
+        /// <param name="deserializers">The deserializers, one for each type of message, chosen by the routing key's last part</param>
+        /// <param name="exchange">The topic exchange, declared if it doesn't exist</param>
+        /// <param name="routingKeyPrefix">The routing key's prefix, for example <c>orders.Events</c></param>
+        /// <param name="uniqueQueueSuffix">Appended to the queue's name, for two or more sources of the same messages in one process</param>
         public MessageSource(Lazy<IConnection> connection, IEnumerable<IMessageDeserializer<TMessage>> deserializers, 
             string exchange, string routingKeyPrefix, string uniqueQueueSuffix = "")
         {
@@ -48,10 +51,12 @@ namespace Obvs.RabbitMQ
             _queueNamePrefix = routingKeyPrefix.StartsWith(exchange) ? routingKeyPrefix : string.Format("{0}.{1}*", _exchange, routingKeyPrefix);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
         }
 
+        /// <inheritdoc />
         public IObservable<TMessage> Messages
         {
             get

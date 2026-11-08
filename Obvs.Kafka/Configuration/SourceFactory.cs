@@ -3,12 +3,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using Obvs.Serialization;
 
-// v6's Kafka transport building blocks, which UseKafka(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.Kafka.Configuration
 {
-    public static class SourceFactory
+    internal static class SourceFactory
     {
         public static MessageSource<TMessage> Create<TMessage, TServiceMessage>(
             KafkaConfiguration kafkaConfiguration, 

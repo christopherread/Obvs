@@ -12,11 +12,14 @@ using Obvs.Hosting;
 using Obvs.Transports;
 using Obvs.Serialization;
 
-// v6's ActiveMQ transport building blocks, which UseActiveMq(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.ActiveMQ
 {
+    /// <summary>
+    /// Sends messages to an ActiveMQ queue or topic as bytes messages, as v6 did, for an app that builds its own endpoints.
+    /// Each carries its type's name and the properties from <c>propertyProvider</c> as message properties, and its headers
+    /// as string properties. Messages are sent one at a time, in order, on the scheduler it's given or one of its own.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
     public class MessagePublisher<TMessage> : IMessagePublisher<TMessage>
         where TMessage : class
     {
@@ -38,6 +41,14 @@ namespace Obvs.ActiveMQ
         private volatile IDisposable _disposable;
         private volatile bool _disposed;
 
+        /// <summary>Creates a publisher to <paramref name="destination"/> that sends messages one at a time, in order, on a scheduler of its own.</summary>
+        /// <param name="lazyConnection">The connection to ActiveMQ, opened on the first message</param>
+        /// <param name="destination">The queue or topic</param>
+        /// <param name="serializer">Writes each message's body</param>
+        /// <param name="propertyProvider">The properties to send with each message, which sources can filter or select on. None when null</param>
+        /// <param name="deliveryMode">Whether each message is persistent. Non-persistent when null</param>
+        /// <param name="priority">Each message's priority. Normal when null</param>
+        /// <param name="timeToLive">How long each message lives. For ever when null</param>
         protected MessagePublisher(
             Lazy<IConnection> lazyConnection,
             IDestination destination,
@@ -54,8 +65,21 @@ namespace Obvs.ActiveMQ
             _deliveryMode = deliveryMode ?? (message => MsgDeliveryMode.NonPersistent);
             _priority = priority ?? (message => MsgPriority.Normal);
             _timeToLive = timeToLive ?? (message => TimeSpan.Zero);
+
+            var taskFactory = new TaskFactory(new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler);
+            _publishMethod = (message, headers, cancellationToken) => taskFactory.StartNew(() => Publish(message, headers, cancellationToken), cancellationToken);
+            _drainMethod = () => taskFactory.StartNew(() => { });
         }
 
+        /// <summary>Creates a publisher to <paramref name="destination"/> that sends messages on <paramref name="scheduler"/>.</summary>
+        /// <param name="lazyConnection">The connection to ActiveMQ, opened on the first message</param>
+        /// <param name="destination">The queue or topic</param>
+        /// <param name="serializer">Writes each message's body</param>
+        /// <param name="propertyProvider">The properties to send with each message, which sources can filter or select on. None when null</param>
+        /// <param name="scheduler">Where messages are sent, which must run one at a time</param>
+        /// <param name="deliveryMode">Whether each message is persistent. Non-persistent when null</param>
+        /// <param name="priority">Each message's priority. Normal when null</param>
+        /// <param name="timeToLive">How long each message lives. For ever when null</param>
         public MessagePublisher(Lazy<IConnection> lazyConnection,
             IDestination destination,
             IMessageSerializer serializer,
@@ -70,6 +94,15 @@ namespace Obvs.ActiveMQ
             _drainMethod = () => scheduler.ScheduleAsync(() => { });
         }
 
+        /// <summary>Creates a publisher to <paramref name="destination"/> that sends messages on <paramref name="taskScheduler"/>.</summary>
+        /// <param name="lazyConnection">The connection to ActiveMQ, opened on the first message</param>
+        /// <param name="destination">The queue or topic</param>
+        /// <param name="serializer">Writes each message's body</param>
+        /// <param name="propertyProvider">The properties to send with each message, which sources can filter or select on. None when null</param>
+        /// <param name="taskScheduler">Where messages are sent, which must run one at a time, for example a <see cref="ConcurrentExclusiveSchedulerPair"/>'s exclusive scheduler</param>
+        /// <param name="deliveryMode">Whether each message is persistent. Non-persistent when null</param>
+        /// <param name="priority">Each message's priority. Normal when null</param>
+        /// <param name="timeToLive">How long each message lives. For ever when null</param>
         public MessagePublisher(
             Lazy<IConnection> lazyConnection,
             IDestination destination,
@@ -86,6 +119,7 @@ namespace Obvs.ActiveMQ
             _drainMethod = () => taskFactory.StartNew(() => { });
         }
 
+        /// <inheritdoc />
         public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             if (_disposed)
@@ -122,6 +156,11 @@ namespace Obvs.ActiveMQ
             _producer.Send(msg, _deliveryMode(message), _priority(message), _timeToLive(message));
         }
         
+        /// <summary>Creates the ActiveMQ message for <paramref name="message"/>, a bytes message unless overridden.</summary>
+        /// <param name="message">The message to send</param>
+        /// <param name="producer">Creates the ActiveMQ message</param>
+        /// <param name="serializer">Writes the message's body</param>
+        /// <returns>The message to send, whose properties the publisher then sets</returns>
         protected virtual IMessage GenerateMessage(TMessage message, IMessageProducer producer, IMessageSerializer serializer)
         {
             var bytesMessage = producer.CreateBytesMessage();
@@ -199,6 +238,7 @@ namespace Obvs.ActiveMQ
             _drainMethod().Wait(TimeSpan.FromSeconds(DrainTimeoutSecs));
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             var disposable = _disposable;

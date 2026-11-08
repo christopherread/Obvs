@@ -1,13 +1,14 @@
 ﻿using NetMQ.Sockets;
 
-// v6's NetMQ transport building blocks, which UseNetMq(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.NetMQ.Configuration
 {
+    /// <summary>Whether a NetMQ source or publisher binds its socket to the address, or connects it to one bound there.</summary>
     public enum SocketType
     {
-         Server,
-         Client
+        /// <summary>Binds to the address, which the other side connects to</summary>
+        Server,
+
+        /// <summary>Connects to the address, which the other side binds to</summary>
+        Client
     }
 }

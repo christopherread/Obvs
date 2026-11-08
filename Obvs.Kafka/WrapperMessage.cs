@@ -2,17 +2,11 @@ using System.Collections.Generic;
 using System.IO;
 using ProtoBuf;
 
-// v6's Kafka transport building blocks, which UseKafka(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.Kafka
 {
-    /// <summary>
-    /// Message wrapper used to append properties and type information 
-    /// to message before sending to Kafka
-    /// </summary>
+    // A message's body, with its type's name and the properties v6 filtered on, as it goes over Kafka
     [ProtoContract]
-    public class WrapperMessage
+    internal class WrapperMessage
     {
         [ProtoMember(1)]
         public byte[] Payload { get; set; }

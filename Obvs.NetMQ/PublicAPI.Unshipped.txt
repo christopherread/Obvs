@@ -1,7 +1,4 @@
 Obvs.Hosting.NetMqTransportExtensions
-Obvs.NetMQ.Configuration.NetMqServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>
-Obvs.NetMQ.Configuration.NetMqServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.NetMqServiceEndpointProvider(string serviceName, string address, int port, Obvs.Serialization.IMessageSerializer serializer, Obvs.Serialization.IMessageDeserializerFactory deserializerFactory, System.Func<System.Reflection.Assembly, bool> assemblyFilter, System.Func<System.Type, bool> typeFilter) -> void
-Obvs.NetMQ.Configuration.NetMqServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.NetMqServiceEndpointProvider(string serviceName, string address, int port, Obvs.Serialization.IMessageSerializer serializer, Obvs.Serialization.IMessageDeserializerFactory deserializerFactory, System.Func<System.Reflection.Assembly, bool> assemblyFilter, System.Func<System.Type, bool> typeFilter, bool sendHeaders) -> void
 Obvs.NetMQ.Configuration.SocketType
 Obvs.NetMQ.Configuration.SocketType.Client = 1 -> Obvs.NetMQ.Configuration.SocketType
 Obvs.NetMQ.Configuration.SocketType.Server = 0 -> Obvs.NetMQ.Configuration.SocketType
@@ -21,8 +18,6 @@ Obvs.NetMQ.NetMqOptions.Port.get -> int
 Obvs.NetMQ.NetMqOptions.Port.set -> void
 Obvs.NetMQ.NetMqOptions.SendHeaders.get -> bool
 Obvs.NetMQ.NetMqOptions.SendHeaders.set -> void
-override Obvs.NetMQ.Configuration.NetMqServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpoint() -> Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
-override Obvs.NetMQ.Configuration.NetMqServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpointClient() -> Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>
 static Obvs.Hosting.NetMqTransportExtensions.UseNetMq(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration) -> Obvs.Hosting.ObvsServiceBuilder
 static Obvs.Hosting.NetMqTransportExtensions.UseNetMq(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration, System.Action<Obvs.NetMQ.NetMqOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
 static Obvs.Hosting.NetMqTransportExtensions.UseNetMq(this Obvs.Hosting.ObvsServiceBuilder service, System.Action<Obvs.NetMQ.NetMqOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder

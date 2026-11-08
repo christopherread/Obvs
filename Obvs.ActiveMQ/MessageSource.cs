@@ -14,11 +14,13 @@ using Obvs.Hosting;
 using Obvs.Transports;
 using Obvs.Serialization;
 
-// v6's ActiveMQ transport building blocks, which UseActiveMq(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.ActiveMQ
 {
+    /// <summary>
+    /// Receives bytes messages from an ActiveMQ queue or topic, as v6 did, for an app that builds its own endpoints. A
+    /// topic's subscribers share one consumer. Messages of a type with no deserializer are skipped.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
     public class MessageSource<TMessage> : IMessageSource<TMessage>
         where TMessage : class
     {
@@ -30,6 +32,14 @@ namespace Obvs.ActiveMQ
         private readonly Lazy<IConnection> _lazyConnection;
         private readonly bool _noLocal;
 
+        /// <summary>Creates a source of the messages sent to <paramref name="destination"/>.</summary>
+        /// <param name="lazyConnection">The connection to ActiveMQ, opened on the first subscription</param>
+        /// <param name="deserializers">The deserializers, one for each type of message, chosen by the type's name the publisher sends</param>
+        /// <param name="destination">The queue or topic</param>
+        /// <param name="mode">When messages are acknowledged: as they're delivered, by default, or once deserialized</param>
+        /// <param name="selector">An ActiveMQ message selector, which the broker filters messages with. All of them when null</param>
+        /// <param name="propertyFilter">Which messages to receive, by their properties, once the broker has delivered them. All of them when null</param>
+        /// <param name="noLocal">Whether to skip messages sent on the same connection</param>
         public MessageSource(Lazy<IConnection> lazyConnection,
             IEnumerable<IMessageDeserializer<TMessage>> deserializers,
             IDestination destination,
@@ -84,6 +94,7 @@ namespace Obvs.ActiveMQ
             Messages = messages;
         }
 
+        /// <inheritdoc />
         public IObservable<TMessage> Messages { get; }
 
         private bool PassesFilter(IMessage message)
@@ -135,6 +146,10 @@ namespace Obvs.ActiveMQ
             return _deserializers.TryGetValue(typeName, out deserializer) ? deserializer : null;
         }
 
+        /// <summary>Reads <paramref name="message"/>, a bytes message unless overridden.</summary>
+        /// <param name="message">The ActiveMQ message</param>
+        /// <param name="deserializer">The deserializer for the message's type</param>
+        /// <returns>The message, or null for one this source can't read, which it skips</returns>
         protected virtual TMessage DeserializeMessage(IMessage message, IMessageDeserializer<TMessage> deserializer)
         {
             var bytesMessage = message as IBytesMessage;
@@ -158,6 +173,7 @@ namespace Obvs.ActiveMQ
             }
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
         }

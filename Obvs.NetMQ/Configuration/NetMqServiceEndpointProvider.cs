@@ -4,12 +4,9 @@ using Obvs.Configuration;
 using Obvs.Serialization;
 using Obvs.Transports;
 
-// v6's NetMQ transport building blocks, which UseNetMq(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.NetMQ.Configuration
 {
-    public class NetMqServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : 
+    internal class NetMqServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : 
         ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TServiceMessage : class
         where TMessage : class

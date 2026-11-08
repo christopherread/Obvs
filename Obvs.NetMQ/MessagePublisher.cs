@@ -10,11 +10,13 @@ using Obvs.NetMQ.Extensions;
 using Obvs.Serialization;
 using Obvs.Transports;
 
-// v6's NetMQ transport building blocks, which UseNetMq(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.NetMQ
 {
+    /// <summary>
+    /// Publishes messages to a NetMQ topic, as v6 did, for an app that builds its own endpoints. Its first message waits
+    /// for a subscriber to the topic, for up to 5 seconds, as ZeroMQ drops messages published before one connects.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
     public class MessagePublisher<TMessage> : IMessagePublisher<TMessage> where TMessage : class
     {
         private readonly string _address;
@@ -29,7 +31,12 @@ namespace Obvs.NetMQ
         private static readonly TimeSpan MinimumSubscriberWait = TimeSpan.FromSeconds(1);
         private static readonly TimeSpan SubscriberWaitTimeout = TimeSpan.FromSeconds(5);
 
-        // sendHeaders adds a fifth frame with the message's headers, which v6 receivers can't read
+        /// <summary>Creates a publisher to <paramref name="topic"/> at <paramref name="address"/>.</summary>
+        /// <param name="address">The socket's address, for example <c>tcp://*:5556</c></param>
+        /// <param name="serializer">Writes each message's body</param>
+        /// <param name="topic">The topic, for example <c>orders.Events</c></param>
+        /// <param name="socketType">Whether the socket binds to the address, by default, or connects to it</param>
+        /// <param name="sendHeaders">Whether to send the message's headers, in a fifth frame, which v6 sources can't read</param>
         public MessagePublisher(string address, IMessageSerializer serializer, string topic, SocketType socketType = SocketType.Server, bool sendHeaders = false)
         {
             _sendHeaders = sendHeaders;
@@ -87,6 +94,7 @@ namespace Obvs.NetMQ
             socket.SendToTopic(_topic, message.GetType().Name, _serializer.Serialize(message), _sendHeaders ? headers : null);
         }
 
+        /// <inheritdoc />
         public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -94,6 +102,7 @@ namespace Obvs.NetMQ
             return Task.FromResult(true);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (_socket.IsValueCreated)
