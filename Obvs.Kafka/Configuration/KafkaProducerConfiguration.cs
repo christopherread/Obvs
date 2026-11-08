@@ -1,10 +1,9 @@
-// v6's Kafka transport building blocks, which UseKafka(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.Kafka.Configuration
 {
+    /// <summary>How a Kafka <see cref="MessagePublisher{TMessage}"/> batches the messages it produces.</summary>
     public class KafkaProducerConfiguration
     {
+        /// <summary>The most messages the producer sends to the broker in one batch, as its <c>batch.num.messages</c>. 1000 by default.</summary>
         public int BatchFlushSize { get; set; } = 1000;
     }
 }

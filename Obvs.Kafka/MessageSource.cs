@@ -18,12 +18,14 @@ using Obvs.Transports;
 using ProtoBuf;
 using SerializationContext = Confluent.Kafka.SerializationContext;
 
-// v6's Kafka transport building blocks, which UseKafka(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.Kafka
 {
-    public class MessageSource<TMessage> : IMessageSource<TMessage> 
+    /// <summary>
+    /// Receives the messages produced to a Kafka topic, as v6 did, for an app that builds its own endpoints. Each
+    /// subscription has its own consumer, in the source's consumer group, and starts at the topic's latest messages.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
+    public class MessageSource<TMessage> : IMessageSource<TMessage>
         where TMessage : class
     {
         private readonly IDictionary<string, IMessageDeserializer<TMessage>> _deserializers;
@@ -38,6 +40,12 @@ namespace Obvs.Kafka
         private static readonly TimeSpan PartitionAssignmentTimeout = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan OffsetQueryTimeout = TimeSpan.FromSeconds(10);
 
+        /// <summary>Creates a source of the messages produced to <paramref name="topicName"/>.</summary>
+        /// <param name="kafkaConfig">The cluster to connect to</param>
+        /// <param name="sourceConfig">How much to fetch at once</param>
+        /// <param name="topicName">The topic, for example <c>orders.Events</c></param>
+        /// <param name="deserializers">The deserializers, one for each type of message, chosen by the type's name the publisher sends</param>
+        /// <param name="propertyFilter">Which messages to receive, by the properties their publisher sent with them. All of them when null</param>
         /// <param name="groupId">The consumer group. Without one, the group is named after the process, so each process receives every message</param>
         public MessageSource(KafkaConfiguration kafkaConfig,
             KafkaSourceConfiguration sourceConfig, 
@@ -69,6 +77,7 @@ namespace Obvs.Kafka
 
         internal ConsumerConfig ConsumerConfig => _consumerConfig;
 
+        /// <inheritdoc />
         public IObservable<TMessage> Messages
         {
             get
@@ -275,12 +284,13 @@ namespace Obvs.Kafka
             ObvsReceivedMessage.Attach(message, headers);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
         }
     }
 
-    public class ConsumerValueDeserializer<T> : IDeserializer<T> where T : new()
+    internal class ConsumerValueDeserializer<T> : IDeserializer<T> where T : new()
     {
         public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context) =>
             isNull ? default(T) : Serializer.Deserialize<T>(new MemoryStream(data.ToArray()));

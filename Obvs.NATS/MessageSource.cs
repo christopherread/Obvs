@@ -10,11 +10,13 @@ using NATS.Client.Core;
 using Obvs.Serialization;
 using Obvs.Transports;
 
-// v6's NATS transport building blocks, which UseNats(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.NATS
 {
+    /// <summary>
+    /// Receives the messages published to NATS subjects under a prefix, as v6 did, for an app that builds its own
+    /// endpoints. Each subscription has its own NATS subscription to <c>{subjectPrefix}.*</c>.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
     public class MessageSource<TMessage> : IMessageSource<TMessage>
         where TMessage : class
     {
@@ -23,6 +25,11 @@ namespace Obvs.NATS
         private readonly Func<Dictionary<string, string>, bool> _filter;
         private readonly string _subject;
 
+        /// <summary>Creates a source of the messages published under <paramref name="subjectPrefix"/>.</summary>
+        /// <param name="connection">The connection to NATS</param>
+        /// <param name="subjectPrefix">The subjects' prefix, for example <c>orders.Events</c></param>
+        /// <param name="deserializers">The deserializers, one for each type of message, chosen by the subject's last part</param>
+        /// <param name="filter">Which messages to receive, by the properties their publisher sent with them. All of them when null</param>
         public MessageSource(INatsConnection connection,
             string subjectPrefix,
             IEnumerable<IMessageDeserializer<TMessage>> deserializers,
@@ -34,6 +41,7 @@ namespace Obvs.NATS
             _subject = string.Format("{0}.*", subjectPrefix);
         }
 
+        /// <inheritdoc />
         public IObservable<TMessage> Messages
         {
             get
@@ -138,6 +146,7 @@ namespace Obvs.NATS
             return subject.Split('.').Last();
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
         }

@@ -5,20 +5,22 @@ using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-// v6's Kafka transport building blocks, which UseKafka(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
 namespace Obvs.Kafka.Configuration
 {
+    /// <summary>The Kafka cluster a <see cref="MessageSource{TMessage}"/> or <see cref="MessagePublisher{TMessage}"/> connects to.</summary>
     public class KafkaConfiguration
     {
         private readonly KafkaOptions _options;
 
+        /// <summary>Connects to the cluster through these brokers.</summary>
+        /// <param name="bootstrapServers">The brokers the clients first connect to</param>
         public KafkaConfiguration(params IPEndPoint[] bootstrapServers)
             : this(string.Join(",", bootstrapServers.Select(ip => ip.ToString())))
         {
         }
 
+        /// <summary>Connects to the cluster through these brokers.</summary>
+        /// <param name="bootstrapServers">The brokers the clients first connect to, separated by commas, for example <c>localhost:9092</c></param>
         public KafkaConfiguration(string bootstrapServers)
         {
             BootstrapServers = bootstrapServers;
@@ -38,6 +40,7 @@ namespace Obvs.Kafka.Configuration
             }
         }
 
+        /// <summary>The brokers the clients first connect to, separated by commas.</summary>
         public string BootstrapServers { get; }
 
         // Set on each client's builder when signing in with OAUTHBEARER

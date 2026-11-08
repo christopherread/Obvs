@@ -53,6 +53,70 @@ namespace Obvs.Tests
             Assert.DoesNotContain("System.Reflection.Emit.Lightweight", File.ReadAllText(Path.Combine(Root, "Directory.Packages.props")));
         }
 
+        // Apps configure a transport with its Use method and options. Its sources and publishers stay public, with the types
+        // their constructors take, for apps that build endpoints from them. What v6 built endpoints with is internal.
+        public static TheoryData<string, string[]> TransportTypes => new TheoryData<string, string[]>
+        {
+            { "Obvs.ActiveMQ", new[]
+            {
+                "Obvs.ActiveMQ.AcknowledgementMode", "Obvs.ActiveMQ.ActiveMqOptions", "Obvs.ActiveMQ.MessagePublisher<TMessage>",
+                "Obvs.ActiveMQ.MessageSource<TMessage>", "Obvs.ActiveMQ.TextMessagePublisher<TMessage>", "Obvs.ActiveMQ.TextMessageSource<TMessage>",
+                "Obvs.Hosting.ActiveMqTransportExtensions",
+            } },
+            { "Obvs.Kafka", new[]
+            {
+                "Obvs.Hosting.KafkaTransportExtensions", "Obvs.Kafka.Configuration.KafkaConfiguration", "Obvs.Kafka.Configuration.KafkaProducerConfiguration",
+                "Obvs.Kafka.Configuration.KafkaSourceConfiguration", "Obvs.Kafka.KafkaOAuthBearerToken", "Obvs.Kafka.KafkaOptions",
+                "Obvs.Kafka.MessagePublisher<TMessage>", "Obvs.Kafka.MessageSource<TMessage>",
+            } },
+            { "Obvs.NATS", new[]
+            {
+                "Obvs.Hosting.NatsJetStreamTransportExtensions", "Obvs.Hosting.NatsTransportExtensions", "Obvs.NATS.MessagePublisher<TMessage>",
+                "Obvs.NATS.MessageSource<TMessage>", "Obvs.NATS.NatsJetStreamOptions", "Obvs.NATS.NatsOptions",
+            } },
+            { "Obvs.NetMQ", new[]
+            {
+                "Obvs.Hosting.NetMqTransportExtensions", "Obvs.NetMQ.Configuration.SocketType", "Obvs.NetMQ.MessagePublisher<TMessage>",
+                "Obvs.NetMQ.MessageSource<TMessage>", "Obvs.NetMQ.NetMqOptions",
+            } },
+            { "Obvs.RabbitMQ", new[]
+            {
+                "Obvs.Hosting.RabbitMqTransportExtensions", "Obvs.RabbitMQ.MessagePublisher<TMessage>", "Obvs.RabbitMQ.MessageSource<TMessage>",
+                "Obvs.RabbitMQ.RabbitMqOptions",
+            } },
+        };
+
+        [Theory]
+        [MemberData(nameof(TransportTypes))]
+        public void ShouldExposeOnlyItsUseMethodOptionsSourcesAndPublishers(string package, string[] types)
+        {
+            Assert.Equal(types.OrderBy(type => type, StringComparer.Ordinal), DeclaredTypes(package));
+        }
+
+        public static TheoryData<string> Transports => new TheoryData<string>("Obvs.ActiveMQ", "Obvs.Kafka", "Obvs.NATS", "Obvs.NetMQ", "Obvs.RabbitMQ");
+
+        // Every public member a transport ships is documented, its sources and publishers included
+        [Theory]
+        [MemberData(nameof(Transports))]
+        public void ShouldDocumentEveryPublicMember(string package)
+        {
+            var exempt = Directory.EnumerateFiles(Path.Combine(Root, package), "*.cs", SearchOption.AllDirectories)
+                .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
+                .Where(file => Regex.IsMatch(File.ReadAllText(file), @"#pragma warning disable[^\n]*CS1591"))
+                .Select(file => Path.GetRelativePath(Root, file));
+            Assert.Empty(exempt);
+        }
+
+        // The types a package declares in its public API files: the lines that name a type, not a member
+        private static string[] DeclaredTypes(string package)
+        {
+            return new[] { "PublicAPI.Shipped.txt", "PublicAPI.Unshipped.txt" }
+                .SelectMany(file => File.ReadAllLines(Path.Combine(Root, package, file)))
+                .Where(line => line.Length > 0 && !line.StartsWith("#") && !line.StartsWith("*REMOVED*") && !line.Contains("->") && !line.Contains("("))
+                .OrderBy(type => type, StringComparer.Ordinal)
+                .ToArray();
+        }
+
         private static string FindRoot()
         {
             var directory = new DirectoryInfo(AppContext.BaseDirectory);

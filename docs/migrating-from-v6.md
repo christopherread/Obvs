@@ -156,6 +156,8 @@ var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSecond
 
 What transports are built from is in the `Obvs.Transports` namespace: the endpoints, publishers and sources, `IServiceEndpointProvider` (in v6, `Obvs.Configuration`), the message property providers (in v6, `Obvs.MessageProperties`), and settlement.
 
+Each transport's endpoint provider is internal, such as v6's `RabbitMQServiceEndpointProvider`, along with what it builds endpoints with, such as Kafka's `SourceFactory` and ActiveMQ's `DestinationFactory`. Configure a transport with its `Use` method instead. Its `MessageSource<T>` and `MessagePublisher<T>` are still public, for an app that builds its own endpoints from them, with the types their constructors take, such as Kafka's `KafkaConfiguration` and ActiveMQ's `AcknowledgementMode`.
+
 Every send takes the message's headers, which include its trace context, and a `CancellationToken`:
 - `IMessagePublisher<T>.PublishAsync(message, headers, cancellationToken)`;
 - `IServiceEndpoint`'s `PublishAsync` and `ReplyAsync`;

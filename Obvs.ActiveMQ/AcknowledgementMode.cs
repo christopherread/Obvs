@@ -1,11 +1,12 @@
-﻿// v6's ActiveMQ transport building blocks, which UseActiveMq(...) is built on: its public members are exempt from the rule that every one is documented
-#pragma warning disable CS1570, CS1572, CS1591
-
-namespace Obvs.ActiveMQ
+﻿namespace Obvs.ActiveMQ
 {
+    /// <summary>When an ActiveMQ <see cref="MessageSource{TMessage}"/> acknowledges the messages it receives.</summary>
     public enum AcknowledgementMode
     {
+        /// <summary>The session acknowledges each message as it's delivered</summary>
         AutoAcknowledge,
+
+        /// <summary>The source acknowledges each message once it has deserialized it</summary>
         ClientAcknowledge
     }
 }

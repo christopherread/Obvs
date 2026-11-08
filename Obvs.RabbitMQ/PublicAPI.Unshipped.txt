@@ -1,6 +1,4 @@
 Obvs.Hosting.RabbitMqTransportExtensions
-Obvs.RabbitMQ.Configuration.RabbitMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>
-Obvs.RabbitMQ.Configuration.RabbitMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.RabbitMQServiceEndpointProvider(string serviceName, string brokerUri, Obvs.Serialization.IMessageSerializer serializer, Obvs.Serialization.IMessageDeserializerFactory deserializerFactory, System.Func<System.Reflection.Assembly, bool> assemblyFilter = null, System.Func<System.Type, bool> typeFilter = null, bool automaticRecoveryEnabled = true, string uniqueQueueSuffix = null) -> void
 Obvs.RabbitMQ.MessagePublisher<TMessage>
 Obvs.RabbitMQ.MessagePublisher<TMessage>.Dispose() -> void
 Obvs.RabbitMQ.MessagePublisher<TMessage>.MessagePublisher(System.Lazy<RabbitMQ.Client.IConnection> connection, Obvs.Serialization.IMessageSerializer serializer, string exchange, string routingKeyPrefix) -> void
@@ -19,8 +17,6 @@ Obvs.RabbitMQ.RabbitMqOptions.MaxDeliveryAttempts.set -> void
 Obvs.RabbitMQ.RabbitMqOptions.RabbitMqOptions() -> void
 Obvs.RabbitMQ.RabbitMqOptions.Uri.get -> System.Uri
 Obvs.RabbitMQ.RabbitMqOptions.Uri.set -> void
-override Obvs.RabbitMQ.Configuration.RabbitMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpoint() -> Obvs.Transports.IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>
-override Obvs.RabbitMQ.Configuration.RabbitMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse>.CreateEndpointClient() -> Obvs.Transports.IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>
 static Obvs.Hosting.RabbitMqTransportExtensions.UseRabbitMq(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration) -> Obvs.Hosting.ObvsServiceBuilder
 static Obvs.Hosting.RabbitMqTransportExtensions.UseRabbitMq(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration, System.Action<Obvs.RabbitMQ.RabbitMqOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
 static Obvs.Hosting.RabbitMqTransportExtensions.UseRabbitMq(this Obvs.Hosting.ObvsServiceBuilder service, System.Action<Obvs.RabbitMQ.RabbitMqOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
