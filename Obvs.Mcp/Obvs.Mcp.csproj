@@ -10,6 +10,7 @@
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Obvs\Obvs.csproj" />
+    <!-- Apps that install only this package get the analyzers and generator Obvs ships -->
+    <ProjectReference Include="..\Obvs\Obvs.csproj" PrivateAssets="contentfiles;build" />
   </ItemGroup>
 </Project>
