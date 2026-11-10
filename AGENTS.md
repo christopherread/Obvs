@@ -80,4 +80,4 @@ The build has no warnings. Keep it that way.
 
 Work goes into the `v7` branch, one pull request per change, with the v7 milestone. CI builds, runs every broker suite and the unit tests, and publishes packages from `master` and tags only.
 
-When a version ships, move each package's `PublicAPI.Unshipped.txt` lines into its `PublicAPI.Shipped.txt`. Until 7.0.0 ships, the whole v7 API is in `PublicAPI.Unshipped.txt`.
+When a version ships, move each package's `PublicAPI.Unshipped.txt` lines into its `PublicAPI.Shipped.txt`, and the analyzers' and generator's `AnalyzerReleases.Unshipped.md` rules into a release in their `AnalyzerReleases.Shipped.md`. 7.0.0's are shipped, so changing or removing any of its API is a breaking change, for 8.0.

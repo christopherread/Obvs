@@ -1,0 +1,13 @@
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageDeserializer<TMessage>
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageDeserializer<TMessage>.MessagePackCSharpMessageDeserializer() -> void
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageDeserializer<TMessage>.MessagePackCSharpMessageDeserializer(MessagePack.IFormatterResolver resolver) -> void
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageDeserializerFactory
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageDeserializerFactory.Create<TMessage, TServiceMessage>(System.Func<System.Reflection.Assembly, bool> assemblyFilter = null, System.Func<System.Type, bool> typeFilter = null) -> System.Collections.Generic.IEnumerable<Obvs.Serialization.IMessageDeserializer<TMessage>>
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageDeserializerFactory.Create<TMessage>(System.Type messageType) -> Obvs.Serialization.IMessageDeserializer<TMessage>
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageDeserializerFactory.MessagePackCSharpMessageDeserializerFactory() -> void
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageDeserializerFactory.MessagePackCSharpMessageDeserializerFactory(MessagePack.IFormatterResolver resolver) -> void
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageSerializer
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageSerializer.MessagePackCSharpMessageSerializer() -> void
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageSerializer.MessagePackCSharpMessageSerializer(MessagePack.IFormatterResolver resolver) -> void
+Obvs.Serialization.MessagePack.MessagePackCSharpMessageSerializer.Serialize(System.IO.Stream destination, object message) -> void
+override Obvs.Serialization.MessagePack.MessagePackCSharpMessageDeserializer<TMessage>.Deserialize(System.IO.Stream source) -> TMessage
