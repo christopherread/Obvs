@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Xunit;
 
 namespace Obvs.Tests
@@ -43,6 +44,38 @@ namespace Obvs.Tests
             Assert.True(File.Exists(readme), $"{package} has no README.md");
             var relative = Regex.Matches(File.ReadAllText(readme), @"\]\((?!https://)([^)]*)\)").Cast<Match>().Select(match => match.Groups[1].Value);
             Assert.Empty(relative);
+        }
+
+        public static TheoryData<string> PackagesOnObvs => new TheoryData<string>(
+            "Obvs.ActiveMQ", "Obvs.AmazonSqs", "Obvs.AzureSB", "Obvs.Kafka", "Obvs.Mcp", "Obvs.NATS", "Obvs.NetMQ", "Obvs.RabbitMQ",
+            "Obvs.Serialization.Json", "Obvs.Serialization.MessagePack", "Obvs.Serialization.ProtoBuf", "Obvs.Testing");
+
+        // An app that installs only a transport still gets the analyzers and the [ObvsMessages] generator Obvs ships.
+        // NuGet's default for a ProjectReference keeps its analyzers private, packing exclude="Build,Analyzers".
+        [Theory]
+        [MemberData(nameof(PackagesOnObvs))]
+        public void ShouldPassOnTheAnalyzersOfObvs(string package)
+        {
+            var reference = XDocument.Load(Path.Combine(Root, package, package + ".csproj")).Descendants("ProjectReference")
+                .Single(item => item.Attribute("Include")?.Value.Replace('\\', '/') == "../Obvs/Obvs.csproj");
+            var privateAssets = reference.Attribute("PrivateAssets")?.Value;
+            Assert.True(privateAssets != null, $"{package} keeps the analyzers of Obvs private: its ProjectReference to Obvs needs PrivateAssets without analyzers");
+            Assert.DoesNotContain("analyzers", privateAssets, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("all", privateAssets, StringComparison.OrdinalIgnoreCase);
+            Assert.Null(reference.Attribute("IncludeAssets"));
+            Assert.Null(reference.Attribute("ExcludeAssets"));
+        }
+
+        // CI packs and publishes each package from master and tags, where packing a project that's gone fails the release
+        [Fact]
+        public void ShouldPackEveryPackageAndNothingElse()
+        {
+            var workflow = File.ReadAllText(Path.Combine(Root, ".github", "workflows", "dotnet.yml"));
+            var packed = Regex.Matches(workflow, @"^\s*dotnet pack .* (\S+)\s*$", RegexOptions.Multiline).Cast<Match>()
+                .Select(match => match.Groups[1].Value)
+                .OrderBy(package => package, StringComparer.Ordinal);
+            var packages = Packages.Select(row => row.Data).OrderBy(package => package, StringComparer.Ordinal);
+            Assert.Equal(packages, packed);
         }
 
         [Fact]

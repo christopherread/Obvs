@@ -11,7 +11,8 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Obvs\Obvs.csproj" />
+    <!-- Apps that install only this package get the analyzers and generator Obvs ships -->
+    <ProjectReference Include="..\Obvs\Obvs.csproj" PrivateAssets="contentfiles;build" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Obvs.ActiveMQ.Tests" />
