@@ -1,0 +1,10 @@
+Obvs.Serialization.ProtoBuf.ProtoBufMessageDeserializer<TMessage>
+Obvs.Serialization.ProtoBuf.ProtoBufMessageDeserializer<TMessage>.ProtoBufMessageDeserializer(ProtoBuf.Meta.RuntimeTypeModel model = null) -> void
+Obvs.Serialization.ProtoBuf.ProtoBufMessageDeserializerFactory
+Obvs.Serialization.ProtoBuf.ProtoBufMessageDeserializerFactory.Create<TMessage, TServiceMessage>(System.Func<System.Reflection.Assembly, bool> assemblyFilter = null, System.Func<System.Type, bool> typeFilter = null) -> System.Collections.Generic.IEnumerable<Obvs.Serialization.IMessageDeserializer<TMessage>>
+Obvs.Serialization.ProtoBuf.ProtoBufMessageDeserializerFactory.Create<TMessage>(System.Type messageType) -> Obvs.Serialization.IMessageDeserializer<TMessage>
+Obvs.Serialization.ProtoBuf.ProtoBufMessageDeserializerFactory.ProtoBufMessageDeserializerFactory(ProtoBuf.Meta.RuntimeTypeModel model = null) -> void
+Obvs.Serialization.ProtoBuf.ProtoBufMessageSerializer
+Obvs.Serialization.ProtoBuf.ProtoBufMessageSerializer.ProtoBufMessageSerializer(ProtoBuf.Meta.RuntimeTypeModel model = null) -> void
+Obvs.Serialization.ProtoBuf.ProtoBufMessageSerializer.Serialize(System.IO.Stream destination, object message) -> void
+override Obvs.Serialization.ProtoBuf.ProtoBufMessageDeserializer<TMessage>.Deserialize(System.IO.Stream source) -> TMessage

@@ -1,0 +1,35 @@
+Obvs.ActiveMQ.AcknowledgementMode
+Obvs.ActiveMQ.AcknowledgementMode.AutoAcknowledge = 0 -> Obvs.ActiveMQ.AcknowledgementMode
+Obvs.ActiveMQ.AcknowledgementMode.ClientAcknowledge = 1 -> Obvs.ActiveMQ.AcknowledgementMode
+Obvs.ActiveMQ.ActiveMqOptions
+Obvs.ActiveMQ.ActiveMqOptions.ActiveMqOptions() -> void
+Obvs.ActiveMQ.ActiveMqOptions.BrokerUri.get -> string
+Obvs.ActiveMQ.ActiveMqOptions.BrokerUri.set -> void
+Obvs.ActiveMQ.ActiveMqOptions.Password.get -> string
+Obvs.ActiveMQ.ActiveMqOptions.Password.set -> void
+Obvs.ActiveMQ.ActiveMqOptions.UserName.get -> string
+Obvs.ActiveMQ.ActiveMqOptions.UserName.set -> void
+Obvs.ActiveMQ.MessagePublisher<TMessage>
+Obvs.ActiveMQ.MessagePublisher<TMessage>.Dispose() -> void
+Obvs.ActiveMQ.MessagePublisher<TMessage>.MessagePublisher(System.Lazy<Apache.NMS.IConnection> lazyConnection, Apache.NMS.IDestination destination, Obvs.Serialization.IMessageSerializer serializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, object>> propertyProvider, System.Func<TMessage, Apache.NMS.MsgDeliveryMode> deliveryMode = null, System.Func<TMessage, Apache.NMS.MsgPriority> priority = null, System.Func<TMessage, System.TimeSpan> timeToLive = null) -> void
+Obvs.ActiveMQ.MessagePublisher<TMessage>.MessagePublisher(System.Lazy<Apache.NMS.IConnection> lazyConnection, Apache.NMS.IDestination destination, Obvs.Serialization.IMessageSerializer serializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, object>> propertyProvider, System.Reactive.Concurrency.IScheduler scheduler, System.Func<TMessage, Apache.NMS.MsgDeliveryMode> deliveryMode = null, System.Func<TMessage, Apache.NMS.MsgPriority> priority = null, System.Func<TMessage, System.TimeSpan> timeToLive = null) -> void
+Obvs.ActiveMQ.MessagePublisher<TMessage>.MessagePublisher(System.Lazy<Apache.NMS.IConnection> lazyConnection, Apache.NMS.IDestination destination, Obvs.Serialization.IMessageSerializer serializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, object>> propertyProvider, System.Threading.Tasks.TaskScheduler taskScheduler, System.Func<TMessage, Apache.NMS.MsgDeliveryMode> deliveryMode = null, System.Func<TMessage, Apache.NMS.MsgPriority> priority = null, System.Func<TMessage, System.TimeSpan> timeToLive = null) -> void
+Obvs.ActiveMQ.MessagePublisher<TMessage>.PublishAsync(TMessage message, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.ActiveMQ.MessageSource<TMessage>
+Obvs.ActiveMQ.MessageSource<TMessage>.Dispose() -> void
+Obvs.ActiveMQ.MessageSource<TMessage>.Messages.get -> System.IObservable<TMessage>
+Obvs.ActiveMQ.MessageSource<TMessage>.MessageSource(System.Lazy<Apache.NMS.IConnection> lazyConnection, System.Collections.Generic.IEnumerable<Obvs.Serialization.IMessageDeserializer<TMessage>> deserializers, Apache.NMS.IDestination destination, Obvs.ActiveMQ.AcknowledgementMode mode = Obvs.ActiveMQ.AcknowledgementMode.AutoAcknowledge, string selector = null, System.Func<System.Collections.IDictionary, bool> propertyFilter = null, bool noLocal = false) -> void
+Obvs.ActiveMQ.TextMessagePublisher<TMessage>
+Obvs.ActiveMQ.TextMessagePublisher<TMessage>.TextMessagePublisher(System.Lazy<Apache.NMS.IConnection> lazyConnection, Apache.NMS.IDestination destination, Obvs.Serialization.IMessageSerializer serializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, object>> propertyProvider, System.Func<TMessage, Apache.NMS.MsgDeliveryMode> deliveryMode = null, System.Func<TMessage, Apache.NMS.MsgPriority> priority = null, System.Func<TMessage, System.TimeSpan> timeToLive = null) -> void
+Obvs.ActiveMQ.TextMessagePublisher<TMessage>.TextMessagePublisher(System.Lazy<Apache.NMS.IConnection> lazyConnection, Apache.NMS.IDestination destination, Obvs.Serialization.IMessageSerializer serializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, object>> propertyProvider, System.Reactive.Concurrency.IScheduler scheduler, System.Func<TMessage, Apache.NMS.MsgDeliveryMode> deliveryMode = null, System.Func<TMessage, Apache.NMS.MsgPriority> priority = null, System.Func<TMessage, System.TimeSpan> timeToLive = null) -> void
+Obvs.ActiveMQ.TextMessagePublisher<TMessage>.TextMessagePublisher(System.Lazy<Apache.NMS.IConnection> lazyConnection, Apache.NMS.IDestination destination, Obvs.Serialization.IMessageSerializer serializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, object>> propertyProvider, System.Threading.Tasks.TaskScheduler taskScheduler, System.Func<TMessage, Apache.NMS.MsgDeliveryMode> deliveryMode = null, System.Func<TMessage, Apache.NMS.MsgPriority> priority = null, System.Func<TMessage, System.TimeSpan> timeToLive = null) -> void
+Obvs.ActiveMQ.TextMessageSource<TMessage>
+Obvs.ActiveMQ.TextMessageSource<TMessage>.TextMessageSource(System.Lazy<Apache.NMS.IConnection> lazyConnection, System.Collections.Generic.IEnumerable<Obvs.Serialization.IMessageDeserializer<TMessage>> deserializers, Apache.NMS.IDestination destination, Obvs.ActiveMQ.AcknowledgementMode mode = Obvs.ActiveMQ.AcknowledgementMode.AutoAcknowledge, string selector = null, System.Text.Encoding encoding = null, System.Func<System.Collections.IDictionary, bool> propertyFilter = null, bool noLocal = false) -> void
+Obvs.Hosting.ActiveMqTransportExtensions
+override Obvs.ActiveMQ.TextMessagePublisher<TMessage>.GenerateMessage(TMessage message, Apache.NMS.IMessageProducer producer, Obvs.Serialization.IMessageSerializer serializer) -> Apache.NMS.IMessage
+override Obvs.ActiveMQ.TextMessageSource<TMessage>.DeserializeMessage(Apache.NMS.IMessage message, Obvs.Serialization.IMessageDeserializer<TMessage> deserializer) -> TMessage
+static Obvs.Hosting.ActiveMqTransportExtensions.UseActiveMq(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Hosting.ActiveMqTransportExtensions.UseActiveMq(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration, System.Action<Obvs.ActiveMQ.ActiveMqOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Hosting.ActiveMqTransportExtensions.UseActiveMq(this Obvs.Hosting.ObvsServiceBuilder service, System.Action<Obvs.ActiveMQ.ActiveMqOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
+virtual Obvs.ActiveMQ.MessagePublisher<TMessage>.GenerateMessage(TMessage message, Apache.NMS.IMessageProducer producer, Obvs.Serialization.IMessageSerializer serializer) -> Apache.NMS.IMessage
+virtual Obvs.ActiveMQ.MessageSource<TMessage>.DeserializeMessage(Apache.NMS.IMessage message, Obvs.Serialization.IMessageDeserializer<TMessage> deserializer) -> TMessage

@@ -1,0 +1,32 @@
+Obvs.Hosting.NatsJetStreamTransportExtensions
+Obvs.Hosting.NatsTransportExtensions
+Obvs.NATS.MessagePublisher<TMessage>
+Obvs.NATS.MessagePublisher<TMessage>.Dispose() -> void
+Obvs.NATS.MessagePublisher<TMessage>.MessagePublisher(NATS.Client.Core.INatsConnection connection, string subjectPrefix, Obvs.Serialization.IMessageSerializer serializer, System.Func<TMessage, System.Collections.Generic.Dictionary<string, string>> properties = null) -> void
+Obvs.NATS.MessagePublisher<TMessage>.PublishAsync(TMessage message, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task
+Obvs.NATS.MessageSource<TMessage>
+Obvs.NATS.MessageSource<TMessage>.Dispose() -> void
+Obvs.NATS.MessageSource<TMessage>.Messages.get -> System.IObservable<TMessage>
+Obvs.NATS.MessageSource<TMessage>.MessageSource(NATS.Client.Core.INatsConnection connection, string subjectPrefix, System.Collections.Generic.IEnumerable<Obvs.Serialization.IMessageDeserializer<TMessage>> deserializers, System.Func<System.Collections.Generic.Dictionary<string, string>, bool> filter = null) -> void
+Obvs.NATS.NatsJetStreamOptions
+Obvs.NATS.NatsJetStreamOptions.AckWait.get -> System.TimeSpan?
+Obvs.NATS.NatsJetStreamOptions.AckWait.set -> void
+Obvs.NATS.NatsJetStreamOptions.MaxConcurrentMessages.get -> int?
+Obvs.NATS.NatsJetStreamOptions.MaxConcurrentMessages.set -> void
+Obvs.NATS.NatsJetStreamOptions.MaxDeliveryAttempts.get -> int
+Obvs.NATS.NatsJetStreamOptions.MaxDeliveryAttempts.set -> void
+Obvs.NATS.NatsJetStreamOptions.MaxHandlerDuration.get -> System.TimeSpan
+Obvs.NATS.NatsJetStreamOptions.MaxHandlerDuration.set -> void
+Obvs.NATS.NatsJetStreamOptions.NatsJetStreamOptions() -> void
+Obvs.NATS.NatsJetStreamOptions.Url.get -> string
+Obvs.NATS.NatsJetStreamOptions.Url.set -> void
+Obvs.NATS.NatsOptions
+Obvs.NATS.NatsOptions.NatsOptions() -> void
+Obvs.NATS.NatsOptions.Url.get -> string
+Obvs.NATS.NatsOptions.Url.set -> void
+static Obvs.Hosting.NatsJetStreamTransportExtensions.UseNatsJetStream(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Hosting.NatsJetStreamTransportExtensions.UseNatsJetStream(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration, System.Action<Obvs.NATS.NatsJetStreamOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Hosting.NatsJetStreamTransportExtensions.UseNatsJetStream(this Obvs.Hosting.ObvsServiceBuilder service, System.Action<Obvs.NATS.NatsJetStreamOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Hosting.NatsTransportExtensions.UseNats(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Hosting.NatsTransportExtensions.UseNats(this Obvs.Hosting.ObvsServiceBuilder service, Microsoft.Extensions.Configuration.IConfiguration configuration, System.Action<Obvs.NATS.NatsOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Hosting.NatsTransportExtensions.UseNats(this Obvs.Hosting.ObvsServiceBuilder service, System.Action<Obvs.NATS.NatsOptions> configure) -> Obvs.Hosting.ObvsServiceBuilder
