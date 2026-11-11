@@ -66,6 +66,18 @@ namespace Obvs.Tests
             Assert.Null(reference.Attribute("ExcludeAssets"));
         }
 
+        // CI packs and publishes each package from master and tags, where packing a project that's gone fails the release
+        [Fact]
+        public void ShouldPackEveryPackageAndNothingElse()
+        {
+            var workflow = File.ReadAllText(Path.Combine(Root, ".github", "workflows", "dotnet.yml"));
+            var packed = Regex.Matches(workflow, @"^\s*dotnet pack .* (\S+)\s*$", RegexOptions.Multiline).Cast<Match>()
+                .Select(match => match.Groups[1].Value)
+                .OrderBy(package => package, StringComparer.Ordinal);
+            var packages = Packages.Select(row => row.Data).OrderBy(package => package, StringComparer.Ordinal);
+            Assert.Equal(packages, packed);
+        }
+
         [Fact]
         public void ShouldNotDependOnSystemReflectionEmitLightweight()
         {
