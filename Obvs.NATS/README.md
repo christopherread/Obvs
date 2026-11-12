@@ -1,9 +1,22 @@
 # Obvs.NATS
 
-[NATS](https://github.com/nats-io) transport support for [Obvs](https://github.com/christopherread/Obvs).
+The NATS transport for [Obvs](https://github.com/christopherread/Obvs). `UseNats` carries messages over core NATS, at most once. `UseNatsJetStream` carries them over JetStream: commands and requests on consumers a service's buses share, so each is handled once, with acknowledgement after the handler and dead-lettering.
 
-## NuGet Package
+```bash
+dotnet add package Obvs.NATS
+```
 
-[![NuGet](https://img.shields.io/nuget/v/Obvs.NATS.svg)](https://www.nuget.org/packages/Obvs.NATS/)
+<!-- snippet: nats-setup -->
+```csharp
+builder.Services.AddObvs(obvs => obvs
+    .AddService<IOrderMessage>("orders", service => service
+        .UseNats(builder.Configuration.GetSection("Obvs:Orders:Nats"))));
+```
 
-See the [NuGet Package Obvs.NATS](https://www.nuget.org/packages/Obvs.NATS/).
+```json
+{ "Obvs": { "Orders": { "Nats": { "Url": "nats://localhost:4222" } } } }
+```
+
+For JetStream, its streams, consumers and settings, see [NATS](https://github.com/christopherread/Obvs/blob/master/docs/transports/nats.md).
+
+[Obvs](https://github.com/christopherread/Obvs) is a .NET library for messaging between services: commands, events, requests and responses, handled by your code or read as Rx streams. Start with its [README](https://github.com/christopherread/Obvs#readme) and [common tasks](https://github.com/christopherread/Obvs/blob/master/docs/common-tasks.md).

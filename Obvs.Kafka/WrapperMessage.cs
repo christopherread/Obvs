@@ -4,12 +4,9 @@ using ProtoBuf;
 
 namespace Obvs.Kafka
 {
-    /// <summary>
-    /// Message wrapper used to append properties and type information 
-    /// to message before sending to Kafka
-    /// </summary>
+    // A message's body, with its type's name and the properties v6 filtered on, as it goes over Kafka
     [ProtoContract]
-    public class WrapperMessage
+    internal class WrapperMessage
     {
         [ProtoMember(1)]
         public byte[] Payload { get; set; }

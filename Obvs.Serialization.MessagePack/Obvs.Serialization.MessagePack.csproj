@@ -2,24 +2,20 @@
 
   <PropertyGroup>
     <TargetFrameworks>net472;netstandard2.0;net10.0</TargetFrameworks>
-    <!-- Deprecated (MsgPack.Cli is unmaintained): no longer published; use Obvs.Serialization.MessagePack-CSharp -->
-    <IsPackable>false</IsPackable>
-    <Company>Christopher Read</Company>
-    <Copyright>Copyright © Christopher Read 2017</Copyright>
+    <Description>MessagePack-CSharp serialization for Obvs: SerializedWith(new MessagePackCSharpMessageSerializer(), ...).</Description>
+    <PackageTags>$(PackageTags) messagepack serialization</PackageTags>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
     <Version>1.0.0</Version>
-    <Authors />
-    <PackageProjectUrl>http://christopherread.github.io/Obvs</PackageProjectUrl>
-    <PackageReleaseNotes>Deprecated: MsgPack.Cli is no longer maintained. Use Obvs.Serialization.MessagePack-CSharp instead.</PackageReleaseNotes>
-    <Description>Deprecated: use Obvs.Serialization.MessagePack-CSharp. MessagePack serialization for Obvs using MsgPack.Cli, which is no longer maintained.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MsgPack.Cli" />
+    <PackageReference Include="MessagePack" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Obvs\Obvs.csproj" />
+    <!-- Apps that install only this package get the analyzers and generator Obvs ships -->
+    <ProjectReference Include="..\Obvs\Obvs.csproj" PrivateAssets="contentfiles;build" />
   </ItemGroup>
 
 </Project>
-

@@ -1,6 +1,8 @@
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using FakeItEasy;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -28,21 +30,21 @@ namespace Obvs.Tests
             ICommand command = A.Fake<ICommand>();
             IMessage message = A.Fake<IMessage>();
 
-            typeRoutingMessagePublisher.PublishAsync(ev);
-            typeRoutingMessagePublisher.PublishAsync(command);
-            typeRoutingMessagePublisher.PublishAsync(message);
+            typeRoutingMessagePublisher.PublishAsync(ev, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            typeRoutingMessagePublisher.PublishAsync(command, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            typeRoutingMessagePublisher.PublishAsync(message, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
-            A.CallTo(() => eventPublisher.PublishAsync(ev)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => eventPublisher.PublishAsync(message)).MustNotHaveHappened();
-            A.CallTo(() => eventPublisher.PublishAsync(command)).MustNotHaveHappened();
+            A.CallTo(() => eventPublisher.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => eventPublisher.PublishAsync(message, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => eventPublisher.PublishAsync(command, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
 
-            A.CallTo(() => commandPublisher.PublishAsync(ev)).MustNotHaveHappened();
-            A.CallTo(() => commandPublisher.PublishAsync(message)).MustNotHaveHappened();
-            A.CallTo(() => commandPublisher.PublishAsync(command)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => commandPublisher.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => commandPublisher.PublishAsync(message, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => commandPublisher.PublishAsync(command, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
 
-            A.CallTo(() => messagePublisher.PublishAsync(ev)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => messagePublisher.PublishAsync(command)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => messagePublisher.PublishAsync(message)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => messagePublisher.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => messagePublisher.PublishAsync(command, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => messagePublisher.PublishAsync(message, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
     }
 }

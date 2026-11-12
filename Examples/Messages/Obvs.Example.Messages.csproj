@@ -1,11 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <!-- Built from this repo until v7 is on NuGet; then this becomes <PackageReference Include="Obvs" Version="7.0.0" /> -->
   <ItemGroup>
-    <PackageReference Include="Obvs" Version="6.0.19" />
+    <ProjectReference Include="..\..\Obvs\Obvs.csproj" />
   </ItemGroup>
 
 </Project>

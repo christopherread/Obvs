@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -9,11 +10,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using Obvs.RabbitMQ.Extensions;
 using Obvs.Serialization;
+using Obvs.Transports;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace Obvs.RabbitMQ
 {
+    /// <summary>
+    /// Receives messages published to a RabbitMQ topic exchange under a routing key prefix, as v6 did, for an app that
+    /// builds its own endpoints. Each subscription has its own queue, bound to <c>{routingKeyPrefix}.*</c>, which is
+    /// deleted when the subscription is disposed, and messages are acknowledged as they arrive.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
     public class MessageSource<TMessage> : IMessageSource<TMessage> where TMessage : class
     {
         private readonly Lazy<IConnection> _connection;
@@ -25,28 +33,30 @@ namespace Obvs.RabbitMQ
         private int _subscriberCount;
 
         /// <summary>
-        /// Creates a new MessageSource
+        /// Creates a source of the messages published to <paramref name="exchange"/> under <paramref name="routingKeyPrefix"/>.
         /// </summary>
-        /// <param name="connection">Lazy connection to RabbitMQ which will connect on first subscription</param>
-        /// <param name="deserializers">Collection of deserializers, one per message type</param>
-        /// <param name="exchange">RabbitMQ Exchange name</param>
-        /// <param name="routingKeyPrefix">Any routing key prefix for filtering messages</param>
-        /// <param name="uniqueQueueSuffix">Only required if you intend to create two or more message sources to subscribe to the same source in the same process</param>
+        /// <param name="connection">The connection to RabbitMQ, opened on the first subscription</param>
+        /// <param name="deserializers">The deserializers, one for each type of message, chosen by the routing key's last part</param>
+        /// <param name="exchange">The topic exchange, declared if it doesn't exist</param>
+        /// <param name="routingKeyPrefix">The routing key's prefix, for example <c>orders.Events</c></param>
+        /// <param name="uniqueQueueSuffix">Appended to the queue's name, for two or more sources of the same messages in one process</param>
         public MessageSource(Lazy<IConnection> connection, IEnumerable<IMessageDeserializer<TMessage>> deserializers, 
             string exchange, string routingKeyPrefix, string uniqueQueueSuffix = "")
         {
             _connection = connection;
             _exchange = exchange;
             _uniqueQueueSuffix = uniqueQueueSuffix;
-            _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
+            _deserializers = deserializers.ToDictionary(d => d.TypeName);
             _routingKey = string.Format("{0}.*", routingKeyPrefix);
             _queueNamePrefix = routingKeyPrefix.StartsWith(exchange) ? routingKeyPrefix : string.Format("{0}.{1}*", _exchange, routingKeyPrefix);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
         }
 
+        /// <inheritdoc />
         public IObservable<TMessage> Messages
         {
             get
@@ -122,7 +132,29 @@ namespace Obvs.RabbitMQ
         {
             var deserializer = GetDeserializer(deliverEventArgs);
             // The body's buffer is only valid until the delivery handler returns, so copy it
-            return deserializer.Deserialize(deliverEventArgs.Body.ToArray());
+            var message = deserializer.Deserialize(deliverEventArgs.Body.ToArray());
+            SetHeaders(message, deliverEventArgs.BasicProperties.Headers);
+            return message;
+        }
+
+        // AMQP string headers arrive as UTF-8 bytes
+        private static void SetHeaders(TMessage message, IDictionary<string, object> amqpHeaders)
+        {
+            if (amqpHeaders == null || amqpHeaders.Count == 0)
+            {
+                return;
+            }
+
+            var headers = new Dictionary<string, string>();
+            foreach (var header in amqpHeaders)
+            {
+                var value = header.Value is byte[] bytes ? Encoding.UTF8.GetString(bytes) : header.Value?.ToString();
+                if (value != null)
+                {
+                    headers[header.Key] = value;
+                }
+            }
+            ObvsReceivedMessage.Attach(message, headers);
         }
 
         private IMessageDeserializer<TMessage> GetDeserializer(BasicDeliverEventArgs deliverEventArgs)

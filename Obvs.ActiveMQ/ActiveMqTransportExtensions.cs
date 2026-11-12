@@ -1,0 +1,105 @@
+using System;
+using System.Collections.Generic;
+using Apache.NMS.ActiveMQ;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Obvs.ActiveMQ;
+using Obvs.ActiveMQ.Configuration;
+using Obvs.Configuration;
+using Obvs.Transports;
+using Obvs.Types;
+using AcknowledgementMode = Obvs.ActiveMQ.AcknowledgementMode;
+
+// In the builder's namespace, so UseActiveMq() is found without an extra using
+namespace Obvs.Hosting
+{
+    /// <summary>Carries services over ActiveMQ: <c>service.UseActiveMq(...)</c> inside <c>AddService</c>.</summary>
+    public static class ActiveMqTransportExtensions
+    {
+        /// <summary>
+        /// Carries this service's messages over ActiveMQ topics, with settings bound from <paramref name="configuration"/>,
+        /// for example <c>builder.Configuration.GetSection("Obvs:Orders:ActiveMq")</c>.
+        /// </summary>
+        public static ObvsServiceBuilder UseActiveMq(this ObvsServiceBuilder service, IConfiguration configuration)
+        {
+            return UseActiveMq(service, configuration, options => { });
+        }
+
+        /// <summary>
+        /// Carries this service's messages over ActiveMQ topics, with settings bound from <paramref name="configuration"/>,
+        /// then changed by <paramref name="configure"/>, for example to set a password read from a secret store.
+        /// </summary>
+        public static ObvsServiceBuilder UseActiveMq(this ObvsServiceBuilder service, IConfiguration configuration, Action<ActiveMqOptions> configure)
+        {
+            if (service == null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+            if (configuration == null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
+
+            service.Services.AddOptions<ActiveMqOptions>(service.Name).Bind(configuration).Configure(configure);
+            var brokerUriKey = configuration is IConfigurationSection section ? section.Path + ":BrokerUri" : "BrokerUri";
+            return UseActiveMq(service, $"configuration key {brokerUriKey}");
+        }
+
+        /// <summary>
+        /// Carries this service's messages over ActiveMQ topics, with settings set in code.
+        /// </summary>
+        public static ObvsServiceBuilder UseActiveMq(this ObvsServiceBuilder service, Action<ActiveMqOptions> configure)
+        {
+            if (service == null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
+
+            service.Services.AddOptions<ActiveMqOptions>(service.Name).Configure(configure);
+            return UseActiveMq(service, "options.BrokerUri in UseActiveMq(...)");
+        }
+
+        private static ObvsServiceBuilder UseActiveMq(ObvsServiceBuilder service, string whereToSetBrokerUri)
+        {
+            return service.UseTransport("ActiveMQ",
+                transport => CreateProvider(transport, GetOptions(transport)),
+                transport => Validate(transport, GetOptions(transport), whereToSetBrokerUri));
+        }
+
+        private static ActiveMqOptions GetOptions(ObvsTransportContext service)
+        {
+            return service.ServiceProvider.GetRequiredService<IOptionsMonitor<ActiveMqOptions>>().Get(service.ServiceName);
+        }
+
+        private static IEnumerable<string> Validate(ObvsTransportContext service, ActiveMqOptions options, string whereToSetBrokerUri)
+        {
+            if (string.IsNullOrWhiteSpace(options.BrokerUri))
+            {
+                yield return $"Service '{service.ServiceName}' has no ActiveMQ broker. Set {whereToSetBrokerUri}, for example activemq:tcp://localhost:61616.";
+            }
+        }
+
+        // The provider is generic in the service's message type, which the builder only knows at run time.
+        // Client IDs get the bus's instance ID, as on .NET Framework they're otherwise the same for every bus
+        // in the process, and the broker refuses a second connection with the same client ID.
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, ActiveMqOptions options)
+        {
+            var providerType = typeof(ActiveMQServiceEndpointProvider<,,,,,>).MakeGenericType(
+                service.ServiceMessageType, typeof(IMessage), typeof(ICommand), typeof(IEvent), typeof(IRequest), typeof(IResponse));
+            Action<ConnectionFactory> configureConnectionFactory = factory => factory.ClientId = $"{factory.ClientId}-{service.InstanceId}";
+
+            return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
+                service.ServiceName, options.BrokerUri, service.Serializer, service.DeserializerFactory, new List<Tuple<Type, AcknowledgementMode>>(),
+                null, null, null, null, null, null, options.UserName, options.Password, configureConnectionFactory, false);
+        }
+    }
+}

@@ -7,7 +7,7 @@ using Apache.NMS;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using FakeItEasy;
-using Obvs.MessageProperties;
+using Obvs.Transports;
 using Obvs.Serialization;
 using Obvs.Types;
 using Xunit;
@@ -81,16 +81,26 @@ namespace Obvs.ActiveMQ.Tests
         {
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
 
-            await _publisher.PublishAsync(new TestMessage());
+            await _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
             A.CallTo(() => _session.CreateProducer(_destination)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => _connection.Start()).MustHaveHappened(1, Times.Exactly);
 
-            await _publisher.PublishAsync(new TestMessage());
-            await _publisher.PublishAsync(new TestMessage());
+            await _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+            await _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
             A.CallTo(() => _session.CreateProducer(_destination)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => _connection.Start()).MustHaveHappened(1, Times.Exactly);
+        }
+
+        [Fact]
+        public async Task ShouldNotPublishWhenAlreadyCancelled()
+        {
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>(), new System.Threading.CancellationToken(true)));
+
+            A.CallTo(() => _producer.Send(A<Apache.NMS.IMessage>._, A<MsgDeliveryMode>._, A<MsgPriority>._, A<TimeSpan>._)).MustNotHaveHappened();
         }
 
         [Fact]
@@ -110,7 +120,7 @@ namespace Obvs.ActiveMQ.Tests
             ITestMessage testMessage = new TestMessage();
             
 
-            await _publisher.PublishAsync(testMessage);
+            await _publisher.PublishAsync(testMessage, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
             A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => _message.Properties.SetInt("key1", 1)).MustHaveHappened(1, Times.Exactly);
@@ -118,6 +128,18 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _message.Properties.SetDouble("key3", 3.0)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => _message.Properties.SetLong("key4", 4L)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => _message.Properties.SetBool("key5", true)).MustHaveHappened(1, Times.Exactly);
+        }
+
+        [Fact]
+        public async Task ShouldPublishWhenGivenNoScheduler()
+        {
+            var textMessage = A.Fake<ITextMessage>();
+            A.CallTo(() => _producer.CreateTextMessage()).Returns(textMessage);
+            _publisher = new TextMessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider);
+
+            await _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+
+            A.CallTo(() => _producer.Send(textMessage, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]
@@ -132,9 +154,51 @@ namespace Obvs.ActiveMQ.Tests
             A.CallTo(() => _serializer.Serialize(A<Stream>._, testMessage)).Invokes(arg => arg.Arguments.Get<Stream>(0).Write(bytes, 0, bytes.Length));
             A.CallTo(() => _producer.CreateBytesMessage()).Returns(bytesMessage);
 
-            await _publisher.PublishAsync(testMessage);
+            await _publisher.PublishAsync(testMessage, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
             A.CallTo(() => _producer.Send(bytesMessage, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
+        }
+
+        [Fact]
+        public async Task ShouldWriteTheSerializedBytesToTheBytesMessage()
+        {
+            _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
+            var serialized = new byte[] { 1, 2, 3, 4, 5 };
+            A.CallTo(() => _serializer.Serialize(A<Stream>._, A<object>._)).Invokes(call => call.GetArgument<Stream>(0).Write(serialized, 0, serialized.Length));
+            byte[] written = null;
+            A.CallTo(() => _message.WriteBytes(A<byte[]>._, A<int>._, A<int>._))
+                .Invokes((byte[] buffer, int offset, int length) => written = new ArraySegment<byte>(buffer, offset, length).ToArray());
+
+            await _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
+
+            Assert.Equal(serialized, written);
+        }
+
+        [Fact]
+        public async Task ShouldPublishOneMessageAtATimeInOrderByDefault()
+        {
+            A.CallTo(() => _session.CreateProducer(A<IDestination>._)).Returns(_producer);
+            var publishing = 0;
+            var mostAtOnce = 0;
+            var sent = new List<int>();
+            A.CallTo(() => _serializer.Serialize(A<Stream>._, A<object>._)).Invokes(call =>
+            {
+                mostAtOnce = Math.Max(mostAtOnce, System.Threading.Interlocked.Increment(ref publishing));
+                System.Threading.Thread.Sleep(5);
+                lock (sent) sent.Add(((TestMessage)call.GetArgument<object>(1)).Id);
+                System.Threading.Interlocked.Decrement(ref publishing);
+            });
+            var publisher = Configuration.DestinationFactory.CreatePublisher<IMessage>(_lazyConnection, "orders", DestinationType.Topic, _serializer, _propertyProvider);
+
+            var publishes = new List<Task>();
+            for (var id = 0; id < 20; id++)
+            {
+                publishes.Add(publisher.PublishAsync(new TestMessage { Id = id }, new Dictionary<string, string>(), TestContext.Current.CancellationToken));
+            }
+            await Task.WhenAll(publishes);
+
+            Assert.Equal(1, mostAtOnce);
+            Assert.Equal(System.Linq.Enumerable.Range(0, 20), sent);
         }
 
         [Fact]
@@ -144,7 +208,7 @@ namespace Obvs.ActiveMQ.Tests
 
             ITestMessage testMessage = new TestMessage();
 
-            await _publisher.PublishAsync(testMessage);
+            await _publisher.PublishAsync(testMessage, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
             A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
             A.CallTo(() => _message.Properties.SetString(MessagePropertyNames.TypeName, typeof(TestMessage).Name)).MustHaveHappened(1, Times.Exactly);
@@ -155,7 +219,7 @@ namespace Obvs.ActiveMQ.Tests
         {
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, _propertyProvider, _testScheduler);
 
-            await _publisher.PublishAsync(new TestMessage());
+            await _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
             _publisher.Dispose();
 
             A.CallTo(() => _session.Close()).MustHaveHappened(1, Times.Exactly);
@@ -169,9 +233,9 @@ namespace Obvs.ActiveMQ.Tests
             
             Assert.ThrowsAsync<InvalidOperationException>(async () => 
             {    
-                await _publisher.PublishAsync(new TestMessage());
+                await _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>());
                 _publisher.Dispose();
-                await _publisher.PublishAsync(new TestMessage());
+                await _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>());
             });
         }
 
@@ -185,7 +249,7 @@ namespace Obvs.ActiveMQ.Tests
 
             try
             {
-                await _publisher.PublishAsync(new TestMessage());
+                await _publisher.PublishAsync(new TestMessage(), new Dictionary<string, string>(), TestContext.Current.CancellationToken);
             }
             catch (Exception exception)
             {
@@ -201,11 +265,11 @@ namespace Obvs.ActiveMQ.Tests
             var message1 = new TestMessage();
             var message2 = new TestMessage();
 
-            await _publisher.PublishAsync(message1);
+            await _publisher.PublishAsync(message1, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
             A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
 
-            await _publisher.PublishAsync(message2);
+            await _publisher.PublishAsync(message2, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
             _publisher.Dispose();
 
@@ -219,7 +283,7 @@ namespace Obvs.ActiveMQ.Tests
             _publisher = new MessagePublisher<IMessage>(_lazyConnection, _destination, _serializer, propertyProviderWhichReturnsNull, _testScheduler);
 
             var message = new TestMessage();
-            await _publisher.PublishAsync(message);
+            await _publisher.PublishAsync(message, new Dictionary<string, string>(), TestContext.Current.CancellationToken);
 
             A.CallTo(() => _producer.Send(_message, MsgDeliveryMode.NonPersistent, MsgPriority.Normal, TimeSpan.Zero)).MustHaveHappened(1, Times.Exactly);
         }

@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Reflection;
 using Obvs.Configuration;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 namespace Obvs.Kafka.Configuration
 {
-    public class KafkaServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>
+    internal class KafkaServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TServiceMessage : class
         where TCommand : class, TMessage
@@ -23,6 +24,13 @@ namespace Obvs.Kafka.Configuration
         private readonly Func<Type, bool> _typeFilter;
         private readonly Func<Dictionary<string, string>, bool> _propertyFiter;
         private readonly Func<TMessage, Dictionary<string, string>> _propertyProvider;
+        private readonly string _instanceId;
+
+        /// <param name="instanceId">
+        /// The bus's instance ID. With one, the service's buses share a consumer group for commands and requests,
+        /// so each is handled once, and each bus has its own for events and responses, named after its instance ID.
+        /// Without one, as in v6, every source has the process's group, so every process receives every message.
+        /// </param>
 
         public KafkaServiceEndpointProvider(string serviceName, 
             KafkaConfiguration kafkaConfiguration, KafkaSourceConfiguration sourceConfiguration, 
@@ -30,7 +38,7 @@ namespace Obvs.Kafka.Configuration
             IMessageSerializer serializer, IMessageDeserializerFactory deserializerFactory,
             Func<Dictionary<string, string>, bool> propertyFilter, 
             Func<TMessage, Dictionary<string, string>> propertyProvider, 
-            Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null)
+            Func<Assembly, bool> assemblyFilter = null, Func<Type, bool> typeFilter = null, string instanceId = null)
             : base(serviceName)
         {
             _kafkaConfiguration = kafkaConfiguration;
@@ -42,6 +50,7 @@ namespace Obvs.Kafka.Configuration
             _typeFilter = typeFilter;
             _propertyFiter = propertyFilter;
             _propertyProvider = propertyProvider;
+            _instanceId = instanceId;
 
             if (string.IsNullOrEmpty(_kafkaConfiguration?.BootstrapServers))
             {
@@ -52,17 +61,28 @@ namespace Obvs.Kafka.Configuration
         public override IServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpoint()
         {
             return new ServiceEndpoint<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                    CreateSource<TRequest>(_kafkaConfiguration, _sourceConfiguration, RequestsDestination),
-                    CreateSource<TCommand>(_kafkaConfiguration, _sourceConfiguration, CommandsDestination),
+                    CreateSource<TRequest>(RequestsDestination),
+                    CreateSource<TCommand>(CommandsDestination),
                     Create<TEvent>(_kafkaConfiguration, _producerConfiguration, EventsDestination),
                     Create<TResponse>(_kafkaConfiguration, _producerConfiguration, ResponsesDestination),
                     typeof(TServiceMessage));
         }
 
-        private IMessageSource<T> CreateSource<T>(KafkaConfiguration kafkaConfiguration, KafkaSourceConfiguration sourceConfiguration, string topic) where T : class, TMessage
+        internal MessageSource<T> CreateSource<T>(string topic) where T : class, TMessage
         {
-            return SourceFactory.Create<T, TServiceMessage>(kafkaConfiguration, sourceConfiguration, 
-                topic, _deserializerFactory, _propertyFiter, _assemblyFilter, _typeFilter);
+            return SourceFactory.Create<T, TServiceMessage>(_kafkaConfiguration, _sourceConfiguration, 
+                topic, _deserializerFactory, _propertyFiter, _assemblyFilter, _typeFilter, GroupId(topic));
+        }
+
+        // Named after the service, and not the process, so a restarted bus reuses its groups. Each topic has its own
+        // group, so one source's subscription doesn't rebalance the others.
+        private string GroupId(string topic)
+        {
+            if (string.IsNullOrEmpty(_instanceId))
+            {
+                return null;
+            }
+            return topic == CommandsDestination || topic == RequestsDestination ? topic : $"{topic}.{_instanceId}";
         }
 
         private IMessagePublisher<T> Create<T>(KafkaConfiguration kafkaConfiguration, KafkaProducerConfiguration producerConfiguration, string topic) where T : class, TMessage
@@ -73,8 +93,8 @@ namespace Obvs.Kafka.Configuration
         public override IServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse> CreateEndpointClient()
         {
             return new ServiceEndpointClient<TMessage, TCommand, TEvent, TRequest, TResponse>(
-                    CreateSource<TEvent>(_kafkaConfiguration, _sourceConfiguration, EventsDestination),
-                    CreateSource<TResponse>(_kafkaConfiguration, _sourceConfiguration, ResponsesDestination),
+                    CreateSource<TEvent>(EventsDestination),
+                    CreateSource<TResponse>(ResponsesDestination),
                     Create<TRequest>(_kafkaConfiguration, _producerConfiguration, RequestsDestination),
                     Create<TCommand>(_kafkaConfiguration, _producerConfiguration, CommandsDestination),
                     typeof(TServiceMessage));

@@ -1,0 +1,46 @@
+using System;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace Obvs.NATS
+{
+    /// <summary>
+    /// A service's NATS JetStream settings. Each service has its own, as named options keyed by the service's
+    /// name: <c>IOptionsMonitor&lt;NatsJetStreamOptions&gt;.Get("orders")</c>.
+    /// </summary>
+    public sealed class NatsJetStreamOptions
+    {
+        /// <summary>The server to connect to, which must have JetStream enabled, for example <c>nats://localhost:4222</c>. Required.</summary>
+        public string Url { get; set; }
+
+        /// <summary>
+        /// How many times a message is delivered to a handler that keeps failing before it's republished to the service's
+        /// dead-letter stream. 10 by default. Applied to consumers as their <c>MaxDeliver</c>.
+        /// </summary>
+        public int MaxDeliveryAttempts { get; set; } = 10;
+
+        /// <summary>
+        /// How many messages each consumer delivers to this bus at once. When not set, as many as the service's handlers
+        /// of its messages take at once: the sum of their <c>MaxConcurrency</c>, or 1 if no handler takes them. Messages
+        /// arrive in order only one at a time. Set it to cap the handlers, or for messages processed with
+        /// <c>SubscribeAsync</c> or Rx, which the bus can't see at startup.
+        /// </summary>
+        public int? MaxConcurrentMessages { get; set; }
+
+        /// <summary>
+        /// How long a delivered message waits to be acknowledged before JetStream delivers it again. Applied to consumers;
+        /// JetStream's default of 30 seconds when not set.
+        /// </summary>
+        public TimeSpan? AckWait { get; set; }
+
+        /// <summary>
+        /// The longest a handler runs with a message, for which the bus keeps telling JetStream the message is in
+        /// progress, restarting its <see cref="AckWait"/>. 5 minutes by default; a handler that runs longer loses the
+        /// message, and it's delivered again. Set <c>TimeSpan.Zero</c> to never keep it in progress.
+        /// </summary>
+        public TimeSpan MaxHandlerDuration { get; set; } = TimeSpan.FromMinutes(5);
+
+        // Set by UseNatsJetStream from the app's logging
+        internal ILogger Logger { get; set; } = NullLogger.Instance;
+    }
+}

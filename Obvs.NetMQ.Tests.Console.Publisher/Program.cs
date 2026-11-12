@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using Obvs.Serialization.ProtoBuf;
 using Obvs.Types;
@@ -28,7 +29,7 @@ namespace Obvs.NetMQ.Tests.Console.Publisher
 					publisher.PublishAsync(new Message1AndItIs32CharactersLongForSureDefinitionForSure()
 					{
 						Id = i
-					});
+					}, new Dictionary<string, string>());
 
 					Thread.Sleep(TimeSpan.FromSeconds(0.5));
 					System.Console.WriteLine("Published: {0}", i);

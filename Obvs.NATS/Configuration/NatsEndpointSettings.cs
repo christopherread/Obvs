@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Obvs.NATS.Configuration
 {
-    public class NatsEndpointSettings<TMessage>
+    internal class NatsEndpointSettings<TMessage>
         where TMessage : class
     {
         public string ServiceName { get; set; }

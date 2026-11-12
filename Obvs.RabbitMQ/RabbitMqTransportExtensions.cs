@@ -1,0 +1,115 @@
+using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Obvs.Configuration;
+using Obvs.RabbitMQ;
+using Obvs.RabbitMQ.SharedQueues;
+using Obvs.Transports;
+using Obvs.Types;
+
+// In the builder's namespace, so UseRabbitMq() is found without an extra using
+namespace Obvs.Hosting
+{
+    /// <summary>Carries services over RabbitMQ: <c>service.UseRabbitMq(...)</c> inside <c>AddService</c>.</summary>
+    public static class RabbitMqTransportExtensions
+    {
+        /// <summary>
+        /// Carries this service's messages over RabbitMQ, with settings bound from <paramref name="configuration"/>,
+        /// for example <c>builder.Configuration.GetSection("Obvs:Orders:RabbitMq")</c>.
+        /// </summary>
+        public static ObvsServiceBuilder UseRabbitMq(this ObvsServiceBuilder service, IConfiguration configuration)
+        {
+            return UseRabbitMq(service, configuration, options => { });
+        }
+
+        /// <summary>
+        /// Carries this service's messages over RabbitMQ, with settings bound from <paramref name="configuration"/>, then
+        /// changed by <paramref name="configure"/>, for example to set a URI read from a secret store.
+        /// </summary>
+        public static ObvsServiceBuilder UseRabbitMq(this ObvsServiceBuilder service, IConfiguration configuration, Action<RabbitMqOptions> configure)
+        {
+            if (service == null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+            if (configuration == null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
+
+            service.Services.AddOptions<RabbitMqOptions>(service.Name).Bind(configuration).Configure(configure);
+            var uriKey = configuration is IConfigurationSection section ? section.Path + ":Uri" : "Uri";
+            return UseRabbitMq(service, $"configuration key {uriKey}");
+        }
+
+        /// <summary>
+        /// Carries this service's messages over RabbitMQ, with settings set in code.
+        /// </summary>
+        public static ObvsServiceBuilder UseRabbitMq(this ObvsServiceBuilder service, Action<RabbitMqOptions> configure)
+        {
+            if (service == null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
+
+            service.Services.AddOptions<RabbitMqOptions>(service.Name).Configure(configure);
+            return UseRabbitMq(service, "options.Uri in UseRabbitMq(...)");
+        }
+
+        private static ObvsServiceBuilder UseRabbitMq(ObvsServiceBuilder service, string whereToSetUri)
+        {
+            return service.UseTransport("RabbitMQ",
+                transport => CreateProvider(transport, GetOptions(transport),
+                    transport.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.RabbitMQ")),
+                transport => Validate(transport, GetOptions(transport), whereToSetUri));
+        }
+
+        private static RabbitMqOptions GetOptions(ObvsTransportContext service)
+        {
+            return service.ServiceProvider.GetRequiredService<IOptionsMonitor<RabbitMqOptions>>().Get(service.ServiceName);
+        }
+
+        private static IEnumerable<string> Validate(ObvsTransportContext service, RabbitMqOptions options, string whereToSetUri)
+        {
+            if (options.Uri == null)
+            {
+                yield return $"Service '{service.ServiceName}' has no RabbitMQ broker address. Set {whereToSetUri}, for example amqp://localhost:5672.";
+            }
+            if (options.MaxDeliveryAttempts < 1)
+            {
+                yield return $"Service '{service.ServiceName}' sets RabbitMQ MaxDeliveryAttempts to {options.MaxDeliveryAttempts}, but it must be at least 1. " +
+                             "Leave it unset for the default of 10.";
+            }
+            if (options.MaxConcurrentMessages < 1)
+            {
+                yield return $"Service '{service.ServiceName}' sets RabbitMQ MaxConcurrentMessages to {options.MaxConcurrentMessages}, but it must be at least 1. " +
+                             "Leave it unset to take as many at once as the service's handlers' MaxConcurrency add up to.";
+            }
+        }
+
+        // The provider is generic in the service's message type, which the builder only knows at run time
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, RabbitMqOptions options, ILogger logger)
+        {
+            if (logger != null)
+            {
+                options.Logger = logger;
+            }
+            Func<Type, int> concurrency = kind => options.MaxConcurrentMessages ?? service.HandlerConcurrency(kind);
+            var providerType = typeof(RabbitMqEndpointProvider<>).MakeGenericType(service.ServiceMessageType);
+
+            return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
+                service.ServiceName, service.InstanceId, options, concurrency, service.Serializer, service.DeserializerFactory, service.IsServer);
+        }
+    }
+}

@@ -1,0 +1,196 @@
+# Migrating from v6 to v7
+
+v7 configures the bus through dependency injection, handles messages with handlers, and awaits requests. The Rx streams are still there. v6's configuration API is gone, so each app's configuration is rewritten, but its messages and the code that uses the streams mostly aren't. v6 and v7 apps work together on the same broker, so you can move one app at a time.
+
+## v6 and v7 apps together
+
+A v7 service talks to v6 apps on the same broker, with the same exchange, topic and queue names and the same JSON, with these exceptions:
+
+- **JSON:** v7 serializes with System.Text.Json by default, which reads and writes the same JSON as `Obvs.Serialization.Json` (Newtonsoft) for ordinary messages: public properties and fields, matched in any case. If your v6 apps customize Newtonsoft (`JsonSerializerSettings`, converters, enums as strings), keep Newtonsoft in v7 with `SerializedWith(new JsonMessageSerializer(settings), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>), settings))`.
+- **Compressed JSON:** `Compressed()` with `Obvs.Serialization.Json` writes the same bytes as v6's `GzippedJson` serializers, and reads theirs.
+- **Azure Service Bus and Amazon SQS** are new transports in v7: there are no v6 apps to talk to.
+- **RabbitMQ commands and requests** go to quorum queues a service's v7 servers share, where v6 gives each bus its own queue. v6 and v7 apps still reach each other, but while a service has v6 and v7 servers at once, each command is handled by every v6 server and by one v7 server. Upgrade a service's servers together. See [RabbitMQ](transports/rabbitmq.md#upgrading-from-v6).
+- **ActiveMQ commands over queues:** v7's ActiveMQ transport sends commands over topics, v6's default. A v6 app configured with `UsingQueueFor<ICommand>()` and a v7 app don't reach each other's commands.
+- **Retired packages:** NetJSON, XML, YAML and MsgPack.Cli serializers stay on v6. A v7 app can't read what they write. Move those services to JSON, MessagePack (MessagePack-CSharp) or ProtoBuf first, from v6.
+
+`TestV6Interop` in `Obvs.RabbitMQ.Tests` runs a v6 app, on the published 6.x packages in its own process, and a v7 app on one broker, in both directions.
+
+## Configuration
+
+**v6**
+
+<!-- not compiled: v6's API, which v7 removed -->
+```csharp
+IServiceBus bus = ServiceBus.Configure()
+    .WithRabbitMQEndpoints<IOrderMessage>()
+        .Named("orders")
+        .ConnectToBroker("amqp://localhost:5672")
+        .SerializedAsJson()
+        .AsClientAndServer()
+    .UsingConsoleLogging()
+    .Create();
+```
+
+**v7**
+
+<!-- snippet: v7-configuration -->
+```csharp
+builder.Services.AddObvs(obvs => obvs
+    .AddService<IOrderMessage>("orders", service => service
+        .UseRabbitMq(options => options.Uri = new Uri("amqp://localhost:5672"))));
+
+// IServiceBus and IServiceBusClient are in the container. The bus starts with the host.
+```
+
+Options can come from configuration: `service.UseRabbitMq(builder.Configuration.GetSection("Obvs:Orders:RabbitMq"))`. Without a host, in a script or a console tool:
+
+<!-- snippet: v7-without-a-host -->
+```csharp
+await using var bus = await ObvsBus.StartAsync(obvs => obvs
+    .AddService<IOrderMessage>("orders", service => service
+        .UseRabbitMq(options => options.Uri = new Uri("amqp://localhost:5672"))));
+```
+
+| v6 | v7 |
+|---|---|
+| `ServiceBus.Configure()` | `services.AddObvs(obvs => ...)`, or `ObvsBus.StartAsync(obvs => ...)` |
+| `.WithRabbitMQEndpoints<T>().Named("orders")` | `.AddService<T>("orders", service => service.UseRabbitMq(...))` |
+| `.WithKafkaEndpoints<T>()`, `.WithNatsEndpoints<T>()`, `.WithActiveMQEndpoints<T>()`, `.WithNetMqEndpoints<T>()` | `UseKafka`, `UseNats` or `UseNatsJetStream`, `UseActiveMq`, `UseNetMq` |
+| `.BindToAddress("tcp://localhost").OnPort(5555)` (NetMQ) | `options.Address` and `options.Port`. v7 sends without headers by default, so v6 apps can read its messages ([NetMQ](transports/netmq.md)) |
+| `.ConnectToBroker(uri)`, `.WithCredentials(user, password)` | The transport's options: `options.Uri`, `options.BrokerUri`, `options.UserName`... |
+| `.UsingQueueFor<ICommand>()` (ActiveMQ) | Not in v7 yet: v7's ActiveMQ transport sends commands over topics, as v6 does by default. A v6 app that sends commands to a queue can't reach a v7 server, so move both apps together |
+| `.AsClient()`, `.AsServer()`, `.AsClientAndServer()` | The same, on the service. Client and server is the default |
+| `.SerializedAsJson()` | Nothing: System.Text.Json is the default. Or `SerializedWith(...)` |
+| `.SerializedAsJson(gzipped: true)` | `.Compressed()` |
+| `.FilterMessageTypeAssemblies(...)` | `.AddMessages(typeof(PlaceOrder), ...)`, or `[ObvsMessages(typeof(IOrderMessage))]` on a partial class to generate the list |
+| `.WithEndpoints(new MyEndpoint())` | `.UseTransport("MyTransport", transport => new MyEndpointProvider())` |
+| `.PublishLocally()` | Not carried over. Use the in-memory transport, `UseInMemory()` from `Obvs.Testing`, for in-process services |
+| `.UsingConsoleLogging()`, `.UsingLogging(...)`, `Obvs.Logging.NLog` | `Microsoft.Extensions.Logging`: the bus logs through the app's `ILoggerFactory` |
+| `.UsingMonitor(...)`, `Obvs.Monitoring.*` | OpenTelemetry: `tracing.AddSource(ObvsTelemetry.ActivitySourceName)` and `metrics.AddMeter(ObvsTelemetry.MeterName)` |
+| `.CreateClient()` | Resolve `IServiceBusClient` |
+
+Configuration errors fail startup, all at once, each with its fix. See [configuration errors](configuration-errors.md).
+
+### Removed from v7
+
+| v6 | v7 |
+|---|---|
+| `ServiceBus.Configure()`, `ServiceBusFluentCreator` and the `ICanAddEndpoint...` interfaces | `AddObvs`, or `ObvsBus.StartAsync` |
+| Each transport's fluent configuration: `With<Transport>Endpoints`, `<Transport>FluentConfig`, `WithActiveMQSharedConnectionScope` | `Use<Transport>(...)` and its options |
+| `SerializedAsJson()`, `SerializedAsProtoBuf()`, `SerializedAsMessagePackCSharp()` | `SerializedWith(serializer, deserializerFactory)`, or nothing for System.Text.Json |
+| `GzippedJsonMessageSerializer` and `GzippedJsonMessageDeserializer` | `Compressed()`, which writes and reads the same bytes |
+| `new ServiceBus(...)`, `new ServiceBusClient(...)` | Resolve `IServiceBus` or `IServiceBusClient` |
+| `IServiceBus<TMessage, ...>` and `IServiceBusClient<TMessage, ...>` | `IServiceBus` and `IServiceBusClient`, over `IMessage` |
+| `GetResponse<T>(request)` | `RequestAsync(request, ct)` for a request that names its response, or `GetResponses(request).OfType<T>().Take(1)` |
+| `GetResponses<T>(request)` | `GetResponses(request).OfType<T>()` |
+| `SendAsync(IEnumerable<ICommand>)` | `await Task.WhenAll(commands.Select(command => bus.SendAsync(command, ct)))` |
+| `IMessageDeserializer<T>.GetTypeName()` | The `TypeName` property |
+| `MessageSerializerExtentions` and `MessageDeserializerExtentions` | `MessageSerializerExtensions` and `MessageDeserializerExtensions`, spelt correctly. Code that calls their methods as extensions doesn't change |
+| `IRequestCorrelationProvider` and `DefaultRequestCorrelationProvider` | Nothing: the bus matches responses to requests by request ID and requester ID, as v6's default did |
+| `Obvs.Logging`: `ILogger`, `ILoggerFactory`, `LogLevel`, the console and debug loggers | `Microsoft.Extensions.Logging` |
+| `Obvs.Monitoring`: `IMonitor`, `IMonitorFactory`, the console monitor | OpenTelemetry, through `ObvsTelemetry` |
+| `SubjectServiceBus`, `SubjectMessageBus`, `IMessageBus`, `PublishLocally()` and `LocalBusOptions` | `UseInMemory()` from `Obvs.Testing` |
+| `MessageBridge`, `MessageSourceConverter` and `IMessageConverter` | A handler that sends what it receives on to another service |
+| The copies of other libraries' helpers: `Obvs.ActiveMQ.RecyclableMemoryStream`, `Obvs.ActiveMQ.Utils.LimitedConcurrencyLevelTaskScheduler` and `Obvs.Serialization.Json.Utils.ArrayPool<T>` | The originals: the `Microsoft.IO.RecyclableMemoryStream` package, `new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler` for one task at a time, and `System.Buffers.ArrayPool<T>` |
+
+## Handling messages
+
+**v6**
+
+<!-- snippet: v6-handling -->
+```csharp
+bus.Commands.OfType<PlaceOrder>().Subscribe(async command =>
+{
+    await bus.PublishAsync(new OrderPlaced(command.OrderId));
+});
+```
+
+**v7**
+
+<!-- snippet: v7-handling -->
+```csharp
+service.HandleCommand<PlaceOrder>(async (command, context, ct) =>
+{
+    await context.PublishAsync(new OrderPlaced(command.OrderId), ct);
+});
+
+// Or a class from the container
+service.HandleCommand<PlaceOrder, PlaceOrderHandler>();
+```
+
+The v6 code runs as `async void`. Commands are handled at the same time, out of order, and an exception crashes the app. The analyzer reports it as OBVS006. A handler, instead:
+- awaits each command, one at a time unless `MaxConcurrency` says otherwise;
+- runs in a DI scope;
+- logs and traces failures;
+- settles the message on transports that keep it until it's handled;
+- starts and stops with the host.
+
+`HandleEvent` and `HandleRequest` work the same way. A request handler returns its response.
+
+The streams are still there for what Rx does best: `bus.Events.OfType<OrderPlaced>().Buffer(...)`. To process one with async code, use `SubscribeAsync(async (placed, ct) => ...)`, which awaits and settles each message as a handler does. To read one at your own pace: `await foreach (var placed in client.ReadEventsAsync<OrderPlaced>(ct))`.
+
+## Requests
+
+**v6**
+
+<!-- snippet: v6-request -->
+```csharp
+var quote = await bus.GetResponses(new GetQuote("sku-1"))
+    .OfType<Quote>().Take(1).Timeout(TimeSpan.FromSeconds(5)).ToTask();
+```
+
+**v7**
+
+A request names its response, as `GetQuote : IOrderMessage, IRequest<Quote>` does. That doesn't change its JSON or where it's sent, so v6 apps still understand it. `RequestAsync` infers the response type from it, and `HandleRequest` must answer with it.
+
+<!-- snippet: v7-request -->
+```csharp
+var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
+```
+
+## Cancellation
+
+`SendAsync`, `PublishAsync` and `ReplyAsync` take an optional `CancellationToken`, which the transports pass to their broker clients.
+
+## Custom transports and endpoints
+
+What transports are built from is in the `Obvs.Transports` namespace: the endpoints, publishers and sources, `IServiceEndpointProvider` (in v6, `Obvs.Configuration`), the message property providers (in v6, `Obvs.MessageProperties`), and settlement.
+
+Each transport's endpoint provider is internal, such as v6's `RabbitMQServiceEndpointProvider`, along with what it builds endpoints with, such as Kafka's `SourceFactory` and ActiveMQ's `DestinationFactory`. Configure a transport with its `Use` method instead. Its `MessageSource<T>` and `MessagePublisher<T>` are still public, for an app that builds its own endpoints from them, with the types their constructors take, such as Kafka's `KafkaConfiguration` and ActiveMQ's `AcknowledgementMode`.
+
+Every send takes the message's headers, which include its trace context, and a `CancellationToken`:
+- `IMessagePublisher<T>.PublishAsync(message, headers, cancellationToken)`;
+- `IServiceEndpoint`'s `PublishAsync` and `ReplyAsync`;
+- `IServiceEndpointClient`'s `SendAsync` and `GetResponses`.
+
+A transport sends the headers with the message. When it receives one, it attaches the headers it arrived with by calling `ObvsReceivedMessage.Attach(message, headers)`, so handlers and `ObvsMessageHeaders.Get` see them.
+
+Register a custom transport with `UseTransport("MyTransport", create, validate)`; the name shows in the service's contract. `create` builds the endpoint provider when the bus starts, and the optional `validate` returns the transport's configuration problems, each saying how to fix it, which startup reports with the rest. Both are given an `ObvsTransportContext`, with the service's name, message type and registered messages, its serializer and deserializer factory, whether this app is its client or server, the bus's instance ID, and the app's services. A transport that can't deserialize a message can count it with `ObvsTransportTelemetry.RecordUndeserializable`.
+
+## Errors
+
+- Sending a message that no service on the bus takes throws an `InvalidOperationException` that names the message type and the missing `AddService`. In v6 it threw a plain `Exception`.
+- Errors on the `Exceptions` stream are logged, under the category `Obvs.Bus`, as well as published.
+
+## Packages
+
+| v6 package | v7 |
+|---|---|
+| `Obvs` | `Obvs`, with System.Text.Json, the analyzers and the `[ObvsMessages]` generator built in |
+| `Obvs.Serialization.Json` | Kept, for Newtonsoft and v6's settings |
+| `Obvs.Serialization.MessagePack-CSharp` | Renamed `Obvs.Serialization.MessagePack` |
+| `Obvs.Serialization.MessagePack` (MsgPack.Cli) | Retired. Use `Obvs.Serialization.MessagePack` (MessagePack-CSharp), which isn't wire-compatible with it |
+| `Obvs.Serialization.ProtoBuf` | Kept |
+| `Obvs.Serialization.NetJson`, `.Xml`, `.Yaml` | Retired: use System.Text.Json |
+| `Obvs.Logging.NLog` | Retired: use `Microsoft.Extensions.Logging` with NLog's provider |
+| `Obvs.Monitoring.AppMetrics`, `.ElasticSearch`, `.PerformanceCounters` | Retired: use OpenTelemetry |
+| `Obvs.RabbitMQ`, `.Kafka`, `.NATS`, `.ActiveMQ`, `.NetMQ` | Kept |
+| — | New: `Obvs.AzureSB`, `Obvs.AmazonSqs`, `Obvs.Testing`, `Obvs.Mcp` |
+
+## What else is new
+
+- **Analyzers** catch common mistakes as you type ([rules](analyzers.md)).
+- **`Obvs.Testing`** runs services against an in-memory broker in tests ([guide](testing.md)).
+- **Contracts:** each service's contract is an AsyncAPI document, and a test can catch breaking changes ([contracts](contracts.md)).
+- **`Obvs.Mcp`** lets an agent inspect and drive a development bus ([guide](mcp.md)).
+- **The examples** in `Examples/` show a client and a service on ActiveMQ, with handlers, a request, and a trace that crosses both apps.

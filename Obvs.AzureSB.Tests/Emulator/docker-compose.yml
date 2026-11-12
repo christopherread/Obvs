@@ -1,0 +1,23 @@
+# Microsoft's Service Bus emulator for the Explicit tests, with Azure SQL Edge as its store.
+# Start with: docker compose -f Obvs.AzureSB.Tests/Emulator/docker-compose.yml up -d
+# Setting ACCEPT_EULA accepts the emulator's Microsoft Software License Terms and SQL Edge's Developer licence.
+name: obvs-servicebus-emulator
+services:
+  emulator:
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    volumes:
+      - ./Config.json:/ServiceBus_Emulator/ConfigFiles/Config.json
+    ports:
+      - "5673:5672" # 5672 is RabbitMQ's, which CI also runs
+      - "5300:5300"
+    environment:
+      SQL_SERVER: sqledge
+      MSSQL_SA_PASSWORD: "Obvs-f524456b2b8cb9a1-Test1" # Only for the throwaway local SQL Edge container
+      ACCEPT_EULA: "Y"
+    depends_on:
+      - sqledge
+  sqledge:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Obvs-f524456b2b8cb9a1-Test1"

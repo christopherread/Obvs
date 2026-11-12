@@ -11,10 +11,12 @@ services:
     networks:
       - obvs
   obvssvc1:
-    build: ./
+    build:
+      context: ..
+      dockerfile: Examples/Dockerfile
     image: obvs.example.service.activemq:latest
     environment:
-      - ACTIVEMQ_BROKER_URI=tcp://amq:61616?connectionTimeout=0
+      - ACTIVEMQ_BROKER_URI=activemq:tcp://amq:61616?connectionTimeout=0
       - OBVS_SERVICE_NAME=Obvs.Service1
     depends_on:
       - amq

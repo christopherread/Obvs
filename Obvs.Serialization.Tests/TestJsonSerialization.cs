@@ -2,9 +2,7 @@
 using System.Reflection;
 using FakeItEasy;
 using Xunit;
-using Obvs.Configuration;
 using Obvs.Serialization.Json;
-using Obvs.Serialization.Json.Configuration;
 using Obvs.Types;
 
 namespace Obvs.Serialization.Tests
@@ -17,7 +15,7 @@ namespace Obvs.Serialization.Tests
         {
             var factory = new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>));
             var deses = factory.Create<TestMessage, IMessage>(ShouldLoadAssembly);
-            var des = deses.FirstOrDefault(d => d.GetTypeName() == typeof(TestMessage).Name);
+            var des = deses.FirstOrDefault(d => d.TypeName == typeof(TestMessage).Name);
 
             IMessageSerializer serializer = new JsonMessageSerializer();
             var messageBefore = new TestMessage { Id = 123, Name = "SomeName" };
@@ -25,6 +23,20 @@ namespace Obvs.Serialization.Tests
 
             var messageAfter = des.Deserialize(bytes);
 
+            Assert.Equal(messageBefore, messageAfter);
+        }
+
+        [Fact]
+        public void ShouldCreateADeserializerForAGivenType()
+        {
+            // For services that register their messages with AddMessages, so nothing is scanned
+            var factory = (IMessageTypeDeserializerFactory)new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>));
+            var deserializer = factory.Create<IMessage>(typeof(TestMessage));
+            var messageBefore = new TestMessage { Id = 123, Name = "SomeName" };
+
+            var messageAfter = deserializer.Deserialize(new JsonMessageSerializer().Serialize(messageBefore));
+
+            Assert.Equal(typeof(TestMessage).Name, deserializer.TypeName);
             Assert.Equal(messageBefore, messageAfter);
         }
 
@@ -63,15 +75,20 @@ namespace Obvs.Serialization.Tests
         }
 
         [Fact]
-        public void ShouldPassInCorrectFluentConfig()
+        public void ShouldNotShipACopyOfArrayPool()
         {
-            var fakeConfigurator = A.Fake<ICanSpecifyEndpointSerializers<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            fakeConfigurator.SerializedAsJson();
+            // v6 shipped a copy of System.Buffers' ArrayPool<T>; v7 pools Newtonsoft's buffers with .NET's own
+            Assert.DoesNotContain(typeof(JsonMessageSerializer).Assembly.GetTypes(), type => type.Name.StartsWith("ArrayPool") || type.Namespace == "Obvs.Serialization.Json.Utils");
+        }
 
-            A.CallTo(() => fakeConfigurator.SerializedWith(
-                A<IMessageSerializer>.That.IsInstanceOf(typeof(JsonMessageSerializer)),
-                A<IMessageDeserializerFactory>.That.IsInstanceOf(typeof(JsonMessageDeserializerFactory))))
-                .MustHaveHappened(1, Times.Exactly);
+        [Fact]
+        public void ShouldRoundTripAMessageLargerThanOnePooledBuffer()
+        {
+            IMessageSerializer serializer = new JsonMessageSerializer();
+            IMessageDeserializer<TestMessageProto> deserializer = new JsonMessageDeserializer<TestMessageProto>();
+            var message = new TestMessageProto { Id = 123, Name = new string('x', 100_000) };
+
+            Assert.Equal(message, deserializer.Deserialize(serializer.Serialize(message)));
         }
     }
 }

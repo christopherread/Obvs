@@ -2,17 +2,23 @@ name: .NET
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, v7 ]
     tags: ['v*' ]
     paths-ignore: ['README.md']
   pull_request:
-    branches: [ master ]
+    branches: [ master, v7 ]
     paths-ignore: ['README.md']
 
 jobs:
   build:
 
     runs-on: ubuntu-latest
+    # A run takes about eight minutes. A hung test fails its suite within HANG_DUMP's timeout; this is the backstop.
+    timeout-minutes: 30
+    env:
+      # Test arguments: a test run that hasn't finished after ten minutes writes a dump, and a log naming the tests still running, then fails.
+      # The directory goes after '=': once it exists, dotnet test would take it alone for a project to test.
+      HANG_DUMP: --hangdump --hangdump-timeout 10m --hangdump-type Mini --results-directory=${{ github.workspace }}/TestResults
     permissions:
       contents: read
       id-token: write # NuGet Trusted Publishing
@@ -58,6 +64,26 @@ jobs:
       uses: actions/checkout@v7
       with:
         fetch-depth: 0
+    - name: Start Service Bus emulator
+      # Its compose file mounts a config from the repo, so it can't be a service container. It starts while the build runs.
+      run: docker compose -f Obvs.AzureSB.Tests/Emulator/docker-compose.yml up -d
+    - name: Start Kafka SASL broker
+      # A second Kafka broker, requiring SASL sign-in, on port 9094. It starts while the build runs.
+      run: docker compose -f Obvs.Kafka.Tests/SaslBroker/docker-compose.yml up -d
+    - name: Start NATS JetStream server
+      # Service containers can't take a command, and the nats service above stays core NATS, without JetStream
+      run: docker run -d -p 4223:4222 nats:2.15 -js
+    - name: Install nats-server
+      # The JetStream reconnect tests start, stop and restart servers of their own, so they need the binary itself
+      run: |
+        docker create --name nats-server-binary nats:2.15
+        mkdir -p "$RUNNER_TEMP/nats-server"
+        docker cp nats-server-binary:/nats-server "$RUNNER_TEMP/nats-server/nats-server"
+        docker rm nats-server-binary
+        echo "$RUNNER_TEMP/nats-server" >> "$GITHUB_PATH"
+    - name: Start LocalStack
+      # SQS and SNS for the Amazon SQS tests, started like the Service Bus emulator from the test project's compose file
+      run: docker compose -f Obvs.AmazonSqs.Tests/LocalStack/docker-compose.yml up -d
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
@@ -74,55 +100,97 @@ jobs:
       id:   gitversion
       uses: gittools/actions/gitversion/execute@v4
 
+    # A tag's build is the version the tag names, such as v7.0.0-rc.1: GitVersion sees a detached checkout of an
+    # unknown branch, tags/v7.0.0-rc.1, and labels the version with that instead. Other builds are GitVersion's.
+    - name: Choose Version
+      id:   version
+      env:
+        GITVERSION_SEMVER: ${{ steps.gitversion.outputs.semVer }}
+      run: |
+        if [[ "$GITHUB_REF" == refs/tags/v* ]]; then semver="${GITHUB_REF_NAME#v}"; else semver="$GITVERSION_SEMVER"; fi
+        echo "Version $semver"
+        echo "semVer=$semver" >> "$GITHUB_OUTPUT"
+
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.gitversion.outputs.semVer }} -p:ContinuousIntegrationBuild=true -p:Deterministic=true
+      run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.version.outputs.semVer }} -p:ContinuousIntegrationBuild=true -p:Deterministic=true
     - name: Create Kafka test topic
       run: docker exec ${{ job.services.kafka.id }} /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic test-topic-3
+    - name: Wait for Service Bus emulator
+      run: |
+        for i in $(seq 1 60); do curl -sf http://localhost:5300/health && exit 0; sleep 2; done
+        docker compose -f Obvs.AzureSB.Tests/Emulator/docker-compose.yml logs
+        exit 1
+    - name: Wait for Kafka SASL broker
+      run: |
+        docker compose -f Obvs.Kafka.Tests/SaslBroker/docker-compose.yml up -d --wait --wait-timeout 120 && exit 0
+        docker compose -f Obvs.Kafka.Tests/SaslBroker/docker-compose.yml logs
+        exit 1
+    - name: Wait for LocalStack
+      run: |
+        for i in $(seq 1 60); do curl -sf http://localhost:4566/_localstack/init/ready | grep -q '"completed": true' && exit 0; sleep 2; done
+        docker compose -f Obvs.AmazonSqs.Tests/LocalStack/docker-compose.yml logs
+        exit 1
     - name: Test transports against brokers
       env:
         RABBITMQ_URI: amqp://localhost:5672
         NATS_URL: nats://localhost:4222
+        NATS_JETSTREAM_URL: nats://localhost:4223
         KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+        KAFKA_SASL_BOOTSTRAP_SERVERS: 127.0.0.1:9094
         ACTIVEMQ_URI: activemq:tcp://localhost:61616
       run: |
-        dotnet test --project Obvs.RabbitMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
-        dotnet test --project Obvs.NATS.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
-        dotnet test --project Obvs.Kafka.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
-        dotnet test --project Obvs.NetMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
-        dotnet test --project Obvs.ActiveMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit"
+        dotnet test --project Obvs.RabbitMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.NATS.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.Kafka.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.NetMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.ActiveMQ.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.AzureSB.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
+        dotnet test --project Obvs.AmazonSqs.Tests --no-build --configuration Release -- --filter-trait "Category=Explicit" $HANG_DUMP
     - name: Test
       # xUnit v3 runs on Microsoft.Testing.Platform (global.json). Exit code 8 means a project ran no tests,
       # as the transport test projects only contain Explicit tests.
-      run: dotnet test --solution Obvs.sln --no-build --configuration Release -- --filter-not-trait "Category=Explicit" --ignore-exit-code 8
-    - name: Pack
-      if: github.event_name == 'push'
+      run: dotnet test --solution Obvs.sln --no-build --configuration Release -- --filter-not-trait "Category=Explicit" --ignore-exit-code 8 $HANG_DUMP
+    - name: Show hung tests
+      if: failure()
       run: |
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs 
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.ActiveMQ
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Kafka
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Logging.NLog
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Monitoring.AppMetrics
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Monitoring.ElasticSearch
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Monitoring.PerformanceCounters
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.NATS
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.NetMQ
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.RabbitMQ
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Json
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.MessagePack-CSharp
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.NetJson
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.ProtoBuf
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Xml
-        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.gitversion.outputs.semVer }} Obvs.Serialization.Yaml
+        for log in TestResults/*_hang.log; do
+          [ -e "$log" ] || continue
+          echo "::error title=Hung tests::$(basename "$log"): $(tr '\n' ' ' < "$log")"
+          cat "$log"
+        done
+    - name: Upload hang dumps
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: hang-dumps
+        path: TestResults/*_hang.*
+        if-no-files-found: ignore
+    - name: Pack
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
+      run: |
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs 
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.ActiveMQ
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.AmazonSqs
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.AzureSB
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.Kafka
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.Mcp
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.NATS
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.NetMQ
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.RabbitMQ
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.Serialization.Json
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.Serialization.MessagePack
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.Serialization.ProtoBuf
+        dotnet pack --no-build --configuration Release --include-symbols --output nupkgs -p:PackageVersion=${{ steps.version.outputs.semVer }} Obvs.Testing
     - name: NuGet Login
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
       id: nuget
       uses: NuGet/login@v1
       with:
         user: inter8ection
     - name: Publish
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
       env:
         NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
       run: |

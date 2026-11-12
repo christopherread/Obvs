@@ -5,10 +5,11 @@ using System.Reflection;
 using NATS.Client.Core;
 using Obvs.Configuration;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 namespace Obvs.NATS.Configuration
 {
-    public class NatsServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>
+    internal class NatsServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TServiceMessage : class
         where TCommand : class, TMessage

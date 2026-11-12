@@ -1,0 +1,645 @@
+using System;
+using System.Collections.Generic;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
+using System.Text.Json.Nodes;
+using System.Threading;
+using System.Threading.Tasks;
+using FakeItEasy;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Obvs.Configuration;
+using Obvs.Hosting;
+using Obvs.Serialization;
+using Obvs.Serialization.SystemTextJson;
+using Obvs.Transports;
+using Obvs.Types;
+using Xunit;
+
+namespace Obvs.Tests.Hosting
+{
+    public class TestAddObvs
+    {
+        private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
+
+        [Fact]
+        public void ShouldResolveOneBusAsBothServiceBusAndClient()
+        {
+            var provider = new FakeEndpointProvider(typeof(IOrderMessage));
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider))));
+
+            var bus = host.Services.GetRequiredService<IServiceBus>();
+
+            Assert.Same(bus, host.Services.GetRequiredService<IServiceBus>());
+            Assert.Same(bus, host.Services.GetRequiredService<IServiceBusClient>());
+        }
+
+        [Fact]
+        public async Task ShouldCreateTheBusWhenTheHostStarts()
+        {
+            var provider = new FakeEndpointProvider(typeof(IOrderMessage));
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider))));
+
+            Assert.Equal(0, provider.EndpointsCreated + provider.ClientsCreated);
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal(1, provider.EndpointsCreated);
+            Assert.Equal(1, provider.ClientsCreated);
+        }
+
+        [Fact]
+        public async Task ShouldDeliverCommandsFromClientToServer()
+        {
+            var provider = new FakeEndpointProvider(typeof(IOrderMessage));
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider))));
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            var received = host.Services.GetRequiredService<IServiceBus>()
+                .Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
+            await host.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+
+            var command = await received.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+            Assert.Equal("o-1", command.OrderId);
+        }
+
+        [Fact]
+        public async Task ShouldAddServicesFromRepeatedCallsToOneBus()
+        {
+            var orders = new FakeEndpointProvider(typeof(IOrderMessage));
+            var shipping = new FakeEndpointProvider(typeof(IShippingMessage));
+            using var host = BuildHost(services => services
+                .AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => orders)))
+                .AddObvs(obvs => obvs.AddService<IShippingMessage>("shipping", service => service.UseTransport("Fake", _ => shipping))));
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.Same(host.Services.GetRequiredService<IServiceBus>(), host.Services.GetRequiredService<IServiceBusClient>());
+            Assert.Equal(1, orders.EndpointsCreated);
+            Assert.Equal(1, shipping.EndpointsCreated);
+        }
+
+        [Fact]
+        public async Task ShouldOnlyCreateClientEndpointsForAClientService()
+        {
+            var provider = new FakeEndpointProvider(typeof(IOrderMessage));
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider).AsClient())));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal(0, provider.EndpointsCreated);
+            Assert.Equal(1, provider.ClientsCreated);
+        }
+
+        [Fact]
+        public async Task ShouldOnlyCreateServerEndpointsForAServerService()
+        {
+            var provider = new FakeEndpointProvider(typeof(IOrderMessage));
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider).AsServer())));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal(1, provider.EndpointsCreated);
+            Assert.Equal(0, provider.ClientsCreated);
+        }
+
+        [Fact]
+        public async Task ShouldDisposeTheBusWhenTheContainerIsDisposed()
+        {
+            var provider = new FakeEndpointProvider(typeof(IOrderMessage));
+            var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider))));
+            await host.StartAsync(TestContext.Current.CancellationToken);
+            await host.StopAsync(TestContext.Current.CancellationToken);
+
+            Assert.False(provider.Endpoint.Messages.IsDisposed);
+
+            host.Dispose();
+
+            Assert.True(provider.Endpoint.Messages.IsDisposed);
+        }
+
+        [Fact]
+        public async Task ShouldDisposeTheBusOnlyOnce()
+        {
+            // Server only, so the shared fake endpoint is owned once by the bus
+            var provider = new FakeEndpointProvider(typeof(IOrderMessage));
+            var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider).AsServer())));
+            await host.StartAsync(TestContext.Current.CancellationToken);
+            host.Services.GetRequiredService<IServiceBusClient>();
+            await host.StopAsync(TestContext.Current.CancellationToken);
+
+            host.Dispose();
+
+            Assert.Equal(1, provider.Endpoint.DisposeCount);
+        }
+
+        [Fact]
+        public async Task ShouldGiveEachHostItsOwnBus()
+        {
+            // One provider per container, as a real transport's connection would be
+            Action<IServiceCollection> configure = services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IOrderMessage)))));
+            using var hostA = BuildHost(configure);
+            using var hostB = BuildHost(configure);
+            await hostA.StartAsync(TestContext.Current.CancellationToken);
+            await hostB.StartAsync(TestContext.Current.CancellationToken);
+
+            var busA = hostA.Services.GetRequiredService<IServiceBus>();
+            var busB = hostB.Services.GetRequiredService<IServiceBus>();
+            Assert.NotSame(busA, busB);
+
+            var receivedByB = busB.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
+            var receivedByA = busA.Commands.OfType<PlaceOrder>().FirstAsync().ToTask();
+            await hostA.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+
+            await receivedByA.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+            Assert.False(receivedByB.IsCompleted);
+        }
+
+        [Fact]
+        public void ShouldResolveAKeyedBusSeparatelyFromTheDefaultBus()
+        {
+            using var host = BuildHost(services => services
+                .AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IOrderMessage)))))
+                .AddObvs("analytics", obvs => obvs.AddService<IShippingMessage>("shipping", service => service
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IShippingMessage))))));
+
+            var defaultBus = host.Services.GetRequiredService<IServiceBus>();
+            var analyticsBus = host.Services.GetRequiredKeyedService<IServiceBus>("analytics");
+
+            Assert.NotSame(defaultBus, analyticsBus);
+            Assert.Same(analyticsBus, host.Services.GetRequiredKeyedService<IServiceBusClient>("analytics"));
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenAServiceHasNoTransport()
+        {
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => { })));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(
+                () => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("UseRabbitMq", error);
+            Assert.Contains("UseAzureServiceBus", error);
+            Assert.Contains("UseInMemory", error);
+            Assert.Contains("UseTransport", error);
+        }
+
+        [Fact]
+        public async Task ShouldFailToStartWhenTwoServicesShareAName()
+        {
+            using var host = BuildHost(services => services
+                .AddObvs(obvs => obvs.AddService<IOrderMessage>("orders", service => service
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IOrderMessage)))))
+                .AddObvs(obvs => obvs.AddService<IShippingMessage>("orders", service => service
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IShippingMessage))))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(
+                () => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("'orders'", error);
+            Assert.Contains("more than once", error);
+            Assert.Contains("unique name", error);
+        }
+
+        [Fact]
+        public async Task ShouldReportEveryConfigurationProblemAtOnce()
+        {
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => { })
+                .AddService<IShippingMessage>("shipping", service => { })));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(
+                () => host.StartAsync(TestContext.Current.CancellationToken));
+
+            Assert.Equal(2, exception.Errors.Count);
+            Assert.Contains(exception.Errors, error => error.Contains("'orders'"));
+            Assert.Contains(exception.Errors, error => error.Contains("'shipping'"));
+        }
+
+        [Fact]
+        public async Task ShouldGiveEachBusItsOwnInstanceId()
+        {
+            string instanceIdA = null;
+            string instanceIdB = null;
+            using var hostA = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", transport =>
+                {
+                    instanceIdA = transport.InstanceId;
+                    return new FakeEndpointProvider(typeof(IOrderMessage));
+                }))));
+            using var hostB = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", transport =>
+                {
+                    instanceIdB = transport.InstanceId;
+                    return new FakeEndpointProvider(typeof(IOrderMessage));
+                }))));
+
+            await hostA.StartAsync(TestContext.Current.CancellationToken);
+            await hostB.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.False(string.IsNullOrWhiteSpace(instanceIdA));
+            Assert.NotEqual(instanceIdA, instanceIdB);
+        }
+
+        [Fact]
+        public async Task ShouldUseTheConfiguredInstanceId()
+        {
+            string instanceId = null;
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .WithInstanceId("orders-worker-1")
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", transport =>
+                {
+                    instanceId = transport.InstanceId;
+                    return new FakeEndpointProvider(typeof(IOrderMessage));
+                }))));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal("orders-worker-1", instanceId);
+        }
+
+        [Fact]
+        public void ShouldRejectABlankInstanceId()
+        {
+            var services = new ServiceCollection();
+
+            Assert.Throws<ArgumentException>(() => services.AddObvs(obvs => obvs.WithInstanceId(" ")));
+        }
+
+        [Fact]
+        public void ShouldTakeTheInstanceIdAndRequestTimeoutFromConfiguration()
+        {
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:InstanceId"] = "orders-worker-1",
+                ["Obvs:RequestTimeout"] = "00:02:00",
+            });
+            ObvsBuilder bus = null;
+
+            new ServiceCollection().AddObvs(obvs => bus = obvs.WithConfiguration(configuration.GetSection("Obvs")));
+
+            Assert.Equal("orders-worker-1", bus.InstanceId);
+            Assert.Equal(TimeSpan.FromMinutes(2), bus.RequestTimeout);
+        }
+
+        [Fact]
+        public void ShouldKeepTheDefaultsForWhatConfigurationLeavesOut()
+        {
+            var configuration = Configuration(new Dictionary<string, string>());
+            ObvsBuilder bus = null;
+
+            new ServiceCollection().AddObvs(obvs => bus = obvs.WithConfiguration(configuration.GetSection("Obvs")));
+
+            Assert.Matches("^[0-9a-f]{32}$", bus.InstanceId);
+            Assert.Equal(TimeSpan.FromSeconds(30), bus.RequestTimeout);
+        }
+
+        [Fact]
+        public void ShouldLetCodeChangeWhatConfigurationSet()
+        {
+            var configuration = Configuration(new Dictionary<string, string>
+            {
+                ["Obvs:InstanceId"] = "orders-worker-1",
+                ["Obvs:RequestTimeout"] = "00:02:00",
+            });
+            ObvsBuilder bus = null;
+
+            new ServiceCollection().AddObvs(obvs => bus = obvs
+                .WithConfiguration(configuration.GetSection("Obvs"))
+                .WithRequestTimeout(TimeSpan.FromSeconds(10)));
+
+            Assert.Equal("orders-worker-1", bus.InstanceId);
+            Assert.Equal(TimeSpan.FromSeconds(10), bus.RequestTimeout);
+        }
+
+        [Theory]
+        [InlineData("00:00:00")]
+        [InlineData("-00:00:05")]
+        [InlineData("30s")]
+        public async Task ShouldFailToStartWhenConfigurationSetsARequestTimeoutThatIsntAPositiveTimeSpan(string requestTimeout)
+        {
+            var configuration = Configuration(new Dictionary<string, string> { ["Obvs:RequestTimeout"] = requestTimeout });
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .WithConfiguration(configuration.GetSection("Obvs"))
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IOrderMessage))))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+
+            var error = Assert.Single(exception.Errors);
+            Assert.Contains("Obvs:RequestTimeout", error);
+            Assert.Contains($"'{requestTimeout}'", error);
+            Assert.Contains("positive", error);
+            Assert.Contains("00:00:30", error);
+        }
+
+        [Fact]
+        public async Task ShouldGiveTheTransportTheServicesSerializer()
+        {
+            var serializer = A.Fake<IMessageSerializer>();
+            var deserializerFactory = A.Fake<IMessageDeserializerFactory>();
+            IMessageSerializer transportSerializer = null;
+            IMessageDeserializerFactory transportDeserializerFactory = null;
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .SerializedWith(serializer, deserializerFactory)
+                    .UseTransport("Fake", transport =>
+                    {
+                        transportSerializer = transport.Serializer;
+                        transportDeserializerFactory = transport.DeserializerFactory;
+                        return new FakeEndpointProvider(typeof(IOrderMessage));
+                    }))));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.Same(serializer, transportSerializer);
+            Assert.Same(deserializerFactory, transportDeserializerFactory);
+        }
+
+        [Fact]
+        public async Task ShouldReportTransportValidationErrorsWithTheRest()
+        {
+            IServiceProvider validatedWith = null;
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => { })
+                .AddService<IShippingMessage>("shipping", service => service
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IShippingMessage)), transport =>
+                    {
+                        validatedWith = transport.ServiceProvider;
+                        return new[] { "Service 'shipping' needs a broker address." };
+                    }))));
+
+            var exception = await Assert.ThrowsAsync<ObvsConfigurationException>(
+                () => host.StartAsync(TestContext.Current.CancellationToken));
+
+            Assert.Equal(2, exception.Errors.Count);
+            Assert.Contains("Service 'shipping' needs a broker address.", exception.Errors);
+            Assert.NotNull(validatedWith);
+        }
+
+        [Fact]
+        public async Task ShouldTellTheTransportWhichServiceItCarries()
+        {
+            ObvsTransportContext context = null;
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .AddMessages(typeof(PlaceOrder), typeof(OrderPlaced))
+                    .AsServer()
+                    .UseTransport("Fake", transport =>
+                    {
+                        context = transport;
+                        return new FakeEndpointProvider(typeof(IOrderMessage));
+                    }))));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal("orders", context.ServiceName);
+            Assert.Equal(typeof(IOrderMessage), context.ServiceMessageType);
+            Assert.Equal(new[] { typeof(PlaceOrder), typeof(OrderPlaced) }, context.Messages);
+            Assert.True(context.IsServer);
+            Assert.False(context.IsClient);
+            // The host's container: the same singletons, though the bus is given its root scope rather than the host's wrapper
+            Assert.Same(host.Services.GetRequiredService<ObvsContracts>(), context.ServiceProvider.GetRequiredService<ObvsContracts>());
+        }
+
+        [Fact]
+        public async Task ShouldNameTheTransportInTheServicesContract()
+        {
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service
+                    .AddMessages(typeof(PlaceOrder))
+                    .UseTransport("Fake", _ => new FakeEndpointProvider(typeof(IOrderMessage))))));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+
+            var document = JsonNode.Parse(host.Services.GetRequiredService<ObvsContracts>().Describe());
+            Assert.Equal("Fake", (string)document["channels"]["orders.commands"]["x-obvs-transport"]);
+        }
+
+        [Fact]
+        public async Task ShouldTellTheTransportHowManyMessagesOfEachKindItsHandlersTakeAtOnce()
+        {
+            var context = await StartAndCaptureContextAsync(service => service
+                .HandleCommand<PlaceOrder>((command, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 8)
+                .HandleRequest<GetQuote, Quote>((request, messageContext, ct) => Task.FromResult(new Quote()), handler => handler.MaxConcurrency = 3)
+                .HandleEvent<OrderPlaced>((@event, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 2));
+
+            Assert.Equal(8, context.HandlerConcurrency(typeof(ICommand)));
+            Assert.Equal(3, context.HandlerConcurrency(typeof(IRequest)));
+            Assert.Equal(2, context.HandlerConcurrency(typeof(IEvent)));
+        }
+
+        [Fact]
+        public async Task ShouldAddUpTheConcurrencyOfHandlersWhoseMessagesShareAQueue()
+        {
+            // Each handler takes its messages in order, so a queue they share takes enough for all of them at once
+            var context = await StartAndCaptureContextAsync(service => service
+                .HandleCommand<PlaceOrder>((command, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 3)
+                .HandleCommand<CancelOrder>((command, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 5)
+                .HandleEvent<OrderPlaced>((@event, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 2)
+                .HandleEvent<OrderPlaced>((@event, messageContext, ct) => Task.CompletedTask, handler => handler.MaxConcurrency = 4));
+
+            Assert.Equal(8, context.HandlerConcurrency(typeof(ICommand)));
+            Assert.Equal(6, context.HandlerConcurrency(typeof(IEvent)));
+        }
+
+        [Fact]
+        public async Task ShouldTellTheTransportToTakeOneMessageAtATimeWhereNoHandlerTakesThem()
+        {
+            var context = await StartAndCaptureContextAsync(service => service
+                .HandleCommand<PlaceOrder>((command, messageContext, ct) => Task.CompletedTask));
+
+            Assert.Equal(1, context.HandlerConcurrency(typeof(ICommand)));
+            Assert.Equal(1, context.HandlerConcurrency(typeof(IRequest)));
+            Assert.Equal(1, context.HandlerConcurrency(typeof(IEvent)));
+            Assert.Equal(1, context.HandlerConcurrency(typeof(IResponse)));
+        }
+
+        [Fact]
+        public void ShouldCheckUseTransportsArguments()
+        {
+            var provider = new FakeEndpointProvider(typeof(IOrderMessage));
+            BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service =>
+                {
+                    // The name shows in the service's contract, so a transport must give one
+                    Assert.ThrowsAny<ArgumentException>(() => service.UseTransport(null, _ => provider));
+                    Assert.ThrowsAny<ArgumentException>(() => service.UseTransport(" ", _ => provider));
+                    var error = Assert.Throws<ArgumentNullException>(() => service.UseTransport("Fake", null));
+                    Assert.Equal("create", error.ParamName);
+                })));
+        }
+
+        [Fact]
+        public void ShouldSerializeWithSystemTextJsonUnlessToldOtherwise()
+        {
+            ObvsServiceBuilder orders = null;
+            ObvsServiceBuilder shipping = null;
+            var serializer = A.Fake<IMessageSerializer>();
+            var deserializerFactory = A.Fake<IMessageDeserializerFactory>();
+            BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => orders = service)
+                .AddService<IShippingMessage>("shipping", service => shipping = service.SerializedWith(serializer, deserializerFactory))));
+
+            Assert.IsType<SystemTextJsonMessageSerializer>(orders.Serializer);
+            Assert.IsType<SystemTextJsonMessageDeserializerFactory>(orders.DeserializerFactory);
+            Assert.Same(serializer, shipping.Serializer);
+            Assert.Same(deserializerFactory, shipping.DeserializerFactory);
+        }
+
+        [Fact]
+        public void ShouldCompressWhicheverSerializerTheServiceUses()
+        {
+            ObvsServiceBuilder byDefault = null;
+            ObvsServiceBuilder serializedAfter = null;
+            var serializer = A.Fake<IMessageSerializer>();
+            var deserializerFactory = A.Fake<IMessageDeserializerFactory>();
+            BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => byDefault = service.Compressed())
+                .AddService<IShippingMessage>("shipping", service => serializedAfter = service
+                    .Compressed(System.IO.Compression.CompressionLevel.Optimal)
+                    .SerializedWith(serializer, deserializerFactory))));
+
+            Assert.IsType<Obvs.Serialization.Compression.GzipMessageSerializer>(byDefault.Serializer);
+            Assert.IsType<Obvs.Serialization.Compression.GzipMessageDeserializerFactory>(byDefault.DeserializerFactory);
+            var compressed = Assert.IsType<Obvs.Serialization.Compression.GzipMessageSerializer>(serializedAfter.Serializer);
+            Assert.Same(serializer, compressed.Inner);
+        }
+
+        [Fact]
+        public async Task ShouldPassTheTokenThroughToTheTransport()
+        {
+            var endpoint = A.Fake<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            var endpointClient = A.Fake<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            A.CallTo(() => endpoint.CanHandle(A<IMessage>._)).Returns(true);
+            A.CallTo(() => endpointClient.CanHandle(A<IMessage>._)).Returns(true);
+            var provider = A.Fake<IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>>();
+            A.CallTo(() => provider.CreateEndpoint()).Returns(endpoint);
+            A.CallTo(() => provider.CreateEndpointClient()).Returns(endpointClient);
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => service.UseTransport("Fake", _ => provider))));
+            await host.StartAsync(TestContext.Current.CancellationToken);
+            var bus = host.Services.GetRequiredService<IServiceBus>();
+            var command = new PlaceOrder { OrderId = "o-1" };
+            var ev = new OrderPlaced { OrderId = "o-1" };
+            using var cancellation = new CancellationTokenSource();
+            var token = cancellation.Token;
+
+            await bus.SendAsync(command, token);
+            await bus.PublishAsync(ev, token);
+
+            A.CallTo(() => endpointClient.SendAsync(command, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => endpoint.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, token)).MustHaveHappenedOnceExactly();
+        }
+
+        private static IConfiguration Configuration(IDictionary<string, string> values)
+        {
+            return new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+        }
+
+        private static IHost BuildHost(Action<IServiceCollection> configure)
+        {
+            var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
+            configure(builder.Services);
+            return builder.Build();
+        }
+
+        private static async Task<ObvsTransportContext> StartAndCaptureContextAsync(Action<ObvsServiceBuilder> configure)
+        {
+            ObvsTransportContext context = null;
+            using var host = BuildHost(services => services.AddObvs(obvs => obvs
+                .AddService<IOrderMessage>("orders", service => configure(service.UseTransport("Fake", transport =>
+                {
+                    context = transport;
+                    return new FakeEndpointProvider(typeof(IOrderMessage));
+                })))));
+
+            await host.StartAsync(TestContext.Current.CancellationToken);
+            await host.StopAsync(TestContext.Current.CancellationToken);
+            return context;
+        }
+
+        public interface IOrderMessage : IMessage { }
+
+        public interface IShippingMessage : IMessage { }
+
+        public class PlaceOrder : IOrderMessage, ICommand
+        {
+            public string OrderId { get; set; }
+        }
+
+        public class OrderPlaced : IOrderMessage, IEvent
+        {
+            public string OrderId { get; set; }
+        }
+
+        public class CancelOrder : IOrderMessage, ICommand
+        {
+            public string OrderId { get; set; }
+        }
+
+        public class GetQuote : IOrderMessage, IRequest<Quote>
+        {
+            public string RequestId { get; set; }
+            public string RequesterId { get; set; }
+        }
+
+        public class Quote : IOrderMessage, IResponse
+        {
+            public string RequestId { get; set; }
+            public string RequesterId { get; set; }
+        }
+
+        // Hands out one shared fake endpoint as both server and client, so messages loop back in-process
+        private sealed class FakeEndpointProvider : IServiceEndpointProvider
+        {
+            public FakeEndpointProvider(Type serviceMessageType)
+            {
+                Endpoint = new CountingServiceEndpoint(serviceMessageType);
+            }
+
+            public CountingServiceEndpoint Endpoint { get; }
+            public int EndpointsCreated { get; private set; }
+            public int ClientsCreated { get; private set; }
+
+            public IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse> CreateEndpoint()
+            {
+                EndpointsCreated++;
+                return Endpoint;
+            }
+
+            public IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse> CreateEndpointClient()
+            {
+                ClientsCreated++;
+                return Endpoint;
+            }
+        }
+
+        private sealed class CountingServiceEndpoint : FakeServiceEndpoint, IDisposable
+        {
+            public CountingServiceEndpoint(Type serviceType) : base(serviceType)
+            {
+            }
+
+            public int DisposeCount { get; private set; }
+
+            void IDisposable.Dispose()
+            {
+                DisposeCount++;
+                Dispose();
+            }
+        }
+    }
+}

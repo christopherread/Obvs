@@ -8,6 +8,52 @@
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
     </PropertyGroup>
+    <!-- The packages, which TestPackages lists too -->
+    <PropertyGroup>
+        <IsObvsPackage>$([System.String]::Copy(';Obvs;Obvs.ActiveMQ;Obvs.AmazonSqs;Obvs.AzureSB;Obvs.Kafka;Obvs.Mcp;Obvs.NATS;Obvs.NetMQ;Obvs.RabbitMQ;Obvs.Serialization.Json;Obvs.Serialization.MessagePack;Obvs.Serialization.ProtoBuf;Obvs.Testing;').Contains(';$(MSBuildProjectName);'))</IsObvsPackage>
+    </PropertyGroup>
+    <!-- What nuget.org shows for every package. Each adds its own Description and PackageTags, after these. -->
+    <PropertyGroup Condition="'$(IsObvsPackage)' == 'true'">
+        <Authors>Christopher Read</Authors>
+        <Company>Christopher Read</Company>
+        <PackageProjectUrl>https://christopherread.github.io/Obvs/</PackageProjectUrl>
+        <PackageTags>obvs messaging servicebus microservices</PackageTags>
+        <PackageReleaseNotes>v7 adds hosting with dependency injection, handlers, RequestAsync, System.Text.Json, OpenTelemetry, Azure Service Bus and Amazon SQS. Migrating from v6: https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md</PackageReleaseNotes>
+        <!-- Each package's own README.md, from its folder -->
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(IsObvsPackage)' == 'true'">
+        <None Include="README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+    <!-- The packages ship their XML docs, and every public member in them is documented: a missing one fails the build -->
+    <PropertyGroup Condition="'$(IsObvsPackage)' == 'true'">
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
+        <!-- Comments document the parameters that need it, not always all of them -->
+        <NoWarn>$(NoWarn);CS1573</NoWarn>
+    </PropertyGroup>
+    <!-- Their public API is declared in PublicAPI.Shipped.txt and PublicAPI.Unshipped.txt: adding to it or removing from it
+         without declaring the change fails the build -->
+    <PropertyGroup Condition="'$(IsObvsPackage)' == 'true'">
+        <WarningsAsErrors>$(WarningsAsErrors);RS0016;RS0017</WarningsAsErrors>
+        <!-- The bus's overloads each take an optional CancellationToken, as the Azure SDK's do, and TestPublicApi pins them -->
+        <NoWarn>$(NoWarn);RS0026</NoWarn>
+    </PropertyGroup>
+    <!-- Apps can publish as a single file, where assemblies have no location and no dependency context: the analyzer
+         flags code that relies on either. It runs on net10.0, as it can't on .NET Framework and .NET Standard. A project
+         with one target framework sets it after this file, so its TargetFramework is still empty here. -->
+    <PropertyGroup Condition="'$(IsObvsPackage)' == 'true' And ('$(TargetFramework)' == '' Or $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')))">
+        <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+        <WarningsAsErrors>$(WarningsAsErrors);IL3000;IL3001;IL3002</WarningsAsErrors>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(IsObvsPackage)' == 'true'">
+        <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all"/>
+        <AdditionalFiles Include="PublicAPI.Shipped.txt;PublicAPI.Unshipped.txt"/>
+    </ItemGroup>
+    <!-- Every test project can dump a hung test run, as CI asks it to. The log names the tests still running. -->
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'Obvs.Samples' Or $(MSBuildProjectName.EndsWith('.Tests'))">
+        <PackageReference Include="Microsoft.Testing.Extensions.HangDump"/>
+    </ItemGroup>
     <!-- License -->
     <PropertyGroup>
         <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>

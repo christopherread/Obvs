@@ -1,0 +1,138 @@
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Obvs.Hosting;
+using Obvs.Serialization.Json;
+using Xunit;
+
+namespace Obvs.RabbitMQ.Tests.Hosting
+{
+    // Two hosts connected only through RabbitMQ stand in for two processes
+    public class TestRabbitMqTracing : IClassFixture<RabbitMqServices>
+    {
+        private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
+
+        private readonly RabbitMqServices _services;
+
+        public TestRabbitMqTracing(RabbitMqServices services)
+        {
+            _services = services;
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldContinueTheSendersTraceAcrossRabbitMq()
+        {
+            var serviceName = _services.Create("tracing-commands");
+            using var activities = new ActivityRecorder();
+            using var receiver = await StartHostAsync(serviceName, service => service.AsServer()
+                .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
+            using var sender = await StartHostAsync(serviceName, service => service.AsClient());
+
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+
+            var send = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"send {serviceName}"));
+            var process = await WaitForAsync(() => activities.For(serviceName).SingleOrDefault(activity => activity.DisplayName == $"process {serviceName}"));
+            Assert.Equal(send.TraceId, process.TraceId);
+            Assert.Equal(send.SpanId, process.ParentSpanId);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldCarryHeadersTheAppSetsOverRabbitMq()
+        {
+            var serviceName = _services.Create("tracing-headers");
+            var received = new TaskCompletionSource<IReadOnlyDictionary<string, string>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var receiver = await StartHostAsync(serviceName, service => service.AsServer()
+                .HandleCommand<PlaceOrder>((command, context, ct) =>
+                {
+                    received.TrySetResult(context.Headers);
+                    return Task.CompletedTask;
+                }));
+            using var sender = await StartHostAsync(serviceName, service => service.AsClient());
+            var headers = new Dictionary<string, string> { ["x-tenant"] = "acme" };
+
+            await sender.Services.GetRequiredService<IServiceBusClient>().SendAsync(new PlaceOrder { OrderId = "o-1" }, headers, TestContext.Current.CancellationToken);
+
+            var arrived = await received.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+            Assert.Equal("acme", arrived["x-tenant"]);
+        }
+
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldCarryEachSendsOwnHeadersWhenOneMessageIsSentTwiceAtOnce()
+        {
+            var serviceName = _services.Create("tracing-headers-concurrent");
+            var tenants = new ConcurrentQueue<string>();
+            var both = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var receiver = await StartHostAsync(serviceName, service => service.AsServer()
+                .HandleCommand<PlaceOrder>((command, context, ct) =>
+                {
+                    tenants.Enqueue(context.Headers["x-tenant"]);
+                    if (tenants.Count == 2)
+                    {
+                        both.TrySetResult(true);
+                    }
+                    return Task.CompletedTask;
+                }));
+            using var sender = await StartHostAsync(serviceName, service => service.AsClient());
+            var client = sender.Services.GetRequiredService<IServiceBusClient>();
+            var command = new PlaceOrder { OrderId = "o-1" };
+
+            await Task.WhenAll(
+                client.SendAsync(command, new Dictionary<string, string> { ["x-tenant"] = "acme" }, TestContext.Current.CancellationToken),
+                client.SendAsync(command, new Dictionary<string, string> { ["x-tenant"] = "globex" }, TestContext.Current.CancellationToken));
+
+            await both.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+            Assert.Equal(new[] { "acme", "globex" }, tenants.OrderBy(tenant => tenant));
+        }
+
+        private static async Task<IHost> StartHostAsync(string serviceName, Action<ObvsServiceBuilder> configure)
+        {
+            var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
+            builder.Services.AddObvs(obvs => obvs.AddService<IOrderMessage>(serviceName, service => configure(service
+                .UseRabbitMq(options => options.Uri = new Uri(TestBroker.Uri))
+                .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>))))));
+            var host = builder.Build();
+            await host.StartAsync(TestContext.Current.CancellationToken);
+            return host;
+        }
+
+        private static async Task<T> WaitForAsync<T>(Func<T> find) where T : class
+        {
+            var deadline = DateTime.UtcNow + Timeout;
+            T found;
+            while ((found = find()) == null && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(20, TestContext.Current.CancellationToken);
+            }
+            return found ?? throw new TimeoutException($"The expected {typeof(T).Name} wasn't recorded in time.");
+        }
+
+        private sealed class ActivityRecorder : IDisposable
+        {
+            private readonly ConcurrentQueue<Activity> _stopped = new ConcurrentQueue<Activity>();
+            private readonly ActivityListener _listener;
+
+            public ActivityRecorder()
+            {
+                _listener = new ActivityListener
+                {
+                    ShouldListenTo = source => source.Name == ObvsTelemetry.ActivitySourceName,
+                    Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+                    ActivityStopped = activity => _stopped.Enqueue(activity),
+                };
+                ActivitySource.AddActivityListener(_listener);
+            }
+
+            public IReadOnlyList<Activity> For(string serviceName)
+            {
+                return _stopped.Where(activity => (activity.GetTagItem("messaging.destination.name") as string) == serviceName).ToList();
+            }
+
+            public void Dispose() => _listener.Dispose();
+        }
+    }
+}

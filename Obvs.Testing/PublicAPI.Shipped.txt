@@ -1,0 +1,38 @@
+Obvs.Hosting.InMemoryTransportExtensions
+Obvs.Testing.InMemoryBroker
+Obvs.Testing.InMemoryBroker.InMemoryBroker() -> void
+Obvs.Testing.InMemoryBroker.InMemoryBroker(System.Reactive.Concurrency.IScheduler scheduler) -> void
+Obvs.Testing.InMemoryBroker.Messages.get -> System.IObservable<Obvs.Testing.InMemoryMessage>
+Obvs.Testing.InMemoryMessage
+Obvs.Testing.InMemoryMessage.Headers.get -> System.Collections.Generic.IReadOnlyDictionary<string, string>
+Obvs.Testing.InMemoryMessage.InMemoryMessage(string serviceName, Obvs.Types.IMessage message, System.Collections.Generic.IReadOnlyDictionary<string, string> headers) -> void
+Obvs.Testing.InMemoryMessage.Message.get -> Obvs.Types.IMessage
+Obvs.Testing.InMemoryMessage.ServiceName.get -> string
+Obvs.Testing.ObvsContractException
+Obvs.Testing.ObvsContractException.ObvsContractException(string message) -> void
+Obvs.Testing.ObvsContractSnapshot
+Obvs.Testing.ObvsTestHarness
+Obvs.Testing.ObvsTestHarness.Broker.get -> Obvs.Testing.InMemoryBroker
+Obvs.Testing.ObvsTestHarness.Bus.get -> Obvs.IServiceBus
+Obvs.Testing.ObvsTestHarness.Client.get -> Obvs.IServiceBusClient
+Obvs.Testing.ObvsTestHarness.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Obvs.Testing.ObvsTestHarness.Messages.get -> System.Collections.Generic.IReadOnlyList<Obvs.Types.IMessage>
+Obvs.Testing.ObvsTestHarness.Published<TEvent>(System.Func<TEvent, bool> predicate = null, System.TimeSpan? timeout = null) -> System.Threading.Tasks.Task<TEvent>
+Obvs.Testing.ObvsTestHarness.Replied<TResponse>(System.Func<TResponse, bool> predicate = null, System.TimeSpan? timeout = null) -> System.Threading.Tasks.Task<TResponse>
+Obvs.Testing.ObvsTestHarness.Requested<TRequest>(System.Func<TRequest, bool> predicate = null, System.TimeSpan? timeout = null) -> System.Threading.Tasks.Task<TRequest>
+Obvs.Testing.ObvsTestHarness.Sent<TCommand>(System.Func<TCommand, bool> predicate = null, System.TimeSpan? timeout = null) -> System.Threading.Tasks.Task<TCommand>
+Obvs.Testing.ObvsTestHarness.Services.get -> System.IServiceProvider
+Obvs.Testing.ObvsTestHarnessOptions
+Obvs.Testing.ObvsTestHarnessOptions.DefaultTimeout.get -> System.TimeSpan
+Obvs.Testing.ObvsTestHarnessOptions.DefaultTimeout.set -> void
+Obvs.Testing.ObvsTestHarnessOptions.ObvsTestHarnessOptions() -> void
+Obvs.Testing.ObvsTestHarnessOptions.Scheduler.get -> System.Reactive.Concurrency.IScheduler
+Obvs.Testing.ObvsTestHarnessOptions.Scheduler.set -> void
+Obvs.Testing.ObvsTestHarnessOptions.TimeProvider.get -> System.TimeProvider
+Obvs.Testing.ObvsTestHarnessOptions.TimeProvider.set -> void
+Obvs.Testing.ObvsTestTimeoutException
+Obvs.Testing.ObvsTestTimeoutException.ObvsTestTimeoutException(string message) -> void
+static Obvs.Hosting.InMemoryTransportExtensions.UseInMemory(this Obvs.Hosting.ObvsServiceBuilder service) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Hosting.InMemoryTransportExtensions.UseInMemory(this Obvs.Hosting.ObvsServiceBuilder service, Obvs.Testing.InMemoryBroker broker) -> Obvs.Hosting.ObvsServiceBuilder
+static Obvs.Testing.ObvsContractSnapshot.Verify(System.IServiceProvider services, string path, string serviceName = null) -> void
+static Obvs.Testing.ObvsTestHarness.StartAsync(System.Action<Microsoft.Extensions.DependencyInjection.IServiceCollection> configureServices, System.Action<Obvs.Testing.ObvsTestHarnessOptions> configureOptions = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Obvs.Testing.ObvsTestHarness>

@@ -5,6 +5,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -13,43 +14,27 @@ namespace Obvs.Tests
     public class TestServiceBusClient
     {
         [Fact]
-        public async Task Given_NoEndpoints_When_SendAsyncMultiple_NoCommands_Assert_DoesNothing()
+        public async Task Given_NoEndpoints_When_SendAsync_Assert_ThrowsNoEndpointsConfigured()
         {
             var serviceEndpointClients = Enumerable.Empty<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
             var serviceEndpoints = Enumerable.Empty<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var sut = new ServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>(serviceEndpointClients, serviceEndpoints, new DefaultRequestCorrelationProvider());
+            var sut = new ServiceBus(serviceEndpointClients, serviceEndpoints);
 
-            var commands = new ICommand[0];
-
-            await sut.SendAsync(commands);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => sut.SendAsync(new TestServiceCommand1()));
         }
 
         [Fact]
-        public async Task Given_NoEndpoints_When_SendAsyncMultiple_SingleCommand_Assert_ThrowsNoEndpointsConfigured()
-        {
-            var serviceEndpointClients = Enumerable.Empty<IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var serviceEndpoints = Enumerable.Empty<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var sut = new ServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>(serviceEndpointClients, serviceEndpoints, new DefaultRequestCorrelationProvider());
-
-            var commands = new[]{new TestServiceCommand1()};
-            
-            await Assert.ThrowsAsync<AggregateException>(() => sut.SendAsync(commands));
-        }
-
-        [Fact]
-        public async Task Given_NoEndpointsForCommand_When_SendAsyncMultiple_SingleCommand_Assert_ThrowsNoEndpointsConfigured()
+        public async Task Given_NoEndpointsForCommand_When_SendAsync_Assert_ThrowsNoEndpointsConfigured()
         {
             var serviceEndpointClients = new IServiceEndpointClient<IMessage, ICommand, IEvent, IRequest, IResponse>[]{new FakeServiceEndpoint(typeof(TestServiceCommand2))};
             var serviceEndpoints = Enumerable.Empty<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var sut = new ServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>(serviceEndpointClients, serviceEndpoints, new DefaultRequestCorrelationProvider());
+            var sut = new ServiceBus(serviceEndpointClients, serviceEndpoints);
 
-            var commands = new[] { new TestServiceCommand1() };
-
-            await Assert.ThrowsAsync<AggregateException>(() => sut.SendAsync(commands));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => sut.SendAsync(new TestServiceCommand1()));
         }
 
         [Fact]
-        public async Task Given_MultipleEndpointsForDifferentServices_When_SendAsyncMultiple_SingleCommand_Assert_CallsSendOnCorrectEndpointClient()
+        public async Task Given_MultipleEndpointsForDifferentServices_When_SendAsync_Assert_CallsSendOnCorrectEndpointClient()
         {
             var signal = new Subject<Unit>();
 
@@ -60,12 +45,11 @@ namespace Obvs.Tests
 
             var serviceEndpointClients = new [] { wrongEndpoint, correctEndpoint };
             var serviceEndpoints = Enumerable.Empty<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var sut = new ServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>(serviceEndpointClients, serviceEndpoints, new DefaultRequestCorrelationProvider());
+            var sut = new ServiceBus(serviceEndpointClients, serviceEndpoints);
 
             var cmd = new TestServiceCommand1();
-            var commands = new[] { cmd };
 
-            await sut.SendAsync(commands);
+            await sut.SendAsync(cmd, TestContext.Current.CancellationToken);
 
             signal.OnNext(Unit.Default);
 
@@ -76,7 +60,7 @@ namespace Obvs.Tests
         }
 
         [Fact]
-        public async Task Given_MultipleEndpointsForSameServices_When_SendAsyncMultiple_SingleCommand_Assert_CallsSendOnBothEndpointClient()
+        public async Task Given_MultipleEndpointsForSameServices_When_SendAsync_Assert_CallsSendOnBothEndpointClient()
         {
             var signal = new Subject<Unit>();
 
@@ -87,12 +71,11 @@ namespace Obvs.Tests
 
             var serviceEndpointClients = new[] { wrongEndpoint, correctEndpoint };
             var serviceEndpoints = Enumerable.Empty<IServiceEndpoint<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            var sut = new ServiceBusClient<IMessage, ICommand, IEvent, IRequest, IResponse>(serviceEndpointClients, serviceEndpoints, new DefaultRequestCorrelationProvider());
+            var sut = new ServiceBus(serviceEndpointClients, serviceEndpoints);
 
             var cmd = new TestServiceCommand1();
-            var commands = new[] { cmd };
 
-            await sut.SendAsync(commands);
+            await sut.SendAsync(cmd, TestContext.Current.CancellationToken);
 
             signal.OnNext(Unit.Default);
 

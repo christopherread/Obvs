@@ -1,0 +1,125 @@
+using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Obvs.Configuration;
+using Obvs.Kafka;
+using Obvs.Kafka.Configuration;
+using Obvs.Transports;
+using Obvs.Types;
+
+// In the builder's namespace, so UseKafka() is found without an extra using
+namespace Obvs.Hosting
+{
+    /// <summary>Carries services over Kafka: <c>service.UseKafka(...)</c> inside <c>AddService</c>.</summary>
+    public static class KafkaTransportExtensions
+    {
+        /// <summary>
+        /// Carries this service's messages over Kafka, with settings bound from <paramref name="configuration"/>,
+        /// for example <c>builder.Configuration.GetSection("Obvs:Orders:Kafka")</c>, including security settings for managed
+        /// platforms such as Confluent Cloud, Amazon MSK and Azure Event Hubs. The service's topics are
+        /// created at startup if they don't exist.
+        /// </summary>
+        public static ObvsServiceBuilder UseKafka(this ObvsServiceBuilder service, IConfiguration configuration)
+        {
+            return UseKafka(service, configuration, options => { });
+        }
+
+        /// <summary>
+        /// Carries this service's messages over Kafka, with settings bound from <paramref name="configuration"/>, then
+        /// changed by <paramref name="configure"/>, for example to set <see cref="KafkaOptions.OAuthBearerTokenProvider"/>,
+        /// which can't come from configuration. The service's topics are created at startup if they don't exist.
+        /// </summary>
+        public static ObvsServiceBuilder UseKafka(this ObvsServiceBuilder service, IConfiguration configuration, Action<KafkaOptions> configure)
+        {
+            if (service == null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+            if (configuration == null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
+
+            service.Services.AddOptions<KafkaOptions>(service.Name).Bind(configuration).Configure(configure);
+            return UseKafka(service, ConfigurationKey(configuration));
+        }
+
+        /// <summary>
+        /// Carries this service's messages over Kafka, with settings set in code. The service's topics are
+        /// created at startup if they don't exist.
+        /// </summary>
+        public static ObvsServiceBuilder UseKafka(this ObvsServiceBuilder service, Action<KafkaOptions> configure)
+        {
+            if (service == null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
+
+            service.Services.AddOptions<KafkaOptions>(service.Name).Configure(configure);
+            return UseKafka(service, setting => $"options.{setting} in UseKafka(...)");
+        }
+
+        // Where a setting is set, for errors: a configuration key, or a property in code
+        private static Func<string, string> ConfigurationKey(IConfiguration configuration)
+        {
+            var prefix = configuration is IConfigurationSection section ? section.Path + ":" : "";
+            return setting => $"configuration key {prefix}{setting}";
+        }
+
+        private static ObvsServiceBuilder UseKafka(ObvsServiceBuilder service, Func<string, string> whereToSet)
+        {
+            return service.UseTransport("Kafka",
+                transport => CreateProvider(transport, GetOptions(transport),
+                    transport.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger("Obvs.Kafka")),
+                transport => Validate(transport, GetOptions(transport), whereToSet));
+        }
+
+        private static KafkaOptions GetOptions(ObvsTransportContext service)
+        {
+            return service.ServiceProvider.GetRequiredService<IOptionsMonitor<KafkaOptions>>().Get(service.ServiceName);
+        }
+
+        private static IEnumerable<string> Validate(ObvsTransportContext service, KafkaOptions options, Func<string, string> whereToSet)
+        {
+            if (string.IsNullOrWhiteSpace(options.BootstrapServers))
+            {
+                yield return $"Service '{service.ServiceName}' has no Kafka brokers. Set {whereToSet("BootstrapServers")}, for example localhost:9092.";
+            }
+            foreach (var error in KafkaSecurityChecks.Validate(service.ServiceName, options, whereToSet))
+            {
+                yield return error;
+            }
+        }
+
+        // The provider is generic in the service's message type, which the builder only knows at run time
+        private static IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse> CreateProvider(ObvsTransportContext service, KafkaOptions options, ILogger logger)
+        {
+            var kafkaConfiguration = new KafkaConfiguration(options);
+            if (logger != null)
+            {
+                kafkaConfiguration.Logger = logger;
+            }
+            KafkaTopics.EnsureCreated(service.ServiceName, kafkaConfiguration, new[]
+            {
+                $"{service.ServiceName}.Commands", $"{service.ServiceName}.Events", $"{service.ServiceName}.Requests", $"{service.ServiceName}.Responses",
+            });
+
+            var providerType = typeof(KafkaServiceEndpointProvider<,,,,,>).MakeGenericType(
+                service.ServiceMessageType, typeof(IMessage), typeof(ICommand), typeof(IEvent), typeof(IRequest), typeof(IResponse));
+
+            return (IServiceEndpointProvider<IMessage, ICommand, IEvent, IRequest, IResponse>)Activator.CreateInstance(providerType,
+                service.ServiceName, kafkaConfiguration, null, null, service.Serializer, service.DeserializerFactory, null, null, null, null, service.InstanceId);
+        }
+    }
+}

@@ -1,142 +1,121 @@
-﻿
 # Obvs: an observable microservice bus
 ## observable services, *obviously*
 
-[![Join the chat at https://gitter.im/inter8ection/Obvs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/inter8ection/Obvs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![.NET](https://github.com/christopherread/Obvs/workflows/.NET/badge.svg)](https://github.com/christopherread/Obvs/actions) [![NuGet](https://img.shields.io/nuget/v/Obvs.svg)](https://www.nuget.org/packages/Obvs/) [![Discussions](https://img.shields.io/github/discussions/christopherread/Obvs)](https://github.com/christopherread/Obvs/discussions)
 
-[![.NET](https://github.com/christopherread/Obvs/workflows/.NET/badge.svg)](https://github.com/christopherread/Obvs/actions)
+Obvs is a .NET library for messaging between services. Each service has commands, events, requests and responses. You choose its transport, such as RabbitMQ, Kafka, NATS, Azure Service Bus or Amazon SQS. Your code handles its messages, or reads them as Reactive Extensions streams.
 
-[![NuGet](https://img.shields.io/nuget/v/Obvs.svg)](https://www.nuget.org/packages/Obvs/)
+## Quick start
 
-### Features
+```bash
+dotnet add package Obvs
+dotnet add package Obvs.RabbitMQ
+```
 
-* Obvs is just a library, not a framework - use as much or as little as you need.
-* Leverage messaging and Reactive Extensions to quickly compose a system of decoupled microservices.
-* Add new services and message contracts with a minimal amount of code and effort.
-* Don't tie yourself to any one transport, migrate between transports with minimal code changes required
-* Use a mix of transports and serialization formats, allowing you to pick what works for your services.
-* Declare a new Obvs ServiceBus easily using the fluent code based configuration.
-* Don't want to use Obvs message contract interfaces? Use the generic ServiceBus and supply your own.
-* Standardize on messaging semantics throughout by wrapping integrations with external API's as custom endpoints.
-* Don't distribute if you don't need to, Obvs ServiceBus includes a local in-memory bus.
-* Use one of the many available serialization extensions, or even write your own.
-* Easily debug and monitor your application using logging and performance counter extensions.
+Define your service's messages:
 
-### Versions/Roadmap
+<!-- snippet: messages -->
+```csharp
+// Every message of a service implements its interface, and is one of ICommand, IEvent, IRequest or IResponse.
+// A request names the response that answers it.
+public interface IOrderMessage : IMessage { }
 
-* V6 - `System.Reactive 5.0`, supports `netstandard2.0`, `net472` and `net5.0`.  Mono-repo
-* V5 - `System.Reactive 4.1`, supports `netstandard2.0` and `net472`
-* V4 - `System.Reactive 3.1.1`, supports `netstandard1.6` and `net452` 
+public record PlaceOrder(string OrderId) : IOrderMessage, ICommand;
 
-### More Details
+public record OrderPlaced(string OrderId) : IOrderMessage, IEvent;
 
-* Convention based messaging over topics/queues/streams per service.
-* Multiplexing of multiple message types over single topics/queues/streams.
-* Dynamic creation of deserializers per type, auto-discovery of message contracts.
-* Exceptions are caught and raised on an asynchronous error channel.
+public record GetQuote(string Sku) : IOrderMessage, IRequest<Quote>
+{
+    public string RequestId { get; set; }
+    public string RequesterId { get; set; }
+}
 
-### Extensions
+public record Quote(string Sku, decimal Price) : IOrderMessage, IResponse
+{
+    public string RequestId { get; set; }
+    public string RequesterId { get; set; }
+}
+```
 
-* Transports: ActiveMQ / RabbitMQ / NetMQ / AzureServiceBus / Kafka / EventStore
-* Serialization: XML / JSON.Net / NetJson / ProtoBuf / MessagePack (via MessagePack-CSharp; the MsgPack.Cli-based package is deprecated)
-* Logging: NLog / log4net
-* Monitoring: Performance Counters / ElasticSearch
+Host the service: it handles commands and requests, and publishes events.
 
-## Example
+<!-- snippet: quick-start-service -->
+```csharp
+var builder = Host.CreateApplicationBuilder(args);
 
-Define a root message type to identify messages as belonging to your service:
+builder.Services.AddObvs(obvs => obvs
+    .AddService<IOrderMessage>("orders", service => service
+        .UseRabbitMq(options => options.Uri = new Uri("amqp://localhost:5672"))
+        .HandleCommand<PlaceOrder>(async (command, context, ct) =>
+        {
+            // ... place the order, then tell whoever's interested
+            await context.PublishAsync(new OrderPlaced(command.OrderId), ct);
+        })
+        .HandleRequest<GetQuote, Quote>((request, context, ct) =>
+            Task.FromResult(new Quote(request.Sku, 9.99m)))));
 
-	public interface IMyServiceMessage : IMessage { }
+await builder.Build().RunAsync();
+```
 
-Create command/event/request/response message types:
+Then send it commands and requests from another app, a client of the service:
 
-	public class MyCommand : IMyServiceMessage, ICommand { }
+<!-- snippet: quick-start-client -->
+```csharp
+var builder = Host.CreateApplicationBuilder(args);
 
-	public class MyEvent : IMyServiceMessage, IEvent { }
+builder.Services.AddObvs(obvs => obvs
+    .AddService<IOrderMessage>("orders", service => service
+        .UseRabbitMq(options => options.Uri = new Uri("amqp://localhost:5672"))
+        .AsClient()));
 
-	public class MyRequest: IMyServiceMessage, IRequest { }
-	
-	public class MyResponse : IMyServiceMessage, IResponse { }
+using var app = builder.Build();
+await app.StartAsync();
 
-Create your service bus:
+var client = app.Services.GetRequiredService<IServiceBusClient>();
 
-	IServiceBus serviceBus = ServiceBus.Configure()
-        .WithActiveMQEndpoints<IMyServiceMessage>()
-            .Named("MyService")
-            .UsingQueueFor<ICommand>()
-            .ConnectToBroker("tcp://localhost:61616")
-            .SerializedAsJson()
-            .AsClientAndServer()
-        .Create();
+await client.SendAsync(new PlaceOrder("o-1"));
 
-Send commands:
+var quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5));
+```
 
-	serviceBus.Commands.Subscribe(c => Console.WriteLine("Received a command!"));
-	await serviceBus.SendAsync(new MyCommand());
+Everything on the bus is an Rx stream: `Commands`, `Events`, `Requests` and `GetResponses(request)`. Compose them with Rx operators, and process them with `SubscribeAsync`, which awaits your code and settles each message. Handlers are the same thing, registered at startup with a DI scope per message, and `RequestAsync` is a request with one response.
 
-Publish events:
+## Next steps
 
-	serviceBus.Events.Subscribe(e => Console.WriteLine("Received an event!"));
-	await serviceBus.PublishAsync(new MyEvent());
-	
-Request/response:
+- [The Obvs site](https://christopherread.github.io/Obvs/), with what's new in v7.
+- [Common tasks](docs/common-tasks.md): add a service, handle and send messages, requests, errors, tests, tracing.
+- [Testing](docs/testing.md) with an in-memory broker.
+- Transports: [RabbitMQ](docs/transports/rabbitmq.md), [Azure Service Bus](docs/transports/azure-service-bus.md), [Kafka](docs/transports/kafka.md) (and [Confluent Cloud](docs/transports/kafka-confluent-cloud.md), [Amazon MSK](docs/transports/kafka-amazon-msk.md), [Azure Event Hubs](docs/transports/kafka-azure-event-hubs.md)), [Amazon SQS and SNS](docs/transports/amazon-sqs.md), [NATS and JetStream](docs/transports/nats.md), [NetMQ](docs/transports/netmq.md).
+- [Configuration errors](docs/configuration-errors.md) and [analyzers](docs/analyzers.md).
+- [Service contracts](docs/contracts.md) as AsyncAPI, and an [MCP server](docs/mcp.md) for agents.
+- [Migrating from v6](docs/migrating-from-v6.md).
+- [`llms.txt`](llms.txt), for agents, and [`AGENTS.md`](AGENTS.md), for working on Obvs itself.
 
-	serviceBus.Requests
-		  .OfType<MyRequest>()
-		  .Subscribe(request => serviceBus.ReplyAsync(request, new MyResponse()));
-	
-	serviceBus.GetResponses(new MyRequest())
-		  .OfType<MyResponse>()
-		  .Take(1)
-		  .Timeout(TimeSpan.FromSeconds(1))
-		  .Subscribe(r => Console.WriteLine("Received a response!"), err => Console.WriteLine("Oh no!"));
+## Packages
 
-Define custom endpoints that can wrap API calls or integrations with other systems:
-	
-	public class MyCustomEndpoint : IServiceEndpointClient
-    	{
-        	Type _serviceType = typeof(IMyCustomServiceMessage);
+| Package | |
+|---|---|
+| `Obvs` | The bus, hosting with `AddObvs`, handlers, System.Text.Json serialization, OpenTelemetry, the analyzers and the `[ObvsMessages]` generator |
+| `Obvs.RabbitMQ`, `Obvs.Kafka`, `Obvs.NATS`, `Obvs.ActiveMQ`, `Obvs.AzureSB`, `Obvs.AmazonSqs`, `Obvs.NetMQ` | Transports. `Obvs.NATS` covers core NATS and JetStream |
+| `Obvs.Serialization.Json`, `.MessagePack`, `.ProtoBuf` | Other serializers: Newtonsoft JSON, MessagePack-CSharp and protobuf-net. Any serializer can be gzipped with `Compressed()` |
+| `Obvs.Testing` | An in-memory broker and a test harness |
+| `Obvs.Mcp` | An MCP server for development buses |
 
-        	public IObservable<IEvent> Events
-        	{
-            		get
-            		{
-                		// subscribe to external MQ broker
-            		}
-        	}
+The XML, NetJSON, YAML and MsgPack.Cli serializers, `Obvs.Monitoring.*` and `Obvs.Logging.NLog` stay on v6.
 
-        	public Task SendAsync(ICommand command)
-        	{
-            		// call external API
-        	}
+## Versions
 
-        	public IObservable<IResponse> GetResponses(IRequest request)
-        	{
-            		// call external API and wrap response in observable
-        	}
+* v7 - hosting with dependency injection, handlers, `RequestAsync`, System.Text.Json, OpenTelemetry, Azure Service Bus and Amazon SQS, analyzers, a test kit, contracts and an MCP server. Supports `netstandard2.0`, `net472` and `net10.0`
+* v6 - `System.Reactive`, supports `netstandard2.0`, `net472` and `net10.0` (`net5.0` in early 6.x). The transports moved into this repo
+* v5 - `System.Reactive 4.1`, supports `netstandard2.0` and `net472`
+* v4 - `System.Reactive 3.1.1`, supports `netstandard1.6` and `net452`
 
-        	public bool CanHandle(IMessage message)
-        	{
-            		return _serviceType.IsInstanceOfType(message);
-        	}
-    	}
-		
-	...
+## Examples
 
-	IServiceBus serviceBus = ServiceBus.Configure()
-          .WithActiveMQEndpoints<IMyServiceMessage>()
-            .Named("MyService")
-            .UsingQueueFor<ICommand>()
-            .ConnectToBroker("tcp://localhost:61616")
-            .SerializedAsJson()
-            .AsClientAndServer()
-	  .WithEndpoints(new MyCustomEndpoint())
-        .Create();
+`Examples/` has a client and a service on ActiveMQ, traced across both apps with OpenTelemetry's console exporter:
 
-## Run Examples in Docker
-
-	cd examples
-	docker-compose up
-
-	cd client
-	dotnet run -f netcoreapp3.1 
+```bash
+cd Examples
+docker compose up        # ActiveMQ and the service
+dotnet run --project Client
+```

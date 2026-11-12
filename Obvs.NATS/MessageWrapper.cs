@@ -3,11 +3,9 @@ using ProtoBuf;
 
 namespace Obvs.NATS
 {
-    /// <summary>
-    /// Enables support of message properties on NATS
-    /// </summary>
+    // A message's body, with the properties v6 filtered on, as it goes over NATS
     [ProtoContract]
-    public class MessageWrapper
+    internal class MessageWrapper
     {
         public MessageWrapper()
         {

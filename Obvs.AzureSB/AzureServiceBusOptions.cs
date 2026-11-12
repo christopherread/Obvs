@@ -1,0 +1,59 @@
+using System;
+using Azure.Core;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace Obvs.AzureSB
+{
+    /// <summary>
+    /// A service's Azure Service Bus settings. Each service has its own, as named options keyed by the service's
+    /// name: <c>IOptionsMonitor&lt;AzureServiceBusOptions&gt;.Get("orders")</c>. Set either
+    /// <see cref="FullyQualifiedNamespace"/> or <see cref="ConnectionString"/>.
+    /// </summary>
+    public sealed class AzureServiceBusOptions
+    {
+        /// <summary>The namespace to connect to, for example <c>contoso.servicebus.windows.net</c>, signing in with <see cref="Credential"/>.</summary>
+        public string FullyQualifiedNamespace { get; set; }
+
+        /// <summary>
+        /// How to sign in to <see cref="FullyQualifiedNamespace"/>. <c>DefaultAzureCredential</c> (managed identity,
+        /// Azure CLI and so on) when not set. Set it in code; it isn't read from configuration.
+        /// </summary>
+        public TokenCredential Credential { get; set; }
+
+        /// <summary>A connection string with a shared access key, for example for the Service Bus emulator.</summary>
+        public string ConnectionString { get; set; }
+
+        /// <summary>
+        /// How many times a message is delivered to a handler that keeps failing before it's moved to its queue's or
+        /// subscription's dead-letter subqueue. 10 by default, as in Service Bus. Applied to entities Obvs creates.
+        /// </summary>
+        public int MaxDeliveryAttempts { get; set; } = 10;
+
+        /// <summary>
+        /// How many messages each queue or subscription delivers to this bus at once. When not set, as many as the
+        /// service's handlers of its messages take at once: the sum of their <c>MaxConcurrency</c>, or 1 if no handler
+        /// takes them. Messages arrive in order only one at a time. Set it to cap the handlers, or for messages processed
+        /// with <c>SubscribeAsync</c> or Rx, which the bus can't see at startup.
+        /// </summary>
+        public int? MaxConcurrentMessages { get; set; }
+
+        /// <summary>
+        /// How long a delivered message stays locked to this bus before Service Bus delivers it again, between 5 seconds
+        /// and 5 minutes. Applied to entities Obvs creates; Service Bus's default of 1 minute when not set.
+        /// </summary>
+        public TimeSpan? LockDuration { get; set; }
+
+        /// <summary>
+        /// The longest a handler runs with a message, for which the message's lock keeps being renewed. 5 minutes by
+        /// default; a handler that runs longer loses the lock, and the message is delivered again. Set
+        /// <c>TimeSpan.Zero</c> to never renew it.
+        /// </summary>
+        public TimeSpan MaxHandlerDuration { get; set; } = TimeSpan.FromMinutes(5);
+
+        // Set by UseAzureServiceBus from the app's logging, and the service's name, for metrics
+        internal ILogger Logger { get; set; } = NullLogger.Instance;
+
+        internal string ServiceName { get; set; }
+    }
+}

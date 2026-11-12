@@ -7,9 +7,7 @@ using FakeItEasy;
 
 using MessagePack.Resolvers;
 
-using Obvs.Configuration;
 using Obvs.Serialization.MessagePack;
-using Obvs.Serialization.MessagePack.Configuration;
 using Obvs.Types;
 
 using Xunit;
@@ -17,6 +15,19 @@ using Xunit;
 namespace Obvs.Serialization.Tests {
     
     public class TestMessagePackCSharpSerialization {
+        [Fact]
+        public void ShouldCreateADeserializerForAGivenType() {
+            // For services that register their messages with AddMessages, so nothing is scanned
+            var factory = (IMessageTypeDeserializerFactory)new MessagePackCSharpMessageDeserializerFactory();
+            var deserializer = factory.Create<IMessage>(typeof(TestMessage));
+            var messageBefore = CreateFixedMessage(); // A UTC date, which MessagePack keeps as is
+
+            var messageAfter = deserializer.Deserialize(new MessagePackCSharpMessageSerializer().Serialize(messageBefore));
+
+            Assert.Equal(typeof(TestMessage).Name, deserializer.TypeName);
+            Assert.Equal(messageBefore, messageAfter);
+        }
+
         [Fact]
         public void ShouldSerializeToMessagePackCSharp() {
             IMessageSerializer serializer = new MessagePackCSharpMessageSerializer();
@@ -111,17 +122,6 @@ namespace Obvs.Serialization.Tests {
         // A NestedMessage nested 'depth' times: each level is a one-element array holding its child
         private static byte[] CreateNestedPayload(int depth) {
             return Enumerable.Repeat((byte)0x91, depth).Append((byte)0xC0).ToArray();
-        }
-
-        [Fact]
-        public void ShouldPassInCorrectFluentConfig() {
-            var fakeConfigurator = A.Fake<ICanSpecifyEndpointSerializers<IMessage, ICommand, IEvent, IRequest, IResponse>>();
-            fakeConfigurator.SerializedAsMessagePackCSharp();
-
-            A.CallTo(() => fakeConfigurator.SerializedWith(
-                    A<IMessageSerializer>.That.IsInstanceOf(typeof(MessagePackCSharpMessageSerializer)),
-                    A<IMessageDeserializerFactory>.That.IsInstanceOf(typeof(MessagePackCSharpMessageDeserializerFactory))))
-                .MustHaveHappened(1, Times.Exactly);
         }
     }
 

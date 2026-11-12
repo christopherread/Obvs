@@ -1,5 +1,5 @@
 ﻿using FakeItEasy;
-using Obvs.Logging;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -23,18 +23,6 @@ namespace Obvs.Tests
             A.CallTo(() => commandSource.Dispose()).MustHaveHappenedOnceExactly();
             A.CallTo(() => eventPublisher.Dispose()).MustHaveHappenedOnceExactly();
             A.CallTo(() => responsePublisher.Dispose()).MustHaveHappenedOnceExactly();
-        }
-
-
-        [Fact]
-        public void ShouldDisposeEndpointIfWrappedInLoggingProxy()
-        {
-            IServiceEndpoint endpoint = A.Fake<IServiceEndpoint>();
-            IServiceEndpoint loggingProxy = new ServiceEndpointLoggingProxy(A.Fake<ILoggerFactory>(), endpoint, message => LogLevel.Info, message => LogLevel.Info);
-
-            loggingProxy.Dispose();
-
-            A.CallTo(() => endpoint.Dispose()).MustHaveHappenedOnceExactly();
         }
     }
 }

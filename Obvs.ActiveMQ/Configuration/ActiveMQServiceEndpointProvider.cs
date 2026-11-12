@@ -6,14 +6,16 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reflection;
 using Apache.NMS;
+using Obvs.ActiveMQ.Utils;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Commands;
 using Obvs.Configuration;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 namespace Obvs.ActiveMQ.Configuration
 {
-    public class ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>
+    internal class ActiveMQServiceEndpointProvider<TServiceMessage, TMessage, TCommand, TEvent, TRequest, TResponse> : ServiceEndpointProviderBase<TMessage, TCommand, TEvent, TRequest, TResponse>
         where TMessage : class
         where TServiceMessage : class
         where TCommand : class, TMessage
@@ -204,9 +206,13 @@ namespace Obvs.ActiveMQ.Configuration
                 if (lazyConnection.IsValueCreated &&
                     lazyConnection.Value.IsStarted)
                 {
-                    lazyConnection.Value.Stop();
-                    lazyConnection.Value.Close();
-                    lazyConnection.Value.Dispose();
+                    var connection = lazyConnection.Value;
+                    ConnectionClosing.Close(connection, () =>
+                    {
+                        connection.Stop();
+                        connection.Close();
+                        connection.Dispose();
+                    });
                 }
             });
         }

@@ -5,7 +5,7 @@ using Obvs.Serialization;
 
 namespace Obvs.Kafka.Configuration
 {
-    public static class PublisherFactory
+    internal static class PublisherFactory
     {
         public static MessagePublisher<TMessage> CreatePublisher<TMessage>(
             KafkaConfiguration kafkaConfiguration,

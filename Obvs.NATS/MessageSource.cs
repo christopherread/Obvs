@@ -8,9 +8,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using NATS.Client.Core;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 namespace Obvs.NATS
 {
+    /// <summary>
+    /// Receives the messages published to NATS subjects under a prefix, as v6 did, for an app that builds its own
+    /// endpoints. Each subscription has its own NATS subscription to <c>{subjectPrefix}.*</c>.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
     public class MessageSource<TMessage> : IMessageSource<TMessage>
         where TMessage : class
     {
@@ -19,17 +25,23 @@ namespace Obvs.NATS
         private readonly Func<Dictionary<string, string>, bool> _filter;
         private readonly string _subject;
 
+        /// <summary>Creates a source of the messages published under <paramref name="subjectPrefix"/>.</summary>
+        /// <param name="connection">The connection to NATS</param>
+        /// <param name="subjectPrefix">The subjects' prefix, for example <c>orders.Events</c></param>
+        /// <param name="deserializers">The deserializers, one for each type of message, chosen by the subject's last part</param>
+        /// <param name="filter">Which messages to receive, by the properties their publisher sent with them. All of them when null</param>
         public MessageSource(INatsConnection connection,
             string subjectPrefix,
             IEnumerable<IMessageDeserializer<TMessage>> deserializers,
             Func<Dictionary<string, string>, bool> filter = null)
         {
-            _deserializers = deserializers.ToDictionary(d => d.GetTypeName());
+            _deserializers = deserializers.ToDictionary(d => d.TypeName);
             _connection = connection;
             _filter = filter;
             _subject = string.Format("{0}.*", subjectPrefix);
         }
 
+        /// <inheritdoc />
         public IObservable<TMessage> Messages
         {
             get
@@ -68,7 +80,9 @@ namespace Obvs.NATS
                         var wrapper = Unwrap(msg.Data);
                         if (MatchesFilter(wrapper))
                         {
-                            observer.OnNext(Deserialize(msg.Subject, wrapper));
+                            var message = Deserialize(msg.Subject, wrapper);
+                            SetHeaders(message, msg.Headers);
+                            observer.OnNext(message);
                         }
                     }
                 }
@@ -80,6 +94,21 @@ namespace Obvs.NATS
             {
                 observer.OnError(exception);
             }
+        }
+
+        private static void SetHeaders(TMessage message, NatsHeaders natsHeaders)
+        {
+            if (natsHeaders == null || natsHeaders.Count == 0)
+            {
+                return;
+            }
+
+            var headers = new Dictionary<string, string>();
+            foreach (var header in natsHeaders)
+            {
+                headers[header.Key] = header.Value.ToString();
+            }
+            ObvsReceivedMessage.Attach(message, headers);
         }
 
         private bool MatchesFilter(MessageWrapper wrapper)
@@ -117,6 +146,7 @@ namespace Obvs.NATS
             return subject.Split('.').Last();
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
         }

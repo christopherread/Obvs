@@ -5,7 +5,7 @@ using System.Security.Principal;
 
 namespace Obvs.ActiveMQ.Configuration
 {
-    public static class ConnectionClientId
+    internal static class ConnectionClientId
     {
         public static string CreateWithSuffix(string uniqueSuffix)
         {

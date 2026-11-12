@@ -3,13 +3,21 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Disposables;
 using System.Threading;
+using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Obvs.Hosting;
 using Obvs.Kafka.Configuration;
 using Obvs.Serialization;
+using Obvs.Transports;
 
 namespace Obvs.Kafka
 {
+    /// <summary>
+    /// Produces messages to a Kafka topic, as v6 did, for an app that builds its own endpoints, with their headers as
+    /// Kafka headers. Its producer is created on the first message.
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the messages, such as the service's commands or events</typeparam>
     public class MessagePublisher<TMessage> : IMessagePublisher<TMessage>
         where TMessage : class
     {
@@ -22,7 +30,14 @@ namespace Obvs.Kafka
         private bool _disposed;
         private long _created;
         private IProducer<Null, WrapperMessage> _producer;
+        private readonly Action<IClient, string> _oauthBearerTokenRefreshHandler;
 
+        /// <summary>Creates a publisher to <paramref name="topic"/>.</summary>
+        /// <param name="kafkaConfiguration">The cluster to connect to</param>
+        /// <param name="producerConfig">How to batch messages</param>
+        /// <param name="topic">The topic, for example <c>orders.Events</c></param>
+        /// <param name="serializer">Writes each message's body</param>
+        /// <param name="propertyProvider">The properties to send with each message, which sources can filter on. None when null</param>
         public MessagePublisher(KafkaConfiguration kafkaConfiguration, KafkaProducerConfiguration producerConfig, string topic, IMessageSerializer serializer, Func<TMessage, Dictionary<string, string>> propertyProvider)
         {
             _topic = topic;
@@ -32,26 +47,31 @@ namespace Obvs.Kafka
                 BootstrapServers = kafkaConfiguration.BootstrapServers,
                 BatchNumMessages = producerConfig.BatchFlushSize
             };
+            kafkaConfiguration.ApplyTo(_producerConfig);
+            _oauthBearerTokenRefreshHandler = kafkaConfiguration.OAuthBearerTokenRefreshHandler;
         }
 
-        public Task PublishAsync(TMessage message)
+        internal ProducerConfig ProducerConfig => _producerConfig;
+
+        /// <inheritdoc />
+        public Task PublishAsync(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
         {
             if (_disposed)
             {
                 throw new InvalidOperationException("Publisher has been disposed already.");
             }
 
-            return Publish(message);
+            return Publish(message, headers, cancellationToken);
         }
 
-        private Task Publish(TMessage message)
+        private Task Publish(TMessage message, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken)
         {
             var properties = _propertyProvider?.Invoke(message);
 
-            return Publish(message, properties);
+            return Publish(message, properties, headers, cancellationToken);
         }
 
-        private async Task Publish(TMessage message, Dictionary<string, string> properties)
+        private async Task Publish(TMessage message, Dictionary<string, string> properties, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken)
         {
             if (_disposed)
             {
@@ -61,9 +81,9 @@ namespace Obvs.Kafka
             CreateProducer();
 
             var wrapperMessage = ToWrapperMessage(message, properties);
-            var msg = new Message<Null, WrapperMessage> {Value = wrapperMessage};
+            var msg = new Message<Null, WrapperMessage> {Value = wrapperMessage, Headers = ToKafkaHeaders(headers)};
 
-            await _producer.ProduceAsync(_topic, msg);
+            await _producer.ProduceAsync(_topic, msg, cancellationToken);
         }
 
         private WrapperMessage ToWrapperMessage(TMessage message, Dictionary<string, string> properties)
@@ -80,13 +100,33 @@ namespace Obvs.Kafka
             }
         }
 
+        // The Obvs headers (such as trace context) as Kafka headers, which v6 receivers ignore
+        private static Headers ToKafkaHeaders(IReadOnlyDictionary<string, string> headers)
+        {
+            if (headers.Count == 0)
+            {
+                return null;
+            }
+
+            var kafkaHeaders = new Headers();
+            foreach (var header in headers)
+            {
+                kafkaHeaders.Add(header.Key, Encoding.UTF8.GetBytes(header.Value));
+            }
+            return kafkaHeaders;
+        }
+
         private void CreateProducer()
         {
             if (Interlocked.CompareExchange(ref _created, 1, 0) == 0)
             {
-                _producer = new ProducerBuilder<Null, WrapperMessage>(_producerConfig)
-                    .SetValueSerializer(new ProducerValueSerializer<WrapperMessage>())
-                    .Build();
+                var builder = new ProducerBuilder<Null, WrapperMessage>(_producerConfig)
+                    .SetValueSerializer(new ProducerValueSerializer<WrapperMessage>());
+                if (_oauthBearerTokenRefreshHandler != null)
+                {
+                    builder.SetOAuthBearerTokenRefreshHandler(_oauthBearerTokenRefreshHandler);
+                }
+                _producer = builder.Build();
 
                 _disposable = Disposable.Create(() =>
                 {
@@ -97,6 +137,7 @@ namespace Obvs.Kafka
             }
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (_disposable != null && !_disposed)
@@ -106,7 +147,7 @@ namespace Obvs.Kafka
         }
     }
 
-    public class ProducerValueSerializer<T> : ISerializer<T>
+    internal class ProducerValueSerializer<T> : ISerializer<T>
     {
         public byte[] Serialize(T data, SerializationContext context)
         {

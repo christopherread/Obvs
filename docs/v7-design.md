@@ -131,14 +131,14 @@ The analyzer ships inside the main package, so it's on by default. First rules:
 
 | Rule | Detects | Code fix |
 |---|---|---|
-| OBVS001 | A message type registered for a service doesn't implement that service's marker interface | Add the interface |
+| OBVS001 | A message type registered or handled on a service doesn't implement that service's marker interface | Add the interface |
 | OBVS002 | A type implements more than one of `ICommand`, `IEvent`, `IRequest` and `IResponse` | — |
 | OBVS003 | A request handler's response type doesn't implement `IResponse` for the same service | — |
-| OBVS004 | A service has no transport or no serializer configured | Add `Use<Transport>()` |
+| OBVS004 | A service has no transport (it always has a serializer, System.Text.Json by default) | Add `Use<Transport>()` |
 | OBVS005 | The result of `Subscribe` on a bus stream is discarded | Store the subscription, or suggest a handler |
-| OBVS006 | An `async` lambda passed to `Subscribe` on a bus stream (compiles to `async void`) | Convert to `HandleCommand`, `HandleEvent` or `HandleRequest` |
+| OBVS006 | An `async` lambda passed to `Subscribe` on a bus stream (compiles to `async void`) | Change `Subscribe` to `SubscribeAsync`, which awaits each message in turn and settles it. Moving it to a handler is in the bus's configuration, which a code fix can't reach, so the message suggests it |
 
-Each diagnostic says what's wrong, how to fix it, and links to a docs page.
+Each diagnostic says what's wrong, how to fix it, and links to a docs page: [analyzers.md](analyzers.md).
 
 ### 4. Handlers and awaitable requests
 
@@ -178,8 +178,8 @@ Agents reproduce common patterns well and rare ones badly, and there is far more
              ┌──────────────────────────────────────────┐
   Handlers   │ HandleCommand<T>(async (cmd, ctx, ct) =>)│  react to a message
              ├──────────────────────────────────────────┤
-  Await      │ RequestAsync<TReq, TResp>(..., ct)       │  ask, get one answer
-             │ Events<T>(ct) → IAsyncEnumerable<T>      │  pull at your own pace
+  Await      │ RequestAsync(request, timeout, ct)       │  ask, get one answer
+             │ ReadEventsAsync<T>(ct) → IAsyncEnumerable│  pull at your own pace
              ├──────────────────────────────────────────┤
   Rx (core)  │ IObservable<T> Commands / Events / ...   │  reason about streams
              └──────────────────────────────────────────┘
@@ -195,6 +195,9 @@ obvs.AddService<IOrderMessage>("orders", service => service
     })
     .HandleRequest<GetQuote, Quote>(async (req, ctx, ct) => new Quote(req.Sku, 9.99m)));
 
+// A request names its response, so RequestAsync infers it and HandleRequest must answer with it
+public record GetQuote(string Sku) : IOrderMessage, IRequest<Quote>;
+
 // Or as classes
 public sealed class PlaceOrderHandler(IOrderRepository orders) : ICommandHandler<PlaceOrder>
 {
@@ -202,10 +205,10 @@ public sealed class PlaceOrderHandler(IOrderRepository orders) : ICommandHandler
 }
 
 // Awaitable request/response
-Quote quote = await client.RequestAsync<GetQuote, Quote>(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
+Quote quote = await client.RequestAsync(new GetQuote("sku-1"), TimeSpan.FromSeconds(5), ct);
 
 // Pull-based consumption with backpressure
-await foreach (var placed in client.Events<OrderPlaced>(ct)) { ... }
+await foreach (var placed in client.ReadEventsAsync<OrderPlaced>(ct)) { ... }
 ```
 
 The upper layers are thin adapters over the observable core, so Rx still does the plumbing. Roughly:
@@ -220,7 +223,8 @@ Commands.OfType<T>()
 // RequestAsync
 GetResponses(request).OfType<TResp>().Take(1).Timeout(timeout).ToTask(ct);
 
-// Events<T>(ct): the observable feeds a bounded Channel<T>, read out as IAsyncEnumerable<T>
+// ReadEventsAsync<T>(ct): the observable feeds a bounded Channel<T>, read out as IAsyncEnumerable<T>. A reader that falls
+// further behind than the channel holds gets an exception, rather than holding up the bus's other subscribers.
 ```
 
 The streams remain first class for what Rx is uniquely good at:
@@ -242,7 +246,7 @@ var unpaid = bus.Events.OfType<OrderPlaced>()
 - **Cancellation:** every async method takes a `CancellationToken`.
 - **Replies:** `MessageContext` carries the message's headers and correlation ID, and lets a handler publish, send or reply, so replies can't go to the wrong place.
 - **Errors:** handler exceptions are logged, traced, and either retried or dead-lettered according to transport options. They don't vanish, and they never end the underlying stream.
-- **One obvious way:** two ways to consume messages is a cost. Analyzer OBVS006 (see 3) flags `Subscribe(async ...)` on a bus stream and offers a code fix that turns it into a handler, so the guidance is enforced by the compiler, not a style guide.
+- **One obvious way:** two ways to consume messages is a cost. Analyzer OBVS006 (see 3) flags `Subscribe(async ...)` on a bus stream and offers a code fix that turns it into `SubscribeAsync`, which processes messages as a handler does, so the guidance is enforced by the compiler, not a style guide.
 
 #### The name
 
@@ -297,8 +301,8 @@ Tracking: #90
 Tracking: #91
 
 - Each service's contract is generated as an [AsyncAPI](https://www.asyncapi.com/) document: its channels and the commands, events, requests and responses on them, with a JSON Schema for each message.
-- **At build time:** the source generator or an MSBuild task writes the document, so it can be committed and diffed. A CI check can then flag breaking changes, such as a removed field or a changed type.
-- **At runtime:** `bus.DescribeAsync()` returns the same document. It feeds the MCP server (9).
+- **Committed and checked in CI:** a test writes the document with `ObvsContractSnapshot.Verify` (in Obvs.Testing), so it can be committed and diffed, and fails on a breaking change, such as a removed field or a changed type. A source generator can't write files, and an MSBuild task would have to run the app to build its bus, which a test already does. See [contracts.md](contracts.md).
+- **At runtime:** `ObvsContracts.Describe()`, from the container, returns the same document. It feeds the MCP server (9).
 
 ### 9. An MCP server for development
 
@@ -328,11 +332,13 @@ Tracking: #93
 | v7 | Status |
 |---|---|
 | `Obvs` (core, including System.Text.Json serialization, the analyzers and the generator) | Core |
-| `Obvs.RabbitMQ`, `Obvs.Kafka`, `Obvs.NATS`, `Obvs.ActiveMQ`, `Obvs.NetMQ` | Transports, all configured the same way |
-| `Obvs.Serialization.MessagePack` (MessagePack-CSharp), `Obvs.Serialization.ProtoBuf` | Optional serializers |
+| `Obvs.RabbitMQ`, `Obvs.Kafka`, `Obvs.NATS`, `Obvs.ActiveMQ` | Transports, all configured the same way |
+| `Obvs.AzureSB`, `Obvs.AmazonSqs` | New transports (see 13) |
+| `Obvs.NetMQ` | Kept, with `UseNetMq`. It sends headers only when asked, as v6 apps can't read them (see open question 4) |
+| `Obvs.Serialization.MessagePack` (MessagePack-CSharp), `Obvs.Serialization.ProtoBuf` | Optional serializers. The MessagePack-CSharp package takes over the `Obvs.Serialization.MessagePack` name, which was MsgPack.Cli's on v6. |
 | `Obvs.Testing`, `Obvs.Mcp` | New |
 | `Obvs.Serialization.Json` (Newtonsoft) | Kept for v6 wire compatibility; not the default |
-| MsgPack.Cli, NetJSON, XML, `Obvs.Monitoring.*`, `Obvs.Logging.NLog` | Stay on v6, deprecated on NuGet with named replacements |
+| MsgPack.Cli, NetJSON, XML, YAML, `Obvs.Monitoring.*`, `Obvs.Logging.NLog` | Stay on v6, deprecated on NuGet with named replacements. Removed from the `v7` branch. |
 
 Every transport is configured the same way: an options class, `Use<Transport>(IConfiguration)` and `Use<Transport>(Action<Options>)`.
 
@@ -354,12 +360,94 @@ Tracking: #95
 - A migration guide gives before-and-after snippets for each change. An optional analyzer code fix rewrites the common v6 fluent chains into `AddObvs` calls.
 - **Wire compatibility:** v6 and v7 services on the same broker must interoperate, with the same exchange, topic and queue naming and the same default serialization for existing services. New defaults (System.Text.Json) apply only to services that opt in, or to new services. A test runs a v6 service and a v7 service on one broker.
 
+### 13. Cloud transports
+
+Tracking: #130
+
+Most teams starting with a messaging library now use a managed cloud service rather than run a broker themselves. v6 covers the brokers people host themselves, but not the two cloud queue services most .NET teams reach for:
+
+| Product | Managed offerings | v6 | v7 |
+|---|---|---|---|
+| Kafka protocol | Confluent Cloud, Amazon MSK, Azure Event Hubs (Kafka endpoint), Redpanda | `Obvs.Kafka` | Verify and document the managed platforms |
+| Azure Service Bus | Azure | None (the README lists it, but there's no package) | New `Obvs.AzureSB` (`Obvs.AzureServiceBus` on NuGet belongs to an unreleased 2016 prototype) |
+| Amazon SQS and SNS | AWS | None | New `Obvs.AmazonSqs` |
+| Google Cloud Pub/Sub | Google Cloud | None | Deferred |
+| RabbitMQ | CloudAMQP, Amazon MQ | `Obvs.RabbitMQ` | Commands and requests on shared quorum queues (see the delivery model) |
+| ActiveMQ | Amazon MQ | `Obvs.ActiveMQ` | No change |
+| NATS | Synadia Cloud | `Obvs.NATS`, core NATS only | Add JetStream |
+
+#### Delivery model
+
+The new transports change how messages are delivered, not just where they go. In v6, RabbitMQ and Kafka give every subscription its own queue or consumer group, so every instance of a service receives every message, commands included. Messages are acknowledged on receipt, and nothing survives a restart. Only ActiveMQ's `UsingQueueFor<ICommand>` shares a queue between instances.
+
+Cloud queues are built for the opposite: a durable queue that instances of a service take turns reading from, where a message is removed only once it's processed. The new transports use that model:
+
+- **Commands and requests** go to one durable queue per service. Each is handled by one instance.
+- **Events** go to every subscribing bus instance, as in v6.
+- **Responses** go to a reply queue for the requesting bus instance, named with its instance ID (see 1).
+- **Settlement** happens after the handler finishes (see 4): completed on success, abandoned for redelivery on failure, dead-lettered after the delivery limit (see open question 3). This is at-least-once delivery, so handlers must tolerate duplicates, and the docs need to say so.
+
+Kafka and RabbitMQ moved to it in 7.0 too, keeping v6's topics, exchanges and routing keys so v6 and v7 apps still reach each other: Kafka's servers share a consumer group for commands and requests, and RabbitMQ's a quorum queue. ActiveMQ, core NATS and NetMQ keep v6's behaviour.
+
+#### Azure Service Bus
+
+The top priority: it's the default broker for .NET teams on Azure, and it fits the Obvs model closely.
+
+```csharp
+service.UseAzureServiceBus(builder.Configuration.GetSection("Obvs:Orders:AzureServiceBus"));
+```
+
+| Obvs | Azure Service Bus |
+|---|---|
+| Commands, requests | A queue per service |
+| Events | A topic per service, with a subscription per subscribing bus instance that deletes itself when idle, so a crashed instance doesn't leave one behind |
+| Responses | A reply queue per bus instance, matched by `ReplyTo` and `CorrelationId`. Alternatively, a shared session-enabled reply queue with the instance ID as the session ID |
+| Headers and trace context | Application properties |
+| Dead-lettering | The built-in dead-letter subqueue, after the entity's `MaxDeliveryCount` |
+
+- Options take a fully qualified namespace plus a `TokenCredential` (managed identity, via `DefaultAzureCredential` by default), or a connection string for local development.
+- Topics need the Standard tier or above. The bus should fail fast (see 6) with an error naming the tier when it can't create a topic.
+- Entities are created on start where the credential allows it, and otherwise must already exist. Start-up validation checks that they do.
+- Tests run against Microsoft's Service Bus emulator, which runs in Docker. Its support for creating entities at runtime needs checking; if it's missing, tests declare entities in the emulator's config file.
+
+#### Amazon SQS and SNS
+
+A close second: the default queue service for teams on AWS.
+
+```csharp
+service.UseAmazonSqs(builder.Configuration.GetSection("Obvs:Orders:AmazonSqs"));
+```
+
+| Obvs | AWS |
+|---|---|
+| Commands, requests | An SQS queue per service |
+| Events | An SNS topic per service, delivering to an SQS queue per subscribing bus instance, with raw message delivery so attributes arrive intact |
+| Responses | An SQS reply queue per bus instance |
+| Headers and trace context | Message attributes |
+| Dead-lettering | An SQS redrive policy, after `maxReceiveCount` |
+
+- Credentials come from the AWS SDK's default chain (IAM roles, profiles, environment), so options hold only the region and naming.
+- SQS is pull-based. The transport runs a long-polling receive loop feeding the service's observable, and deletes each message after its handler succeeds. The visibility timeout must exceed the handler's timeout, so options validation checks the two together.
+- SQS and SNS allow only 10 message attributes, so Obvs headers are packed into one attribute and trace context into another.
+- Both services cap the payload size. Messages over the limit fail with an error naming the limit. A claim-check option (body in S3, reference in the message) can follow later.
+- SQS queues don't delete themselves. Per-instance queues for events and responses left behind by a crashed instance need cleaning up: queues are tagged with their instance ID and last-seen time, and a stable instance ID (see 1) lets a restarted instance reuse its own.
+- Standard queues don't preserve order. FIFO queues and topics, keyed by a message group ID, are an option for services that need ordering.
+- Tests run against LocalStack, which runs in Docker.
+
+#### The other gaps
+
+- **NATS JetStream.** `Obvs.NATS` uses only `NATS.Client.Core`. Core NATS delivers at most once and keeps nothing, while durable work on NATS uses JetStream. A JetStream mode (`NATS.Client.JetStream`) gives durable streams, consumers that instances share, and acknowledgement after handling, using the same delivery model as the new transports.
+- **Kafka on managed platforms.** `Obvs.Kafka` should already work against Confluent Cloud, Amazon MSK and the Event Hubs Kafka endpoint. What's missing is security settings in `KafkaOptions` (SASL and TLS), an OAuth token callback for MSK sign-in with AWS IAM and for Event Hubs with Microsoft Entra ID, and a docs page for each platform.
+- **Kafka share groups** (KIP-932) let instances share a partition, which would give Kafka the same delivery model as a queue. They were early access in Kafka 4.0, and support in the .NET client (`Confluent.Kafka`) is unconfirmed. Watch them, but don't build on them for 7.0.
+- **Google Cloud Pub/Sub.** Few .NET teams use it. Defer to 7.x, or to a contributor.
+- **Redis Streams, Pulsar.** Out of scope.
+
 ## Phasing
 
 | Phase | Ships in | Changes |
 |---|---|---|
 | A: additive foundations | 6.x minors | 1 (DI hosting), 5 (testing kit), 6 (validation and errors), 7 (OpenTelemetry), 11 (docs) |
-| B: new programming model | 6.x minors, previews | 2 (registration and generator), 3 (analyzers), 4 (handlers and `RequestAsync`), 8 (contracts) |
+| B: new programming model | 6.x minors, previews | 2 (registration and generator), 3 (analyzers), 4 (handlers and `RequestAsync`), 8 (contracts), 13 (Azure Service Bus and SQS/SNS as new packages, once handlers exist to settle messages after handling) |
 | C: v7.0 | 7.0 | 10 (package consolidation), 12 (remove obsolete APIs), 9 (MCP server, once contracts exist) |
 
 Phase A is useful on its own, and doesn't break anyone.
@@ -385,5 +473,29 @@ The same tasks double as onboarding material for people.
 1. ~~**Rx's place.** Should the `IObservable` streams stay on `IServiceBus`, or move to an `Obvs.Reactive` package in 7.0?~~ **Resolved: they stay in the core.** Observables are the library's identity and the engine the handler and `await` layers are built on, so moving them out would cost more than it saves. See 4.
 2. **Default serializer for new services.** System.Text.Json is proposed. Is that acceptable for users who mix v6 and v7 services by default?
 3. **Retries and dead-lettering.** Should Obvs own these policies across transports, or delegate to each broker's features?
+
+   **Proposed: delegate where the broker has the feature, and have Obvs supply it only where it doesn't.** Most brokers, and every cloud queue service, already count deliveries and dead-letter for you, and their consoles, metrics and redrive tools are built around that. Copying it in Obvs would duplicate it badly. What each transport offers:
+
+   | Transport | Delivery limit | Dead-letter destination | Obvs's part |
+   |---|---|---|---|
+   | Azure Service Bus | `MaxDeliveryCount` on the queue or subscription | Built-in dead-letter subqueue | Set the limit from options; record the reason |
+   | Amazon SQS | Redrive policy `maxReceiveCount` | A dead-letter queue | Create the dead-letter queue and redrive policy from options |
+   | RabbitMQ | Quorum queues' delivery limit | Dead-letter exchange | Declare both from options, and dead-letter on the last attempt with the reason |
+   | ActiveMQ | Client redelivery policy | `ActiveMQ.DLQ`, or one per destination | Set the policy from options |
+   | NATS JetStream | `MaxDeliver` on the consumer | None (an advisory is published) | Republish to a dead-letter subject |
+   | Kafka | None | None | A retry topic and a dead-letter topic |
+   | Core NATS, NetMQ | None (at-most-once) | None | Log and trace the failure only |
+
+   Obvs owns what has to be the same everywhere:
+   - one options shape on every transport (`MaxDeliveryAttempts`, the dead-letter name, and an optional in-process retry with backoff before the message goes back to the broker);
+   - the same headers on a dead-lettered message, recording the exception, handler and attempt count;
+   - logs, traces and a metric for every retry and dead-letter (see 7);
+   - `recent_errors` in the MCP server (see 9) reads from the same source.
+
+   Still open: whether Obvs should offer a redrive API, or leave that to each broker's tools.
 4. **Which transports to keep.** Is there enough use of ActiveMQ and NetMQ to justify porting them to the new model?
+
+   **Decided: keep both.**
+   - **ActiveMQ** is still sold as a managed service (Amazon MQ), its `UsingQueueFor<ICommand>` already matches the delivery model of the new transports (see 13), and the port to the new options model is under way.
+   - **NetMQ** has no broker, so there's no managed offering, no durability and no dead-lettering, and its tests have needed repeated fixes for flakiness and port clashes. The proposal was to leave it on 6.x, with core NATS as its replacement. It's kept instead, as NetMQ is still maintained and suits low-latency messaging inside one network without running a server. `UseNetMq` configures it like the other transports. Headers need a fifth frame, which v6 apps can't read, so they're sent only when `SendHeaders` is on.
 5. **The MCP server's scope.** Should it ever support read-only use against production, for incident debugging?

@@ -5,11 +5,12 @@ using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
 using Microsoft.Reactive.Testing;
 using Obvs.Configuration;
-using Obvs.Monitoring;
+using Obvs.Transports;
 using Obvs.Types;
 using Xunit;
 
@@ -23,6 +24,42 @@ namespace Obvs.Tests
         public TestServiceBus(ITestOutputHelper testOutputHelper)
         {
             _testOutputHelper = testOutputHelper;
+        }
+
+        [Fact]
+        public async Task ShouldSayWhichServiceIsMissingWhenNoEndpointCanPublishAnEvent()
+        {
+            var serviceBus = new ServiceBus(new IServiceEndpointClient[0], new IServiceEndpoint[0]);
+
+            var exception = await Assert.ThrowsAnyAsync<Exception>(() => serviceBus.PublishAsync(new TestServiceEvent1(), TestContext.Current.CancellationToken));
+
+            Assert.Contains("TestServiceEvent1", exception.Message);
+            Assert.Contains("AddService", exception.Message);
+        }
+
+        [Fact]
+        public async Task ShouldSayWhichServiceIsMissingWhenNoEndpointCanSendACommand()
+        {
+            var serviceBus = new ServiceBus(new IServiceEndpointClient[0], new IServiceEndpoint[0]);
+
+            var exception = await Assert.ThrowsAnyAsync<Exception>(() => serviceBus.SendAsync(new TestServiceCommand1(), TestContext.Current.CancellationToken));
+
+            Assert.Contains("TestServiceCommand1", exception.Message);
+            Assert.Contains("AddService", exception.Message);
+        }
+
+        [Fact]
+        public void ShouldDisposeEndpointsOnlyOnceWhenDisposedTwice()
+        {
+            IServiceEndpoint serviceEndpoint = A.Fake<IServiceEndpoint>();
+            IServiceEndpointClient serviceEndpointClient = A.Fake<IServiceEndpointClient>();
+            var serviceBus = new ServiceBus(new[] { serviceEndpointClient }, new[] { serviceEndpoint });
+
+            serviceBus.Dispose();
+            serviceBus.Dispose();
+
+            A.CallTo(() => serviceEndpoint.Dispose()).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient.Dispose()).MustHaveHappenedOnceExactly();
         }
 
         [Fact]
@@ -207,8 +244,8 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpointClient1.CanHandle(request)).Returns(true);
             A.CallTo(() => serviceEndpointClient2.CanHandle(request)).Returns(true);
 
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).Returns(observable1);
-            A.CallTo(() => serviceEndpointClient2.GetResponses(request)).Returns(observable2);
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).Returns(observable1);
+            A.CallTo(() => serviceEndpointClient2.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).Returns(observable2);
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2 });
 
@@ -217,8 +254,8 @@ namespace Obvs.Tests
             IDisposable sub1 = responses.Subscribe(observer1);
             IDisposable sub2 = responses.Subscribe(observer2);
 
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient2.GetResponses(request)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient2.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustHaveHappenedOnceExactly();
 
             A.CallTo(() => observable1.Subscribe(A<IObserver<IResponse>>._)).MustHaveHappenedOnceExactly();
             A.CallTo(() => observable2.Subscribe(A<IObserver<IResponse>>._)).MustHaveHappenedOnceExactly();
@@ -378,8 +415,8 @@ namespace Obvs.Tests
 
             IRequest request = A.Fake<IRequest>();
 
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).Returns(observable1);
-            A.CallTo(() => serviceEndpointClient2.GetResponses(request)).Returns(observable2);
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).Returns(observable1);
+            A.CallTo(() => serviceEndpointClient2.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).Returns(observable2);
             
             A.CallTo(() => serviceEndpointClient1.CanHandle(request)).Returns(true);
             A.CallTo(() => serviceEndpointClient2.CanHandle(request)).Returns(true);
@@ -777,21 +814,22 @@ namespace Obvs.Tests
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2, serviceEndpointClient3 }, new[] { serviceEndpoint1, serviceEndpoint2 });
             
-            serviceBus.SendAsync(command1);
+            serviceBus.SendAsync(command1, TestContext.Current.CancellationToken);
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command1)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient2.SendAsync(command1)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command1)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command1, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command1, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command1, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
             
-            serviceBus.SendAsync(new[]{command2, command3});
+            serviceBus.SendAsync(command2, TestContext.Current.CancellationToken);
+            serviceBus.SendAsync(command3, TestContext.Current.CancellationToken);
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command2)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient2.SendAsync(command2)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command2)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command2, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command2, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command2, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command3)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient2.SendAsync(command3)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command3)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command3, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command3, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command3, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         } 
         
         [Fact]
@@ -813,51 +851,20 @@ namespace Obvs.Tests
             
             IDisposable sub1 = serviceBus.GetResponses(request).Subscribe(A.Fake<IObserver<IResponse>>());
 
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient2.GetResponses(request)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.GetResponses(request)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient2.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpointClient3.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustHaveHappenedOnceExactly();
 
-            IDisposable sub2 = serviceBus.GetResponses<IResponse>(request).Subscribe(A.Fake<IObserver<IResponse>>());
+            IDisposable sub2 = serviceBus.GetResponses(request).Subscribe(A.Fake<IObserver<IResponse>>());
 
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappenedTwiceExactly();
-            A.CallTo(() => serviceEndpointClient2.GetResponses(request)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpointClient3.GetResponses(request)).MustHaveHappenedTwiceExactly();
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustHaveHappenedTwiceExactly();
+            A.CallTo(() => serviceEndpointClient2.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpointClient3.GetResponses(request, A<IReadOnlyDictionary<string, string>>._)).MustHaveHappenedTwiceExactly();
 
             sub1.Dispose();
             sub2.Dispose();
         }
 
-        [Fact]
-        public void ShouldCompleteGetResponseWhenOneResponseReturned()
-        {
-            IServiceEndpoint serviceEndpoint1 = A.Fake<IServiceEndpoint>();
-            IServiceEndpointClient serviceEndpointClient1 = A.Fake<IServiceEndpointClient>();
-            
-            IRequest request = A.Fake<IRequest>();
-            var response = A.Fake<IResponse>();
-            var subject = new Subject<IResponse>();
-            var requestCorrelationProvider = A.Fake<IRequestCorrelationProvider>();
-
-            A.CallTo(() => requestCorrelationProvider.AreCorrelated(request, response)).Returns(true);
-            A.CallTo(() => serviceEndpointClient1.CanHandle(request)).Returns(true);
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).Returns(subject);
-
-            IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1 }, new[] { serviceEndpoint1  }, requestCorrelationProvider);
-
-            var observer = A.Fake<IObserver<IResponse>>();
-            IDisposable sub1 = serviceBus.GetResponse<IResponse>(request).Subscribe(observer);
-
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request)).MustHaveHappenedOnceExactly();
-
-            subject.OnNext(response);
-
-            A.CallTo(() => observer.OnNext(response)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => observer.OnCompleted()).MustHaveHappenedOnceExactly();
-            A.CallTo(() => observer.OnError(A<Exception>._)).MustNotHaveHappened();
-            
-            sub1.Dispose();
-        }
-        
         [Fact]
         public void ShouldPublishEventsToCorrectEndpoints()
         {
@@ -875,11 +882,11 @@ namespace Obvs.Tests
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2, serviceEndpoint3 });
             
-            serviceBus.PublishAsync(ev);
+            serviceBus.PublishAsync(ev, TestContext.Current.CancellationToken);
 
-            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint1.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint2.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpoint3.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]
@@ -900,11 +907,11 @@ namespace Obvs.Tests
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2, serviceEndpoint3 });
 
-            serviceBus.ReplyAsync(request, response);
+            serviceBus.ReplyAsync(request, response, TestContext.Current.CancellationToken);
 
-            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).MustNotHaveHappened();
-            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]
@@ -931,8 +938,8 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpointClient1.CanHandle(request1)).Returns(true);
             A.CallTo(() => serviceEndpointClient2.CanHandle(request2)).Returns(true);
 
-            A.CallTo(() => serviceEndpointClient1.GetResponses(request1)).Returns(observable1);
-            A.CallTo(() => serviceEndpointClient2.GetResponses(request2)).Returns(observable2);
+            A.CallTo(() => serviceEndpointClient1.GetResponses(request1, A<IReadOnlyDictionary<string, string>>._)).Returns(observable1);
+            A.CallTo(() => serviceEndpointClient2.GetResponses(request2, A<IReadOnlyDictionary<string, string>>._)).Returns(observable2);
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2 });
 
@@ -963,23 +970,22 @@ namespace Obvs.Tests
             IServiceEndpointClient serviceEndpointClient3 = A.Fake<IServiceEndpointClient>();
 
             ICommand command = A.Fake<ICommand>();
-            ICommand command2 = A.Fake<ICommand>();
 
             A.CallTo(() => serviceEndpointClient1.CanHandle(A<ICommand>._)).Returns(true);
             A.CallTo(() => serviceEndpointClient2.CanHandle(A<ICommand>._)).Returns(true);
             A.CallTo(() => serviceEndpointClient3.CanHandle(A<ICommand>._)).Returns(true);
 
             Exception originalException = new Exception("Something went wrong");
-            A.CallTo(() => serviceEndpointClient1.SendAsync(A<ICommand>._)).Returns(Task.FromResult(true));
-            A.CallTo(() => serviceEndpointClient2.SendAsync(A<ICommand>._)).Throws(originalException);
-            A.CallTo(() => serviceEndpointClient3.SendAsync(A<ICommand>._)).Returns(Task.FromResult(true));
+            A.CallTo(() => serviceEndpointClient1.SendAsync(A<ICommand>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Returns(Task.FromResult(true));
+            A.CallTo(() => serviceEndpointClient2.SendAsync(A<ICommand>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Throws(originalException);
+            A.CallTo(() => serviceEndpointClient3.SendAsync(A<ICommand>._, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Returns(Task.FromResult(true));
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2, serviceEndpointClient3 }, new[] { serviceEndpoint1, serviceEndpoint2 });
 
             AggregateException aggregateException = null;
             try
             {
-                serviceBus.SendAsync(new[] {command, command2});
+                serviceBus.SendAsync(command, TestContext.Current.CancellationToken);
             }
             catch (AggregateException ex)
             {
@@ -990,9 +996,9 @@ namespace Obvs.Tests
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
             Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpointClient1.SendAsync(command)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient2.SendAsync(command)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpointClient3.SendAsync(command)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient1.SendAsync(command, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient2.SendAsync(command, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpointClient3.SendAsync(command, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]
@@ -1011,16 +1017,16 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpoint3.CanHandle(A<IEvent>._)).Returns(true);
 
             Exception originalException = new Exception("Something went wrong");
-            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).Returns(Task.FromResult(true));
-            A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).Throws(originalException);
-            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).Returns(Task.FromResult(true));
+            A.CallTo(() => serviceEndpoint1.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Returns(Task.FromResult(true));
+            A.CallTo(() => serviceEndpoint2.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Throws(originalException);
+            A.CallTo(() => serviceEndpoint3.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Returns(Task.FromResult(true));
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2, serviceEndpoint3 });
 
             AggregateException aggregateException = null;
             try
             {
-                serviceBus.PublishAsync(ev);
+                serviceBus.PublishAsync(ev, TestContext.Current.CancellationToken);
             }
             catch (AggregateException ex)
             {
@@ -1031,9 +1037,9 @@ namespace Obvs.Tests
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
             Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpoint1.PublishAsync(ev)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint2.PublishAsync(ev)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint3.PublishAsync(ev)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint1.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint2.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint3.PublishAsync(ev, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
         
         [Fact]
@@ -1053,7 +1059,7 @@ namespace Obvs.Tests
             A.CallTo(() => serviceEndpoint3.CanHandle(A<IResponse>._)).Returns(true);
 
             Exception originalException = new Exception("Something went wrong");
-            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).Throws(originalException);
+            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).Throws(originalException);
 
             IServiceBus serviceBus = new ServiceBus(new[] { serviceEndpointClient1, serviceEndpointClient2 }, new[] { serviceEndpoint1, serviceEndpoint2, serviceEndpoint3 });
 
@@ -1061,7 +1067,7 @@ namespace Obvs.Tests
             
             try
             {
-                serviceBus.ReplyAsync(request, response);
+                serviceBus.ReplyAsync(request, response, TestContext.Current.CancellationToken);
             }
             catch (AggregateException ex)
             {
@@ -1072,9 +1078,9 @@ namespace Obvs.Tests
             Assert.True(aggregateException != null, "No aggregate exception was thrown");
             Assert.True(aggregateException.InnerExceptions.Any(e => e.InnerException == originalException), "Aggregate exception did not contain original exception");
 
-            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response)).MustHaveHappenedOnceExactly();
-            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint1.ReplyAsync(request, response, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint2.ReplyAsync(request, response, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => serviceEndpoint3.ReplyAsync(request, response, A<IReadOnlyDictionary<string, string>>._, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         }
 
         [Fact]
@@ -1101,13 +1107,7 @@ namespace Obvs.Tests
             FakeServiceEndpoint erroringEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1)) { ThrowException = true };
             FakeServiceEndpoint serviceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
 
-            IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpointClient) erroringEndpoint)
-                .WithEndpoint((IServiceEndpoint)erroringEndpoint)
-                .WithEndpoint((IServiceEndpointClient) serviceEndpoint)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint)
-                .UsingConsoleLogging()
-                .Create();
+            IServiceBus serviceBus = new ServiceBus(new IServiceEndpointClient[] { erroringEndpoint, serviceEndpoint }, new IServiceEndpoint[] { erroringEndpoint, serviceEndpoint });
 
             ConcurrentBag<IMessage> messages = new ConcurrentBag<IMessage>();
             ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
@@ -1118,219 +1118,20 @@ namespace Obvs.Tests
             serviceBus.Exceptions.Subscribe(exceptions.Add);
 
             // trigger exception
-            serviceBus.PublishAsync(new TestServiceEvent1());
+            serviceBus.PublishAsync(new TestServiceEvent1(), TestContext.Current.CancellationToken);
 
             TestServiceEvent2 message1 = new TestServiceEvent2();
-            serviceBus.PublishAsync(message1);
+            serviceBus.PublishAsync(message1, TestContext.Current.CancellationToken);
 
             // trigger another exception
-            serviceBus.PublishAsync(new TestServiceEvent1());
+            serviceBus.PublishAsync(new TestServiceEvent1(), TestContext.Current.CancellationToken);
 
             TestServiceEvent2 message2 = new TestServiceEvent2();
-            serviceBus.PublishAsync(message2);
+            serviceBus.PublishAsync(message2, TestContext.Current.CancellationToken);
 
             Assert.Equal(exceptions.Count, 2);
             Assert.True(messages.Contains(message1), "message1 not received");
             Assert.True(messages.Contains(message2), "message2 not received");
-        }
-
-        [Fact]
-        public void ShouldDeliverAllMessagesFromEndpointsWithoutLoggingEnabled()
-        {
-            FakeServiceEndpoint serviceEndpoint1 = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
-            FakeServiceEndpoint serviceEndpoint2 = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
-
-            IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpointClient)serviceEndpoint1)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint1)
-                .WithEndpoint((IServiceEndpointClient)serviceEndpoint2)
-                .WithEndpoint((IServiceEndpoint)serviceEndpoint2)
-                .UsingConsoleLogging(endpoint => false)
-                .Create();
-
-            List<Exception> exceptions = new List<Exception>();
-            List<IMessage> messages = new List<IMessage>();
-            serviceBus.Exceptions.Subscribe(exceptions.Add);
-            serviceBus.Events.Subscribe(messages.Add);
-            serviceBus.Commands.Subscribe(messages.Add);
-            
-            serviceEndpoint1.Messages.OnNext(new TestServiceEvent1());
-            serviceEndpoint1.Messages.OnNext(new TestServiceCommand1());
-
-            Assert.Equal(exceptions.Count, 0);
-            Assert.Equal(messages.Count, 2);
-            Assert.Equal(messages[0].GetType(), typeof(TestServiceEvent1));
-            Assert.Equal(messages[1].GetType(), typeof(TestServiceCommand1));
-            
-        }
-
-        [Fact]
-        public void ShouldPublishMessagesToLocalBusWhenConfigured()
-        {
-            FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
-            FakeServiceEndpoint fakeServer = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
-
-            var localBus = new SubjectServiceBus();
-
-            IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpoint)fakeServiceEndpoint)
-                .WithEndpoint((IServiceEndpointClient)fakeServer)
-                .PublishLocally(localBus).AnyMessagesWithNoEndpointClients()
-                .Create();
-
-            List<Exception> exceptions = new List<Exception>();
-            List<IMessage> serviceBusMessages = new List<IMessage>();
-            List<IMessage> localBusMessages = new List<IMessage>();
-            serviceBus.Exceptions.Subscribe(exceptions.Add);
-            serviceBus.Events.Subscribe(serviceBusMessages.Add);
-            serviceBus.Commands.Subscribe(serviceBusMessages.Add);
-            serviceBus.Requests.Subscribe(serviceBusMessages.Add);
-            serviceBus.Exceptions.Subscribe(exceptions.Add);
-            localBus.Events.Subscribe(localBusMessages.Add);
-            localBus.Commands.Subscribe(localBusMessages.Add);
-            localBus.Requests.Subscribe(localBusMessages.Add);
-
-            fakeServer.Commands.Subscribe(command => fakeServer.PublishAsync(new TestServiceEvent2()));
-            fakeServer.Requests.Subscribe(request => fakeServer.ReplyAsync(request, new TestServiceResponse2()));
-            serviceBus.Requests.OfType<TestServiceRequest1>().Subscribe(request =>
-            {
-                serviceBus.ReplyAsync(request, new TestServiceResponse1());
-            });
-
-            serviceBus.GetResponses(new TestServiceRequest1()).Subscribe(serviceBusMessages.Add);
-            serviceBus.GetResponses(new TestServiceRequest2()).Subscribe(serviceBusMessages.Add);
-            serviceBus.SendAsync(new TestServiceCommand2());
-            serviceBus.PublishAsync(new TestServiceEvent1());
-            serviceBus.SendAsync(new TestServiceCommand1());
-            serviceBus.PublishAsync(new TestEventBelongingToNoService());
-
-            Assert.Equal(exceptions.Count, 0);
-
-            Assert.Equal(4, localBusMessages.Count);
-            Assert.Equal(localBusMessages[0].GetType(), typeof(TestServiceRequest1));
-            Assert.Equal(localBusMessages[1].GetType(), typeof(TestServiceEvent1));
-            Assert.Equal(localBusMessages[2].GetType(), typeof(TestServiceCommand1));
-            Assert.Equal(localBusMessages[3].GetType(), typeof(TestEventBelongingToNoService));
-
-            Assert.Equal(7, serviceBusMessages.Count);
-            Assert.Equal(serviceBusMessages[0].GetType(), typeof(TestServiceRequest1)); // locally published
-            Assert.Equal(serviceBusMessages[1].GetType(), typeof(TestServiceResponse1)); // locally published
-            Assert.Equal(serviceBusMessages[2].GetType(), typeof(TestServiceResponse2));
-            Assert.Equal(serviceBusMessages[3].GetType(), typeof(TestServiceEvent2));
-            Assert.Equal(serviceBusMessages[4].GetType(), typeof(TestServiceEvent1)); // locally published
-            Assert.Equal(serviceBusMessages[5].GetType(), typeof(TestServiceCommand1)); // locally published
-            Assert.Equal(serviceBusMessages[6].GetType(), typeof(TestEventBelongingToNoService)); // locally published
-            
-        }
-        
-        [Fact]
-        public void ShouldPublishMessagesWithNoEndpointToLocalBusWhenConfigured()
-        {
-            FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
-            FakeServiceEndpoint fakeServer = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
-
-            var localBus = new SubjectServiceBus();
-
-            var testScheduler = new TestScheduler();
-
-            IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpoint)fakeServiceEndpoint)
-                .WithEndpoint((IServiceEndpointClient)fakeServer)
-                .PublishLocally(localBus).OnlyMessagesWithNoEndpoints()
-                .UsingConsoleMonitor(TimeSpan.FromSeconds(5), testScheduler)
-                .UsingConsoleLogging()
-                .Create();
-
-            List<Exception> exceptions = new List<Exception>();
-            List<IMessage> serviceBusMessages = new List<IMessage>();
-            List<IMessage> localBusMessages = new List<IMessage>();
-            serviceBus.Exceptions.Subscribe(exceptions.Add);
-            serviceBus.Events.Subscribe(serviceBusMessages.Add);
-            serviceBus.Commands.Subscribe(serviceBusMessages.Add);
-            serviceBus.Requests.Subscribe(serviceBusMessages.Add);
-            localBus.Events.Subscribe(localBusMessages.Add);
-            localBus.Commands.Subscribe(localBusMessages.Add);
-            localBus.Requests.Subscribe(localBusMessages.Add);
-
-            fakeServer.Commands.Subscribe(command => fakeServer.PublishAsync(new TestServiceEvent2()));
-            fakeServer.Requests.Subscribe(request => fakeServer.ReplyAsync(request, new TestServiceResponse2()));
-            serviceBus.Requests.OfType<TestServiceRequest1>().Subscribe(request =>
-            {
-                serviceBus.ReplyAsync(request, new TestServiceResponse1());
-            });
-
-            serviceBus.GetResponses(new TestServiceRequest1()).Subscribe(serviceBusMessages.Add);
-            serviceBus.GetResponses(new TestServiceRequest2()).Subscribe(serviceBusMessages.Add);
-            serviceBus.SendAsync(new TestServiceCommand2());
-            serviceBus.PublishAsync(new TestServiceEvent1());
-            serviceBus.PublishAsync(new TestEventBelongingToNoService());
-
-            Assert.Equal(exceptions.Count, 0);
-
-            Assert.Equal(localBusMessages.Count, 1);
-            Assert.Equal(localBusMessages[0].GetType(), typeof(TestEventBelongingToNoService));
-
-            Assert.Equal(serviceBusMessages.Count, 3);
-            Assert.Equal(serviceBusMessages[0].GetType(), typeof(TestServiceResponse2));
-            Assert.Equal(serviceBusMessages[1].GetType(), typeof(TestServiceEvent2));
-            Assert.Equal(serviceBusMessages[2].GetType(), typeof(TestEventBelongingToNoService)); // locally published
-
-            testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
-            
-        }
-
-        [Fact]
-        public async Task ShouldMonitorAllMessagesSentAndReceived()
-        {
-            FakeServiceEndpoint fakeServiceEndpoint = new FakeServiceEndpoint(typeof(ITestServiceMessage1));
-            FakeServiceEndpoint fakeServer = new FakeServiceEndpoint(typeof(ITestServiceMessage2));
-
-            List<IMessage> monitorReceived = new List<IMessage>();
-            List<IMessage> monitorSent = new List<IMessage>();
-
-            var monitorFactory = A.Fake<IMonitorFactory<IMessage>>();
-            var monitor = A.Fake<IMonitor<IMessage>>();
-            A.CallTo(() => monitor.MessageReceived(A<IMessage>._, A<TimeSpan>._)).Invokes(call =>
-            {
-                var message = call.GetArgument<IMessage>(0);
-                _testOutputHelper.WriteLine("Received {0}", message);
-                monitorReceived.Add(message);
-            });
-            A.CallTo(() => monitor.MessageSent(A<IMessage>._, A<TimeSpan>._)).Invokes(call =>
-            {
-                var message = call.GetArgument<IMessage>(0);
-                _testOutputHelper.WriteLine("Sent {0}", message);
-                monitorSent.Add(message);
-            });
-            A.CallTo(() => monitorFactory.Create(A<string>._)).Returns(monitor);
-
-            IServiceBus serviceBus = ServiceBus.Configure()
-                .WithEndpoint((IServiceEndpoint)fakeServiceEndpoint)
-                .WithEndpoint((IServiceEndpointClient)fakeServer)
-                .UsingMonitor(monitorFactory)
-                .Create();
-
-            List<Exception> exceptions = new List<Exception>();
-            List<IMessage> serviceBusMessages = new List<IMessage>();
-            serviceBus.Exceptions.Subscribe(exceptions.Add);
-            serviceBus.Events.Subscribe(serviceBusMessages.Add);
-            serviceBus.Commands.Subscribe(serviceBusMessages.Add);
-            serviceBus.Requests.Subscribe(serviceBusMessages.Add);
-
-            fakeServer.Commands.OfType<TestServiceCommand1>().Subscribe(async command => await fakeServer.PublishAsync(new TestServiceEvent2()));
-            fakeServer.Requests.OfType<TestServiceRequest2>().Subscribe(async request => await fakeServer.ReplyAsync(request, new TestServiceResponse2()));
-
-            serviceBus.GetResponses(new TestServiceRequest2()).Subscribe(serviceBusMessages.Add);
-            await serviceBus.SendAsync(new TestServiceCommand2());
-            await serviceBus.PublishAsync(new TestServiceEvent1());
-
-            Assert.Equal(monitorSent.Count, 3);
-            Assert.Equal(monitorSent.OfType<TestServiceCommand2>().Count(), 1);
-            Assert.Equal(monitorSent.OfType<TestServiceEvent1>().Count(), 1);
-            Assert.Equal(monitorSent.OfType<TestServiceRequest2>().Count(), 1);
-
-            Assert.Equal(monitorReceived.Count, 1);
-            Assert.Equal(monitorReceived.OfType<TestServiceResponse2>().Count(), 1);
         }
     }
     
