@@ -5,50 +5,50 @@
     <!-- Libraries -->
     <ItemGroup>
         <PackageVersion Include="Apache.NMS.ActiveMQ" Version="2.3.0"/>
-        <PackageVersion Include="AWSSDK.SimpleNotificationService" Version="4.0.100.21"/>
-        <PackageVersion Include="AWSSDK.SQS" Version="4.0.100.20"/>
+        <PackageVersion Include="AWSSDK.SimpleNotificationService" Version="4.1.0"/>
+        <PackageVersion Include="AWSSDK.SQS" Version="4.1.0"/>
         <PackageVersion Include="Azure.Identity" Version="1.21.0"/>
         <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.21.0"/>
         <PackageVersion Include="Confluent.Kafka" Version="2.16.0"/>
         <PackageVersion Include="MessagePack" Version="3.1.12"/>
-        <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.14"/>
-        <PackageVersion Include="Microsoft.Bcl.TimeProvider" Version="10.0.14"/>
-        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0"/>
+        <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.15"/>
+        <PackageVersion Include="Microsoft.Bcl.TimeProvider" Version="10.0.15"/>
+        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0"/>
-        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0"/>
-        <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.14"/>
-        <PackageVersion Include="ModelContextProtocol" Version="2.2.0"/>
-        <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0"/>
-        <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.19.1"/>
-        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1"/>
-        <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14"/>
-        <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14"/>
-        <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="10.0.14"/>
-        <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.14"/>
-        <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.14"/>
-        <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14"/>
-        <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.14"/>
+        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0"/>
+        <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.15"/>
+        <PackageVersion Include="ModelContextProtocol" Version="2.4.0"/>
+        <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.4.0"/>
+        <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.21.0"/>
+        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.21.0"/>
+        <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.15"/>
+        <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.15"/>
+        <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="10.0.15"/>
+        <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.15"/>
+        <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.15"/>
+        <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.15"/>
+        <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.15"/>
         <PackageVersion Include="NATS.Client.Core" Version="3.3.2"/>
         <PackageVersion Include="NATS.Client.JetStream" Version="3.3.2"/>
         <PackageVersion Include="NetMQ" Version="4.0.4.5"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
         <PackageVersion Include="protobuf-net" Version="3.4.40"/>
         <PackageVersion Include="RabbitMQ.Client" Version="7.2.2"/>
-        <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="10.0.14"/>
+        <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="10.0.15"/>
         <PackageVersion Include="System.Reactive" Version="7.0.0"/>
-        <PackageVersion Include="System.Text.Json" Version="10.0.14"/>
-        <PackageVersion Include="System.Threading.Channels" Version="10.0.14"/>
+        <PackageVersion Include="System.Text.Json" Version="10.0.15"/>
+        <PackageVersion Include="System.Threading.Channels" Version="10.0.15"/>
     </ItemGroup>
     <!-- Tests -->
     <ItemGroup>
         <PackageVersion Include="FakeItEasy" Version="9.0.1"/>
         <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.11.0"/>
-        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0"/>
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0"/>
         <!-- Keep in step with System.Reactive -->
         <PackageVersion Include="Microsoft.Reactive.Testing" Version="7.0.0"/>
         <!-- Keep in step with the Microsoft.Testing.Platform that xunit.v3 brings -->
-        <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.5.1"/>
-        <PackageVersion Include="xunit.v3" Version="4.0.2"/>
+        <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.5.3"/>
+        <PackageVersion Include="xunit.v3" Version="4.0.3"/>
         <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1"/>
     </ItemGroup>
 </Project>
