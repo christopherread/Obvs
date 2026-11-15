@@ -1,9 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace Obvs.NATS.Tests.JetStream
@@ -14,8 +13,15 @@ namespace Obvs.NATS.Tests.JetStream
     {
         private static readonly TimeSpan StartTimeout = TimeSpan.FromSeconds(10);
 
-        private readonly int _port = FreePort();
+        // Below the ports the OS gives outgoing connections (from 32768 on Linux, 49152 on macOS and Windows), which could
+        // take a server's port while it's down, or before it first starts. Servers of tests running at the same time can
+        // still pick the same one, so a server that can't listen on its port picks another.
+        private const int FirstPort = 20000;
+        private const int LastPort = 32000;
+        private const int Attempts = 10;
+
         private readonly string _storeDirectory = Path.Combine(Path.GetTempPath(), $"obvs-js-{Guid.NewGuid():N}");
+        private int _port;
         private Process _process;
 
         private RestartableJetStreamServer()
@@ -29,14 +35,24 @@ namespace Obvs.NATS.Tests.JetStream
         public static async Task<RestartableJetStreamServer> StartAsync()
         {
             var server = new RestartableJetStreamServer();
-            await server.StartAgainAsync();
-            return server;
+            for (var attempt = 1; ; attempt++)
+            {
+                server._port = Random.Shared.Next(FirstPort, LastPort);
+                try
+                {
+                    await server.StartAgainAsync();
+                    return server;
+                }
+                catch (PortInUseException) when (attempt < Attempts)
+                {
+                }
+            }
         }
 
         // Without JetStream, the server is core NATS only
         public async Task StartAgainAsync(bool jetStream = true)
         {
-            var arguments = jetStream ? $"-js -sd \"{_storeDirectory}\" -p {_port}" : $"-p {_port}";
+            var arguments = jetStream ? $"-js -sd \"{_storeDirectory}\" -a 127.0.0.1 -p {_port}" : $"-a 127.0.0.1 -p {_port}";
             var startInfo = new ProcessStartInfo(Executable, arguments)
             {
                 UseShellExecute = false,
@@ -52,28 +68,49 @@ namespace Obvs.NATS.Tests.JetStream
                 throw new InvalidOperationException(
                     $"Couldn't run '{Executable}'. Install nats-server and put it on the PATH, or set NATS_SERVER to its path.", exception);
             }
-            _process.OutputDataReceived += (sender, args) => { };
-            _process.ErrorDataReceived += (sender, args) => { };
+            var output = new ConcurrentQueue<string>();
+            var ready = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            DataReceivedEventHandler record = (sender, args) =>
+            {
+                if (args.Data == null)
+                {
+                    // It's exited, and everything it wrote has been read
+                    ready.TrySetResult(false);
+                    return;
+                }
+                Record(output, args.Data);
+                if (args.Data.Contains("Server is ready"))
+                {
+                    ready.TrySetResult(true);
+                }
+            };
+            _process.OutputDataReceived += record;
+            _process.ErrorDataReceived += record;
             _process.BeginOutputReadLine();
             _process.BeginErrorReadLine();
 
-            var deadline = DateTime.UtcNow + StartTimeout;
-            while (true)
+            bool started;
+            try
             {
-                if (_process.HasExited)
+                started = await ready.Task.WaitAsync(StartTimeout);
+            }
+            catch (TimeoutException)
+            {
+                await StopAsync();
+                throw new InvalidOperationException(
+                    $"nats-server {arguments} didn't start in {StartTimeout}: {string.Join(Environment.NewLine, output)}");
+            }
+            if (!started)
+            {
+                // Waits until both its outputs have been read
+                _process.WaitForExit();
+                var written = string.Join(Environment.NewLine, output);
+                await StopAsync();
+                if (written.Contains("Error listening on port"))
                 {
-                    throw new InvalidOperationException($"nats-server {arguments} exited with code {_process.ExitCode}.");
+                    throw new PortInUseException();
                 }
-                try
-                {
-                    using var client = new TcpClient();
-                    await client.ConnectAsync(IPAddress.Loopback, _port);
-                    return;
-                }
-                catch (SocketException) when (DateTime.UtcNow < deadline)
-                {
-                    await Task.Delay(50);
-                }
+                throw new InvalidOperationException($"nats-server {arguments} exited: {written}");
             }
         }
 
@@ -109,13 +146,17 @@ namespace Obvs.NATS.Tests.JetStream
             }
         }
 
-        private static int FreePort()
+        // The last lines it wrote, which say why it couldn't start
+        private static void Record(ConcurrentQueue<string> output, string line)
         {
-            var listener = new TcpListener(IPAddress.Loopback, 0);
-            listener.Start();
-            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-            listener.Stop();
-            return port;
+            output.Enqueue(line);
+            while (output.Count > 20 && output.TryDequeue(out _))
+            {
+            }
+        }
+
+        private sealed class PortInUseException : Exception
+        {
         }
     }
 }
