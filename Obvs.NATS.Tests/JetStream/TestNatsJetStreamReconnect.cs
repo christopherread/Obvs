@@ -225,8 +225,8 @@ namespace Obvs.NATS.Tests.JetStream
         }
 
         // Deleting a consumer, or its stream, answers the pulls waiting on it. A pull still on its way is dropped without
-        // an answer, and the client gives up on it only when it misses two idle heartbeats, 30 seconds by default, so a
-        // test that deletes one waits until the bus's first pull is waiting.
+        // an answer, and the bus gives up on it only when it misses two idle heartbeats, 10 seconds, so a test that
+        // deletes one waits until the bus's first pull is waiting.
         private static async Task WaitUntilPullingAsync(INatsJSContext jetStream, string stream, string consumer)
         {
             await WaitUntilAsync(async () => (await jetStream.GetConsumerAsync(stream, consumer, Ct)).Info.NumWaiting > 0);
