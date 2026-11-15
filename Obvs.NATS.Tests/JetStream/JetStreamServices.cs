@@ -60,6 +60,23 @@ namespace Obvs.NATS.Tests.JetStream
             return info.Info.State.Messages;
         }
 
+        // Until a bus's first pull is waiting on a consumer, a test can't tell what deleting the consumer, or stopping the
+        // server or the bus, does to a bus that's receiving. And deleting a consumer only answers the pulls waiting on it:
+        // a pull still on its way is dropped without an answer, and the bus gives up on it only after missing two idle
+        // heartbeats, 10 seconds.
+        public static async Task WaitUntilPullingAsync(INatsJSContext jetStream, string stream, string consumer)
+        {
+            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+            while ((await jetStream.GetConsumerAsync(stream, consumer, TestContext.Current.CancellationToken)).Info.NumWaiting == 0)
+            {
+                if (DateTime.UtcNow > deadline)
+                {
+                    throw new TimeoutException($"Nothing pulled from consumer {consumer} on stream {stream} in time.");
+                }
+                await Task.Delay(50, TestContext.Current.CancellationToken);
+            }
+        }
+
         public async ValueTask DisposeAsync()
         {
             var streams = new List<string>();

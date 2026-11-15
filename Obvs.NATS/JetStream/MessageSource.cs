@@ -28,6 +28,10 @@ namespace Obvs.NATS.JetStream
         private static readonly TimeSpan FirstRetryDelay = TimeSpan.FromMilliseconds(250);
         private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromSeconds(5);
 
+        // How often the server tells a waiting pull it's still there. The client gives up on a pull after missing two, as
+        // when the server dropped it on its way to a consumer being deleted: 30 seconds with the client's default.
+        private static readonly TimeSpan PullHeartbeat = TimeSpan.FromSeconds(5);
+
         // JetStream's error codes for a consumer that doesn't exist, and for a server or account without JetStream
         private const int ConsumerNotFound = 10014;
         private const int JetStreamNotEnabledForAccount = 10039;
@@ -368,6 +372,7 @@ namespace Obvs.NATS.JetStream
                 var unanswered = false;
                 var opts = new NatsJSNextOpts
                 {
+                    IdleHeartbeat = PullHeartbeat,
                     NotificationHandler = (notification, cancellationToken) =>
                     {
                         if (notification is NatsJSNoRespondersNotification)
