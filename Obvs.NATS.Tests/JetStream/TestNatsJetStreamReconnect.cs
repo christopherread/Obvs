@@ -133,9 +133,9 @@ namespace Obvs.NATS.Tests.JetStream
             var errors = RecordErrors(bus);
             var received = new ConcurrentQueue<string>();
             using var subscription = bus.Events.OfType<OrderPlaced>().Subscribe(placed => received.Enqueue(placed.OrderId));
-            await Task.Delay(500, Ct);
             await using var connection = new NatsConnection(new NatsOpts { Url = server.Url });
             var jetStream = new NatsJSContext(connection);
+            await WaitUntilPullingAsync(jetStream, $"{ServiceName}_Events", instanceId);
 
             await jetStream.DeleteConsumerAsync($"{ServiceName}_Events", instanceId, Ct);
             await WaitUntilAsync(async () => await ConsumerExistsAsync(jetStream, $"{ServiceName}_Events", instanceId));
