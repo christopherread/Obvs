@@ -157,8 +157,10 @@ namespace Obvs.NATS.Tests.JetStream
                 .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
             var errors = RecordErrors(worker.Services.GetRequiredService<IServiceBus>());
             await using var connection = new NatsConnection(new NatsOpts { Url = server.Url });
+            var jetStream = new NatsJSContext(connection);
+            await WaitUntilPullingAsync(jetStream, $"{ServiceName}_Commands", ServiceName);
 
-            await new NatsJSContext(connection).DeleteConsumerAsync($"{ServiceName}_Commands", ServiceName, Ct);
+            await jetStream.DeleteConsumerAsync($"{ServiceName}_Commands", ServiceName, Ct);
 
             var error = await WaitForErrorAsync(errors);
             Assert.Equal(10014, Assert.IsType<NatsJSApiException>(error.InnerException).Error.ErrCode);
@@ -172,8 +174,10 @@ namespace Obvs.NATS.Tests.JetStream
                 .HandleCommand<PlaceOrder>((command, context, ct) => Task.CompletedTask));
             var errors = RecordErrors(worker.Services.GetRequiredService<IServiceBus>());
             await using var connection = new NatsConnection(new NatsOpts { Url = server.Url });
+            var jetStream = new NatsJSContext(connection);
+            await WaitUntilPullingAsync(jetStream, $"{ServiceName}_Commands", ServiceName);
 
-            await new NatsJSContext(connection).DeleteStreamAsync($"{ServiceName}_Commands", Ct);
+            await jetStream.DeleteStreamAsync($"{ServiceName}_Commands", Ct);
 
             var error = await WaitForErrorAsync(errors);
             Assert.Equal(10059, Assert.IsType<NatsJSApiException>(error.InnerException).Error.ErrCode);
@@ -218,6 +222,14 @@ namespace Obvs.NATS.Tests.JetStream
             {
                 return false;
             }
+        }
+
+        // Deleting a consumer, or its stream, answers the pulls waiting on it. A pull still on its way is dropped without
+        // an answer, and the client gives up on it only when it misses two idle heartbeats, 30 seconds by default, so a
+        // test that deletes one waits until the bus's first pull is waiting.
+        private static async Task WaitUntilPullingAsync(INatsJSContext jetStream, string stream, string consumer)
+        {
+            await WaitUntilAsync(async () => (await jetStream.GetConsumerAsync(stream, consumer, Ct)).Info.NumWaiting > 0);
         }
 
         private static async Task<Exception> WaitForErrorAsync(ConcurrentQueue<Exception> errors)
