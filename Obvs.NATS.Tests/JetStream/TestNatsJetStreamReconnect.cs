@@ -59,12 +59,16 @@ namespace Obvs.NATS.Tests.JetStream
         public async Task ShouldKeepReceivingEventsAfterTheServerRestarts()
         {
             await using var server = await RestartableJetStreamServer.StartAsync();
-            using var subscriber = await StartHostAsync(server, service => service.AsClient());
+            const string instanceId = "orders-worker-1";
+            using var subscriber = await StartHostAsync(server, service => service.AsClient(), instanceId);
             var bus = subscriber.Services.GetRequiredService<IServiceBusClient>();
             var errors = RecordErrors(bus);
             var received = new ConcurrentQueue<string>();
             using var subscription = bus.Events.OfType<OrderPlaced>().Subscribe(placed => received.Enqueue(placed.OrderId));
-            await Task.Delay(500, Ct);
+            await using (var connection = new NatsConnection(new NatsOpts { Url = server.Url }))
+            {
+                await WaitUntilPullingAsync(new NatsJSContext(connection), $"{ServiceName}_Events", instanceId);
+            }
 
             await server.RestartAsync();
             var restarted = Stopwatch.StartNew();
