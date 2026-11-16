@@ -199,6 +199,26 @@ namespace Obvs.NATS.Tests.JetStream
         }
 
         [Fact]
+        public async Task ShouldGiveUpOnAPullThatGoesUnansweredWithinTenSeconds()
+        {
+            // The server drops a pull that reaches a consumer as it's deleted, without an answer. The client gives up on a
+            // pull when it misses two of the server's idle heartbeats, then the loop pulls again and finds the consumer gone.
+            var heartbeats = new ConcurrentQueue<TimeSpan?>();
+            _thenPull = (opts, cancellationToken) =>
+            {
+                heartbeats.Enqueue(opts?.IdleHeartbeat);
+                return WaitUntilCancelledAsync(opts, cancellationToken);
+            };
+
+            using var subscription = Subscribe(Commands());
+
+            await WaitUntilAsync(() => !heartbeats.IsEmpty);
+            var heartbeat = heartbeats.Single();
+            Assert.True(heartbeat > TimeSpan.Zero && heartbeat.Value.Ticks * 2 <= TimeSpan.FromSeconds(10).Ticks,
+                $"Pulls with an idle heartbeat of {heartbeat?.ToString() ?? "the client's default"}.");
+        }
+
+        [Fact]
         public async Task ShouldReportAnErrorWhenTheServerNoLongerHasJetStream()
         {
             // A pull nothing answers returns nothing, as one that expires does, so the loop checks the consumer is still there

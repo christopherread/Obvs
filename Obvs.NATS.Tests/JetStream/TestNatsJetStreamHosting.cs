@@ -108,12 +108,15 @@ namespace Obvs.NATS.Tests.JetStream
         public async Task ShouldNotReportAnErrorToSubscribersWhenTheBusStops()
         {
             // Deleting this bus's consumers as it stops mustn't fail receive loops still subscribed
-            var host = await StartHostAsync(_services.Create("stop-quietly"));
+            var serviceName = _services.Create("stop-quietly");
+            const string instanceId = "orders-worker-1";
+            var host = await StartHostAsync(serviceName, instanceId: instanceId);
             var bus = host.Services.GetRequiredService<IServiceBus>();
             var errors = new ConcurrentQueue<Exception>();
             var eventSubscription = bus.Events.Subscribe(_ => { }, errors.Enqueue);
             var commandSubscription = bus.Commands.Subscribe(_ => { }, errors.Enqueue);
-            await Task.Delay(500, Ct);
+            await WaitUntilPullingAsync(_services.JetStream, $"{serviceName}_Events", instanceId);
+            await WaitUntilPullingAsync(_services.JetStream, $"{serviceName}_Commands", serviceName);
 
             await host.StopAsync(Ct);
             host.Dispose();
