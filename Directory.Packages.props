@@ -21,8 +21,8 @@
         <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0"/>
         <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.19.1"/>
         <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1"/>
-        <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14"/>
-        <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14"/>
+        <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0"/>
+        <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.0.0"/>
         <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="10.0.14"/>
         <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.14"/>
         <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.14"/>
