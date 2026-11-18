@@ -1,8 +1,11 @@
 version: 2
+# Every update goes to v7, where work is done: a pull request merged into master would publish packages. Dependabot
+# reads this file from master, so the target takes effect from the release that brings it there.
 updates:
   # Library and test packages, versioned centrally in Directory.Packages.props
   - package-ecosystem: nuget
     directory: /
+    target-branch: v7
     schedule:
       interval: weekly
     groups:
@@ -12,10 +15,14 @@ updates:
       # Obvs.V6InteropApp is a v6 app on the published packages, so it stays on Obvs 6.x
       - dependency-name: "Obvs*"
         update-types: ["version-update:semver-major"]
+      # The analyzers and generator are compiled against the oldest compiler they support, which can't load them if
+      # they're compiled against a newer one (see Obvs.Analyzers.csproj)
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp*"
 
   # The examples pin published Obvs packages, so keep them on the latest release
   - package-ecosystem: nuget
     directory: /Examples
+    target-branch: v7
     schedule:
       interval: weekly
     groups:
@@ -24,6 +31,7 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
+    target-branch: v7
     schedule:
       interval: weekly
     groups:
