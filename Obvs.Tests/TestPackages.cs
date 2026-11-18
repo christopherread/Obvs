@@ -35,6 +35,33 @@ namespace Obvs.Tests
             Assert.Contains("<PackageReadmeFile>README.md</PackageReadmeFile>", props);
         }
 
+        // nuget.org shows the icon the package ships, a PNG it recommends at 128 by 128 pixels
+        [Theory]
+        [MemberData(nameof(Packages))]
+        public void ShouldShipAnIcon(string package)
+        {
+            var props = XDocument.Load(Path.Combine(Root, "Directory.Build.props"));
+            var icon = props.Descendants("PackageIcon").SingleOrDefault()?.Value;
+            Assert.True(icon != null, "Directory.Build.props sets no PackageIcon");
+            var packed = props.Descendants("None")
+                .Where(item => item.Attribute("Pack")?.Value == "true")
+                .SingleOrDefault(item => Path.GetFileName(item.Attribute("Include").Value.Replace('\\', '/')) == icon);
+            Assert.True(packed != null, $"Directory.Build.props doesn't pack {icon}");
+            Assert.Equal("\\", packed.Attribute("PackagePath")?.Value);
+            var file = Path.GetFullPath(Path.Combine(Root, package, packed.Attribute("Include").Value.Replace('\\', '/')));
+            Assert.True(File.Exists(file), $"{package} packs {file}, which doesn't exist");
+
+            // A PNG starts with an 8-byte signature, then its IHDR chunk: length, type, then width and height, big-endian
+            var bytes = File.ReadAllBytes(file);
+            Assert.Equal(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }, bytes.Take(8));
+            Assert.Equal("IHDR", System.Text.Encoding.ASCII.GetString(bytes, 12, 4));
+            Assert.Equal(128, BigEndian(bytes, 16));
+            Assert.Equal(128, BigEndian(bytes, 20));
+        }
+
+        private static int BigEndian(byte[] bytes, int offset) =>
+            (bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3];
+
         // nuget.org can't follow a link relative to the repo
         [Theory]
         [MemberData(nameof(Packages))]
