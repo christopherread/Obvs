@@ -21,9 +21,12 @@
         <PackageReleaseNotes>v7 adds hosting with dependency injection, handlers, RequestAsync, System.Text.Json, OpenTelemetry, Azure Service Bus and Amazon SQS. Migrating from v6: https://github.com/christopherread/Obvs/blob/master/docs/migrating-from-v6.md</PackageReleaseNotes>
         <!-- Each package's own README.md, from its folder -->
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <!-- One icon for them all, images/icon.svg rendered at the 128 by 128 pixels nuget.org asks for -->
+        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
     <ItemGroup Condition="'$(IsObvsPackage)' == 'true'">
         <None Include="README.md" Pack="true" PackagePath="\"/>
+        <None Include="..\images\icon.png" Pack="true" PackagePath="\"/>
     </ItemGroup>
     <!-- The packages ship their XML docs, and every public member in them is documented: a missing one fails the build -->
     <PropertyGroup Condition="'$(IsObvsPackage)' == 'true'">
