@@ -6,6 +6,8 @@
 
   <!-- Built from this repo until v7 is on NuGet; then this becomes <PackageReference Include="Obvs" Version="7.0.0" /> -->
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="11.0.0" />
     <ProjectReference Include="..\..\Obvs\Obvs.csproj" />
   </ItemGroup>
 
