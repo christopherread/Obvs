@@ -92,13 +92,13 @@ jobs:
         # Go back to 10.0.x once that release downloads.
         dotnet-version: 10.0.402
     - name: Setup GitVersion
-      uses: gittools/actions/gitversion/setup@v4
+      uses: gittools/actions/gitversion/setup@v5
       with:
         versionSpec: '6.x'
 
     - name: Determine Version
       id:   gitversion
-      uses: gittools/actions/gitversion/execute@v4
+      uses: gittools/actions/gitversion/execute@v5
 
     # A tag's build is the version the tag names, such as v7.0.0-rc.1: GitVersion sees a detached checkout of an
     # unknown branch, tags/v7.0.0-rc.1, and labels the version with that instead. Other builds are GitVersion's.
