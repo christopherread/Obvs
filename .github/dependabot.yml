@@ -18,8 +18,23 @@ updates:
       # The analyzers and generator are compiled against the oldest compiler they support, which can't load them if
       # they're compiled against a newer one (see Obvs.Analyzers.csproj)
       - dependency-name: "Microsoft.CodeAnalysis.CSharp*"
+      # The packages stay on .NET's long-term support release, 10, so an app on it doesn't have to take .NET 11's
+      # packages to use Obvs. They move together, as each depends on the others at its own version.
+      - dependency-name: "Microsoft.AspNetCore.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.Bcl.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "System.Diagnostics.DiagnosticSource"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "System.Text.Json"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "System.Threading.Channels"
+        update-types: ["version-update:semver-major"]
 
-  # The examples pin published Obvs packages, so keep them on the latest release
+  # The examples' own packages. They build Obvs from the repo, so its versions in Directory.Packages.props are theirs
+  # too, and they take the same ignores.
   - package-ecosystem: nuget
     directory: /Examples
     target-branch: v7
@@ -28,6 +43,20 @@ updates:
     groups:
       examples:
         patterns: ["*"]
+    ignore:
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp*"
+      - dependency-name: "Microsoft.AspNetCore.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.Bcl.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "System.Diagnostics.DiagnosticSource"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "System.Text.Json"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "System.Threading.Channels"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
