@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Xml.Serialization;
@@ -26,6 +27,7 @@ namespace Obvs.ActiveMQ.Tests
         private IDestination _destination;
         private AcknowledgementMode _acknowledgementMode;
         private Lazy<IConnection> _lazyConnection;
+        private int _connectAttempts;
 
         public interface ITestMessage : IMessage
         {
@@ -65,6 +67,61 @@ namespace Obvs.ActiveMQ.Tests
         {
             SpinWait.SpinUntil(() => Fake.GetCalls(_observer).Any(call => call.Method.Name == nameof(_observer.OnNext) && ReferenceEquals(call.Arguments[0], message)), TimeSpan.FromSeconds(5));
             A.CallTo(() => _observer.OnNext(message)).MustHaveHappened();
+        }
+
+        // As the bus does with a source that fails: report the error and subscribe again at once (CatchAndHandle, in the core)
+        private static IObservable<T> WithTheBusErrorHandling<T>(IObservable<T> messages)
+        {
+            return messages.Catch<T, Exception>(exception => WithTheBusErrorHandling(messages));
+        }
+
+        // A connection whose first attempts are refused, as when the service starts before its broker
+        private Lazy<IConnection> ConnectionRefusedAtFirst(int refusals)
+        {
+            return new Lazy<IConnection>(() =>
+            {
+                if (Interlocked.Increment(ref _connectAttempts) <= refusals)
+                {
+                    throw new NMSConnectionException("Connection refused");
+                }
+                _connection.Start();
+                return _connection;
+            }, LazyThreadSafetyMode.PublicationOnly);
+        }
+
+        [Fact]
+        public void ShouldReceiveFromATopicOnceItConnectsAfterBeingRefused()
+        {
+            A.CallTo(() => _destination.DestinationType).Returns(DestinationType.Topic);
+            var bytesMessage = A.Fake<IBytesMessage>();
+            A.CallTo(() => bytesMessage.Content).Returns(new byte[0]);
+            var message = A.Fake<ITestMessage>();
+            A.CallTo(() => _deserializer.Deserialize(A<Stream>._)).Returns(message);
+            var source = new MessageSource<ITestMessage>(ConnectionRefusedAtFirst(1), new[] {_deserializer}, _destination, _acknowledgementMode);
+
+            using (WithTheBusErrorHandling(source.Messages).Subscribe(_observer))
+            {
+                Assert.True(SpinWait.SpinUntil(() => Fake.GetCalls(_consumer).Any(call => call.Method.Name == "add_Listener"), TimeSpan.FromSeconds(5)),
+                    "The source didn't listen for messages once it could connect");
+                _consumer.Listener += Raise.FreeForm.With((Apache.NMS.IMessage) bytesMessage);
+
+                AssertDelivered(message);
+            }
+        }
+
+        [Fact]
+        public void ShouldWaitBeforeConnectingAgainAfterBeingRefused()
+        {
+            // The bus subscribes again as soon as the source fails, so a broker that's down mustn't make it try at once,
+            // over and over
+            var source = new MessageSource<ITestMessage>(ConnectionRefusedAtFirst(100), new[] {_deserializer}, _destination, _acknowledgementMode);
+
+            using (WithTheBusErrorHandling(source.Messages).Subscribe(_observer))
+            {
+                Thread.Sleep(200);
+            }
+
+            Assert.InRange(Volatile.Read(ref _connectAttempts), 1, 2);
         }
 
         [Fact]

@@ -159,13 +159,43 @@ namespace Obvs.ActiveMQ.Tests.Hosting
             Assert.Equal("acme", arrived["x-tenant"]);
         }
 
-        private static async Task<IHost> StartHostAsync(string serviceName, Action<ObvsServiceBuilder> configure = null)
+        [Fact, Trait("Category", "Explicit")]
+        public async Task ShouldSendAndReceiveOnceTheBrokerCanBeReachedAfterStarting()
+        {
+            // The service and its client start before their broker does
+            const string serviceName = "obvs-activemq-broker-starts-later";
+            using var broker = new BrokerProxy(TestBroker.Uri);
+            var received = new TaskCompletionSource<PlaceOrder>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var service = await StartHostAsync(serviceName, s => s.AsServer()
+                .HandleCommand<PlaceOrder>((command, context, ct) =>
+                {
+                    received.TrySetResult(command);
+                    return Task.CompletedTask;
+                }), broker.Uri);
+            using var client = await StartHostAsync(serviceName, s => s.AsClient(), broker.Uri);
+            var sender = client.Services.GetRequiredService<IServiceBusClient>();
+            await Assert.ThrowsAnyAsync<Exception>(() => sender.SendAsync(new PlaceOrder { OrderId = "o-0" }, TestContext.Current.CancellationToken));
+
+            broker.Start();
+
+            // Commands sent before the service is listening again aren't kept, as they go to a topic, so send until one arrives
+            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+            while (!received.Task.IsCompleted && DateTime.UtcNow < deadline)
+            {
+                await sender.SendAsync(new PlaceOrder { OrderId = "o-1" }, TestContext.Current.CancellationToken);
+                await Task.WhenAny(received.Task, Task.Delay(500, TestContext.Current.CancellationToken));
+            }
+            Assert.True(received.Task.IsCompleted, "The service didn't receive a command once it could reach the broker");
+            Assert.Equal("o-1", (await received.Task).OrderId);
+        }
+
+        private static async Task<IHost> StartHostAsync(string serviceName, Action<ObvsServiceBuilder> configure = null, string brokerUri = null)
         {
             var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
             builder.Services.AddObvs(obvs => obvs.AddService<IOrderMessage>(serviceName, service =>
             {
                 service
-                    .UseActiveMq(options => options.BrokerUri = TestBroker.Uri)
+                    .UseActiveMq(options => options.BrokerUri = brokerUri ?? TestBroker.Uri)
                     .SerializedWith(new JsonMessageSerializer(), new JsonMessageDeserializerFactory(typeof(JsonMessageDeserializer<>)));
                 configure?.Invoke(service);
             }));

@@ -31,6 +31,14 @@ namespace Obvs.ActiveMQ
         private readonly Apache.NMS.AcknowledgementMode _mode;
         private readonly Lazy<IConnection> _lazyConnection;
         private readonly bool _noLocal;
+        private readonly object _gate = new object();
+        private IObservable<TMessage> _shared;
+        private TimeSpan _retryDelay;
+
+        // How long the source waits before connecting again after it couldn't, doubling each time in a row up to the last.
+        // The bus subscribes again as soon as a source fails, so a broker that's down would otherwise be tried over and over.
+        private static readonly TimeSpan FirstRetryDelay = TimeSpan.FromMilliseconds(250);
+        private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromSeconds(5);
 
         /// <summary>Creates a source of the messages sent to <paramref name="destination"/>.</summary>
         /// <param name="lazyConnection">The connection to ActiveMQ, opened on the first subscription</param>
@@ -56,10 +64,28 @@ namespace Obvs.ActiveMQ
             _propertyFilter = propertyFilter;
             _noLocal = noLocal;
 
-            var messages = Observable.Create<TMessage>(observer =>
+            // A topic's subscribers share one consumer
+            Messages = _destination.DestinationType == DestinationType.Topic ? Observable.Defer(Shared) : Receive();
+        }
+
+        private IObservable<TMessage> Receive()
+        {
+            return Observable.Defer(() =>
+            {
+                var receive = Observable.Create<TMessage>(observer =>
                 {
-                    var connection = _lazyConnection.Value;
-                    var session = connection.CreateSession(_mode);
+                    IConnection connection;
+                    ISession session;
+                    try
+                    {
+                        connection = _lazyConnection.Value;
+                        session = connection.CreateSession(_mode);
+                    }
+                    catch
+                    {
+                        NextRetryDelay();
+                        throw;
+                    }
 
                     var subscription = session
                         .ToObservable(_destination, _selector, _noLocal)
@@ -72,6 +98,7 @@ namespace Obvs.ActiveMQ
                         // which stops the connection and waits for that thread.
                         .ObserveOn(TaskPoolScheduler.Default)
                         .Subscribe(observer);
+                    ResetRetryDelay();
 
                     return Disposable.Create(() =>
                     {
@@ -84,14 +111,68 @@ namespace Obvs.ActiveMQ
                     });
                 });
 
-            // Can only do this optimization if we're on a topic
-            if (_destination.DestinationType == DestinationType.Topic)
-            {
-                messages = messages
-                      .PublishRefCountRetriable();
-            }
+                var retryDelay = RetryDelay;
+                return retryDelay > TimeSpan.Zero ? receive.DelaySubscription(retryDelay) : receive;
+            });
+        }
 
-            Messages = messages;
+        // A consumer that failed isn't shared any more: the bus subscribes again as soon as a source fails, and that has to
+        // connect again, not wait on a consumer that's gone.
+        private IObservable<TMessage> Shared()
+        {
+            lock (_gate)
+            {
+                if (_shared != null)
+                {
+                    return _shared;
+                }
+
+                IObservable<TMessage> shared = null;
+                shared = Receive()
+                    .Do(_ => { }, _ => Forget(shared), () => Forget(shared))
+                    .Publish()
+                    .RefCount();
+                return _shared = shared;
+            }
+        }
+
+        private void Forget(IObservable<TMessage> shared)
+        {
+            lock (_gate)
+            {
+                if (_shared == shared)
+                {
+                    _shared = null;
+                }
+            }
+        }
+
+        private TimeSpan RetryDelay
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return _retryDelay;
+                }
+            }
+        }
+
+        private void NextRetryDelay()
+        {
+            lock (_gate)
+            {
+                var doubled = TimeSpan.FromTicks(_retryDelay.Ticks * 2);
+                _retryDelay = _retryDelay == TimeSpan.Zero ? FirstRetryDelay : doubled < MaxRetryDelay ? doubled : MaxRetryDelay;
+            }
+        }
+
+        private void ResetRetryDelay()
+        {
+            lock (_gate)
+            {
+                _retryDelay = TimeSpan.Zero;
+            }
         }
 
         /// <inheritdoc />
