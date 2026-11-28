@@ -33,8 +33,9 @@ updates:
       - dependency-name: "System.Threading.Channels"
         update-types: ["version-update:semver-major"]
 
-  # The examples' own packages. They build Obvs from the repo, so its versions in Directory.Packages.props are theirs
-  # too, and they take the same ignores.
+  # The examples are built on the published Obvs packages, so keep them on its latest release. They pin their own
+  # versions, so this entry updates only theirs. It carried the root's ignores while the examples built Obvs from the
+  # repo, which made it update Directory.Packages.props too, and doesn't need them now.
   - package-ecosystem: nuget
     directory: /Examples
     target-branch: v7
@@ -43,20 +44,6 @@ updates:
     groups:
       examples:
         patterns: ["*"]
-    ignore:
-      - dependency-name: "Microsoft.CodeAnalysis.CSharp*"
-      - dependency-name: "Microsoft.AspNetCore.*"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "Microsoft.Bcl.*"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "Microsoft.Extensions.*"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "System.Diagnostics.DiagnosticSource"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "System.Text.Json"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "System.Threading.Channels"
-        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /

@@ -4,9 +4,8 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
-  <!-- Built from this repo until v7 is on NuGet; then this becomes <PackageReference Include="Obvs" Version="7.0.0" /> -->
   <ItemGroup>
-    <ProjectReference Include="..\..\Obvs\Obvs.csproj" />
+    <PackageReference Include="Obvs" Version="7.0.2" />
   </ItemGroup>
 
 </Project>

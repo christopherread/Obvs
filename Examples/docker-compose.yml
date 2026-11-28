@@ -8,18 +8,22 @@ services:
     ports:
       - "61616:61616"
       - "8161:8161"
+    # Ready once it accepts connections: the service connects as it starts
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/61616"]
+      interval: 2s
+      retries: 30
     networks:
       - obvs
   obvssvc1:
-    build:
-      context: ..
-      dockerfile: Examples/Dockerfile
+    build: .
     image: obvs.example.service.activemq:latest
     environment:
       - ACTIVEMQ_BROKER_URI=activemq:tcp://amq:61616?connectionTimeout=0
       - OBVS_SERVICE_NAME=Obvs.Service1
     depends_on:
-      - amq
+      amq:
+        condition: service_healthy
     networks:
       - obvs
 
